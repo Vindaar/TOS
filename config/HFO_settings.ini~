@@ -1,0 +1,41 @@
+[General]
+sAddress_fadc = 1
+baseAddress_hv = 0x4400
+setKillEnable = true
+# if this flag is set to true, anode and grid
+# will be coupled to one group
+anodeGridGroupFlag           = true
+anodeGridGroupMasterChannel  = 0 # grid is master channel
+monitorTripGroupFlag         = true
+gridChannelNumber            = 0
+anodeChannelNumber           = 1
+cathodeChannelNumber         = 2
+
+# grid, anode and cathode settings
+gridVoltageSet               = 295
+gridVoltageNominal           = 295
+gridVoltageBound             = 0
+gridCurrentSet               = 0.005 # in mA
+gridCurrentNominal           = 0.005 # in mA		     
+gridCurrentBound             = 0
+anodeVoltageSet              = 345
+anodeVoltageNominal          = 345
+anodeVoltageBound            = 0
+anodeCurrentSet              = 0.005 # in mA
+anodeCurrentNominal          = 0.005 # in mA
+anodeCurrentBound            = 0
+cathodeVoltageSet            = 1845
+cathodeVoltageNominal        = 1845
+cathodeVoltageBound          = 0
+cathodeCurrentSet            = 0.010 # in mA
+cathodeCurrentNominal        = 0.010 # in mA
+cathodeCurrentBound          = 0
+
+# Voltage and Current RampSpeed currently set to arbitrary value
+# in percent / second
+moduleVoltageRampSpeed       = 1
+moduleCurrentRampSpeed       = 50
+# checkModuleTimeInterval = 60, checks the status of the
+# module every 60 seconds during a Run, between two events
+checkModuleTimeInterval      = 60
+

@@ -1,0 +1,59 @@
+// vmusb.h by ISEG
+// modified by Sebastian Schmidt
+
+#ifndef __VMUSB_H
+#define __VMUSB_H
+
+#include <QLibrary>
+#include <QStringList>
+
+#include "vmecontroller.h"
+// originally using xxusbdll.h by ISEG
+// due to conflicts with libxxusb (which refers to <usb.h>)
+#include <libxxusb.h>
+
+#ifdef Q_OS_LINUX
+	#define __stdcall
+#endif
+
+/* Prototypes of dynamically imported functions from xxusb.dll */
+
+typedef short (__stdcall *t_xxusbDevicesFind)(xxusb_device_type *);
+typedef usb_dev_handle* (__stdcall *t_xxusbDeviceOpen)(struct usb_device *dev);
+typedef short (__stdcall *t_xxusbDeviceClose)(usb_dev_handle *hDev);
+typedef short (__stdcall *t_vmeRead16)(usb_dev_handle *, short, long, long *);
+typedef short (__stdcall *t_vmeWrite16)(usb_dev_handle *, short, long, long);
+
+class CVmUsb : public CVmeController
+{
+public:
+	CVmUsb();
+	~CVmUsb();
+	//QStringList enumControllers(void);
+
+	virtual QString errorString(void);
+	virtual QString controllerName(void);
+	virtual QString information(void);
+
+	virtual bool initController(int controllerNumber);
+	virtual void writeShort(int vmeAddress, int addressModifier, int data, int *errorCode = NULL);
+	virtual int  readShort(int vmeAddress, int addressModifier, int *errorCode = NULL);
+	virtual bool closeController(void);
+
+private:
+
+	QLibrary *lib;
+
+	usb_dev_handle *udev;
+
+	QString serialNumber;
+	QString ErrorString;
+
+	t_xxusbDevicesFind xxusbDevicesFind;
+	t_xxusbDeviceOpen xxusbDeviceOpen;
+	t_xxusbDeviceClose xxusbDeviceClose;
+	t_vmeRead16 vmeRead16;
+	t_vmeWrite16 vmeWrite16;
+};
+
+#endif // __VMUSB_H
