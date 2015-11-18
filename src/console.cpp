@@ -82,7 +82,6 @@ Console::Console(QString iniFilePath):
 
     bool useHvFadc = true;
     _hvFadcObj = new HV_FADC_Obj(iniFilePath);
-    
 
     // now the HV_FADC_Obj should be set up and running 
     // HV voltages ramped up
@@ -475,402 +474,406 @@ int Console::UserInterfaceFadc()
        */
     
     case 0:
-      printGeneralCommands(_hvFadcObjActive);
-      break;
+	printGeneralCommands(_hvFadcObjActive);
+	break;
 
     case 7001:
-      printFadcCommands();
-      break;    
+	printFadcCommands();
+	break;    
 
     case 50:
-      printTosCommands();
-      break;    
+	printTosCommands();
+	break;    
 
     case 57:
-      if(_hvFadcObjActive)
-      {
-	_hvFadcObj->F_SetTriggerType(0);
-        _hvFadcObj->F_SendSoftwareTrigger();
-        _hvFadcObjActive = false;
-        pc.initHV_FADC(NULL, _hvFadcObjActive);
-        //delete _fadcFunctions;
-        delete _hvFadcObj;
-      }
-      return 0;
+	if(_hvFadcObjActive)
+	{
+	    _hvFadcObj->F_SetTriggerType(0);
+	    _hvFadcObj->F_SendSoftwareTrigger();
+	    _hvFadcObjActive = false;
+	    pc.initHV_FADC(NULL, _hvFadcObjActive);
+	    //delete _fadcFunctions;
+	    delete _hvFadcObj;
+	}
+	return 0;
 
     case 98:
-      UserInterface();
-      break;
+	UserInterface();
+	break;
 
     case 99:
-      if(_hvFadcObjActive)
-      {
-        _hvFadcObj->F_SetTriggerType(0);
-        _hvFadcObj->F_SendSoftwareTrigger();
-        //delete _fadcFunctions;
-        _hvFadcObjActive = false;
-        std::cout << "switching to TOS only" << std::endl;
+	if(_hvFadcObjActive)
+	{
+	    _hvFadcObj->F_SetTriggerType(0);
+	    _hvFadcObj->F_SendSoftwareTrigger();
+	    //delete _fadcFunctions;
+	    _hvFadcObjActive = false;
+	    std::cout << "switching to TOS only" << std::endl;
         
-        delete _hvFadcObj;
-      }
-      UserInterfaceNew(_hvFadcObjActive);            
-      return 0;
+	    delete _hvFadcObj;
+	}
+	UserInterfaceNew(_hvFadcObjActive);            
+	return 0;
 
-      /*FADC Commands
-       */
+	/*FADC Commands
+	 */
      
     case 7002:
-      _hvFadcObj->FADC_Functions->printSettings();
-      break;
+	_hvFadcObj->FADC_Functions->printSettings();
+	break;
     
     case 7003:
-      _hvFadcObj->F_Reset();
-      break;
+	_hvFadcObj->F_Reset();
+	break;
 
     case 7004:
-      _hvFadcObj->F_StartAcquisition();
-      break;
+	_hvFadcObj->F_StartAcquisition();
+	break;
 
     case 7005:
-      _hvFadcObj->F_SendSoftwareTrigger();
-      break;
+	_hvFadcObj->F_SendSoftwareTrigger();
+	break;
 
     case 7006:
-      std::cout << "Interrupt: " << _hvFadcObj->F_ReadInterrupt() << std::endl;
-      break;
+	std::cout << "Interrupt: " << _hvFadcObj->F_ReadInterrupt() << std::endl;
+	break;
    
     case 7007:
-      _hvFadcObj->F_ReleaseInterrupt();
-      break;
+	_hvFadcObj->F_ReleaseInterrupt();
+	break;
 
     case 7008:
-      _hvFadcObj->F_SetTriggerThresholdDACAll( getInputValue() );
-      break;
+	_hvFadcObj->F_SetTriggerThresholdDACAll( getInputValue() );
+	break;
 
     case 7009 :
-      std::cout << "getTriggerThreshold perChannel:" << std::endl;
-      std::cout << "Channel 1: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(0) << std::endl;
-      std::cout << "Channel 2: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(1) << std::endl;
-      std::cout << "Channel 3: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(2) << std::endl;
-      std::cout << "Channel 4: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(3) << std::endl;
-      std::cout << "getTriggerThreshold All: " << _hvFadcObj->F_GetTriggerThresholdDACAll() << std::endl << std::endl;
-      break;
+	std::cout << "getTriggerThreshold perChannel:" << std::endl;
+	std::cout << "Channel 1: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(0) << std::endl;
+	std::cout << "Channel 2: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(1) << std::endl;
+	std::cout << "Channel 3: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(2) << std::endl;
+	std::cout << "Channel 4: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(3) << std::endl;
+	std::cout << "getTriggerThreshold All: " << _hvFadcObj->F_GetTriggerThresholdDACAll() << std::endl << std::endl;
+	break;
 
     case 7010:
-      std::cout << "setTriggerThresholdRegisterAll returns: " 
-		<<  _hvFadcObj->FADC_Functions->setTriggerThresholdRegisterAll( getInputValue() ) << std::endl;
-      break;
+	std::cout << "setTriggerThresholdRegisterAll returns: " 
+		  <<  _hvFadcObj->FADC_Functions->setTriggerThresholdRegisterAll( getInputValue() ) << std::endl;
+	break;
     
     case 7011:
-      _hvFadcObj->FADC_Functions->getTriggerThresholdRegister();
-      break;
+	_hvFadcObj->FADC_Functions->getTriggerThresholdRegister();
+	break;
     
     case 7012:
-      _hvFadcObj->F_LoadTriggerThresholdDAC();
-      break;
+	_hvFadcObj->F_LoadTriggerThresholdDAC();
+	break;
 
     case 7013:
-      _hvFadcObj->F_SetTriggerType( getInputValue() );
-      break;
+	_hvFadcObj->F_SetTriggerType( getInputValue() );
+	break;
 
     case 7014:
-      std::cout << "Trigger type: " << _hvFadcObj->F_GetTriggerType() << std::endl;
-      break;
+	std::cout << "Trigger type: " << _hvFadcObj->F_GetTriggerType() << std::endl;
+	break;
 
     case 7015:
-      _hvFadcObj->F_SetTriggerChannelSource( getInputValue() );
-      break;
+	_hvFadcObj->F_SetTriggerChannelSource( getInputValue() );
+	break;
 
     case 7016:
-      std::cout << "Trigger channel source: " << _hvFadcObj->F_GetTriggerChannelSource() << std::endl;
-      break;
+	std::cout << "Trigger channel source: " << _hvFadcObj->F_GetTriggerChannelSource() << std::endl;
+	break;
 
     case 7017:
-      _hvFadcObj->F_SetPosttrig( getInputValue() );
-      break;
+	_hvFadcObj->F_SetPosttrig( getInputValue() );
+	break;
 
     case 7018:
-      std::cout << "Posttrig: " << _hvFadcObj->F_GetPosttrig() << std::endl;
-      break;
+	std::cout << "Posttrig: " << _hvFadcObj->F_GetPosttrig() << std::endl;
+	break;
 
     case 7019:
-      _hvFadcObj->F_SetPretrig( getInputValue() );
-      break;
+	_hvFadcObj->F_SetPretrig( getInputValue() );
+	break;
 
     case 7020:
-      std::cout << "Pretrig: " << _hvFadcObj->F_GetPretrig() << std::endl;
-      break;
+	std::cout << "Pretrig: " << _hvFadcObj->F_GetPretrig() << std::endl;
+	break;
 
     case 7021:
-      _hvFadcObj->F_SetChannelMask( getInputValue() );
-      break;
+	_hvFadcObj->F_SetChannelMask( getInputValue() );
+	break;
 
     case 7022:
-      std::cout << "Channel mask: " << _hvFadcObj->F_GetChannelMask() << std::endl;
-      break;
+	std::cout << "Channel mask: " << _hvFadcObj->F_GetChannelMask() << std::endl;
+	break;
 
     case 7023:
-      _hvFadcObj->F_SetNbOfChannels(getInputValue());
-      break;      
+	_hvFadcObj->F_SetNbOfChannels(getInputValue());
+	break;      
 
     case 7024:
-      std::cout << "#Channels: " << _hvFadcObj->F_GetNbOfChannels() << std::endl;
-      break;
+	std::cout << "#Channels: " << _hvFadcObj->F_GetNbOfChannels() << std::endl;
+	break;
 
     case 7027:
-      _hvFadcObj->F_SetModeRegister(static_cast<const unsigned short>(getInputValue()));
-      break;
+	_hvFadcObj->F_SetModeRegister(static_cast<const unsigned short>(getInputValue()));
+	break;
 
     case 7028:
-      std::cout << "mode register: " << _hvFadcObj->F_GetModeRegister() << std::endl;
-      break;
+	std::cout << "mode register: " << _hvFadcObj->F_GetModeRegister() << std::endl;
+	break;
 
     case 7029:
-      _hvFadcObj->F_SetFrequency( getInputValue() );
-      break;
+	_hvFadcObj->F_SetFrequency( getInputValue() );
+	break;
 
     case 7030:
-      std::cout << "Frequency: " << _hvFadcObj->F_GetFrequency() << std::endl;
-      break;
+	std::cout << "Frequency: " << _hvFadcObj->F_GetFrequency() << std::endl;
+	break;
 
     case 7031:
-      _hvFadcObj->F_SetReadMode( getInputValue() );
-      break;
+	_hvFadcObj->F_SetReadMode( getInputValue() );
+	break;
 
     case 7032:
-      std::cout << "Read mode: " << _hvFadcObj->F_GetReadMode() << std::endl;
-      break;
+	std::cout << "Read mode: " << _hvFadcObj->F_GetReadMode() << std::endl;
+	break;
 
     case 7033:
-      _hvFadcObj->F_SetPostStopLatency( getInputValue() );
-      break;
+	_hvFadcObj->F_SetPostStopLatency( getInputValue() );
+	break;
 
     case 7034:
-      std::cout << "Post stop latency: " << _hvFadcObj->F_GetPostStopLatency() << std::endl;
-      break;
+	std::cout << "Post stop latency: " << _hvFadcObj->F_GetPostStopLatency() << std::endl;
+	break;
 
     case 7035:
-      _hvFadcObj->F_SetPostLatencyPretrig( getInputValue() );
-      break;
+	_hvFadcObj->F_SetPostLatencyPretrig( getInputValue() );
+	break;
 
     case 7036:
-      std::cout << "Post latency pretrig: " << _hvFadcObj->F_GetPostLatencyPretrig() << std::endl;
-      break;
+	std::cout << "Post latency pretrig: " << _hvFadcObj->F_GetPostLatencyPretrig() << std::endl;
+	break;
 
 
-      /*TOS Commands - code doubling from the commands of the 
-       *"userInterface function below
-       */
+	/*TOS Commands - code doubling from the commands of the 
+	 *"userInterface function below
+	 */
 
     case 1005:
-      std::cout << "Ext-Trigger Bit: " << ReadoutFpgaExtTriggerBit() << std::endl;
-      break;
+	std::cout << "Ext-Trigger Bit: " << ReadoutFpgaExtTriggerBit() << std::endl;
+	break;
 
     case 1006:
-      std::cout << "Ext-Trigger Flag: " << ReadoutFpgaExtTriggerFlag() << std::endl;
-      break;
+	std::cout << "Ext-Trigger Flag: " << ReadoutFpgaExtTriggerFlag() << std::endl;
+	break;
 
     case 1007:
-      std::cout << "Cleared Ext-Trigger Flag:" << std::endl;
-      ClearFpgaExtTriggerFlag();
-      break;
+	std::cout << "Cleared Ext-Trigger Flag:" << std::endl;
+	ClearFpgaExtTriggerFlag();
+	break;
 
-      //case 510:
-      //break;
+	//case 510:
+	//break;
 
-      //case 511:
-      //break;
+	//case 511:
+	//break;
 
     case 52:
-      errorVar=pc.fpga.GeneralReset();
-      if(errorVar>10){
-        ErrorMessages(errorVar);
-      }
-      else{
-        std::cout<<"\t GeneralReset accomplished" <<std::endl;
-      }
-      break;
+	errorVar=pc.fpga.GeneralReset();
+	if(errorVar>10){
+	    ErrorMessages(errorVar);
+	}
+	else{
+	    std::cout<<"\t GeneralReset accomplished" <<std::endl;
+	}
+	break;
 
     case 53:
-      CommandSetNumChips();
-      break;
+	CommandSetNumChips();
+	break;
 
     case 54:
-      std:: cout << "Switch Trigger Connection (0/tlu 1/lemo)" << std::endl;
-      CommandSwitchTriggerConnection(getInputValue());
-      break;
+	std:: cout << "Switch Trigger Connection (0/tlu 1/lemo)" << std::endl;
+	CommandSwitchTriggerConnection(getInputValue());
+	break;
 
     case 1020:
-      CommandCounting(1);
-      break; 
+	CommandCounting(1);
+	break; 
 
     case 1021:
-      CommandCounting(0);
-      break;
+	CommandCounting(0);
+	break;
 
     case 1022:
-      CommandCountingLong();
-      break;
+	CommandCountingLong();
+	break;
 
     case 1023:
-      std::cout << "counting-trigger-value" << std::endl;
-      CommandCountingTrigger(getInputValue());
-      break;
+	std::cout << "counting-trigger-value" << std::endl;
+	CommandCountingTrigger(getInputValue());
+	break;
 
     case 1024:
-      std::cout << "counting-time-value" << std::endl;
-      CommandCountingTime(getInputValue());
-      break;
+	std::cout << "counting-time-value" << std::endl;
+	CommandCountingTime(getInputValue());
+	break;
 
     case 1025:
-      std::cout << "counting-time-value fast" << std::endl;
-      CommandCountingTime_fast(getInputValue());
-      break;
+	std::cout << "counting-time-value fast" << std::endl;
+	CommandCountingTime_fast(getInputValue());
+	break;
 
     case 1026:
-      std::cout << "counting-time-value long" << std::endl;
-      CommandCountingTime_long(getInputValue());
-      break;
+	std::cout << "counting-time-value long" << std::endl;
+	CommandCountingTime_long(getInputValue());
+	break;
 
     case 1027:
-      std::cout << "counting-time-value very long" << std::endl;
-      CommandCountingTime_verylong(getInputValue());
-      break;
+	std::cout << "counting-time-value very long" << std::endl;
+	CommandCountingTime_verylong(getInputValue());
+	break;
 
     case 1030:
-      CommandReadOut();
-      break;
+	CommandReadOut();
+	break;
 
     case 1031:
-      CommandReadOut2();
-      break;
+	CommandReadOut2();
+	break;
 
     case 1040:
-      CommandSetMatrix();
-      break;
+	CommandSetMatrix();
+	break;
 
     case 1050:
-      CommandWriteReadFSR();
-      break;
+	CommandWriteReadFSR();
+	break;
 
     case 55:
-      int tmp;
-      tmp = CommandRun(_hvFadcObjActive);
-      if(tmp == 1) pc.initHV_FADC(_hvFadcObj, true); 
-      break;
+	int tmp;
+	tmp = CommandRun(_hvFadcObjActive);
+	if(tmp == 1) pc.initHV_FADC(_hvFadcObj, true); 
+	break;
 
     case 56:
-      std::cout << "End measurement - someone should implement that" << std::endl;
-      break;
+	std::cout << "End measurement - someone should implement that" << std::endl;
+	break;
 
     case 58:
-      CommandHelp();
-      break;
+	CommandHelp();
+	break;
 
     case 591:
-      std::cout << "enter IP adress - Format: [SetIP][Space][IPAdress]" << std::endl;
-      command.clear();
-      std::cin >> command;
-      CommandSetIP(command.substr(6));
-      break;
+	std::cout << "enter IP adress - Format: [SetIP][Space][IPAdress]" << std::endl;
+	command.clear();
+	std::cin >> command;
+	CommandSetIP(command.substr(6));
+	break;
 
     case 592:
-      std::cout << pc.fpga.ShowIP() << std::endl;
-      break;
+	std::cout << pc.fpga.ShowIP() << std::endl;
+	break;
 
     case 60:
-      pc.fpga.EnableTPulse(1);
-      break;
+	pc.fpga.EnableTPulse(1);
+	break;
 
     case 61:
-      pc.fpga.EnableTPulse(0);
-      break;
+	pc.fpga.EnableTPulse(0);
+	break;
 
     case 62:
-      CommandDACScan();
-      break;
+	CommandDACScan();
+	break;
 
     case 63:
-      CommandTHLScan();
-      break;
+	CommandTHLScan();
+	break;
 
     case 64:
-      CommandSCurve();
-      break;
+	CommandSCurve();
+	break;
 
     case 65:
-      CommandSCurveFast();
-      break;
+	CommandSCurveFast();
+	break;
 
-      //case 66:
-      //break;
+	//case 66:
+	//break;
 
     case 1060:
-      CommandDoTHSopt();
-      break;
+	CommandDoTHSopt();
+	break;
 
     case 1070:
-      CommandThresholdEqNoiseCenter();
-      break;
+	CommandThresholdEqNoiseCenter();
+	break;
 
     case 1080:
-      CommandTOCalib();
-      break;
+	CommandTOCalib();
+	break;
 
     case 1081:
-      CommandTOCalibFast();
-      break;
+	CommandTOCalibFast();
+	break;
 
     case 67:
-      CommandLoadThreshold();
-      break;
+	CommandLoadThreshold();
+	break;
 
     case 68:
-      CommandSaveFSR();
-      break;
+	CommandSaveFSR();
+	break;
 
     case 69:
-      CommandLoadFSR();
-      break;
+	CommandLoadFSR();
+	break;
 
     case 70:
-      std::cout << "Enter params: ";
-      command.clear();
-      std::cin >> command;
-      CommandSetDAC(command);
-      break;
+	std::cout << "Enter params: ";
+	command.clear();
+	std::cin >> command;
+	CommandSetDAC(command);
+	break;
 
     case 71:
-      CommandVarChessMatrix();
-      break;
+	CommandVarChessMatrix();
+	break;
 
     case 72:
-      CommandUniformMatrix();
-      break;
+	CommandUniformMatrix();
+	break;
 
     case 73:
-      CommandSaveMatrix();
-      break;
+	CommandSaveMatrix();
+	break;
 
-     case 74:
-      CommandLoadMatrix();
-      break;
+    case 74:
+	CommandLoadMatrix();
+	break;
 
-     case 75:
-      pc.fpga.MakeARPEntry();
-      break;
+    case 75:
+	pc.fpga.MakeARPEntry();
+	break;
 
-     case 76:
-      std::cout << "enter spacing: " << std::endl;
-       CommandSpacing(getInputValue());
-      break;
+    case 76:
+	std::cout << "enter spacing: " << std::endl;
+	CommandSpacing(getInputValue());
+	break;
+
+    case 9999:
+	_hvFadcObj->InitHFOForTOS();
+	
 
 
-      /*default
-       */
+	/*default
+	 */
 
     default:
-      std::cout << "Command not found. Try the FADC (1) Command list or the TOS (51) help" << std::endl;
+	std::cout << "Command not found. Try the FADC (1) Command list or the TOS (51) help" << std::endl;
     }//end switch
   }//end while
 

@@ -10,7 +10,7 @@
 #include <chrono>
 
 // either create object using addresses for FADC and HV
-HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv){
+HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, QString iniFilePath){
     // upon initialisation of HV_FADC_Obj, we need to create the
     // V1729a_VME (FADC) instance and vmemodule (HV) instance
     // using the base Addresses
@@ -18,6 +18,8 @@ HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv){
     // TODO: make sure that this baseAddress_hv is actually the one
     // given to the function and not the private int variable
     // of the object itself with the same name
+
+    iniFile = iniFilePath;
 
     // initialize Controller
     Controller.initController(0);
@@ -48,12 +50,10 @@ HV_FADC_Obj::HV_FADC_Obj(QString iniFilePath){
     Controller.initController(0);
     
     // set the object created flag to false
-    hvFadcObjectCreatedFlag = false;
+    hvFadcObjCreatedFlag = false;
     // and set the ini file path variable to the given input
     iniFile = iniFilePath;
 
-    // and call the initialization for TOS    
-    InitHFOForTOS(iniFile);
 }
 
 
@@ -82,14 +82,13 @@ HV_FADC_Obj::~HV_FADC_Obj() {
 
 
 
-void HV_FADC_Obj::InitHFOForTOS(QString iniFilePath){
+void HV_FADC_Obj::InitHFOForTOS(){
     // what do we need to do? 
     // we read the settings from a file, given to this function
     std::cout << "Entering Init HFO for TOS" << std::endl;
-    iniFile = iniFilePath;
 
     // First we read the Settings file
-    // in case HV_FADC_ObjectCreatedFlag is false 
+    // in case hvFadcObjCreatedFlag is false 
     // we use the read settings to create the objects properly
     
 
@@ -112,7 +111,7 @@ void HV_FADC_Obj::InitHFOForTOS(QString iniFilePath){
     // TODO: check proper path
     //       or rather: add option to give full path or
     //       relative?
-    iniFile = dir.absolutePath() + '/' + iniFilePath;
+    iniFile = dir.absolutePath() + '/' + iniFile;
     std::cout << "Path to Ini File: " << iniFile.toStdString() << std::endl;
 
     // now we have read the QString with the path
@@ -402,7 +401,7 @@ void HV_FADC_Obj::InitHFOForTOS(QString iniFilePath){
     // use the just read settings to create the objects, if not
     // yet created
     // check if FADC and HV modules have been created
-    if (HV_FADC_ObjectCreatedFlag == false){
+    if (hvFadcObjCreatedFlag == false){
 
         HV_module   = new CVmeModule(&Controller, baseAddress_hv);
         std::cout << "creating.. " << HV_module->IsConnected() <<std::endl;

@@ -81,7 +81,7 @@ class HV_FADC_Obj
   public:
     // Creator
     // either create by using addresses
-    HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv);
+    HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, QString iniFilePath);
     // or reading everything from .ini file (and calling InitHFOForTOS)
     HV_FADC_Obj(QString iniFilePath);
     // sAddress_fadc is a multiplicative number for the FADC
@@ -104,7 +104,7 @@ class HV_FADC_Obj
     //************ based on module functions ***********
     //**************************************************
 
-    void InitHFOForTOS(QString iniFilePath, bool HV_FADC_ObjectCreatedFlag = false);
+    void InitHFOForTOS();
     void ShutDownHFOForTOS();
     void H_CheckModuleIsRamping(bool rampUpFlag);
     
