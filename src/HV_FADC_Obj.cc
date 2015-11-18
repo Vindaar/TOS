@@ -32,6 +32,9 @@ HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv){
     // now create FADC functions object
     FADC_Functions = new HighLevelFunction_VME(FADC_module);
 
+    // set the object created flag to true
+    hvFadcObjCreatedFlag = true;
+
     FADC_module->reset();
     
 }
@@ -44,10 +47,13 @@ HV_FADC_Obj::HV_FADC_Obj(QString iniFilePath){
     // initialize Controller
     Controller.initController(0);
     
-    // and call the initialization for TOS
-    bool HV_FADC_ObjectCreatedFlag = false;
-    
-    InitHFOForTOS(iniFilePath, HV_FADC_ObjectCreatedFlag);
+    // set the object created flag to false
+    hvFadcObjectCreatedFlag = false;
+    // and set the ini file path variable to the given input
+    iniFile = iniFilePath;
+
+    // and call the initialization for TOS    
+    InitHFOForTOS(iniFile);
 }
 
 
@@ -76,26 +82,16 @@ HV_FADC_Obj::~HV_FADC_Obj() {
 
 
 
-void HV_FADC_Obj::InitHFOForTOS(QString iniFilePath, bool HV_FADC_ObjectCreatedFlag){
+void HV_FADC_Obj::InitHFOForTOS(QString iniFilePath){
     // what do we need to do? 
     // we read the settings from a file, given to this function
     std::cout << "Entering Init HFO for TOS" << std::endl;
+    iniFile = iniFilePath;
 
-
-    // check if FADC and HV modules have been created
-    if (HV_FADC_ObjectCreatedFlag == false){
-
-        HV_module   = new CVmeModule(&Controller, baseAddress_hv);
-        std::cout << "creating.. " << HV_module->IsConnected() <<std::endl;
-        FADC_module = new V1729a_VME(&Controller, sAddress_fadc);
-	// create FADC high level functions
-        FADC_Functions = new HighLevelFunction_VME(FADC_module);
-	// and reset FADC
-        FADC_module->reset();
-
-	
-    }
-
+    // First we read the Settings file
+    // in case HV_FADC_ObjectCreatedFlag is false 
+    // we use the read settings to create the objects properly
+    
 
     // define variables
 
@@ -402,6 +398,22 @@ void HV_FADC_Obj::InitHFOForTOS(QString iniFilePath, bool HV_FADC_ObjectCreatedF
 	checkModuleTimeInterval = DEFAULT_CHECK_MODULE_TIME_INTERVAL;
     }
 
+
+    // use the just read settings to create the objects, if not
+    // yet created
+    // check if FADC and HV modules have been created
+    if (HV_FADC_ObjectCreatedFlag == false){
+
+        HV_module   = new CVmeModule(&Controller, baseAddress_hv);
+        std::cout << "creating.. " << HV_module->IsConnected() <<std::endl;
+        FADC_module = new V1729a_VME(&Controller, sAddress_fadc);
+	// create FADC high level functions
+        FADC_Functions = new HighLevelFunction_VME(FADC_module);
+	// and reset FADC
+        FADC_module->reset();
+
+	
+    }
 
     // now we have all values to set up the HV for TOS
     // first set kill enable

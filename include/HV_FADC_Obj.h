@@ -382,6 +382,7 @@ class HV_FADC_Obj
     uint16_t cathodeChannelNumber;
 
     // flags
+    bool hvFadcObjCreatedFlag;
     bool setKillEnable;
     bool anodeGridGroupFlag;
     bool monitorTripGroupFlag;
