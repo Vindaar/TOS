@@ -1,5 +1,0 @@
-# ignore the tmp folder, the Makefile and tos.pro
-*.o
-*.moc
-Makefile
-TOS.pro
