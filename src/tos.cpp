@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     // TODO: change all this to use HV_FADC_Obj
     // V1729a* myFADC = new V1729a_Dummy;
     bool useHV_FADC_Obj = false;
-    QString iniFilePath;
+    QString iniFilePath("../config/HFOSettings.ini");
 
     //get parameter for the FADC use
     extern char* optarg;
@@ -83,8 +83,12 @@ int main(int argc, char *argv[])
 		      << "../config/HFOSettings.ini \n"
 		      << "is used. " << std::endl;
 	    QTextStream qtin(stdin);
-	    qtin >> iniFilePath;
 
+	    iniFilePath = qtin.readLine();
+	    if(iniFilePath.isEmpty() == true){
+		iniFilePath = "../config/HFOSettings.ini";
+	    }
+	    std::cout << "Using path " << iniFilePath.toStdString() << std::endl;
 	    //HV_FADC_Obj *myHV_FADC_Obj = new HV_FADC_Obj(input);
 	    useHV_FADC_Obj = true;
 	    break;
