@@ -435,6 +435,11 @@ int Console::UserInterface(){
 	{
 	    pc.fpga.UseFastClock(0);
 	}
+
+	else if( ein.compare("")==0 )
+	{
+	    std::cout << "" << std::flush;
+	}
 	else{
 	    std::cout<<"command not found"<<std::endl;
 	}
