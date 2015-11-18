@@ -40,6 +40,8 @@ public:
     // TODO: replace by HV_FADC_Obj pointer
     Console(V1729a* dev);
 
+    Console(QString iniFilePath);
+
     //D'tor
     ~Console();
 
@@ -149,9 +151,13 @@ private:
     // TODO: Change to usage of HV_FADC_Obj
     
   
-    V1729a* _fadc;                           //< fadc pointer
-    bool _fadcActive;                        //< check var. true if a fadc is used, false otherwise
-    HighLevelFunction_VME* _fadcFunctions;   //< some additional functions for the use of the fadc
+    //V1729a* _fadc;                           //< fadc pointer
+    //bool _fadcActive;                        //< check var. true if a fadc is used, false otherwise
+    
+    HV_FADC_Obj* _hvFadcObj;
+    bool _hvFadcObjActive;		       
+
+    //HighLevelFunction_VME* _fadcFunctions;   //< some additional functions for the use of the fadc
 
 
     // test

@@ -21,9 +21,8 @@
 Console::Console():
          _nbOfChips(0),
          _preload(0),
-         _fadc(NULL),
-         _fadcActive(false),
-         _fadcFunctions(NULL)
+         _hvFadcObj(NULL),
+         _hvFadcObjActive(false)
 {
 #if DEBUG==2
     std::cout<<"Enter Console::Console()"<<std::endl;
@@ -50,20 +49,48 @@ Console::Console():
 }
 
 
-Console::Console(V1729a* dev):
+// Console::Console(V1729a* dev):
+//     _nbOfChips(1),
+//     _preload(0),
+//     _fadc(dev),
+//     _fadcActive(true),
+//     _fadcFunctions(new HighLevelFunction_VME(dev))
+// {
+// #if DEBUG==2
+//     std::cout<<"Enter Console::Console()"<<std::endl;
+// #endif
+//     //init FADC
+//     pc.initFADC(_fadc,_fadcFunctions);
+//     ok = pc.okay();
+  
+//     std::cout << "Warning: In FADC-Mode one can only use one Chip" << std::endl;
+
+//     //get preoload
+//     _preload = getPreload();
+//     pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
+// }
+
+Console::Console(QString iniFilePath):
     _nbOfChips(1),
     _preload(0),
-    _fadc(dev),
-    _fadcActive(true),
-    _fadcFunctions(new HighLevelFunction_VME(dev))
+    // _fadc(dev),
+    _hvFadcObjActive(true)
 {
 #if DEBUG==2
     std::cout<<"Enter Console::Console()"<<std::endl;
 #endif
+
+    bool useHvFadc = true;
+    _hvFadcObj = new HV_FADC_Obj(iniFilePath);
+    
+
+    // now the HV_FADC_Obj should be set up and running 
+    // HV voltages ramped up
+
     //init FADC
-    pc.initFADC(_fadc,_fadcFunctions);
+    pc.initHV_FADC(_hvFadcObj, useHvFadc);
     ok = pc.okay();
-  
+    
     std::cout << "Warning: In FADC-Mode one can only use one Chip" << std::endl;
 
     //get preoload
@@ -72,12 +99,11 @@ Console::Console(V1729a* dev):
 }
 
 
+
 Console::~Console()
 {
-    if(_fadcActive) 
-    {
-	delete _fadc;
-	delete _fadcFunctions;
+    if(_hvFadcObjActive){
+        delete _hvFadcObj;
     }
 }
 
@@ -124,7 +150,7 @@ void Console::ConsoleMain(){
     //pc.fpga.tp.SaveMatrixToFile(MatrixFileName.c_str());
 
     //call the main "command-function" w or wo FADC commands
-    if(_fadcActive) UserInterfaceFadc();
+    if(_hvFadcObjActive) UserInterfaceFadc();
     else
     {
 	std::cout << "Do you want to use the common (0) or the new Userinterface (1)?" << std::endl;
@@ -179,7 +205,7 @@ int Console::UserInterface(){
     
 	else if(ein.compare("UserInterface")==0)
 	{
-	    if(_fadcActive) UserInterfaceFadc();
+	    if(_hvFadcObjActive) UserInterfaceFadc();
 	    else UserInterfaceNew();
 
 	    break;
@@ -421,11 +447,11 @@ int Console::UserInterface(){
 int Console::UserInterfaceFadc()
 {
   std::cout << "Welcome to FADC Interface" << std::endl;
-  printGeneralCommands(_fadcActive);
+  printGeneralCommands(_hvFadcObjActive);
 
   
   
-  while(_fadcActive){
+  while(_hvFadcObjActive){
     
     std::cout << ">";
     
@@ -444,7 +470,7 @@ int Console::UserInterfaceFadc()
        */
     
     case 0:
-      printGeneralCommands(_fadcActive);
+      printGeneralCommands(_hvFadcObjActive);
       break;
 
     case 7001:
@@ -456,14 +482,14 @@ int Console::UserInterfaceFadc()
       break;    
 
     case 57:
-      if(_fadcActive)
+      if(_hvFadcObjActive)
       {
-        _fadc->setTriggerType(0);
-        _fadc->sendSoftwareTrigger();
-        _fadcActive = false;
-        pc.initFADC(NULL, NULL, _fadcActive);
+	_hvFadcObj->F_SetTriggerType(0);
+        _hvFadcObj->F_SendSoftwareTrigger();
+        _hvFadcObjActive = false;
+        pc.initHV_FADC(NULL, _hvFadcObjActive);
         //delete _fadcFunctions;
-        delete _fadc;
+        delete _hvFadcObj;
       }
       return 0;
 
@@ -472,158 +498,158 @@ int Console::UserInterfaceFadc()
       break;
 
     case 99:
-      if(_fadcActive)
+      if(_hvFadcObjActive)
       {
-        _fadc->setTriggerType(0);
-        _fadc->sendSoftwareTrigger();
+        _hvFadcObj->F_SetTriggerType(0);
+        _hvFadcObj->F_SendSoftwareTrigger();
         //delete _fadcFunctions;
-        _fadcActive = false;
+        _hvFadcObjActive = false;
         std::cout << "switching to TOS only" << std::endl;
         
-        delete _fadc;
+        delete _hvFadcObj;
       }
-      UserInterfaceNew(_fadcActive);            
+      UserInterfaceNew(_hvFadcObjActive);            
       return 0;
 
       /*FADC Commands
        */
      
     case 7002:
-      _fadcFunctions->printSettings();
+      _hvFadcObj->FADC_Functions->printSettings();
       break;
     
     case 7003:
-      _fadc->reset();
+      _hvFadcObj->F_Reset();
       break;
 
     case 7004:
-      _fadc->startAcquisition();
+      _hvFadcObj->F_StartAcquisition();
       break;
 
     case 7005:
-      _fadc->sendSoftwareTrigger();
+      _hvFadcObj->F_SendSoftwareTrigger();
       break;
 
     case 7006:
-      std::cout << "Interrupt: " << _fadc->readInterrupt() << std::endl;
+      std::cout << "Interrupt: " << _hvFadcObj->F_ReadInterrupt() << std::endl;
       break;
    
     case 7007:
-      _fadc->releaseInterrupt();
+      _hvFadcObj->F_ReleaseInterrupt();
       break;
 
     case 7008:
-      _fadc->setTriggerThresholdDACAll( getInputValue() );
+      _hvFadcObj->F_SetTriggerThresholdDACAll( getInputValue() );
       break;
 
     case 7009 :
       std::cout << "getTriggerThreshold perChannel:" << std::endl;
-      std::cout << "Channel 1: " <<  _fadc->getTriggerThresholdDACPerChannel(0) << std::endl;
-      std::cout << "Channel 2: " <<  _fadc->getTriggerThresholdDACPerChannel(1) << std::endl;
-      std::cout << "Channel 3: " <<  _fadc->getTriggerThresholdDACPerChannel(2) << std::endl;
-      std::cout << "Channel 4: " <<  _fadc->getTriggerThresholdDACPerChannel(3) << std::endl;
-      std::cout << "getTriggerThreshold All: " << _fadc->getTriggerThresholdDACAll() << std::endl << std::endl;
+      std::cout << "Channel 1: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(0) << std::endl;
+      std::cout << "Channel 2: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(1) << std::endl;
+      std::cout << "Channel 3: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(2) << std::endl;
+      std::cout << "Channel 4: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(3) << std::endl;
+      std::cout << "getTriggerThreshold All: " << _hvFadcObj->F_GetTriggerThresholdDACAll() << std::endl << std::endl;
       break;
 
     case 7010:
       std::cout << "setTriggerThresholdRegisterAll returns: " 
-		<<  _fadcFunctions->setTriggerThresholdRegisterAll( getInputValue() ) << std::endl;
+		<<  _hvFadcObj->FADC_Functions->setTriggerThresholdRegisterAll( getInputValue() ) << std::endl;
       break;
     
     case 7011:
-      _fadcFunctions->getTriggerThresholdRegister();
+      _hvFadcObj->FADC_Functions->getTriggerThresholdRegister();
       break;
     
     case 7012:
-      _fadc->loadTriggerThresholdDAC();
+      _hvFadcObj->F_LoadTriggerThresholdDAC();
       break;
 
     case 7013:
-      _fadc->setTriggerType( getInputValue() );
+      _hvFadcObj->F_SetTriggerType( getInputValue() );
       break;
 
     case 7014:
-      std::cout << "Trigger type: " << _fadc->getTriggerType() << std::endl;
+      std::cout << "Trigger type: " << _hvFadcObj->F_GetTriggerType() << std::endl;
       break;
 
     case 7015:
-      _fadc->setTriggerChannelSource( getInputValue() );
+      _hvFadcObj->F_SetTriggerChannelSource( getInputValue() );
       break;
 
     case 7016:
-      std::cout << "Trigger channel source: " << _fadc->getTriggerChannelSource() << std::endl;
+      std::cout << "Trigger channel source: " << _hvFadcObj->F_GetTriggerChannelSource() << std::endl;
       break;
 
     case 7017:
-      _fadc->setPosttrig( getInputValue() );
+      _hvFadcObj->F_SetPosttrig( getInputValue() );
       break;
 
     case 7018:
-      std::cout << "Posttrig: " << _fadc->getPosttrig() << std::endl;
+      std::cout << "Posttrig: " << _hvFadcObj->F_GetPosttrig() << std::endl;
       break;
 
     case 7019:
-      _fadc->setPretrig( getInputValue() );
+      _hvFadcObj->F_SetPretrig( getInputValue() );
       break;
 
     case 7020:
-      std::cout << "Pretrig: " << _fadc->getPretrig() << std::endl;
+      std::cout << "Pretrig: " << _hvFadcObj->F_GetPretrig() << std::endl;
       break;
 
     case 7021:
-      _fadc->setChannelMask( getInputValue() );
+      _hvFadcObj->F_SetChannelMask( getInputValue() );
       break;
 
     case 7022:
-      std::cout << "Channel mask: " << _fadc->getChannelMask() << std::endl;
+      std::cout << "Channel mask: " << _hvFadcObj->F_GetChannelMask() << std::endl;
       break;
 
     case 7023:
-      _fadc->setNbOfChannels(getInputValue());
+      _hvFadcObj->F_SetNbOfChannels(getInputValue());
       break;      
 
     case 7024:
-      std::cout << "#Channels: " << _fadc->getNbOfChannels() << std::endl;
+      std::cout << "#Channels: " << _hvFadcObj->F_GetNbOfChannels() << std::endl;
       break;
 
     case 7027:
-      _fadc->setModeRegister(static_cast<const unsigned short>(getInputValue()));
+      _hvFadcObj->F_SetModeRegister(static_cast<const unsigned short>(getInputValue()));
       break;
 
     case 7028:
-      std::cout << "mode register: " << _fadc->getModeRegister() << std::endl;
+      std::cout << "mode register: " << _hvFadcObj->F_GetModeRegister() << std::endl;
       break;
 
     case 7029:
-      _fadc->setFrequency( getInputValue() );
+      _hvFadcObj->F_SetFrequency( getInputValue() );
       break;
 
     case 7030:
-      std::cout << "Frequency: " << _fadc->getFrequency() << std::endl;
+      std::cout << "Frequency: " << _hvFadcObj->F_GetFrequency() << std::endl;
       break;
 
     case 7031:
-      _fadc->setReadMode( getInputValue() );
+      _hvFadcObj->F_SetReadMode( getInputValue() );
       break;
 
     case 7032:
-      std::cout << "Read mode: " << _fadc->getReadMode() << std::endl;
+      std::cout << "Read mode: " << _hvFadcObj->F_GetReadMode() << std::endl;
       break;
 
     case 7033:
-      _fadc->setPostStopLatency( getInputValue() );
+      _hvFadcObj->F_SetPostStopLatency( getInputValue() );
       break;
 
     case 7034:
-      std::cout << "Post stop latency: " << _fadc->getPostStopLatency() << std::endl;
+      std::cout << "Post stop latency: " << _hvFadcObj->F_GetPostStopLatency() << std::endl;
       break;
 
     case 7035:
-      _fadc->setPostLatencyPretrig( getInputValue() );
+      _hvFadcObj->F_SetPostLatencyPretrig( getInputValue() );
       break;
 
     case 7036:
-      std::cout << "Post latency pretrig: " << _fadc->getPostLatencyPretrig() << std::endl;
+      std::cout << "Post latency pretrig: " << _hvFadcObj->F_GetPostLatencyPretrig() << std::endl;
       break;
 
 
@@ -724,8 +750,8 @@ int Console::UserInterfaceFadc()
 
     case 55:
       int tmp;
-      tmp = CommandRun(_fadcActive);
-      if(tmp == 1) pc.initFADC(_fadc,_fadcFunctions,true); 
+      tmp = CommandRun(_hvFadcObjActive);
+      if(tmp == 1) pc.initHV_FADC(_hvFadcObj, true); 
       break;
 
     case 56:
@@ -847,13 +873,13 @@ int Console::UserInterfaceFadc()
 }
 
 
-int Console::UserInterfaceNew(bool useFadc){
+int Console::UserInterfaceNew(bool useHvFadc){
 #if DEBUG==2
   std::cout<<"Enter Console::UserInterface()"<<std::endl;	
 #endif
 
   std::cout << "Welcome to TOS Interface" << std::endl;
-  printGeneralCommands(useFadc);
+  printGeneralCommands(useHvFadc);
   int running=1;
 
   //std::cout << "> " << std::flush;
@@ -884,17 +910,17 @@ int Console::UserInterfaceNew(bool useFadc){
       break;
 
     case 7001:
-      if(useFadc) printFadcCommands();
+      if(useHvFadc) printFadcCommands();
       else std::cout << "No fadc initialised" << std::endl;
       break;    
      
     case 7002:
-      if(useFadc) _fadcFunctions->printSettings();
+      if(useHvFadc) _hvFadcObj->FADC_Functions->printSettings();
       else std::cout << "No fadc initialised" << std::endl;
       break;
     
     case 49:
-      if(useFadc){
+      if(useHvFadc){
 	UserInterfaceFadc();
         return 0;
       }
@@ -906,7 +932,7 @@ int Console::UserInterfaceNew(bool useFadc){
       break;
 
     case 50:
-      printTosCommands(useFadc);
+      printTosCommands(useHvFadc);
       break;
 
       //case 510:
@@ -1025,8 +1051,8 @@ int Console::UserInterfaceNew(bool useFadc){
       //else if(ein.compare("Run")==0){CommandRun();}
     case 55:
       int tmp;
-      tmp  = CommandRun(useFadc);
-      if(tmp == 1) pc.initFADC(_fadc,_fadcFunctions,true); 
+      tmp  = CommandRun(useHvFadc);
+      if(tmp == 1) pc.initHV_FADC(_hvFadcObj,true); 
       break;
 
     case 56:
@@ -1035,15 +1061,14 @@ int Console::UserInterfaceNew(bool useFadc){
 
       //else if(ein.compare("quit")==0){running=0;}
     case 57:
-      if(useFadc == true)
+      if(useHvFadc == true)
       {
-        if(_fadc != NULL)
+        if(_hvFadcObj != NULL)
 	{
-          _fadc->setTriggerType(0);
-          _fadc->sendSoftwareTrigger();
+          _hvFadcObj->F_SetTriggerType(0);
+          _hvFadcObj->F_SendSoftwareTrigger();
 	}
-        //delete _fadcFunctions;
-        delete _fadc;
+        delete _hvFadcObj;
       }
       // TODO: finish this by converting TOS to ncurses
       // for (std::list<std::string>::iterator it = commandList.begin(); it != commandList.end(); ++it){
@@ -1580,7 +1605,7 @@ int Console::CommandSetOption(){
 }
 
 
-int Console::CommandRun(bool useFadc){
+int Console::CommandRun(bool useHvFadc){
 #if DEBUG==2
     std::cout<<"Enter Console::CommandCounting()"<<std::endl;	
 #endif
@@ -1640,7 +1665,7 @@ int Console::CommandRun(bool useFadc){
 
     //full matrix or zero surpressed
     std::cout << "(Run)\t Run mode (0 = zero suppressed, 1 = complete matrix (slow)" << std::endl;
-    if(useFadc) std::cout << "Choose zero surpressed if you want to use the FADC" << std::endl;
+    if(useHvFadc) std::cout << "Choose zero surpressed if you want to use the FADC" << std::endl;
     run_mode = getShortInputValue();
     if(run_mode>1)
     {
@@ -1651,7 +1676,7 @@ int Console::CommandRun(bool useFadc){
     /*
      * Set settings for the use of the fadc
      */
-    if(useFadc)
+    if(useHvFadc)
     {
 	std::cout << "Detected FADC - do you want to start a measurement with simultaneous Chip and Fadc readout? 1 = yes, 0 = no \n" 
 		  << "WARNING: If Fadc is used, only one Chip is supported!"
@@ -1659,7 +1684,7 @@ int Console::CommandRun(bool useFadc){
     
 	//check if the user wants to use the fadc
 	if(getShortInputValue() != 1){
-	    useFadc = false;
+	    useHvFadc = false;
 	    std::cout << "Don't use the Fadc" << std::endl; 
 	}
 	//set nb of chips to 1, if the user wants to use the fadc
@@ -1669,8 +1694,7 @@ int Console::CommandRun(bool useFadc){
 	    pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
 
 	    //print fadc settings
-	    // TODO: change line to use HV_FADC_Obj functions
-	    _fadcFunctions->printSettings();
+	    _hvFadcObj->FADC_Functions->printSettings();
 
 	    std::cout << "Return to main menu to change some Fadc settings? 1 = y, 0 = n \n" 
 		      << "If yes, this aborts the run."
@@ -1680,18 +1704,18 @@ int Console::CommandRun(bool useFadc){
 		return 0; 
 	    }      
 	}
-    }//end of if(useFadc)
+    }//end of if(useHvFadc)
 
     if(runtime==0){
 	std::cout << "\t\tRun starts now. <q> to stop\n> " << std::endl;
     }
 
     // Start measurement
-    if(useFadc) result = pc.DoRun(runtimeFrames, runtime, shutter, 0, shutter_mode, run_mode, useFadc);
+    if(useHvFadc) result = pc.DoRun(runtimeFrames, runtime, shutter, 0, shutter_mode, run_mode, useHvFadc);
     else 
     {
 	// if Fadc not used, init FADC with NULL and call standard DoRun function
-	pc.initFADC(NULL,NULL,false);
+	pc.initHV_FADC(NULL,false);
 	result = pc.DoRun(runtimeFrames, runtime, shutter, 0, shutter_mode, run_mode);
     }
 
@@ -1703,7 +1727,7 @@ int Console::CommandRun(bool useFadc){
     }
   
     //FIXME: drop this?
-    if((!useFadc) && _fadcActive) return 1;
+    if((!useHvFadc) && _hvFadcObjActive) return 1;
     else return 0;	
 }//end CommandRun
 

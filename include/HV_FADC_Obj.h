@@ -76,7 +76,7 @@
 
 
 
-class HV_FADC_Obj// : public V1729a_VME, public CVmeModule
+class HV_FADC_Obj
 {
   public:
     // Creator
@@ -90,7 +90,7 @@ class HV_FADC_Obj// : public V1729a_VME, public CVmeModule
     // default: 0x4400
 
     // Destructor
-    ~HV_FADC_Obj();
+    virtual ~HV_FADC_Obj();
 
     /*************** Functions      ***************/
 

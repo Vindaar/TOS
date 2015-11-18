@@ -14,9 +14,8 @@
 
 
 
-PC::PC():_useFADC(false),
-         _fadc(NULL),
-         _fadcFunctions(NULL),
+PC::PC():_useHvFadc(false),
+         _hvFadcObj(NULL),
          BufferSize(80),
          Vbuffer( BufferSize, std::vector<std::vector<int>* >( 8))
 {
@@ -127,24 +126,44 @@ PC::PC():_useFADC(false),
 
 
 
-// TODO: change so that we use HV_FADC_Obj
-void PC::initFADC(V1729a* fadc, HighLevelFunction_VME* fadcFunctions, bool useFadc)
+// void PC::initFADC(V1729a* fadc, HighLevelFunction_VME* fadcFunctions, bool useFadc)
+// {
+// #if DEBUG == 2
+//     std::cout << "Enter: PC::initFADC()" << std::endl;
+// #endif
+
+//     _useFADC = useFadc;
+
+//     if(useFadc)
+//     {
+// 	_fadc = fadc;
+// 	_fadcFunctions = fadcFunctions;
+//     }
+//     else
+//     {
+// 	_fadc = NULL;
+// 	_fadcFunctions = NULL;
+//     }
+  
+//     return;
+// }
+
+
+void PC::initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc)
 {
 #if DEBUG == 2
-    std::cout << "Enter: PC::initFADC()" << std::endl;
+    std::cout << "Enter: PC::initHV_FADC()" << std::endl;
 #endif
 
-    _useFADC = useFadc;
+    _useHvFadc = useHvFadc;
 
-    if(useFadc)
+    if(_useHvFadc)
     {
-	_fadc = fadc;
-	_fadcFunctions = fadcFunctions;
+	_hvFadcObj = hvFadcObj;
     }
     else
     {
-	_fadc = NULL;
-	_fadcFunctions = NULL;
+	_hvFadcObj = NULL;
     }
   
     return;
@@ -1992,16 +2011,16 @@ int PC::DoRun(unsigned short runtimeFrames_,
 	      int filter_, 
 	      unsigned short shutter_mode_, 
 	      unsigned short run_mode_, 
-	      bool useFadc)
+	      bool useHvFadc)
 {
 #if DEBUG == 2
     std::cout << "Enter: PC::DoRun()" << std::endl;
 #endif 
 
     //check if the fadc readout is not wanted although the fadc was initilised...
-    bool tmpFADC = _useFADC;
+    bool tmpFADC = _useHvFadc;
     //... if this happens, set the FADC flag to false and change it after the run to true again
-    if(useFadc != _useFADC) _useFADC = false; 
+    if(useHvFadc != _useHvFadc) _useHvFadc = false; 
   
     //build local vars
     int result;
@@ -2103,7 +2122,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
     //result=fpga.DataFPGAPC(data); something like this should in principle be done (Mode 1b = 27 to read out RAM from FPGA from last run). Not important
 
     //change the global FADC flag back to true (otherwise it stays at false)
-    _useFADC = tmpFADC;
+    _useHvFadc = tmpFADC;
     return 0;
 }
 
@@ -2134,7 +2153,7 @@ void PC::run()
     std::cout << "Enter: PC::run()" << std::endl;
  #endif 
   
-    if(_useFADC) runFADC();
+    if(_useHvFadc) runFADC();
     else runOTPX();
   
     return;

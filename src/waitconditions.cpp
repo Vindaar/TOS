@@ -33,10 +33,10 @@ void Producer::run()
 
 	// TODO: change for usage with HV_FADC_Obj
 	//start measurement at the fadc
-	if((parent->_useFADC) && !(parent->_fadc == NULL))
+	if((parent->_useHvFadc) && !(parent->_hvFadcObj == NULL))
 	{
 	    parent->mutexVBuffer.lock();               
-	    (parent->_fadc)->startAcquisition();       //< start acq
+	    (parent->_hvFadcObj)->F_StartAcquisition();       //< start acq
 	    parent->mutexVBuffer.unlock();             
 
 	    std::cout << "fadc active" << std::endl;
@@ -83,7 +83,7 @@ void Producer::run()
 
 
 	//check if simultainious FADC and chip readout is activated
-	if(parent->_useFADC)                   
+	if(parent->_useHvFadc)                   
 	{
 	    parent->mutexVBuffer.lock();             
 	    //if there was a trigger from the fadc: stop data taking and readout the chip and fadc event
@@ -115,7 +115,7 @@ void Producer::run()
 	    //chip readout
 	    //To FIX the readout problem
 	    // TODO: understand this
-	    if(parent->_useFADC){
+	    if(parent->_useHvFadc){
 		parent->fpga.DataFPGAPC(dataVec,chip+1);
 	    }
 	    else{
@@ -139,13 +139,13 @@ void Producer::run()
 		parent->mutexVBuffer.lock();
 
 		//fill params vector
-		fadcParams.push_back((parent->_fadc)->getNbOfChannels());
-		fadcParams.push_back((parent->_fadc)->getChannelMask());
-		fadcParams.push_back((parent->_fadc)->getPosttrig());
-		fadcParams.push_back((parent->_fadc)->getPretrig());
-		fadcParams.push_back((parent->_fadc)->getTriggerRecord());
-		fadcParams.push_back((parent->_fadc)->getFrequency());
-		fadcParams.push_back((parent->_fadc)->getModeRegister());
+		fadcParams.push_back((parent->_hvFadcObj)->F_GetNbOfChannels());
+		fadcParams.push_back((parent->_hvFadcObj)->F_GetChannelMask());
+		fadcParams.push_back((parent->_hvFadcObj)->F_GetPosttrig());
+		fadcParams.push_back((parent->_hvFadcObj)->F_GetPretrig());
+		fadcParams.push_back((parent->_hvFadcObj)->F_GetTriggerRecord());
+		fadcParams.push_back((parent->_hvFadcObj)->F_GetFrequency());
+		fadcParams.push_back((parent->_hvFadcObj)->F_GetModeRegister());
 
 		//get nb of channels
 		int channels = 4;
@@ -161,7 +161,7 @@ void Producer::run()
 		//get fadc data
 		//TODO/FIXME one wants to use channels instead of 4 as parameter of the next function?
 		// TODO: fix this!!!
-		std::vector<int> fadcData = (parent->_fadc)->getAllData(4);
+		std::vector<int> fadcData = (parent->_hvFadcObj)->F_GetAllData(4);
                    
 		parent->readoutFadc(parent->PathName, fadcParams, dataVec, fadcData); 
 		parent->mutexVBuffer.unlock();
@@ -185,10 +185,10 @@ void Producer::run()
 	parent->bufferNotEmpty.wakeAll();
 
 	//send software trigger (to stop the measurement if there wasn't an event at the fadc)
-	if((parent->_useFADC) && !(parent->_fadc == NULL))
+	if((parent->_useHvFadc) && !(parent->_hvFadcObj == NULL))
 	{
 	    parent->mutexVBuffer.lock();
-	    (parent->_fadc)->sendSoftwareTrigger();
+	    (parent->_hvFadcObj)->F_SendSoftwareTrigger();
 	    parent->mutexVBuffer.unlock();
 	}
     

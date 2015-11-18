@@ -34,6 +34,9 @@
 #include "V1729a_VME.h"
 #include "High-Level-functions_VME.h"
 
+// HV_FADC_Obj and related header files
+#include "HV_FADC_Obj.h"
+
 
 class PC:public QThread{
     friend class Producer;
@@ -46,7 +49,9 @@ public:
 
     //initilise FADC (or don't)
     // TODO: change to use HV_FADC_Obj instead
-    void initFADC(V1729a* fadc, HighLevelFunction_VME* fadcFunctions, bool useFadc = true);
+    //void initFADC(V1729a* fadc, HighLevelFunction_VME* fadcFunctions, bool useFadc = true);
+
+    void initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc = true);
   
     FPGA fpga;
     int DoReadOut(const char* filename[9]);
@@ -109,9 +114,9 @@ private:
     // for QThread used for run
 
     // TODO: change to use HV_FADC_Obj instead
-    bool _useFADC;                           //< true if a FADC is used, false otherwise
-    V1729a* _fadc;                           //< The FADC-Pointer. If no FADC is used, it will be set to 0
-    HighLevelFunction_VME* _fadcFunctions;   //< some additional fadc functions
+    bool _useHvFadc;                           //< true if a FADC is used, false otherwise
+    HV_FADC_Obj* _hvFadcObj;                           //< The HV_FADC-Pointer. If no HV_FADC_Obj is used, it will be set to 0
+    //HighLevelFunction_VME* _fadcFunctions;   //< some additional fadc functions
 
     /* run: Depending on _useFADC the measurement function for a measuremnt with the chip only
      * (runOTPX) or the function for a mesurement with chip and fadc is called

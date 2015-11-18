@@ -60,7 +60,8 @@ HV_FADC_Obj::~HV_FADC_Obj() {
     // we should properly shut both of them down
     // for FADC: reset?
     FADC_module->reset();
-
+    
+    // TODO: check, if voltages already ramped down?
 
     // call shut down function
     ShutDownHFOForTOS();
@@ -122,6 +123,7 @@ void HV_FADC_Obj::InitHFOForTOS(QString iniFilePath, bool HV_FADC_ObjectCreatedF
     // to the iniFile
     // create a QSettings object from this file
     // settings object contains every setting from file
+    // TODO: check if file exists
     QSettings settings(iniFile, QSettings::IniFormat);
     
 
@@ -878,7 +880,9 @@ void HV_FADC_Obj::ShutDownHFOForTOS(){
 GroupSTRUCT HV_FADC_Obj::H_GetFlexGroup(int group){
     // call both get flex group functions from the module
     // and return the group built from that
-    GroupSTRUCT groupObject = { 0 };
+    // note: initialization with designated initializer illegal in c++
+    // thus, initialization includes comments for readability
+    GroupSTRUCT groupObject;
 
     groupObject.MemberList1.Word = H_GetModuleFlexGroupMemberList(group);
     

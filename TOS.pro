@@ -19,7 +19,16 @@ HEADERS += include/caseHeader.h \
            include/header.hpp \ 
            include/pc.hpp \ 
            include/timepix.hpp \
-           include/waitconditions.hpp
+           include/waitconditions.hpp \
+           include/V1729a_VME.h \
+           include/HV_FADC_Obj.h \
+           include/vmemodule.h \
+           include/vmecontroller.h \
+           include/vmusb.h \ 
+           include/DeviceVME.h \
+           include/High-Level-functions_VME.h \
+           include/FADCConstants_V1729a.h \
+           include/const.h
 SOURCES += src/caseFunctions.cc \
            src/console.cpp \
            src/fpga.cpp \ 
@@ -27,15 +36,22 @@ SOURCES += src/caseFunctions.cc \
            src/pc.cpp \
            src/timepix.cpp \
            src/tos.cpp \
-           src/waitconditions.cpp
+           src/waitconditions.cpp \
+           src/HV_FADC_Obj.cc \
+           src/DeviceVME.cc \
+           src/V1729a_VME.cc \
+           src/vmecontroller.cpp \
+           src/vmusb.cpp \
+           src/vmemodule.cpp \
+           src/High-Level-functions_VME.cc
 
 LIBS += -Wl,--no-as-needed \
         -Wl,--rpath=/usr/local/lib \
         -Wl,--rpath=/home/schmidt/HV_FADC/VME/lib \
         -Wl,--rpath=/home/schmidt/HV_FADC/FadcVMEReadout/lib \
         -Wl,--rpath=/usr/lib \
-        -lMyVME \
-        -lMyV1729a
+        #-lMyVME \
+        #-lMyV1729a
 
 
 #external libs

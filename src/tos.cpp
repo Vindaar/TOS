@@ -1,36 +1,42 @@
-/**********************************************************************/
-/*                                                            tos.cpp */
-/*  TOS - Timepix Operating Software                                  */
-/*  with addtional readout software of a CAEN V1729a FADC             */
-/*  based on:                                                         */
-/*                                                                    */
-/*                                                         20.07.2009 */
-/*                                                    Christian Kahra */
-/*                                     chrkahra@students.uni-mainz.de */
-/*                                        Institut fuer Physik - ETAP */
-/*                              Johannes-Gutenberg Universitaet Mainz */
-/*                                                                    */
-/*  with changes by Michael Lupberger (Time Pix)                      */
-/*  and Alexander Deisting (FADC)                                     */
-/*                                                                    */
-/**********************************************************************/
+// /**********************************************************************/
+// /*                                                            tos.cpp */
+// /*  TOS - Timepix Operating Software                                  */
+// /*  with addtional readout software of a CAEN V1729a FADC             */
+// /*  based on:                                                         */
+// /*                                                                    */
+// /*                                                         20.07.2009 */
+// /*                                                    Christian Kahra */
+// /*                                     chrkahra@students.uni-mainz.de */
+// /*                                        Institut fuer Physik - ETAP */
+// /*                              Johannes-Gutenberg Universitaet Mainz */
+// /*                                                                    */
+// /*  with changes by Michael Lupberger (Time Pix)                      */
+// /*  and Alexander Deisting (FADC)                                     */
+// /*                                                                    */
+// /**********************************************************************/
 
-//TOS
+// //TOS
 #include "header.hpp"
 #include "console.hpp"
 
 
-//STD C++
+// //STD C++
 #include <cstdlib>
 
-//FADC stuff
+// //FADC stuff
 #include "V1729a.h"
 #include "V1729a_Dummy.h"
 #include "V1729a_VME.h"
 
+// // HV_FADC_Obj and related header files
+#include "HV_FADC_Obj.h"
+#include <QTextStream>
+#include <QString>
+
 
 int main(int argc, char *argv[])
 {
+    
     std::cout<<"\n\n\t-- Welcome to TOS --\n\nIf you need help, type: help"<<std::endl;
 
 #ifdef __WIN32__
@@ -53,31 +59,41 @@ int main(int argc, char *argv[])
 
     //just to be sure - initialise FADC
     // TODO: change all this to use HV_FADC_Obj
-    V1729a* myFADC = new V1729a_Dummy;
-    bool useFADC = false;
+    // V1729a* myFADC = new V1729a_Dummy;
+    bool useHV_FADC_Obj = false;
+    QString iniFilePath;
 
     //get parameter for the FADC use
     extern char* optarg;
     int option = 0;
 
+
     while( ( option = getopt( argc, argv, "v:g:n" ) ) != -1 ){
 	switch( option ){
 	case 'n' :
 	    //do not use the FADC
-	    delete myFADC;
-	    std::cout << "Working without FADC" << std::endl;
+	    std::cout << "Working without HV_FADC_Obj" << std::endl;
 	    break;
 	case 'v' :
+	{
 	    //work with a FADC via VME
-	    delete myFADC;
 	    std::cout << "Working with VME" << std::endl;
-	    myFADC = new V1729a_VME( atoi( optarg ) );
-	    useFADC = true;
+	    std::cout << "Please give the relative path to a configuration file for "
+		      << "the HV_FADC_Obj. If no input is given, the default path:\n"
+		      << "../config/HFOSettings.ini \n"
+		      << "is used. " << std::endl;
+	    QTextStream qtin(stdin);
+	    qtin >> iniFilePath;
+
+	    //HV_FADC_Obj *myHV_FADC_Obj = new HV_FADC_Obj(input);
+	    useHV_FADC_Obj = true;
 	    break;
+	}
 	case 'g' :
+	    // TODO: deprecated
 	    //work with a FADC via GPIB - not implemented
-	    delete myFADC;
-	    myFADC = new V1729a_Dummy;
+	    //delete myFADC;
+	    //myFADC = new V1729a_Dummy;
 	    std::cout << std::endl << "GPIB is not supported" << std::endl << std::endl;
 	    break;
 	default:
@@ -92,33 +108,39 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
   
     //check if one wants to use the FADC
-    if(useFADC){
-	std::cout << "WARNING: Still FADC parameters hardcoded in tos.cpp main()" << std::endl;
+    if(useHV_FADC_Obj){
+	//std::cout << "WARNING: Still FADC parameters hardcoded in tos.cpp main()" << std::endl;
     
-	myFADC->setTriggerType(7);
-	myFADC->setTriggerType(7);
+	// TODO: add these to HFOSettings.ini
+	// myFADC->setTriggerType(7);
+	// myFADC->setTriggerType(7);
 
-	myFADC->setFrequency(2);
-	myFADC->setPosttrig(80);
-	myFADC->setPretrig(15000);
+	// myFADC->setFrequency(2);
+	// myFADC->setPosttrig(80);
+	// myFADC->setPretrig(15000);
 
 	//myFADC->setTriggerThresholdRegisterAll(2033);
 	//myFADC->printSettings();
+
+	
     
-	Console consoleFADC(myFADC);
+	Console* consoleHV_FADC = new Console(iniFilePath);
   
-	if(consoleFADC.okay()){
-	    consoleFADC.ConsoleMain();
+	if(consoleHV_FADC->okay()){
+	    consoleHV_FADC->ConsoleMain();
 	}
+
+	delete(consoleHV_FADC);
+	
     }
     else{
 	Console console;
   
 	if(console.okay()){
 	    console.ConsoleMain();
-	}
+        }
+    }
 
-    }	
     std::cout<<"TOS ends now...\n\tHave a nice day\n\n"<<std::flush;
 #ifdef __WIN32__
     WSACleanup();
