@@ -72,7 +72,12 @@
 #define DEFAULT_MODULE_CURRENT_RAMP_SPEED                         50
 #define DEFAULT_CHECK_MODULE_TIME_INTERVAL                        60
 
-
+// FADC macros
+#define DEFAULT_FADC_TRIGGER_TYPE                                 7
+#define DEFAULT_FADC_FREQUENCY                                    2
+#define DEFAULT_FADC_POSTTRIG                                     80
+#define DEFAULT_FADC_PRETRIG                                      15000
+#define DEFAULT_FADC_TRIGGER_THRESHOLD_REGISTER_ALL               2033
 
 
 
@@ -419,6 +424,12 @@ class HV_FADC_Obj
     float cathodeCurrentNominal;
     float cathodeCurrentBound;
 
+    // Fadc settings variables
+    int fadcTriggerType;
+    int fadcFrequency;
+    int fadcPosttrig;
+    int fadcPretrig;
+    int fadcTriggerThresholdRegisterAll;
     
   
 };

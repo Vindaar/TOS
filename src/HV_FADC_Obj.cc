@@ -397,6 +397,44 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	checkModuleTimeInterval = DEFAULT_CHECK_MODULE_TIME_INTERVAL;
     }
 
+    // **************************************************
+    // ***************** FADC SETTINGS ******************
+    // **************************************************
+
+    if (settings.contains("fadcTriggerType")){
+	fadcTriggerType = settings.value("fadcTriggerType").toInt();
+    }
+    else{
+	fadcTriggerType = DEFAULT_FADC_TRIGGER_TYPE;
+    }
+
+    if (settings.contains("fadcFrequency")){
+	fadcFrequency = settings.value("fadcFrequency").toInt();
+    }
+    else{
+	fadcFrequency = DEFAULT_FADC_FREQUENCY;
+    }
+
+    if (settings.contains("fadcPosttrig")){
+	fadcPosttrig = settings.value("fadcPosttrig").toInt();
+    }
+    else{
+	fadcPosttrig = DEFAULT_FADC_POSTTRIG;
+    }
+
+    if (settings.contains("fadcPretrig")){
+	fadcPretrig = settings.value("fadcPretrig").toInt();
+    }
+    else{
+	fadcPretrig = DEFAULT_FADC_PRETRIG;
+    }
+
+    if (settings.contains("fadcTriggerThresholdRegisterAll")){
+	fadcTriggerThresholdRegisterAll = settings.value("fadcTriggerThresholdRegisterAll").toInt();
+    }
+    else{
+	fadcTriggerThresholdRegisterAll = DEFAULT_FADC_TRIGGER_THRESHOLD_REGISTER_ALL;
+    }
 
     // use the just read settings to create the objects, if not
     // yet created
@@ -604,6 +642,18 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	timeout--;
     }
     // channels should now start to ramp
+
+
+    // before we start ramping up the HV modules, first set FADC settings
+    std::cout << "Settings FADC settings" << std::endl;
+
+    F_SetTriggerType(fadcTriggerType);
+    F_SetFrequency(fadcFrequency);
+    F_SetPosttrig(fadcPosttrig);
+    F_SetPretrig(fadcPretrig);
+    F_SetTriggerThresholdRegisterAll(fadcTriggerThresholdRegisterAll);
+    
+    F_PrintSettings();
 
     // now check while is ramping
     bool rampUpFlag = true;
