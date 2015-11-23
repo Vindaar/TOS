@@ -178,23 +178,46 @@ void Console::ConsoleMain(){
     return;
 }
 
-
 int Console::UserInterface(){
 #if DEBUG==2
     std::cout<<"Enter Console::UserInterface()"<<std::endl;	
 #endif
 
     int running=1;
-    std::string ein;
     int result;
-  
-    std::cout << "> " << std::flush;
-  
-    while(running)
-    {
-	std::getline(std::cin,ein);
-  
     
+    // create a char buffer, which stores the input from the readline() function
+    char *buf;
+    // define the attempted completion function (our custom TOS_Command_Completion
+    // function defined in tosCommandCompletion.cpp
+    rl_attempted_completion_function = TOS_Command_Completion;
+  
+    // while loop runs the basic UserInterface
+    // it checks, whether we're still running, prints 
+    // TOS> 
+    // to each line and reads the user input based on 
+    // readline() function
+    while(running && ((buf = readline("TOS> ")) != NULL))
+    {
+
+	// exit ends the program
+	if (strcmp (buf, "exit") == 0) break;
+	// if buf starts with NULL, we simply read a new line
+	else if (buf[0] == '\0'){
+	    free(buf);
+	    continue;
+	}
+	// if something else is typed, we add the command to our 
+	// command history
+	else{
+	    std::cout << buf << std::endl;
+	    add_history( buf );
+	}
+
+	// now initialize a new std::string with the input buf
+	// in order to start the case machine
+	std::string ein(buf);
+	
 	if((ein.compare("GeneralReset")==0)||(ein.compare("1")==0)) 
 	{
 	    result=pc.fpga.GeneralReset();
@@ -224,31 +247,31 @@ int Console::UserInterface(){
 	{
 	    CommandCountingLong();
 	}
-	else if( ein.compare(0,16,"CountingTrigger ")==0 )
+	else if( ein.compare(0,16,"CountingTrigger")==0 )
 	{
 	    CommandCountingTrigger(ein.substr(16));
 	}
-	else if( ein.compare(0,3,"2t ")==0 )
+	else if( ein.compare(0,3,"2t")==0 )
 	{
 	    CommandCountingTrigger(ein.substr(3));
 	}
-	else if( ein.compare(0,13,"CountingTime ")==0 )
+	else if( ein.compare(0,13,"CountingTime")==0 )
 	{
 	    CommandCountingTime(ein.substr(13));
 	}
-	else if( ein.compare(0,3,"2z ")==0 )
+	else if( ein.compare(0,3,"2z")==0 )
 	{
 	    CommandCountingTime(ein.substr(3));
 	}
-	else if( ein.compare(0,3,"2f ")==0 )
+	else if( ein.compare(0,3,"2f")==0 )
 	{
 	    CommandCountingTime_fast(ein.substr(3));
 	}
-	else if( ein.compare(0,3,"2l ")==0 )
+	else if( ein.compare(0,3,"2l")==0 )
 	{
 	    CommandCountingTime_long(ein.substr(3));
 	}
-	else if( ein.compare(0,4,"2vl ")==0 )
+	else if( ein.compare(0,4,"2vl")==0 )
 	{
 	    CommandCountingTime_verylong(ein.substr(3));
 	}
@@ -357,7 +380,7 @@ int Console::UserInterface(){
 	{
 	    CommandLoadFSR();
 	}
-	else if( ein.compare(0,7,"SetDAC ")==0 )
+	else if( ein.compare(0,7,"SetDAC")==0 )
 	{
 	    CommandSetDAC(ein.substr(7));
 	}
@@ -382,11 +405,11 @@ int Console::UserInterface(){
 	{
 	    CommandLoadMatrix();
 	}
-	else if( ein.compare(0,8,"Trigger ")==0 )
+	else if( ein.compare(0,8,"Trigger")==0 )
 	{
 	    CommandSwitchTriggerConnection(ein.substr(8));
 	}
-	else if( ein.compare(0,6,"SetIP ")==0 )
+	else if( ein.compare(0,6,"SetIP")==0 )
 	{
 	    CommandSetIP(ein.substr(6));
 	}
@@ -406,7 +429,7 @@ int Console::UserInterface(){
 	{
 	    CommandHelp();
 	}
-	else if( ein.compare(0,8,"spacing ")==0 )
+	else if( ein.compare(0,8,"spacing")==0 )
 	{
 	    CommandSpacing(ein.substr(8));
 	}
@@ -442,10 +465,19 @@ int Console::UserInterface(){
 	else{
 	    std::cout<<"command not found"<<std::endl;
 	}
-	std::cout<<"TOS> "<<std::flush;
+
+	// free the buffer pointer and point it to NULL again
+	free(buf);
+	buf = NULL;
+	
     }// end while(running){}
+    // if while loop ends and buffer not freed, free it.
+    if (buf != NULL) free(buf);
+
     return 0;
 }
+
+
 
 
 int Console::UserInterfaceFadc()

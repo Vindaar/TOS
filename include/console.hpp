@@ -31,6 +31,9 @@
 #include "V1729a_VME.h"
 #include "High-Level-functions_VME.h"
 
+// include readline history library to achieve command completion etc
+#include <readline/history.h>
+#include "tosCommandCompletion.hpp"
 
 class Console{
 

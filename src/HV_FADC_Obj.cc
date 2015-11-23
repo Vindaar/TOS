@@ -651,9 +651,9 @@ void HV_FADC_Obj::InitHFOForTOS(){
     F_SetFrequency(fadcFrequency);
     F_SetPosttrig(fadcPosttrig);
     F_SetPretrig(fadcPretrig);
-    F_SetTriggerThresholdRegisterAll(fadcTriggerThresholdRegisterAll);
+    //F_SetTriggerThresholdRegisterAll(fadcTriggerThresholdRegisterAll);
     
-    F_PrintSettings();
+    //F_PrintSettings();
 
     // now check while is ramping
     bool rampUpFlag = true;
