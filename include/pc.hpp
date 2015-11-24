@@ -27,13 +27,6 @@
 #include <qthread.h>
 #include <qmutex.h>
 
-//FADC stuff
-// TODO: change to use HV_FADC_Obj instead
-#include "V1729a.h"
-#include "V1729a_Dummy.h"
-#include "V1729a_VME.h"
-#include "High-Level-functions_VME.h"
-
 // HV_FADC_Obj and related header files
 #include "HV_FADC_Obj.h"
 

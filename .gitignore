@@ -1,0 +1,6 @@
+# gitignore file
+./tmp/*
+Makefile
+TOS.pro
+./Backup/*
+*.*~

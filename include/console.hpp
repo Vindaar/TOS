@@ -25,10 +25,6 @@
 #include "caseHeader.h"
 
 //FADC stuff
-// TODO: replace this by HV_FADC_Obj
-#include "V1729a.h"
-#include "V1729a_Dummy.h"
-#include "V1729a_VME.h"
 #include "High-Level-functions_VME.h"
 
 // include readline history library to achieve command completion etc

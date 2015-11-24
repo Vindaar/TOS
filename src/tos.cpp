@@ -23,12 +23,7 @@
 // //STD C++
 #include <cstdlib>
 
-// //FADC stuff
-#include "V1729a.h"
-#include "V1729a_Dummy.h"
-#include "V1729a_VME.h"
-
-// // HV_FADC_Obj and related header files
+// HV_FADC_Obj and related header files
 #include "HV_FADC_Obj.h"
 #include <QTextStream>
 #include <QString>
