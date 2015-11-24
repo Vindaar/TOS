@@ -11,6 +11,7 @@
 #include <readline/history.h>
 #include <stdlib.h>
 #include <iostream>
+#include <stdexcept>
 
 
 
@@ -24,6 +25,14 @@ char *TOS_Command_Generator (const char *text, int state);
 // custom completion function
 //static 
 char **TOS_Command_Completion( const char *text, int start, int end);
+
+// get user input function
+std::string getUserInput(const char *prompt, 
+			 bool numericalInput = true, 
+			 bool allowDefaultOnEmptyInput = true);
+
+
+
 
 
 #endif

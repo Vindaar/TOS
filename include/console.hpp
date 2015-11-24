@@ -50,7 +50,7 @@ public:
 
     void ConsoleMain();  //< calls a UserInterface function 
     int okay();          //< returns value of the ok-var
-
+   
     static void WrapperToDACScanLive(void* PointerToObject, char dac, int val);
 
 private:
@@ -158,13 +158,13 @@ private:
     //bool _fadcActive;                        //< check var. true if a fadc is used, false otherwise
     
     HV_FADC_Obj* _hvFadcObj;
-    bool _hvFadcObjActive;		       
+    bool _hvFadcObjActive;
+
+    // member variable for general command prompt for input methods
+    const char *_prompt = "> ";
 
     //HighLevelFunction_VME* _fadcFunctions;   //< some additional functions for the use of the fadc
 
-
-    // test
-    std::list<std::string> commandList;
 };
 
 #endif

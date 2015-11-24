@@ -1389,19 +1389,19 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 	std::vector<int> meanTOT6; std::vector<double> stddevTOT6;
 	std::vector<int> meanTOT7; std::vector<double> stddevTOT7;
 	std::vector<int> meanTOT8; std::vector<double> stddevTOT8;
-
+	
 	int i = 0;
 
 	while(next_voltage)
 	{
 		int myint = 0;
 		if (internalPulser == 0) {
-			std::cout << "What is the voltage you set at the external pulser in mV?"<<std::endl;
-			std::string ein5="";
-			std::getline(std::cin,ein5);
-			if(ein5==""){myint=0;}
-			else if(ein5.find_first_not_of("0123456789 ",0)==ein5.npos){myint=(int) atoi(ein5.data());}
-			else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+		    std::string ein5 = "";
+		    ein5 = getUserInput("What is the voltage you set at the external pulser in mV? ");
+		    if(ein5==""){myint=0;}
+		    else{
+			myint=(int) atoi(ein5.data());
+		    }
 		}
 		if (internalPulser == 1) {
 			if (i == 0) { myint = 370;}
@@ -1584,12 +1584,12 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 			if (fpga.tp.GetNumChips() > 7) {meanTOT8.push_back(meanTOT_[8]/4);stddevTOT8.push_back(stddevTOT_[8]);}
 		//}
 			if (internalPulser == 0) {
-				std::cout << "Do you want to record data for another voltage? (0 = no, 1 = yes)"<<std::endl;
-				std::string ein4="";
-				std::getline(std::cin,ein4);
-				if(ein4==""){next_voltage=false;}
-				else if(ein4.find_first_not_of("0123456789 ",0)==ein4.npos){next_voltage=(bool) atoi(ein4.data());}
-				else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+			    std::string ein4="";
+			    ein4 = getUserInput("Do you want to record data for another voltage? (0 = no, 1 = yes)");
+			    if(ein4==""){next_voltage=false;}
+			    else{
+				next_voltage=(bool) atoi(ein4.data());
+			    }
 			}
 			if (internalPulser == 1) {
 				next_voltage=true;
@@ -1632,34 +1632,34 @@ int PC::TOCalib(){
 	unsigned short time = 1;
 	unsigned short TOT = 0;
 	std::fstream f;
-	std::cout << "TOT (0) or TOA (1)? "<<std::endl;
 	std::string ein0="";
-	std::getline(std::cin,ein0);
+	ein0 = getUserInput("TOT (0) or TOA (1)? ");
 	if(ein0==""){TOT=0;}
-	else if(ein0.find_first_not_of("0123456789 ",0)==ein0.npos){TOT=(unsigned short) atoi(ein0.data());}
-	else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+	else{
+	    TOT=(unsigned short) atoi(ein0.data());
+	}
 	std::cout<<TOT<<" selected"<<std::endl;
 	std::cout << "Hello this is TOT/TOA calibration. You will have to specify spacing and shutter length. I will then ask you a voltage you set on the external pulser and record 4 frames(times pixel per row). Then ask you if you want to do another voltage. "<< std::endl;
 	std::cout<<"You have "<< fpga.tp.GetNumChips() <<" chips, all of them will be calibrated at the same time. "<<std::endl;
-	std::cout << "For the spacing: How many pixel per row at same time? 1,2,4,8,16 (more is not good!)? "<<std::endl;
 	std::string ein="";
-	std::getline(std::cin,ein);
+	ein = getUserInput("For the spacing: How many pixel per row at same time? 1,2,4,8,16 (more is not good!)? ");
 	if(ein==""){pix_per_row=1;}
-	else if(ein.find_first_not_of("0123456789 ",0)==ein.npos){pix_per_row=(unsigned short) atoi(ein.data());}
-	else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+	else{
+	    pix_per_row=(unsigned short) atoi(ein.data());
+	}
 	std::cout<<pix_per_row<<" pixel per row at same time"<<std::endl;
-	std::cout << "Shutter length: press 1 for short shutter (0-255 clock cycles); press 2 for long shutter (256 - 65280 clock cycles)"<<std::endl;
 	std::string ein2="";
-	std::getline(std::cin,ein2);
+	ein2 = getUserInput("Shutter length: press 1 for short shutter (0-255 clock cycles); press 2 for long shutter (256 - 65280 clock cycles) ");
 	if(ein2==""){shuttertype=1;}
-	else if(ein2.find_first_not_of("0123456789 ",0)==ein2.npos){shuttertype=(unsigned short) atoi(ein2.data());}
-	else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
-	std::cout << "Set shutter length in clock cycles(0 -255) (if you have chosen long shutter this value will be multiplied by 256):"<<std::endl;
+	else{
+	    shuttertype=(unsigned short) atoi(ein2.data());
+	}
 	std::string ein3="";
-	std::getline(std::cin,ein3);
+	ein3 = getUserInput("Set shutter length in clock cycles(0 -255) (if you have chosen long shutter this value will be multiplied by 256): ");
 	if(ein3==""){time=1;}
-	else if(ein3.find_first_not_of("0123456789 ",0)==ein3.npos){time=(unsigned short) atoi(ein3.data());}
-	else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+	else{
+	    time=(unsigned short) atoi(ein3.data());
+	}
 	std::cout << "Ok, lets start!"<<std::endl;
 
 	bool next_voltage = true;
@@ -1678,12 +1678,12 @@ int PC::TOCalib(){
 	while(next_voltage)
 	{
 		int myint = 0;
-		std::cout << "What is the voltage you set at the external pulser in mV?"<<std::endl;
 		std::string ein5="";
-		std::getline(std::cin,ein5);
+		ein5 = getUserInput("What is the voltage you set at the external pulser in mV? ");
 		if(ein5==""){myint=0;}
-		else if(ein5.find_first_not_of("0123456789 ",0)==ein.npos){myint=(int) atoi(ein5.data());}
-		else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+		else{
+		    myint=(int) atoi(ein5.data());
+		}
 		voltage.push_back(myint);
 		int meanTOT_[9] = {0};
 		double stddevTOT_[9] = {0};
@@ -1818,12 +1818,12 @@ int PC::TOCalib(){
 			if (fpga.tp.GetNumChips() > 7) {meanTOT8.push_back(meanTOT_[8]/4);stddevTOT8.push_back(stddevTOT_[8]);}
 		//}
 
-			std::cout << "Do you want to record data for another voltage? (0 = no, 1 = yes)"<<std::endl;
 			std::string ein4="";
-			std::getline(std::cin,ein4);
+			ein4 = getUserInput("Do you want to record data for another voltage? (0 = no, 1 = yes)");
 			if(ein4==""){next_voltage=false;}
-			else if(ein4.find_first_not_of("0123456789 ",0)==ein.npos){next_voltage=(bool) atoi(ein4.data());}
-			else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+			else{
+			    next_voltage=(bool) atoi(ein4.data());
+			}
 			i++;
 	}
 	//if (TOT == 0){
@@ -2112,11 +2112,21 @@ int PC::DoRun(unsigned short runtimeFrames_,
     //TODO: Someone - who wrote this - should check the difference between the two if loops...
     if (runtimeFrames == 0)
     {
-	do{std::getline(std::cin,ein);if(ein.compare("q")==0){StopRun();}} while(IsRunning()) ;
+	do{
+	    std::getline(std::cin,ein);
+	    if(ein.compare("q")==0){
+		StopRun();
+	    }
+	} while(IsRunning()) ;
     }
     if (runtimeFrames == 1)
     {
-	do{std::getline(std::cin,ein);if(ein.compare("q")==0){StopRun();}} while(IsRunning()) ;
+	do{
+	    std::getline(std::cin,ein);
+	    if(ein.compare("q")==0){
+		StopRun();
+	    }
+	} while(IsRunning()) ;
     }
 
     //result=fpga.DataFPGAPC(data); something like this should in principle be done (Mode 1b = 27 to read out RAM from FPGA from last run). Not important

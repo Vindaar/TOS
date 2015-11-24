@@ -113,3 +113,67 @@ char **TOS_Command_Completion(const char *text, int start, int end){
     // else rl_bind_key('\t', rl_abort);
     return matches;
 }
+
+std::string getUserInput(const char *prompt, 
+				  bool numericalInput, 
+				  bool allowDefaultOnEmptyInput){
+    // char *prompt: given char array is the prompt
+    //               presented to the user on input
+    // e.g.: prompt == "TOS> " then this will be prepended to the input.
+    // for most calls to this function use "" empty string or NULL
+    // bool numericalInput: if this flag is set, only allow numerical input
+    // bool allowDefaultOnEmptyInput: if this flag is set, allow empty input
+    //                                and thus set a default value later
+
+    char *buf;
+    while ( true ){
+	buf = readline(prompt);
+
+	if (allowDefaultOnEmptyInput == false && buf[0] == '\0'){
+	    free(buf);
+	    continue;
+	}
+	else if ((buf != NULL) && 
+		 (allowDefaultOnEmptyInput == true) && 
+		 (buf[0] == '\0')){
+	    // in this case, no EOF encountered, line is empty and we allow
+	    // empty lines to set default, simply break
+	    break;
+	}
+	else if (buf != NULL){
+	    // buf is non empty and no EOF encountered
+	    // create a temporary string to perform proper exception
+	    // handling (stoi throws exceptions, atoi does not)
+	    std::string tempStr(buf);
+
+	    // if numericalInput is set to true, check whether input is numerical
+	    if (numericalInput == true){
+		// try to convert tempStr to int, if non numerical, will throw
+		// invalid_argument exception
+		try{
+		    // do not need to use return value, only interested in 
+		    // exception 
+		    std::stoi(tempStr);
+		    // if no exception is thrown, break from while loop
+		    break;
+		}
+		catch (const std::invalid_argument &ia) {
+		    // if this is catched, argument non numerical
+		    std::cout << "Argument non numerical; try again" 
+			      << std::endl;
+		}
+	    }// end numericalInput
+	    else{
+		// in this case we accept all input
+		break;
+	    }
+	}//end non empty buffer
+    }//end while loop
+
+    // now buf should be non empty
+    // initialize a string with the char* and return it
+    std::string input(buf);
+    if (buf != NULL) free(buf);
+    return input;
+}
+
