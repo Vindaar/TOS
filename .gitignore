@@ -1,8 +1,12 @@
-# ignore the tmp folder, the Makefile and tos.pro
-*.o
-*.moc
+# gitignore file
+./tmp/*
 Makefile
 TOS.pro
+<<<<<<< HEAD
 ./tmp/*
 *.*~
 ./bin/*
+=======
+./Backup/*
+*.*~
+>>>>>>> 80cb2c823bf35b429b02c7bfc1960e9efbf8f116

@@ -16,6 +16,9 @@
 /**********************************************************************/
 
 #include "console.hpp"
+#include <string>
+
+
 
 //C~tor
 Console::Console():
@@ -32,14 +35,12 @@ Console::Console():
     std::string input="";
   
     //get nb of chips
-    std::cout<<"How many chips are on your board? (1-8)"<<std::flush;
-    std::getline(std::cin,input);
+    const char *prompt = "How many chips are on your board? (1-8)";
+    input = getUserInput(prompt);
     if(input==""){_nbOfChips=1;}
-    else if(input.find_first_not_of("0123456789 ",0)==input.npos)
-    {
+    else{
 	_nbOfChips=(unsigned short) atoi(&input[0]);
     }
-    else{std::cout<<"\tNon-numerical sign\n> "<<std::flush;}
     std::cout << "Number of Chips: " << _nbOfChips << std::endl << std::endl;
     input.clear();
  
@@ -112,21 +113,12 @@ unsigned short Console::getPreload()
     std::string input;
     unsigned short preload = 0;
 
-    std::cout << "How many clock cycles do you want to add to the preload counter (usually 0 for a single chip, 3 for octoboard)" << std::flush;
-    std::getline(std::cin,input);
+    const char *prompt = "How many clock cycles do you want to add to the preload counter (usually 0 for a single chip, 3 for octoboard)";
+    input = getUserInput(prompt);
 
     if(input==""){preload=0;}
-    else
-    {
-	if(input.find_first_not_of("0123456789 ",0)==input.npos)
-	{
-	    preload=(unsigned short) atoi(&input[0]);
-	}
-	else
-	{ 
-	    std::cout << "\t Non-numerical sign \n> " << std::flush;
-	    std::cout << "Return 0" << std::endl << std::endl;
-	}
+    else{
+	preload=(unsigned short) atoi(&input[0]);
     }
     return preload;
 }
@@ -150,13 +142,13 @@ void Console::ConsoleMain(){
 
     //call the main "command-function" w or wo FADC commands
     if(_hvFadcObjActive) UserInterfaceFadc();
-    else
-    {
-	std::cout << "Do you want to use the common (0) or the new Userinterface (1)?" << std::endl;
-
-	std::string command; 
-	std::cin >> command;    
+    else{
     
+	bool numericalInput = true;
+	bool allowDefaultOnEmptyInput = false;
+        const char *promptUserInterface = "Do you want to use the common (0) or the new Userinterface (1)? ";
+	std::string command; 
+	command = getUserInput(promptUserInterface, numericalInput, allowDefaultOnEmptyInput);
 	switch( std::atoi( command.c_str() ) )
 	{
     
@@ -178,23 +170,46 @@ void Console::ConsoleMain(){
     return;
 }
 
-
 int Console::UserInterface(){
 #if DEBUG==2
     std::cout<<"Enter Console::UserInterface()"<<std::endl;	
 #endif
 
     int running=1;
-    std::string ein;
     int result;
-  
-    std::cout << "> " << std::flush;
-  
-    while(running)
-    {
-	std::getline(std::cin,ein);
-  
     
+    // create a char buffer, which stores the input from the readline() function
+    char *buf;
+    // define the attempted completion function (our custom TOS_Command_Completion
+    // function defined in tosCommandCompletion.cpp
+    rl_attempted_completion_function = TOS_Command_Completion;
+  
+    // while loop runs the basic UserInterface
+    // it checks, whether we're still running, prints 
+    // TOS> 
+    // to each line and reads the user input based on 
+    // readline() function
+    while(running && ((buf = readline("TOS> ")) != NULL))
+    {
+
+	// exit ends the program
+	if (strcmp (buf, "exit") == 0) break;
+	// if buf starts with NULL, we simply read a new line
+	else if (buf[0] == '\0'){
+	    free(buf);
+	    continue;
+	}
+	// if something else is typed, we add the command to our 
+	// command history
+	else{
+	    std::cout << buf << std::endl;
+	    add_history( buf );
+	}
+
+	// now initialize a new std::string with the input buf
+	// in order to start the case machine
+	std::string ein(buf);
+	
 	if((ein.compare("GeneralReset")==0)||(ein.compare("1")==0)) 
 	{
 	    result=pc.fpga.GeneralReset();
@@ -224,31 +239,31 @@ int Console::UserInterface(){
 	{
 	    CommandCountingLong();
 	}
-	else if( ein.compare(0,16,"CountingTrigger ")==0 )
+	else if( ein.compare(0,16,"CountingTrigger")==0 )
 	{
 	    CommandCountingTrigger(ein.substr(16));
 	}
-	else if( ein.compare(0,3,"2t ")==0 )
+	else if( ein.compare(0,3,"2t")==0 )
 	{
 	    CommandCountingTrigger(ein.substr(3));
 	}
-	else if( ein.compare(0,13,"CountingTime ")==0 )
+	else if( ein.compare(0,13,"CountingTime")==0 )
 	{
 	    CommandCountingTime(ein.substr(13));
 	}
-	else if( ein.compare(0,3,"2z ")==0 )
+	else if( ein.compare(0,3,"2z")==0 )
 	{
 	    CommandCountingTime(ein.substr(3));
 	}
-	else if( ein.compare(0,3,"2f ")==0 )
+	else if( ein.compare(0,3,"2f")==0 )
 	{
 	    CommandCountingTime_fast(ein.substr(3));
 	}
-	else if( ein.compare(0,3,"2l ")==0 )
+	else if( ein.compare(0,3,"2l")==0 )
 	{
 	    CommandCountingTime_long(ein.substr(3));
 	}
-	else if( ein.compare(0,4,"2vl ")==0 )
+	else if( ein.compare(0,4,"2vl")==0 )
 	{
 	    CommandCountingTime_verylong(ein.substr(3));
 	}
@@ -357,7 +372,7 @@ int Console::UserInterface(){
 	{
 	    CommandLoadFSR();
 	}
-	else if( ein.compare(0,7,"SetDAC ")==0 )
+	else if( ein.compare(0,7,"SetDAC")==0 )
 	{
 	    CommandSetDAC(ein.substr(7));
 	}
@@ -382,11 +397,11 @@ int Console::UserInterface(){
 	{
 	    CommandLoadMatrix();
 	}
-	else if( ein.compare(0,8,"Trigger ")==0 )
+	else if( ein.compare(0,8,"Trigger")==0 )
 	{
 	    CommandSwitchTriggerConnection(ein.substr(8));
 	}
-	else if( ein.compare(0,6,"SetIP ")==0 )
+	else if( ein.compare(0,6,"SetIP")==0 )
 	{
 	    CommandSetIP(ein.substr(6));
 	}
@@ -406,7 +421,7 @@ int Console::UserInterface(){
 	{
 	    CommandHelp();
 	}
-	else if( ein.compare(0,8,"spacing ")==0 )
+	else if( ein.compare(0,8,"spacing")==0 )
 	{
 	    CommandSpacing(ein.substr(8));
 	}
@@ -442,10 +457,19 @@ int Console::UserInterface(){
 	else{
 	    std::cout<<"command not found"<<std::endl;
 	}
-	std::cout<<"TOS> "<<std::flush;
+
+	// free the buffer pointer and point it to NULL again
+	free(buf);
+	buf = NULL;
+	
     }// end while(running){}
+    // if while loop ends and buffer not freed, free it.
+    if (buf != NULL) free(buf);
+
     return 0;
 }
+
+
 
 
 int Console::UserInterfaceFadc()
@@ -899,14 +923,8 @@ int Console::UserInterfaceNew(bool useHvFadc){
      * or the printCommands function in the caseFunctions.cc file
      */
     
-    std::string command; 
+    std::string command;
     std::cin >> command;    
-
-    // TODO: finish this by converting whole TOS to ncurses
-    // std::cout << "you typed " << command.c_str() << std::endl;
-    
-    // commandList.push_front(command.c_str());
-    
 
 
     int errorVar = 0;
@@ -1574,13 +1592,12 @@ int Console::CommandSpacing(unsigned int space){
 
 int Console::CommandSetNumChips(){
     std::string ein="";
-    std::cout<<"How many chips are on your board? (1-8)"<<std::flush;
-    std::getline(std::cin,ein);
+    const char *prompt = "How many chips are on your board? (1-8)";
+    ein = getUserInput(prompt);
     if(ein==""){_nbOfChips=1;}
-    else if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
+    else{
 	_nbOfChips=(unsigned short) atoi(&ein[0]);
     }
-    else{std::cout<<"\tNon-numerical sign\n> "<<std::flush;}
     _preload = getPreload();
     pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
     pc.fpga.WriteReadFSR();
@@ -1595,14 +1612,12 @@ int Console::CommandSetNumChips(){
 int Console::CommandSetOption(){
     unsigned short option = 0;
     std::string ein="";
-    std::cout<<"Option (0 to 255)"<<std::flush;
-    std::getline(std::cin,ein);
+    const char *prompt = "Option (0 to 255)";
+    ein = getUserInput(prompt);
     if(ein==""){option=0;}
-    else if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
+    else{
 	option=(unsigned short) atoi(&ein[0]);
     }
-    else{std::cout<<"\tNon-numerical sign\n> "<<std::flush;}
-    //std::cout<<"Number of Chips: "<<Chips<<std::endl;
     pc.fpga.tp.SetOption(option);
     pc.fpga.WriteReadFSR();
     pc.fpga.WriteReadFSR();
@@ -1624,38 +1639,42 @@ int Console::CommandRun(bool useHvFadc){
     int runtime = 0;                               //< var to store the runtime or the nb of triggers
     unsigned short shutter_mode = 0;
     unsigned short run_mode = 0;
+
+    // variables related to UserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
   
     //ProfilerStart();
 
     //Get input vals from user
     //defined runtime or trigger
-    std::cout << " Please give parameters for run. Do you want to use a defined run time (0) or a record a defined number of triggers (1)?" << std::endl;
-    // All std::getline(std::cin, input) lines were replaced by the proper implementation
-    // of an input function, which already does exception handling (implemented in caseFunctions.cc)
-    runtimeFrames = getShortInputValue();
+    const char *promptRunParameter = "Please give parameters for run. Do you want to use a defined run time (0) or a record a defined number of triggers (1)?";
+    input = getUserInput(promptRunParameter, numericalInput, allowDefaultOnEmptyInput);
+
+    // exception handling is done in getUserInput, thus this conversion should 
+    // always work
+    runtimeFrames = std::stoi(input);
     std::cout << "Run parameter set to: " << runtimeFrames << std::endl;
-  
     if (runtimeFrames == 1)
     {
-	std::cout << "(Run)\t Number of triggers you want = " << std::endl;
-	runtime = getInputValue();
+	const char *promptTrigger = "(Run)\t Number of triggers you want = ";
+	input = getUserInput(promptTrigger, numericalInput, allowDefaultOnEmptyInput);
+	runtime = std::stoi(input);
 	std::cout << "#Triggers set to: " << runtime <<  std::endl;
     }
     else if(runtimeFrames == 0)
     {
-	std::cout << "(Run)\t Runtime [sec]= " << std::endl;
-	runtime = getInputValue();
+	const char *promptRuntime = "(Run)\t Runtime [sec]= ";
+	input = getUserInput(promptRuntime, numericalInput, allowDefaultOnEmptyInput);
+	runtime = std::stoi(input);
 	std::cout << "(Run)\t Runtime [sec] set to: " << runtime << std::endl;
-    }
-    else
-    {
-	std::cout << "abort " << runtimeFrames << std::endl;
-	return 0;
     }
 
     //Shutter mode
-    std::cout << "(Run)\t Shutter mode (0= untiggered, 1 = external trigger, 2 = untiggered 2x faster clock, 3 = external trigger 2x faster clock, 4 = untriggered long ,5 = untriggered very long)" << std::endl;
-    shutter_mode = getShortInputValue();
+    const char *promptShutterMode = "(Run)\t Shutter mode (0= untiggered, 1 = external trigger, 2 = untiggered 2x faster clock, 3 = external trigger 2x faster clock, 4 = untriggered long ,5 = untriggered very long)";
+    input = getUserInput(promptShutterMode, numericalInput, allowDefaultOnEmptyInput);
+    shutter_mode = std::stoi(input);
     if(shutter_mode > 5)
     {
 	std::cout << "Shutter mode invalid -> abort" << std::endl; 
@@ -1663,8 +1682,9 @@ int Console::CommandRun(bool useHvFadc){
     }
 
     //Shutter time
-    std::cout << "(Run)\t Shutter (time [µsec] = (256*)(256*)46*x/freq[MHz], x<256), x= " << std::flush;
-    shutter = getInputValue();
+    const char *promptShutterTime = "(Run)\t Shutter (time [µsec] = (256*)(256*)46*x/freq[MHz], x<256), x= ";
+    input = getUserInput(promptShutterTime, numericalInput, allowDefaultOnEmptyInput);
+    shutter = std::stoi(input);
     if((shutter>255) || (shutter < 0))
     {
 	std::cout << "(Run)\t Shutter value invalid" << std::endl; 
@@ -1674,7 +1694,8 @@ int Console::CommandRun(bool useHvFadc){
     //full matrix or zero surpressed
     std::cout << "(Run)\t Run mode (0 = zero suppressed, 1 = complete matrix (slow)" << std::endl;
     if(useHvFadc) std::cout << "Choose zero surpressed if you want to use the FADC" << std::endl;
-    run_mode = getShortInputValue();
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    run_mode = std::stoi(input);
     if(run_mode>1)
     {
 	std::cout << "(Run)\t Run mode higher than 1 -> abort" << std::endl; 
@@ -1686,12 +1707,16 @@ int Console::CommandRun(bool useHvFadc){
      */
     if(useHvFadc)
     {
+	// temporary int variable, used as flag for yes / no inputs
+	int temp;
 	std::cout << "Detected FADC - do you want to start a measurement with simultaneous Chip and Fadc readout? 1 = yes, 0 = no \n" 
 		  << "WARNING: If Fadc is used, only one Chip is supported!"
 		  << std::endl;
-    
+	
 	//check if the user wants to use the fadc
-	if(getShortInputValue() != 1){
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	temp  = std::stoi(input);
+	if(temp != 1){
 	    useHvFadc = false;
 	    std::cout << "Don't use the Fadc" << std::endl; 
 	}
@@ -1707,7 +1732,9 @@ int Console::CommandRun(bool useHvFadc){
 	    std::cout << "Return to main menu to change some Fadc settings? 1 = y, 0 = n \n" 
 		      << "If yes, this aborts the run."
 		      << std::endl;
-	    if(getShortInputValue() == 1){
+	    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	    temp  = std::stoi(input);
+	    if(temp == 1){
 		std::cout << "Aborting Run - display menu by entering 0" << std::endl;
 		return 0; 
 	    }      
@@ -1771,18 +1798,23 @@ int Console::CommandCountingLong(){ //outdated, not used any more, rewrite!
     int n;
     int t;
     std::string ein="";
+    bool numericalInput           = true;
+    bool allowDefaultOnEmptyInput = true;
 
-    std::cout << " Opening time [us] " << std::flush;
-    std::getline(std::cin,ein);
+
+    const char *promptOpeningTime = " Opening time [us] ";
+    ein = getUserInput(promptOpeningTime, numericalInput, allowDefaultOnEmptyInput);
     if(ein==""){t=20000;}
-    else if(ein.find_first_not_of("0123456789 ",0)==ein.npos){t=(unsigned int) atoi(ein.data());}
-    else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+    else{
+	t=(unsigned int) atoi(ein.data());
+    }
 
-    std::cout<<" Frames wanted "<<std::flush;
-    std::getline(std::cin,ein);
+    const char *promptFrames = " Frames wanted ";
+    ein = getUserInput(promptFrames, numericalInput, allowDefaultOnEmptyInput);
     if(ein==""){n=1;}
-    else if(ein.find_first_not_of("0123456789 ",0)==ein.npos){n=(unsigned int) atoi(ein.data());}
-    else{std::cout<<"(Run)\t Non-numerical sign -> abort"<<std::endl; return 0;}
+    else{
+	n=(unsigned int) atoi(ein.data());
+    }
 
     result=pc.fpga.GeneralReset();
     std::cout<<"Reset done"<<std::endl;
@@ -2087,6 +2119,9 @@ int Console::CommandSetMatrix(){
 }
 
 int Console::CommandSaveMatrix(){
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = false;
+
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::string ein;
 	const char* f=pc.GetMatrixFileName(chip);
@@ -2095,9 +2130,9 @@ int Console::CommandSaveMatrix(){
 		  << ": (press ENTER to save in "
 		  << pc.GetMatrixFileName(chip) 
 		  << "): " 
-		  << std::flush;
-	std::getline(std::cin,ein);
-	if(ein != ""){f=ein.c_str();}
+		  << std::endl;
+	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	f=ein.c_str();
 	pc.fpga.tp.SaveMatrixToFile(f,chip);
 	std::cout<<"Matrix saved to "<<f<<"\n> "<<std::flush;
     }
@@ -2106,6 +2141,9 @@ int Console::CommandSaveMatrix(){
 
 
 int Console::CommandLoadMatrix(){
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = false;
+
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::string ein;
 	const char* f=pc.GetMatrixFileName(chip);
@@ -2114,11 +2152,18 @@ int Console::CommandLoadMatrix(){
 		  << " (press ENTER to load from "
 		  << pc.GetMatrixFileName(chip) 
 		  << "): " 
-		  << std::flush;
-	std::getline(std::cin,ein);
-	if(ein != ""){f=ein.c_str();}
-	FILE* f1=fopen(f,"r"); if(f1==NULL) {std::cout<<"File not found"<<std::endl; return -1;}
-	if (f1 != NULL) {pc.fpga.tp.LoadMatrixFromFile(f,chip);std::cout<<"Matrix loaded from "<<f<<"\n> "<<std::flush;}
+		  << std::endl;
+	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	f=ein.c_str();
+	FILE* f1=fopen(f,"r"); 
+	if(f1==NULL) {
+	    std::cout<<"File not found"<<std::endl; 
+	    return -1;
+	}
+	if (f1 != NULL) {
+	    pc.fpga.tp.LoadMatrixFromFile(f,chip);
+	    std::cout<<"Matrix loaded from "<<f<<"\n> "<<std::flush;
+	}
 	pc.fpga.tp.SaveMatrixToFile(pc.GetMatrixFileName(chip),chip);
 	std::cout<<"Matrix saved to program folder as "<<pc.GetMatrixFileName(chip)<<"\n> "<<std::flush;
     }
@@ -2141,6 +2186,9 @@ int Console::CommandWriteReadFSR(){
 
 
 int Console::CommandSaveFSR(){
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = false;
+
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::string ein;
 	const char* f=pc.GetFSRFileName(chip);
@@ -2149,9 +2197,9 @@ int Console::CommandSaveFSR(){
 		  << ": (press ENTER to save in " 
 		  << pc.GetFSRFileName(chip) 
 		  << "): " 
-		  << std::flush;
-	std::getline(std::cin,ein);
-	if(ein != ""){f=ein.c_str();}
+		  << std::endl;
+	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	f=ein.c_str();
 	pc.fpga.tp.SaveFSRToFile(f,chip);
 	std::cout<<"FSR saved in "<<f<<"\n> "<<std::flush;
     }
@@ -2164,6 +2212,9 @@ int Console::CommandLoadFSR(){
     std::cout<<"Enter Console::CommandLoadFSR()"<<std::endl;	
 #endif	
     int err = 0;
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = false;
+
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::string ein;
 	const char* f=pc.GetFSRFileName(chip);
@@ -2172,9 +2223,9 @@ int Console::CommandLoadFSR(){
 		  << " (press ENTER to load from "
 		  << pc.GetFSRFileName(chip) 
 		  << "): " 
-		  << std::flush;
-	std::getline(std::cin,ein);
-	if(ein != ""){f=ein.c_str();}
+		  << std::endl;
+	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	f=ein.c_str();
 	FILE* f1=fopen(f,"r"); 
 	if (f1 == NULL) {
 	    std::cout << "File not found"
@@ -2184,17 +2235,10 @@ int Console::CommandLoadFSR(){
 	if (f1 != NULL) {
 	    err=pc.fpga.tp.LoadFSRFromFile(f,chip);
 	    if(err==1){
-		std::cout << "FSR loaded from "
-			  << f
-			  << "\n> "
-			  << std::flush;
+		std::cout << "FSR loaded from " << f << "\n> " << std::flush;
 	    }
 	    else{
-		std::cout << "Error in "
-			  << f 
-			  << " in row " 
-			  << -err 
-			  << "\n> " 
+		std::cout << "Error in " << f << " in row " << -err << "\n> " 
 			  << std::flush;
 	    }
 	}
@@ -2210,6 +2254,9 @@ int Console::CommandLoadThreshold(){
     std::cout << "Enter Console::CommandLoadFSR()" << std::endl;	
 #endif	
     int err = 0;
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = false;
+
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::string ein;
 	const char* f=pc.GetThresholdFileName(chip);
@@ -2218,9 +2265,9 @@ int Console::CommandLoadThreshold(){
 		  << " (press ENTER to load from "
 		  << pc.GetThresholdFileName(chip) 
 		  << "): " 
-		  << std::flush;
-	std::getline(std::cin,ein);
-	if(ein != ""){f=ein.c_str();}
+		  << std::endl;
+	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	f=ein.c_str();
 	FILE* f1=fopen(f,"r");
 	if(f1==NULL) {
 	    std::cout << "File not found" << std::endl;
@@ -2229,15 +2276,9 @@ int Console::CommandLoadThreshold(){
 	if (f1 != NULL) {
 	    err=pc.fpga.tp.LoadThresholdFromFile(f,chip);
 	    if(err==-1){ 
-		std::cout << "File "
-			  << f
-			  << " not found"
-			  << std::endl;
+		std::cout << "File " << f << " not found" << std::endl;
 	    }
-	    std::cout << "Threshold loaded from " 
-		      << f
-		      << "\n> " 
-		      << std::flush;
+	    std::cout << "Threshold loaded from " << f << "\n> " << std::flush;
 	}
 	pc.fpga.tp.SaveThresholdToFile(pc.GetThresholdFileName(chip),chip);
 	std::cout<<"Threshold saved to program folder as "<<pc.GetThresholdFileName(chip)<<"\n> "<<std::flush;
@@ -2293,32 +2334,50 @@ int Console::CommandVarChessMatrix(){
     int err = 0;
     int sp0,sp1,stest,smask,sth;
     int wp0,wp1,wtest,wmask,wth;
+
+    // variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::cout<<"Chip Number "<<chip<<std::endl;
 	std::cout<<"\t Number cols per field="<<std::flush;
-	std::cin>>sl;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	sl = std::stoi(input);
 	std::cout<<"\t Number row per field="<<std::flush;
-	std::cin>>wl;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	wl = std::stoi(input);
 	std::cout<<"\t Black P0="<<std::flush;
-	std::cin>>sp0;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	sp0 = std::stoi(input);
 	std::cout<<"\t Black P1="<<std::flush;
-	std::cin>>sp1;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	sp1 = std::stoi(input);
 	std::cout<<"\t Black Mask="<<std::flush;
-	std::cin>>smask;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	smask = std::stoi(input);
 	std::cout<<"\t Black Test="<<std::flush;
-	std::cin>>stest;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	stest = std::stoi(input);
 	std::cout<<"\t Black Threshold="<<std::flush;
-	std::cin>>sth;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	sth = std::stoi(input);
 	std::cout<<"\t White P0="<<std::flush;
-	std::cin>>wp0;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	wp0 = std::stoi(input);
 	std::cout<<"\t White P1="<<std::flush;
-	std::cin>>wp1;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	wp1 = std::stoi(input);
 	std::cout<<"\t White Mask="<<std::flush;
-	std::cin>>wmask;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	wmask = std::stoi(input);
 	std::cout<<"\t White Test="<<std::flush;
-	std::cin>>wtest;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	wtest = std::stoi(input);
 	std::cout<<"\t White Threshold="<<std::flush;
-	std::cin>>wth;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	wth = std::stoi(input);
 	std::cin.ignore(1);
 	err=pc.fpga.tp.VarChessMatrix(sl,wl,sp0,sp1,smask,stest,sth,wp0,wp1,wmask,wtest,wth,chip);
 	if(err==0){std::cout<<"Matrix created\n> "<<std::flush;}
@@ -2330,18 +2389,29 @@ int Console::CommandVarChessMatrix(){
 int Console::CommandUniformMatrix(){
     int p0,p1,test,mask,th;
     int err = 0;
+
+    // variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::cout<<"Chip Number "<<chip<<std::endl;
 	std::cout<<"\t P0="<<std::flush;
-	std::cin>>p0;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	p0 = std::stoi(input);
 	std::cout<<"\t P1="<<std::flush;
-	std::cin>>p1;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	p1 = std::stoi(input);
 	std::cout<<"\t Mask="<<std::flush;
-	std::cin>>mask;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	mask = std::stoi(input);
 	std::cout<<"\t Test="<<std::flush;
-	std::cin>>test;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	test = std::stoi(input);
 	std::cout<<"\t Threshold="<<std::flush;
-	std::cin>>th;
+	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	th = std::stoi(input);
 	std::cin.ignore(1);
 	err=pc.fpga.tp.UniformMatrix(p0,p1,mask,test,th,chip);
 	if(err==0){std::cout<<"Matrix created\n> "<<std::flush;}
@@ -2353,12 +2423,18 @@ int Console::CommandUniformMatrix(){
 
 
 int Console::CommandFADCshutter(){
+    // variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+
     std::cout << "How many clock cycles after FADC trigger the shutter should be closed "
 	      << "(1-2 clock cycles delay in firmware) ? (1 to 16777215, 0 leads to failure)"
 	      << std::endl;
     std::cout << "WARNING: don't put more clock cycles than shutter is long." << std::endl;
     int closeshutter = 0;
-    std::cin >> closeshutter;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    closeshutter = std::stoi(input);
     pc.fpga.tp.SetI2C(closeshutter);
     pc.fpga.EnableFADCshutter(1);
     return 0;
@@ -2369,39 +2445,59 @@ int Console::CommandDACScan(){
 #if DEBUG==2
     std::cout<<"Enter Console::CommandDACScan()"<<std::endl;
 #endif
+    // variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+
     int DacsOn[14]={1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     unsigned short chip;
     std::cout << "Which chip do you want to DAC scan? (1-" << pc.fpga.tp.GetNumChips() << ") " << std::flush;
-    std::cin  >> chip;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    chip = std::stoi(input);
     std::cout << "Choose DACs to scan (1=Yes, 0=No) \n" << std::flush;
     std::cout << "\t IKrum " << std::flush;
-    std::cin  >> DacsOn[0];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[0] = std::stoi(input);
     std::cout << "\t Disc " << std::flush;
-    std::cin  >> DacsOn[1];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[1] = std::stoi(input);
     std::cout << "\t Preamp " << std::flush;
-    std::cin  >> DacsOn[2];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[2] = std::stoi(input);
     std::cout << "\t BuffAnalogA " << std::flush;
-    std::cin  >> DacsOn[3];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[3] = std::stoi(input);
     std::cout << "\t BuffAnalogB " << std::flush;
-    std::cin  >> DacsOn[4];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[4] = std::stoi(input);
     std::cout << "\t Hist " << std::flush;
-    std::cin  >> DacsOn[5];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[5] = std::stoi(input);
     std::cout << "\t THL " << std::flush;
-    std::cin  >> DacsOn[6];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[6] = std::stoi(input);
     std::cout << "\t Vcas " << std::flush;
-    std::cin  >> DacsOn[7];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[7] = std::stoi(input);
     std::cout << "\t FBK " << std::flush;
-    std::cin  >> DacsOn[8];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[8] = std::stoi(input);
     std::cout << "\t GND " << std::flush;
-    std::cin  >> DacsOn[9];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[9] = std::stoi(input);
     std::cout << "\t THS " << std::flush;
-    std::cin  >> DacsOn[10];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[10] = std::stoi(input);
     std::cout << "\t BiasLVDS " << std::flush;
-    std::cin  >> DacsOn[11];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[11] = std::stoi(input);
     std::cout << "\t RefLVDS " << std::flush;
-    std::cin  >> DacsOn[12];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[12] = std::stoi(input);
     std::cout << "\t Coarse " << std::flush;
-    std::cin  >> DacsOn[13];
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    DacsOn[13] = std::stoi(input);
     std::cin.ignore(1);
 
     int DACstoScan = 0;
@@ -2421,38 +2517,60 @@ int Console::CommandDACScan(){
 
 
 int Console::CommandTHLScan(){
+    // variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+
     unsigned short chip;
     unsigned short coarselow;
     unsigned short coarsehigh;
     std::cout << "Which chip do you want to THL scan? (1-" << pc.fpga.tp.GetNumChips() << ") " << std::flush;
-    std::cin  >> chip;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    chip = std::stoi(input);
     std::cout << "Start coarse " << std::flush;
-    std::cin  >> coarselow;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    coarselow = std::stoi(input);
     std::cout << "End coarse " << std::flush;
-    std::cin  >> coarsehigh;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    coarsehigh = std::stoi(input);
     pc.DoTHLScan(chip,coarselow,coarsehigh);
     return 0;
 }
 
 int Console::CommandSCurve(){
+    // variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+
     unsigned short chip = 1;
     unsigned short coarselow = 7;
     unsigned short coarsehigh = 7;
     int time = 255;
     std::cout << "Which chip do you want to THL scan to write the files for the S-Curve scan? (1-" << pc.fpga.tp.GetNumChips() << ") " << std::flush;
-    std::cin  >> chip;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    chip = std::stoi(input);
     std::cout << "Shutter time in clock cycles (0-255), LONG mode used " << std::flush;
-    std::cin  >> time;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    time = std::stoi(input);
     std::cout << "Start coarse " << std::flush;
-    std::cin  >> coarselow;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    coarselow = std::stoi(input);
     std::cout << "End coarse " << std::flush;
-    std::cin  >> coarsehigh;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    coarsehigh = std::stoi(input);
     pc.DoSCurveScan(chip,coarselow,coarsehigh,time);
     return 0;
 }
 
 
 int Console::CommandSCurveFast(){
+    // variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+
     unsigned short voltage = 0;
     unsigned short offset = 0;
     int time = 255;
@@ -2468,19 +2586,24 @@ int Console::CommandSCurveFast(){
 	      << "x= 32, ... Make sure that NONE of this columns is dead. "
 	      << "Otherwise put a column offset ( 0(no offset) to 31)" 
 	      << std::flush;
-    std::cin  >> offset;
+    input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    offset     = std::stoi(input);
     std::cout << "What voltage did you set on pulser, put 0 for internal pulser?" 
 	      << std::flush;
-    std::cin  >> voltage;
+    input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    voltage    = std::stoi(input);
     std::cout << "Shutter time in clock cycles (0-255), LONG mode used "
 	      << "(100 is ok for internal pulser) " 
 	      << std::flush;
-    std::cin  >> time;
+    input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    time       = std::stoi(input);
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::cout << "Start (lower) THL for chip " << chip << " " << std::flush;
-	std::cin  >> StartTHL[chip];
+	input          = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	StartTHL[chip] = std::stoi(input);
 	std::cout << "End (upper) THL for chip " << chip << " " << std::flush;
-	std::cin  >> StopTHL[chip];
+	input          = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+	StopTHL[chip]  = std::stoi(input);
     }
     pc.DoSCurveScan_meanChip(voltage,time,StartTHL,StopTHL,offset);
     return 0;
@@ -2496,10 +2619,15 @@ int Console::Commandi2creset(){
 int Console::Commandi2cDAC(){
     unsigned short Umv = 0;
     unsigned short DACchannel = 0;
-    std::cout << "I2C DAC channel (0=not used,1=Ext_DAC,2=MUX low,3=MUX high): " << std::flush;
-    std::cin  >> DACchannel;
-    std::cout << "I2C DAC voltage (mV): " << std::flush;
-    std::cin  >> Umv;
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+    const char *promptDACchannel = "I2C DAC channel (0=not used,1=Ext_DAC,2=MUX low,3=MUX high): ";
+    input      = getUserInput(promptDACchannel, numericalInput, allowDefaultOnEmptyInput);
+    DACchannel = std::stoi(input);
+    const char *promptDACvoltage = "I2C DAC voltage (mV): ";
+    input = getUserInput(promptDACvoltage, numericalInput, allowDefaultOnEmptyInput);
+    Umv   = std::stoi(input);
     pc.fpga.i2cDAC(Umv, DACchannel);
     return 0;
 }
@@ -2507,8 +2635,11 @@ int Console::Commandi2cDAC(){
 
 int Console::Commandi2cADC(){
     unsigned short channel = 0;
-    std::cout << "ADC channel to read: " << std::flush;
-    std::cin>>channel;
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+    const char *promptADCchannel = "ADC channel to read: ";
+    input = getUserInput(promptADCchannel, numericalInput, allowDefaultOnEmptyInput);
     std::cout << "ADC channel is: " << channel << std::endl;
     pc.fpga.i2cADC(channel);
     return 0;
@@ -2518,10 +2649,15 @@ int Console::Commandi2cADC(){
 int Console::CommandTpulse(){
     unsigned short Npulses = 1;
     unsigned short div500kHz = 1;
-    std::cout << "Number of testpulses (1 - 5000): " << std::flush;
-    std::cin>>Npulses;
-    std::cout << "Testpulse frequency: Divide 500 kHz by (1 - 50): " << std::flush;
-    std::cin>>div500kHz;
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+    const char *promptNumTestPulses = "Number of testpulses (1 - 5000): ";
+    input   = getUserInput(promptNumTestPulses, numericalInput, allowDefaultOnEmptyInput);
+    Npulses = std::stoi(input);
+    const char *promptFreqTestPulse = "Testpulse frequency: Divide 500 kHz by (1 - 50): ";
+    input     = getUserInput(promptFreqTestPulse, numericalInput, allowDefaultOnEmptyInput);    
+    div500kHz = std::stoi(input);
     pc.fpga.tpulse(Npulses, div500kHz);
     return 0;
 }
@@ -2538,16 +2674,11 @@ int Console::CommandDoTHSopt(){
 	      << pc.fpga.tp.GetNumChips() 
 	      << " chips, for which of them do you want to do the optimization? "
 	      << "Put 0 if you want to go for all of them one after the other. " 
-	      << std::flush;
-    std::getline(std::cin,ein0);
+	      << std::endl;
+    ein0 = getUserInput(_prompt);
     if(ein0==""){ chp=1; }
-    else if( ein0.find_first_not_of("0123456789 ",0)==ein0.npos ){
-	chp=(unsigned short) atoi(ein0.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	chp=(unsigned short) atoi(ein0.data());
     }
     std::cout << "Chip= " << chp << std::endl;
     std::string ein="";
@@ -2555,16 +2686,11 @@ int Console::CommandDoTHSopt(){
 	      << " active per row at same time (but only one step). Only 4096 "
 	      << "pixels are used. Do you want to do a THeq directly afterwards?"
 	      << " (no extended coarse THeq possible) (1=yes, 0=no) " 
-	      << std::flush;
-    std::getline(std::cin,ein);
+	      << std::endl;
+    ein = getUserInput(_prompt);
     if(ein==""){doTHeq=0;}
-    else if( ein.find_first_not_of("0123456789 ",0)==ein.npos ){
-	doTHeq=(unsigned short) atoi(ein.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	doTHeq=(unsigned short) atoi(ein.data());
     }
     std::cout << "doTHeq= " << doTHeq << std::endl;
 
@@ -2573,47 +2699,32 @@ int Console::CommandDoTHSopt(){
 	std::cout << "How many pixel per row at same time for THeq later? "
 		  << "1,2,4,8,16 (more is not good!)? But 0 if you want to "
 		  << "decide later " 
-		  << std::flush;
-	std::getline(std::cin,ein1);
+		  << std::endl;
+	ein1 = getUserInput(_prompt);
 	if(ein1==""){pix_per_row_THeq=1;}
-	else if( ein1.find_first_not_of("0123456789 ",0)==ein1.npos ){
-	    pix_per_row_THeq =(unsigned short) atoi(ein1.data());
-	}
 	else{
-	    std::cout << "(Run)\t Non-numerical sign -> abort" 
-		      << std::endl; 
-	    return 0;
+	    pix_per_row_THeq =(unsigned short) atoi(ein1.data());
 	}
     }
     short ths = 255;
     std::string ein2="";
     std::cout << "Set start value for ths from 20 to 255 (lower only if you are "
 	      << "sure that best ths is near that value) " 
-	      << std::flush;
-    std::getline(std::cin,ein2);
+	      << std::endl;
+    ein2 = getUserInput(_prompt);
     if(ein2==""){ths=127;}
-    else if( ein2.find_first_not_of("0123456789 ",0)==ein2.npos ){
-	ths=(unsigned short) atoi(ein2.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	ths=(unsigned short) atoi(ein2.data());
     }
     short ext_coarse = 0;
     std::string ein3 = "";
     std::cout << " Do you want to use extended coarse thl range (coarse 6 and 8 "
 	      << "in addition to 7)? (1=yes, 0=no) " 
-	      << std::flush;
-    std::getline(std::cin,ein3);
+	      << std::endl;
+    ein3 = getUserInput(_prompt);
     if(ein3==""){ext_coarse=0;}
-    else if( ein3.find_first_not_of("0123456789 ",0)==ein3.npos ){
-	ext_coarse=(unsigned short) atoi(ein3.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	ext_coarse=(unsigned short) atoi(ein3.data());
     }
     short max_thl = 1023;
     short min_thl = 0;
@@ -2621,27 +2732,17 @@ int Console::CommandDoTHSopt(){
 	std::string ein4="";
 	std::cout << " Use upper and lower thl bound? Then set upper first, then "
 		  << "lower. Default is 1023 and 0. " 
-		  << std::flush;
-	std::getline(std::cin,ein4);
+		  << std::endl;
+	ein4 = getUserInput(_prompt);
 	if(ein4==""){max_thl = 1023;}
-	else if( ein4.find_first_not_of("0123456789 ",0)==ein4.npos ){
+	else{
 	    max_thl=(unsigned short) atoi(ein4.data());
 	}
-	else{
-	    std::cout << "(Run)\t Non-numerical sign -> abort" 
-		      << std::endl; 
-	    return 0;
-	}
 	std::string ein5="";
-	std::getline(std::cin,ein5);
+	ein5 = getUserInput(_prompt);
 	if(ein5==""){min_thl = 0;}
-	else if( ein5.find_first_not_of("0123456789 ",0)==ein5.npos ){
-	    min_thl=(unsigned short) atoi(ein5.data());
-	}
 	else{
-	    std::cout << "(Run)\t Non-numerical sign -> abort" 
-		      << std::endl; 
-	    return 0;
+	    min_thl=(unsigned short) atoi(ein5.data());
 	}
     }
     if (chp == 0){
@@ -2668,15 +2769,10 @@ int Console::CommandThresholdEqNoiseCenter(){
 	      << "equalisation? Put 0 if you want to go for all of them "
 	      << "one after the other." 
 	      << std::endl;
-    std::getline(std::cin,ein);
+    ein = getUserInput(_prompt);
     if(ein==""){chp=1;}
-    else if( ein.find_first_not_of("0123456789 ",0)==ein.npos ){
-	chp=(unsigned short) atoi(ein.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	chp=(unsigned short) atoi(ein.data());
     }
     std::cout << "chip " << chp << std::endl;
     std::cout << " You have " 
@@ -2687,53 +2783,33 @@ int Console::CommandThresholdEqNoiseCenter(){
     std::string ein1="";
     std::cout << " How many pixel per row at same time? 1,2,4,8,16 "
 	      << "(more is not good!)? " 
-	      << std::flush;
-    std::getline(std::cin,ein1);
+	      << std::endl;
+    ein1 = getUserInput(_prompt);
     if(ein1==""){pix_per_row=1;}
-    else if( ein1.find_first_not_of("0123456789 ",0)==ein1.npos ){
-	pix_per_row=(unsigned short) atoi(ein1.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	pix_per_row=(unsigned short) atoi(ein1.data());
     }
     std::cout << pix_per_row << " pixel per row at same time" << std::endl;
     std::string ein3="";
-    std::cout << " Do you want to use extended coarse thl range (coarse 6 and 8 in addition to 7)? (1=yes, 0=no) " << std::flush;
-    std::getline(std::cin,ein3);
+    const char *promptUseExtendedTHLRange = "Do you want to use extended coarse thl range (coarse 6 and 8 in addition to 7)? (1=yes, 0=no) ";
+    ein3 = getUserInput(promptUseExtendedTHLRange);
     if(ein3==""){ext_coarse=0;}
-    else if( ein3.find_first_not_of("0123456789 ",0)==ein3.npos ){
-	ext_coarse = (unsigned short) atoi(ein3.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	ext_coarse = (unsigned short) atoi(ein3.data());
     }
     if (ext_coarse==0){
 	std::string ein4="";
 	std::cout << " Use upper and lower thl bound? Then set upper first, then lower. Default is 1023 and 0. " << std::flush;
-	std::getline(std::cin,ein4);
+	ein4 = getUserInput(_prompt);
 	if(ein4==""){max_thl = 1023;}
-	else if( ein4.find_first_not_of("0123456789 ",0)==ein4.npos ){
+	else{
 	    max_thl=(unsigned short) atoi(ein4.data());
 	}
-	else{
-	    std::cout << "(Run)\t Non-numerical sign -> abort" 
-		      << std::endl; 
-	    return 0;
-	}
 	std::string ein5="";
-	std::getline(std::cin,ein5);
+	ein5 = getUserInput(_prompt);
 	if(ein5==""){min_thl = 0;}
-	else if( ein5.find_first_not_of("0123456789 ",0)==ein5.npos ){
-	    min_thl=(unsigned short) atoi(ein5.data());
-	}
 	else{
-	    std::cout << "(Run)\t Non-numerical sign -> abort" 
-		      << std::endl; 
-	    return 0;
+	    min_thl=(unsigned short) atoi(ein5.data());
 	}
     }
     if (chp == 0){
@@ -2758,17 +2834,12 @@ int Console::CommandTOCalibFast(){
     unsigned short time = 1;
     unsigned short TOT = 0;
     unsigned short internalPulser = 0;
-    std::cout << "TOT (0) or TOA (1)? "<<std::endl;
+    const char *promptTOTorTOA = "TOT (0) or TOA (1)? ";
     std::string ein0="";
-    std::getline(std::cin,ein0);
+    ein0 = getUserInput(promptTOTorTOA);
     if(ein0==""){TOT=0;}
-    else if( ein0.find_first_not_of("0123456789 ",0)==ein0.npos ){
-	TOT=(unsigned short) atoi(ein0.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort"
-		  << std::endl; 
-	return 0;
+	TOT=(unsigned short) atoi(ein0.data());
     }
     std::cout << TOT << " selected" << std::endl;
     std::cout << "Hello this is TOT/TOA calibration. You will have to specify "
@@ -2781,19 +2852,12 @@ int Console::CommandTOCalibFast(){
 	      << pc.fpga.tp.GetNumChips() 
 	      <<" chips, all of them will be calibrated at the same time. "
 	      << std::endl;
-    std::cout << "Do you want to use the external (0, default) or "
-	      << "internal (1) pulser? "
-	      << std::endl;
+    const char *promptExtIntPulser = "Do you want to use the external (0, default) or internal (1) pulser? ";
     std::string ein4="";
-    std::getline(std::cin,ein4);
+    ein4 = getUserInput(promptExtIntPulser);
     if(ein4==""){internalPulser=0;}
-    else if( ein4.find_first_not_of("0123456789 ",0)==ein4.npos ){
-	internalPulser=(unsigned short) atoi(ein4.data());
-    }
     else{
-	std::cout<<"(Run)\t Non-numerical sign -> abort"
-		 <<std::endl; 
-	return 0;
+	internalPulser=(unsigned short) atoi(ein4.data());
     }
     if (internalPulser == 0) { std::cout<<"External pulser selected"<<std::endl;}
     if (internalPulser == 1) { std::cout<<"Internal pulser selected"<<std::endl;}
@@ -2801,44 +2865,29 @@ int Console::CommandTOCalibFast(){
 	      << "1,2,4,8,16 (more is not good!)? "
 	      << std::endl;
     std::string ein="";
-    std::getline(std::cin,ein);
+    ein = getUserInput(_prompt);
     if(ein==""){pix_per_row=1;}
-    else if( ein.find_first_not_of("0123456789 ",0)==ein.npos ){
-	pix_per_row = (unsigned short) atoi(ein.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort"
-		  << std::endl; 
-	return 0;
+	pix_per_row = (unsigned short) atoi(ein.data());
     }
     std::cout << pix_per_row << " pixel per row at same time" << std::endl;
     std::cout << "Shutter length: press 1 for short shutter (0-255 clock cycles);"
 	      << " press 2 for long shutter (256 - 65280 clock cycles)" 
 	      << std::endl;
     std::string ein2="";
-    std::getline(std::cin,ein2);
+    ein2 = getUserInput(_prompt);
     if(ein2==""){shuttertype=1;}
-    else if( ein2.find_first_not_of("0123456789 ",0)==ein2.npos ){
-	shuttertype = (unsigned short) atoi(ein2.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	shuttertype = (unsigned short) atoi(ein2.data());
     }
     std::cout << "Set shutter length in clock cycles(0 -255) (if you have "
 	      << "chosen long shutter this value will be multiplied by 256):" 
 	      << std::endl;
     std::string ein3="";
-    std::getline(std::cin,ein3);
+    ein3 = getUserInput(_prompt);
     if(ein3==""){time=1;}
-    else if( ein3.find_first_not_of("0123456789 ",0)==ein3.npos ){
-	time=(unsigned short) atoi(ein3.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	time=(unsigned short) atoi(ein3.data());
     }
     std::cout << "Ok, lets start!" << std::endl;
 
@@ -2855,6 +2904,7 @@ int Console::CommandCheckOffset(){
 
 
 int Console::CommandCalibrate(){
+
     std::cout << "This is the calibration function." 
 	      << std::endl;
     std::cout << "All chips or a selected chip will be calibrated." 
@@ -2866,26 +2916,20 @@ int Console::CommandCalibrate(){
 	      << "(optional: TOT calibration and  TOA calibration) will "
 	      << "be done."
 	      << std::endl;
-    std::cout << "Do you want to do a TOT calibration (0: no, 1: yes)"
-	      << std::endl;
-    unsigned short doTOT = 0;
+    const char *promptTOT = "Do you want to do a TOT calibration (0: no, 1: yes)";
     std::string ein="";
-    std::getline(std::cin,ein);
+    ein = getUserInput(promptTOT);
+    unsigned short doTOT = 0;
     if(ein==""){doTOT=0;}
-    else if( ein.find_first_not_of("0123456789 ",0)==ein.npos ){
+    else{
 	doTOT=(unsigned short) atoi(ein.data());
     }
-    else{
-	std::cout<<"(Run)\t Non-numerical sign -> abort"
-		 <<std::endl; 
-	return 0;
-    }
-    std::cout << "Do you want to do a TOA calibration (0: no, 1: yes)"<< std::endl;
-    unsigned short doTOA = 0;
+    const char *promptTOA = "Do you want to do a TOA calibration (0: no, 1: yes)";
     std::string ein0="";
-    std::getline(std::cin,ein0);
+    ein0 = getUserInput(promptTOA);
+    unsigned short doTOA = 0;
     if(ein0==""){doTOA=0;}
-    else if( ein0.find_first_not_of("0123456789 ",0)==ein0.npos ){
+    else{
 	doTOA=(unsigned short) atoi(ein0.data());
     }
     unsigned short chp = 1;
@@ -2898,15 +2942,10 @@ int Console::CommandCalibrate(){
     std::cout << "Which chips do you want to calibrate? Put 0 if you want to "
 	      << "go for all of them one after the other. "
 	      <<std::endl;
-    std::getline(std::cin,ein1);
+    ein1 = getUserInput(_prompt);
     if(ein1==""){chp=1;}
-    else if( ein1.find_first_not_of("0123456789 ",0)==ein1.npos ){
-	chp=(unsigned short) atoi(ein1.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort"
-		  << std::endl; 
-	return 0;
+	chp=(unsigned short) atoi(ein1.data());
     }
     std::cout << "Chip= " << chp << std::endl;
 
@@ -2918,30 +2957,20 @@ int Console::CommandCalibrate(){
 	      << std::endl;
     std::cout << "Press ENTER to use 127 (default) " 
 	      << std::flush;
-    std::getline(std::cin,ein2);
+    ein2 = getUserInput(_prompt);
     if(ein2==""){ths=127;}
-    else if( ein2.find_first_not_of("0123456789 ",0)==ein2.npos ){
-	ths=(unsigned short) atoi(ein2.data());
-    }
     else{
-	std::cout<<"(Run)\t Non-numerical sign -> abort"
-		 <<std::endl; 
-	return 0;
+	ths=(unsigned short) atoi(ein2.data());
     }
     short ext_coarse = 0;
     std::string ein3="";
     std::cout << "Do you want to use extended coarse thl range "
 	      << "(coarse 6 and 8 in addition to 7)? (1=yes, 0=no) "
 	      << std::flush;
-    std::getline(std::cin,ein3);
+    ein3 = getUserInput(_prompt);
     if(ein3==""){ext_coarse=0;}
-    else if( ein3.find_first_not_of("0123456789 ",0)==ein3.npos ){
-	ext_coarse=(unsigned short) atoi(ein3.data());
-    }
     else{
-	std::cout<<"(Run)\t Non-numerical sign -> abort"
-		 <<std::endl; 
-	return 0;
+	ext_coarse=(unsigned short) atoi(ein3.data());
     }
     short max_thl = 1023;
     short min_thl = 0;
@@ -2950,28 +2979,18 @@ int Console::CommandCalibrate(){
 	std::cout << " THL scan range: Set upper and lower bound. Default "
 		  << "is 1023 and 0. "
 		  << std::endl;
-	std::cout << " Upper: " << std::flush;
-	std::getline(std::cin,ein4);
+	const char *promptUpper = "Upper: ";
+	ein4 = getUserInput(promptUpper);
 	if(ein4==""){max_thl = 1023;}
-	else if( ein4.find_first_not_of("0123456789 ",0)==ein4.npos ){
+	else{
 	    max_thl=(unsigned short) atoi(ein4.data());
 	}
-	else{
-	    std::cout<<"(Run)\t Non-numerical sign -> abort"
-		     <<std::endl; 
-	    return 0;
-	}
 	std::string ein5="";
-	std::cout << " Lower: " << std::flush;
-	std::getline(std::cin,ein5);
+	const char *promptLower = "Lower: ";
+	ein5 = getUserInput(promptLower);
 	if(ein5==""){min_thl = 0;}
-	else if( ein5.find_first_not_of("0123456789 ",0)==ein5.npos ){
-	    min_thl=(unsigned short) atoi(ein5.data());
-	}
 	else{
-	    std::cout<<"(Run)\t Non-numerical sign -> abort"
-		     <<std::endl; 
-	    return 0;
+	    min_thl=(unsigned short) atoi(ein5.data());
 	}
     }
     unsigned short pix_per_row = 1;
@@ -2981,15 +3000,10 @@ int Console::CommandCalibrate(){
     std::cout << "(Spacing) How many active pixel per row at the same time? "
 	      << "1,2,4,8,16 (more is not good!)?" 
 	      << std::flush;
-    std::getline(std::cin,ein6);
+    ein6 = getUserInput(_prompt);
     if(ein6==""){pix_per_row=1;}
-    else if( ein6.find_first_not_of("0123456789 ",0)==ein6.npos ){
-	pix_per_row =(unsigned short) atoi(ein6.data());
-    }
     else{
-	std::cout << "(Run)\t Non-numerical sign -> abort" 
-		  << std::endl; 
-	return 0;
+	pix_per_row =(unsigned short) atoi(ein6.data());
     }
 
     unsigned short voltage = 0;
@@ -2997,6 +3011,8 @@ int Console::CommandCalibrate(){
     int time = 255;
     unsigned short StartTHL[9] = {0};
     unsigned short StopTHL[9] = {1023};
+    // input string for getUserInput in the following few lines of code
+    std::string input;
     std::cout << "S-Curve parameters (internal pulser will be used):" 
 	      << std::endl;
     std::cout << "Warning: Only CTPR = 1 will be used. Hence only "
@@ -3005,16 +3021,20 @@ int Console::CommandCalibrate(){
     std::cout << "Make sure that NONE of this columns is dead and press 0. "
 	      << "Otherwise put a column offset ( 0(no offset) to 31)" 
 	      << std::flush;
-    std::cin  >> offset;
+    input      = getUserInput(_prompt, true, false);
+    offset     = std::stoi(input);
     std::cout << "Shutter time in clock cycles (0-255), LONG mode used "
 	      << "(100 is ok for internal pulser) " 
 	      << std::flush;
-    std::cin  >> time;
+    input      = getUserInput(_prompt, true, false);
+    time       = std::stoi(input);
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::cout << "End (upper) THL for chip "   << chip << ": " << std::flush;
-	std::cin  >> StopTHL[chip];
+	input          = getUserInput(_prompt, true, false);
+	StopTHL[chip]  = std::stoi(input);
 	std::cout << "Start (lower) THL for chip " << chip << ": " << std::flush;
-	std::cin  >> StartTHL[chip];
+	input          = getUserInput(_prompt, true, false);
+	StartTHL[chip] = std::stoi(input);
     }
     unsigned short pix_per_rowTO = 1;
     unsigned short shuttertype = 1;
@@ -3032,15 +3052,10 @@ int Console::CommandCalibrate(){
 		  << "1,2,4,8,16 (more is not good!)? "
 		  << std::endl;
 	std::string ein7="";
-	std::getline(std::cin,ein7);
+	ein7 = getUserInput(_prompt);
 	if(ein7==""){pix_per_rowTO=1;}
-	else if( ein7.find_first_not_of("0123456789 ",0)==ein7.npos ){
-	    pix_per_rowTO=(unsigned short) atoi(ein7.data());
-	}
 	else{
-	    std::cout<<"(Run)\t Non-numerical sign -> abort"
-		     <<std::endl; 
-	    return 0;
+	    pix_per_rowTO=(unsigned short) atoi(ein7.data());
 	}
 	std::cout << pix_per_rowTO 
 		  << " pixel per row at same time"
@@ -3050,30 +3065,20 @@ int Console::CommandCalibrate(){
 		  << "(256 - 65280 clock cycles)"
 		  << std::endl;
 	std::string ein8="";
-	std::getline(std::cin,ein8);
+	ein8 = getUserInput(_prompt);
 	if(ein8==""){shuttertype=1;}
-	else if( ein8.find_first_not_of("0123456789 ",0)==ein8.npos ){
-	    shuttertype=(unsigned short) atoi(ein8.data());
-	}
 	else{
-	    std::cout<<"(Run)\t Non-numerical sign -> abort"
-		     <<std::endl; 
-	    return 0;
+	    shuttertype=(unsigned short) atoi(ein8.data());
 	}
 	std::cout << "Set shutter length in clock cycles(0 -255) "
 		  << "(if you have chosen long shutter this value will "
 		  << "be multiplied by 256):"
 		  << std::endl;
 	std::string ein9="";
-	std::getline(std::cin,ein9);
+	ein9 = getUserInput(_prompt);
 	if(ein9==""){timeTO=1;}
-	else if( ein9.find_first_not_of("0123456789 ",0)==ein9.npos ){
-	    timeTO=(unsigned short) atoi(ein9.data());
-	}
 	else{
-	    std::cout<<"(Run)\t Non-numerical sign -> abort"
-		     <<std::endl; 
-	    return 0;
+	    timeTO=(unsigned short) atoi(ein9.data());
 	}
 	std::cout << "Ok, lets start!"<<std::endl;
     }
