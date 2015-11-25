@@ -3,3 +3,6 @@
 *.moc
 Makefile
 TOS.pro
+./tmp/*
+*.*~
+./bin/*
