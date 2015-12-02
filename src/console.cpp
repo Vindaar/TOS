@@ -621,8 +621,6 @@ int Console::UserInterface(){
 		_hvFadcObj->InitHFOForTOS();
 	    }
 	    // if it is not initialized
-	    // TODO: implement to ask for initialization
-	    //
 	    else{
 		std::cout << "Currently not using HV_FADC Object \n" 
 			  << "Call ActivateHFO command and try again"
