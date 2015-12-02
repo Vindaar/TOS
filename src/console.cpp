@@ -501,8 +501,115 @@ int Console::UserInterface(){
 	// ################## FADC related commands #########
 	// ##################################################
 	
+	else if (ein.compare("PrintFADCSettings") == 0){
+	    _hvFadcObj->FADC_Functions->printSettings();
+	}
+	else if (ein.compare("ResetFADC") == 0){
+	    _hvFadcObj->F_Reset();
+	}
+	else if ((ein.compare("StartFadcAcquisition") == 0) ||
+		 (ein.compare("StartFadcAcq")         == 0)){
+	    _hvFadcObj->F_StartAcquisition();
+	}
+	else if (ein.compare("SendFadcSoftwareTrigger") == 0){
+	    _hvFadcObj->F_SendSoftwareTrigger();	    
+	}
+	else if (ein.compare("ReadFadcInterrupt") == 0){
+	    std::cout << "Interrupt: " << _hvFadcObj->F_ReadInterrupt() << std::endl;
+	}
+	else if (ein.compare("ReleaseFadcInterrupt") == 0){
+	    _hvFadcObj->F_ReleaseInterrupt();
+	}
+	else if (ein.compare("SetFadcTriggerThresholdDACAll") == 0){
+	    _hvFadcObj->F_SetTriggerThresholdDACAll( getInputValue() );
+	}
+	else if (ein.compare("GetFadcTriggerPerChannel") == 0){
+	    std::cout << "getTriggerThreshold perChannel:" << std::endl;
+	    std::cout << "Channel 1: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(0) << std::endl;
+	    std::cout << "Channel 2: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(1) << std::endl;
+	    std::cout << "Channel 3: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(2) << std::endl;
+	    std::cout << "Channel 4: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(3) << std::endl;
+	    std::cout << "getTriggerThreshold All: " << _hvFadcObj->F_GetTriggerThresholdDACAll() << std::endl << std::endl;
+	}
+	else if (ein.compare("SetFadcTriggerThresholdRegisterAll") == 0){
+	    std::cout << "setTriggerThresholdRegisterAll returns: " 
+		      <<  _hvFadcObj->FADC_Functions->setTriggerThresholdRegisterAll( getInputValue() ) << std::endl;
+	}
+	else if (ein.compare("GetFadcTriggerThresholdRegister") == 0){
+	    _hvFadcObj->FADC_Functions->getTriggerThresholdRegister();
+	}
+	else if (ein.compare("LoadFadcTriggerThresholdDAC") == 0){
+	    _hvFadcObj->F_LoadTriggerThresholdDAC();
+	}
+	else if (ein.compare("SetFadcTriggerType") == 0){
+	    _hvFadcObj->F_SetTriggerType( getInputValue() );
+	}
+	else if (ein.compare("GetFadcTriggerType") == 0){
+	    std::cout << "Trigger type: " << _hvFadcObj->F_GetTriggerType() << std::endl;
+	}
+	else if (ein.compare("SetFadcTriggerChannelSource") == 0){
+	    _hvFadcObj->F_SetTriggerChannelSource( getInputValue() );
+	}
+	else if (ein.compare("GetFadcTriggerChannelSource") == 0){
+	    std::cout << "Trigger channel source: " << _hvFadcObj->F_GetTriggerChannelSource() << std::endl;
+	}
+	else if (ein.compare("SetFadcPostTrig") == 0){
+	    _hvFadcObj->F_SetPosttrig( getInputValue() );
+	}
+	else if (ein.compare("GetFadcPostTrig") == 0){
+	    std::cout << "Posttrig: " << _hvFadcObj->F_GetPosttrig() << std::endl;
+	}
+	else if (ein.compare("SetFadcPreTrig") == 0){
+	    _hvFadcObj->F_SetPretrig( getInputValue() );
+	}
+	else if (ein.compare("GetFadcPreTrig") == 0){
+	    std::cout << "Pretrig: " << _hvFadcObj->F_GetPretrig() << std::endl;
+	}
+	else if (ein.compare("SetFadcChannelMask") == 0){
+	    _hvFadcObj->F_SetChannelMask( getInputValue() );
+	}
+	else if (ein.compare("GetFadcChannelMask") == 0){
+	    std::cout << "Channel mask: " << _hvFadcObj->F_GetChannelMask() << std::endl;
+	}
+	else if (ein.compare("SetFadcNumberOfChannels") == 0){
+	    _hvFadcObj->F_SetNbOfChannels(getInputValue());
+	}
+	else if (ein.compare("GetFadcNumberOfChannels") == 0){
+	    std::cout << "#Channels: " << _hvFadcObj->F_GetNbOfChannels() << std::endl;
+	}
+	else if (ein.compare("SetFadcModeRegister") == 0){
+	    _hvFadcObj->F_SetModeRegister(static_cast<const unsigned short>(getInputValue()));
+	}
+	else if (ein.compare("GetFadcModeRegister") == 0){
+	    std::cout << "mode register: " << _hvFadcObj->F_GetModeRegister() << std::endl;
+	}
+	else if (ein.compare("SetFadcFrequency") == 0){
+	    _hvFadcObj->F_SetFrequency( getInputValue() );
+	}
+	else if (ein.compare("GetFadcFrequency") == 0){
+	    std::cout << "Frequency: " << _hvFadcObj->F_GetFrequency() << std::endl;
+	}
+	else if (ein.compare("SetFadcReadMode") == 0){
+	    _hvFadcObj->F_SetReadMode( getInputValue() );
+	}
+	else if (ein.compare("GetFadcReadMode") == 0){
+	    std::cout << "Read mode: " << _hvFadcObj->F_GetReadMode() << std::endl;
+	}
+	else if (ein.compare("SetFadcPostStopLatency") == 0){
+	    _hvFadcObj->F_SetPostStopLatency( getInputValue() );
+	}
+	else if (ein.compare("GetFadcPostStopLatency") == 0){
+	    std::cout << "Post stop latency: " << _hvFadcObj->F_GetPostStopLatency() << std::endl;
+	}
+	else if (ein.compare("SetFadcPostLatencyPreTrig") == 0){
+	    _hvFadcObj->F_SetPostLatencyPretrig( getInputValue() );
+	}
+	else if (ein.compare("GetFadcPostLatencyPretrig()") == 0){
+	    std::cout << "Post latency pretrig: " << _hvFadcObj->F_GetPostLatencyPretrig() << std::endl;
+	}
+
 	// ##################################################
-	// ################## HV related commands ###########
+	// ################## HV_FADC related commands ######
 	// ##################################################	
 
 	// main function to call 

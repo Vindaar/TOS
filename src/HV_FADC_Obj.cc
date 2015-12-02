@@ -104,8 +104,6 @@ void HV_FADC_Obj::InitHFOForTOS(){
     int anodeChannelNumberBinary;
     int cathodeChannelNumberBinary;
 
-    //bool ok = true;
-    
     // create path for iniFile 
     QDir dir(get_current_dir_name());
     // TODO: check proper path
@@ -651,8 +649,8 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	ChStatusSTRUCT gridStatus = { 0 };
 	ChStatusSTRUCT anodeStatus = { 0 };
 	ChStatusSTRUCT cathodeStatus = { 0 };
-	gridStatus.Word = H_GetChannelStatus(gridChannelNumber);
-	anodeStatus.Word = H_GetChannelStatus(anodeChannelNumber);
+	gridStatus.Word    = H_GetChannelStatus(gridChannelNumber);
+	anodeStatus.Word   = H_GetChannelStatus(anodeChannelNumber);
 	cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
 
 	if(gridStatus.Bit.isOn == 0 ||
@@ -687,6 +685,8 @@ void HV_FADC_Obj::InitHFOForTOS(){
     F_SetFrequency(fadcFrequency);
     F_SetPosttrig(fadcPosttrig);
     F_SetPretrig(fadcPretrig);
+
+    // TODO: find out what this was supposed to be
     //F_SetTriggerThresholdRegisterAll(fadcTriggerThresholdRegisterAll);
     
     //F_PrintSettings();
