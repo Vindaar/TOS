@@ -542,6 +542,43 @@ void HV_FADC_Obj::InitHFOForTOS(){
     H_SetFlexGroup(monitorTripGroupNumber, monitorTripGroup);
     H_SetFlexGroup(rampingGroupNumber,     rampingGroup);
 
+
+    // TODO: need to set ModuleEventGroupMask for the groups,
+    //       in order to register group events for the wanted 
+    //       things
+    
+    // ok: need
+    // ModuleEventGroupMask: set everything to 0 except 
+    //                       gridGroupNumbers of all 3 defined groups
+    // ChannelEventMask: set all three of our channel masks to the following pattern:
+    //                   MaskEventTrip = 1
+    //                   MaskEventEndOfRamp = 1
+    //                   MaskEventVoltageLimit = 1
+    //                   MaskEventCurrentLimit = 1
+    //                   MaskEventEmergency = 1
+    //                   rest to 0.
+    ChEventMaskSTRUCT ChEventMask         = { 0 };
+    ChEventMask.Bit.MaskEventCurrentTrip  = 1;
+    ChEventMask.Bit.MaskEventEndOfRamp    = 1;
+    ChEventMask.Bit.MaskEventVoltageLimit = 1;
+    ChEventMask.Bit.MaskEventCurrentLimit = 1;
+    ChEventMask.Bit.MaskEventEmergency    = 1;
+
+    // write this ChannelEventMask to all three of our channels
+    H_SetChannelEventMask(gridChannelNumber,    ChEventMask);
+    H_SetChannelEventMask(anodeChannelNumber,   ChEventMask);
+    H_SetChannelEventMask(cathodeChannelNumber, ChEventMask);
+
+    // moduleEventGroupMask is a 32bit integer, where each bit
+    // corresponds to the activation of one group. This means, since
+    // we wish to set the GroupMask to our three Groups, we need to set
+    // each bit for the number of each group. Incidentally, the group numbers
+    // are the same as the channel numbers, thus we can use the bitwise
+    // created integer for the GroupMembers containing all three channels
+    uint32_t moduleEventGroupMask = monitorAndRampGroupMembersInt;
+    H_SetModuleEventGroupMask(moduleEventGroupMask);
+    // now we can check the channel events and group events
+
     // groups set up. now set voltages, currents
 
 
@@ -645,7 +682,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 
 
     // before we start ramping up the HV modules, first set FADC settings
-    std::cout << "Settings FADC settings" << std::endl;
+    std::cout << "Setting FADC settings" << std::endl;
 
     F_SetTriggerType(fadcTriggerType);
     F_SetFrequency(fadcFrequency);
@@ -677,8 +714,7 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
     // the channels we use are currently ramping
     // prints output of channel voltages every second
     //******************* CHECK RAMPING **************************
-    // TODO: define a CheckRamping convenience function, which
-    // does all this?
+
     //************************************************************
     int timeout;
 
@@ -690,18 +726,20 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
     anodeEventStatus.Word = H_GetChannelEventStatus(anodeChannelNumber);
     cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
 
+    // TODO: this while loop is not what I need exactly
     timeout = 1000;
     while(timeout>0){
         uint16_t resetChannelEventStatus = 0;
-        H_SetChannelEventStatus(gridChannelNumber, resetChannelEventStatus);
-        H_SetChannelEventStatus(anodeChannelNumber, resetChannelEventStatus);
+        H_SetChannelEventStatus(gridChannelNumber,    resetChannelEventStatus);
+        H_SetChannelEventStatus(anodeChannelNumber,   resetChannelEventStatus);
         H_SetChannelEventStatus(cathodeChannelNumber, resetChannelEventStatus);
-        std::this_thread::sleep_for(std::chrono::milliseconds(5)); 
-	gridEventStatus.Word = H_GetChannelEventStatus(gridChannelNumber);
-	anodeEventStatus.Word = H_GetChannelEventStatus(anodeChannelNumber);
+        // sleep for a while...
+        std::this_thread::sleep_for(std::chrono::milliseconds(10)); 
+	gridEventStatus.Word    = H_GetChannelEventStatus(gridChannelNumber);
+	anodeEventStatus.Word   = H_GetChannelEventStatus(anodeChannelNumber);
 	cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
-	if (gridEventStatus.Bit.EventEndOfRamping == 0 &&
-	    anodeEventStatus.Bit.EventEndOfRamping == 0 &&
+	if (gridEventStatus.Bit.EventEndOfRamping    == 0 &&
+	    anodeEventStatus.Bit.EventEndOfRamping   == 0 &&
 	    cathodeEventStatus.Bit.EventEndOfRamping == 0){
 	    break;
 	}
@@ -710,11 +748,9 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
     if (timeout == 0){
 	std::cout << "ERROR: Timeout while trying to reset EventStatus of channels." << std::endl;
     }
-    gridEventStatus.Word = H_GetChannelEventStatus(gridChannelNumber);
-    anodeEventStatus.Word = H_GetChannelEventStatus(anodeChannelNumber);
+    gridEventStatus.Word    = H_GetChannelEventStatus(gridChannelNumber);
+    anodeEventStatus.Word   = H_GetChannelEventStatus(anodeChannelNumber);
     cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
-    std::cout << "stuff" << std::endl << gridEventStatus.Bit.EventEndOfRamping << std::endl;
-
 
     // define rampUpFlag to differentiate between ramp up 
     // and ramp down
@@ -724,17 +760,6 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
     ChStatusSTRUCT gridStatus = { 0 };
     ChStatusSTRUCT anodeStatus = { 0 };
     ChStatusSTRUCT cathodeStatus = { 0 };
-    // gridStatus.Word  = H_GetChannelStatus(gridChannelNumber);
-    // anodeStatus.Word = H_GetChannelStatus(anodeChannelNumber);
-    // cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
-    // if(gridStatus.Bit.isOn == 1 &&
-    //    anodeStatus.Bit.isOn == 1 &&
-    //    cathodeStatus.Bit.isOn == 1){
-    // 	rampUpFlag = true;
-    // }
-    // else{
-    // 	rampUpFlag = false;
-    // }
 
     timeout = 1000;
     while(timeout > 0){
@@ -742,6 +767,8 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
 	// rampingGroup = H_GetFlexGroup(rampingGroupNumber);
 	// TODO: currently not using rampinGroup, because unclear
 	//       how status group works
+
+	// TODO: change printed output -> convert to 1 line, which is called with '\r'
 	
 
 	// ChEventStatusSTRUCT gridEventStatus = { 0 };
@@ -752,35 +779,22 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
 	float anodeVoltageMeasured;
 	float cathodeVoltageMeasured;
 
-	float gridCurrentHardwareNominal;
-	float anodeCurrentHardwareNominal;
-	float cathodeCurrentHardwareNominal;
-
 	std::this_thread::sleep_for(std::chrono::seconds(1)); 
-	gridStatus.Word  = H_GetChannelStatus(gridChannelNumber);
-	anodeStatus.Word = H_GetChannelStatus(anodeChannelNumber);
+	gridStatus.Word    = H_GetChannelStatus(gridChannelNumber);
+	anodeStatus.Word   = H_GetChannelStatus(anodeChannelNumber);
 	cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
 
-	gridEventStatus.Word = H_GetChannelEventStatus(gridChannelNumber);
-	anodeEventStatus.Word = H_GetChannelEventStatus(anodeChannelNumber);
+	gridEventStatus.Word 	= H_GetChannelEventStatus(gridChannelNumber);
+	anodeEventStatus.Word   = H_GetChannelEventStatus(anodeChannelNumber);
 	cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
 	
 
-	ModuleControlSTRUCT moduleControl = { 0 };
+	// ModuleControlSTRUCT moduleControl = { 0 };
 
 	// moduleControl.Word = H_GetModuleControl();
 	// moduleControl.Bit.DoClear = 1;
 	// H_SetModuleControl(moduleControl.Word);
 
-	if (gridStatus.Bit.isOn == 0 ||
-	     anodeStatus.Bit.isOn == 0 ||
-	     cathodeStatus.Bit.isOn == 0){
-	    std::cout << "grid event status word " << gridEventStatus.Word << std::endl;
-	    std::cout << "anode event status word " << anodeEventStatus.Word << std::endl;
-	    std::cout << "cathode event status word " << cathodeEventStatus.Word << std::endl;
-	}
-
-	
 	if (rampUpFlag == 1){
 	    std::cout << "Enter CheckIsRamping rampUpFlag is True\n";
 	    //**************************************************
@@ -817,17 +831,22 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
 	        cathodeVoltageMeasured = H_GetChannelVoltageMeasure(cathodeChannelNumber);
 
 	        std::cout << '\r'
-			  << "Still ramping... Current Voltage of all channels is:" << "\n"
-			  << "Grid Voltage / VoltageSet: " << gridVoltageMeasured << " / " << gridVoltageSet << "\n"
-			  << "Anode Voltage / VoltageSet: " << anodeVoltageMeasured << " / " << anodeVoltageSet << "\n"
+			  << "Still ramping... Current Voltage of all channels is:"     << "\n"
+			  << "Grid Voltage / VoltageSet: "    << gridVoltageMeasured    << " / " << gridVoltageSet << "\n"
+			  << "Anode Voltage / VoltageSet: "   << anodeVoltageMeasured   << " / " << anodeVoltageSet << "\n"
 			  << "Cathode Voltage / VoltageSet: " << cathodeVoltageMeasured << " / " << cathodeVoltageSet << std::flush;
 	    }
-	    else if (gridEventStatus.Bit.EventEndOfRamping == 1 &&
-	    	 anodeEventStatus.Bit.EventEndOfRamping == 1 &&
-	    	 cathodeEventStatus.Bit.EventEndOfRamping == 1 &&
-	    	 gridStatus.Bit.isOn == 1 &&
-	    	 anodeStatus.Bit.isOn == 1 &&
-	    	 cathodeStatus.Bit.isOn == 1){
+	    // else if all channels not ramping anymore, event end of ramping true and still ON
+	    else if( gridStatus.Bit.isRamping == 0 && 
+		     anodeStatus.Bit.isRamping == 0 &&
+		     cathodeStatus.Bit.isRamping == 0 &&
+		     gridEventStatus.Bit.EventEndOfRamping == 1 &&
+		     anodeEventStatus.Bit.EventEndOfRamping == 1 &&
+		     cathodeEventStatus.Bit.EventEndOfRamping == 1 &&
+		     gridStatus.Bit.isOn == 1 &&
+		     anodeStatus.Bit.isOn == 1 &&
+		     cathodeStatus.Bit.isOn == 1){
+		// this defines the channels as successfully ramped
 
 	        gridVoltageMeasured = H_GetChannelVoltageMeasure(gridChannelNumber);
 	        anodeVoltageMeasured = H_GetChannelVoltageMeasure(anodeChannelNumber);
@@ -869,11 +888,11 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
 		std::cout << "Anode Voltage / VoltageSet: " << anodeVoltageMeasured << " / " << anodeVoltageSet << std::endl;
 		std::cout << "Cathode Voltage / VoltageSet: " << cathodeVoltageMeasured << " / " << cathodeVoltageSet << std::endl;
 	    }
-	    else if (gridEventStatus.Bit.EventEndOfRamping == 1 &&
-		     anodeEventStatus.Bit.EventEndOfRamping == 1 &&
+	    else if (gridEventStatus.Bit.EventEndOfRamping    == 1 &&
+		     anodeEventStatus.Bit.EventEndOfRamping   == 1 &&
 		     cathodeEventStatus.Bit.EventEndOfRamping == 1 &&
-		     gridStatus.Bit.isOn == 0 &&
-		     anodeStatus.Bit.isOn == 0 &&
+		     gridStatus.Bit.isOn    == 0 &&
+		     anodeStatus.Bit.isOn   == 0 &&
 		     cathodeStatus.Bit.isOn == 0){
 		std::cout << "All channels successfully ramped down" << std::endl;
 		break;
@@ -892,6 +911,89 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
 
 }
 
+
+
+int HV_FADC_Obj::H_CheckHVModuleIsGood(){
+    // this function is called every checkModuleTimeInterval (from
+    // HFOSettings.ini) seconds and checks, whether all voltages
+    // are good / if any events happened
+    // if module tripped / voltages bad, stop Run immediately (return -1)
+    // and shut down module (if Trip, is done automatically through 
+    // monitoring group)
+    
+    // variables to store the current EventStatus values
+    // these will be compared to the values of the last call
+    // of this function
+    ChEventStatusSTRUCT gridEventStatus    = { 0 };
+    ChEventStatusSTRUCT anodeEventStatus   = { 0 };
+    ChEventStatusSTRUCT cathodeEventStatus = { 0 };
+
+
+    // first need to check whether module tripped. 
+    // check EventTrip
+    // or rather check monitoring group
+    uint32_t moduleEventGroupStatus = H_GetModuleEventGroupStatus();
+    // if != 0, some event was triggered
+    if (moduleEventGroupStatus != 0){
+	std::cout << "One of the groups triggered an Event. Abort Run" << std::endl;
+	std::cout << "Probably the module tripped." << std::endl;
+	return -1;
+    }    
+
+    // this function basically only does the following:
+    // reads the current voltages and currents
+    // compares them to the values we set in the beginning
+    // additionally check whether module is in IsControlledVoltage,
+    // which should be set, if our module is at the set level
+    // and isOn is set
+
+    float gridVoltageMeasured;  
+    float anodeVoltageMeasured; 
+    float cathodeVoltageMeasured;
+    
+    gridVoltageMeasured    = H_GetChannelVoltageMeasure(gridChannelNumber);
+    anodeVoltageMeasured   = H_GetChannelVoltageMeasure(anodeChannelNumber);
+    cathodeVoltageMeasured = H_GetChannelVoltageMeasure(cathodeChannelNumber);
+
+    if ((gridVoltageMeasured    >= 0.99*gridVoltageSet)  &&
+	(anodeVoltageMeasured   >= 0.99*anodeVoltageSet) &&
+	(cathodeVoltageMeasured >= 0.99*cathodeVoltageSet)){
+	std::cout << "All voltages within 1 percent of the set voltage." << std::endl;
+    }
+    else{
+	std::cout << "Voltage outside of 1 percent of set voltage.\n" 
+		  << "Stopping run immediately." << std::endl;
+	return -1;
+    }
+
+    ChStatusSTRUCT gridStatus    = { 0 };
+    ChStatusSTRUCT anodeStatus   = { 0 };
+    ChStatusSTRUCT cathodeStatus = { 0 };
+    gridStatus.Word    = H_GetChannelStatus(gridChannelNumber);
+    anodeStatus.Word   = H_GetChannelStatus(anodeChannelNumber);
+    cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
+
+    if ((gridStatus.Bit.IsControlledVoltage    == 1) &&
+	(gridStatus.Bit.IsOn    == 1) &&
+	(anodeStatus.Bit.IsControlledVoltage   == 1) &&
+	(anodeStatus.Bit.IsOn   == 1) &&
+	(cathodeStatus.Bit.IsControlledVoltage == 1) &&
+	(cathodeStatus.Bit.IsOn == 1)){
+
+	std::cout << "All channels controlled by voltage and set to IsOn.\n" 
+		  << "All good, continue run." << std::endl;
+	return 0;
+    }
+    else{
+	std::cout << "One or more channels not controlled by voltage or turned off.\n" 
+		  << "Probably module already tripped.\n" 
+		  << "Stopping run immediately." << std::endl;
+	return -1;
+    }
+    
+}
+
+
 void HV_FADC_Obj::ShutDownHFOForTOS(){
     // this function is called upon deleting the HV_FADC_Obj or
     // and thus when shutting down TOS
@@ -904,7 +1006,7 @@ void HV_FADC_Obj::ShutDownHFOForTOS(){
     //       setStatus to 0x0000 (everything off)
     //       set KillEnable == False
     //       
-    ModuleStatusSTRUCT  moduleStatus = { 0 };
+    // ModuleStatusSTRUCT  moduleStatus = { 0 };
     ModuleControlSTRUCT moduleControl = { 0 };
     ChControlSTRUCT     channelControl = { 0 };    
 

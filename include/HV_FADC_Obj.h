@@ -113,6 +113,12 @@ class HV_FADC_Obj
     void ShutDownHFOForTOS();
     void H_CheckModuleIsRamping(bool rampUpFlag);
     
+    // this function is used during a Run in order to check
+    // whether the HV module is good
+    // this is done every checkModuleTimeInterval (from 
+    // HFOSettings.ini) seconds
+    void H_CheckHVModuleIsGood();
+    
     // These two functions are convenience functions, which 
     // write a group (from a GroupSTRUCT struct to the 
     // HV module. Internally it simply calls both the
@@ -399,6 +405,11 @@ class HV_FADC_Obj
 
     // monitor variables
     int checkModuleTimeInterval;
+    // the event status variables which were current in the 
+    // last call of H_CheckHVModuleIsGood()
+    ChEventStatusSTRUCT gridEventStatusLastIter = { 0 };
+    ChEventStatusSTRUCT anodeEventStatusLastIter = { 0 };
+    ChEventStatusSTRUCT cathodeEventStatusLastIter = { 0 };
 
     
 
