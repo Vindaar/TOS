@@ -613,8 +613,8 @@ int Console::UserInterface(){
 	// ##################################################	
 
 	// main function to call 
-	else if( ein.compare("InitHFO") == 0 ||
-		 ein.compare("InitHV_FADC") == 0)
+	else if ((ein.compare("InitHFO") == 0) ||
+		 (ein.compare("InitHV_FADC") == 0))
 	{
 	    // if the HV_FADC object is initialized
 	    if(_hvFadcObjActive == true){
@@ -630,7 +630,13 @@ int Console::UserInterface(){
 	    }
 	}
 
-	else if( ein.compare("ActivateHFO") == 0)
+	else if (ein.compare("ShutdownHFO") == 0){
+	    if (_hvFadcObjActive == true){
+		_hvFadcObj->ShutdownHFOForTOS();
+	    }
+	}
+
+	else if (ein.compare("ActivateHFO") == 0)
 	{
 	    CommandActivateHvFadcObj();
 	}

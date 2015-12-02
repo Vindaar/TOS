@@ -78,6 +78,7 @@ const char *tosCommands[] = {"GeneralReset",
 // HV_FADC commands
 			     "InitHFO",
 			     "InitHV_FADC",
+			     "ShutdownHFO",
 			     "ActivateHFO",
 // FADC commands
 			     "PrintFADCSettings",
