@@ -630,7 +630,7 @@ int Console::UserInterface(){
 
 	else if (ein.compare("ShutdownHFO") == 0){
 	    if (_hvFadcObjActive == true){
-		_hvFadcObj->ShutdownHFOForTOS();
+		_hvFadcObj->ShutDownHFOForTOS();
 	    }
 	}
 
