@@ -39,7 +39,7 @@ public:
     // TODO: replace by HV_FADC_Obj pointer
     Console(V1729a* dev);
 
-    Console(QString iniFilePath);
+    Console(std::string iniFilePath);
 
     //D'tor
     ~Console();
@@ -71,6 +71,10 @@ private:
     int CommandHelp();
     int CommandSpacing(std::string ein);
     int CommandSetNumChips();
+    // SetNumChips is the actual function, which changes the number of chips internally
+    // CommandSetNumChips() calls this function after getting user input
+    void SetNumChips(int nChips);
+
     int CommandSetOption();
     int CommandRun(bool useFadc = false);
     int CommandCounting(int c);
@@ -143,6 +147,10 @@ private:
 
 		
     void CommandSetIP(std::string ein);
+
+
+    // functions related to HV_FADC object
+    void CommandActivateHvFadcObj();
 
 
     //

@@ -49,29 +49,7 @@ Console::Console():
     pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
 }
 
-
-// Console::Console(V1729a* dev):
-//     _nbOfChips(1),
-//     _preload(0),
-//     _fadc(dev),
-//     _fadcActive(true),
-//     _fadcFunctions(new HighLevelFunction_VME(dev))
-// {
-// #if DEBUG==2
-//     std::cout<<"Enter Console::Console()"<<std::endl;
-// #endif
-//     //init FADC
-//     pc.initFADC(_fadc,_fadcFunctions);
-//     ok = pc.okay();
-  
-//     std::cout << "Warning: In FADC-Mode one can only use one Chip" << std::endl;
-
-//     //get preoload
-//     _preload = getPreload();
-//     pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
-// }
-
-Console::Console(QString iniFilePath):
+Console::Console(std::string iniFilePath):
     _nbOfChips(1),
     _preload(0),
     // _fadc(dev),
@@ -132,6 +110,8 @@ int Console::okay(){
 }
 
 
+
+// TODO: remove ConsoleMain() once UserInterfaceFADC and UserInterfaceNew are removed
 void Console::ConsoleMain(){
 #if DEBUG==2
     std::cout<<"Enter Console::ConsoleMain()"<<std::endl;	
@@ -169,6 +149,72 @@ void Console::ConsoleMain(){
   
     return;
 }
+
+
+void Console::CommandActivateHvFadcObj(){
+    // this function activates the usage of the HV_FADC object
+    // after TOS was called without command line arguments 
+    // e.g. not with ./TOS -v
+    // This function does
+    //       - warn user only 1 chip currently supported
+    //           - check if only 1 chip in use, if so, continue
+    //           - else ask if to change number of chips --> call SetNumChips
+    //       - ask for config file to use to initialize HV_FADC object
+    //       - set _hvFadcObjActive flag to true
+    //       - initialize _hvFadcObj
+
+    // flags and variables for getUserInput 
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = true;
+    std::string input;
+    bool activateHFO = true;
+
+    
+    if (_nbOfChips != 1){
+	std::cout << "Usage of HFO (HV_FADC Object) currently limited to use of 1 chip" 
+		  << std::endl;
+	const char *promptNumChips = "Do you wish to set the number of Chips to 1? (y / N)";
+	std::string input;
+	input = getUserInput(promptNumChips, numericalInput, allowDefaultOnEmptyInput);
+	if ((input == "y") ||
+	    (input == "Y")){
+	    // in this case, calls SetNumChips to set number of chips to 1
+	    SetNumChips(1);
+	}
+	// if input empty, n or N do nothing
+	else if ((input == "")  ||
+		 (input == "n") ||
+		 (input == "N")){
+	    std::cout << "Number of chips will not be changed.\n"
+		      << "Will not activate HFO" << std::endl;
+	    activateHFO = false;
+	}
+    }
+    // number of chips is either 1 or we will not activate HFO
+    if (activateHFO == true){
+	// will activate HFO
+	std::string iniFilePath;
+
+	// set HFO flag to active
+	_hvFadcObjActive = true;
+	
+	
+	const char *promptConfig = "Give the (relative) path to the HFOSettings.ini: ";
+	iniFilePath = getUserInput(promptConfig, numericalInput, allowDefaultOnEmptyInput);
+	if (iniFilePath == ""){
+	    iniFilePath = "../config/HFOSettings.ini";
+	}
+	
+	_hvFadcObj = new HV_FADC_Obj(iniFilePath);
+	
+	//init FADC
+	pc.initHV_FADC(_hvFadcObj, _hvFadcObjActive);
+	ok = pc.okay();
+    }
+
+
+}
+
 
 int Console::UserInterface(){
 #if DEBUG==2
@@ -450,8 +496,42 @@ int Console::UserInterface(){
 	    pc.fpga.UseFastClock(0);
 	}
 
+	
+	// ##################################################
+	// ################## FADC related commands #########
+	// ##################################################
+	
+	// ##################################################
+	// ################## HV related commands ###########
+	// ##################################################	
+
+	// main function to call 
+	else if( ein.compare("InitHFO") == 0 ||
+		 ein.compare("InitHV_FADC") == 0)
+	{
+	    // if the HV_FADC object is initialized
+	    if(_hvFadcObjActive == true){
+		_hvFadcObj->InitHFOForTOS();
+	    }
+	    // if it is not initialized
+	    // TODO: implement to ask for initialization
+	    //
+	    else{
+		std::cout << "Currently not using HV_FADC Object \n" 
+			  << "Call ActivateHFO command and try again"
+			  << std::endl;
+	    }
+	}
+
+	else if( ein.compare("ActivateHFO") == 0)
+	{
+	    CommandActivateHvFadcObj();
+	}
+
+	// if no other if was true, command not found
 	else if( ein.compare("")==0 )
 	{
+	    // TODO: is this necessary??
 	    std::cout << "" << std::flush;
 	}
 	else{
@@ -1591,13 +1671,35 @@ int Console::CommandSpacing(unsigned int space){
 
 
 int Console::CommandSetNumChips(){
+    // this function uses getUserInput to get the number
+    // of chips to be set and then calls the
+    // SetNumChips(int nChips) function to actually
+    // set this number internally
+    int nChips;
     std::string ein="";
     const char *prompt = "How many chips are on your board? (1-8)";
     ein = getUserInput(prompt);
-    if(ein==""){_nbOfChips=1;}
-    else{
-	_nbOfChips=(unsigned short) atoi(&ein[0]);
+    if (ein == "") {
+	nChips = 1;
     }
+    else{
+	nChips = (unsigned short) atoi(&ein[0]);
+    }
+    // got user input, now call
+    SetNumChips(nChips);
+    
+    return 0;
+}
+
+void Console::SetNumChips(int nChips){
+    // this function sets the number of chips to nChips
+    // it is not called Command*, because it is not callable
+    // by the user from ther user interface, but rather is the internal
+    // function to set the number of chips, which is called by
+    // CommandSetNumChips and at other points in the code (e.g. setting
+    // number of chips to 1, in order to use the HV_FADC object)
+    _nbOfChips = nChips;
+
     _preload = getPreload();
     pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
     pc.fpga.WriteReadFSR();
@@ -1605,7 +1707,6 @@ int Console::CommandSetNumChips(){
     for (unsigned short chip = 1; chip <= pc.fpga.tp.GetNumChips(); chip++){
 	pc.fpga.tp.GetChipID(chip);
     }
-    return 0;
 }
 
 

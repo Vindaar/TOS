@@ -10,7 +10,7 @@
 #include <chrono>
 
 // either create object using addresses for FADC and HV
-HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, QString iniFilePath){
+HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniFilePath){
     // upon initialisation of HV_FADC_Obj, we need to create the
     // V1729a_VME (FADC) instance and vmemodule (HV) instance
     // using the base Addresses
@@ -19,7 +19,7 @@ HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, QString iniFileP
     // given to the function and not the private int variable
     // of the object itself with the same name
 
-    iniFile = iniFilePath;
+    iniFile = QString::fromStdString(iniFilePath);
 
     // initialize Controller
     Controller.initController(0);
@@ -42,7 +42,7 @@ HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, QString iniFileP
 }
 
 // or create object and immediately initialize object for TOS using .ini file
-HV_FADC_Obj::HV_FADC_Obj(QString iniFilePath){
+HV_FADC_Obj::HV_FADC_Obj(std::string iniFilePath){
     // upon initialisation of HV_FADC_Obj, we need to initialize the
     // controller
 
@@ -52,7 +52,7 @@ HV_FADC_Obj::HV_FADC_Obj(QString iniFilePath){
     // set the object created flag to false
     hvFadcObjCreatedFlag = false;
     // and set the ini file path variable to the given input
-    iniFile = iniFilePath;
+    iniFile = QString::fromStdString(iniFilePath);
 
 }
 
@@ -547,7 +547,6 @@ void HV_FADC_Obj::InitHFOForTOS(){
     //       in order to register group events for the wanted 
     //       things
     
-    // ok: need
     // ModuleEventGroupMask: set everything to 0 except 
     //                       gridGroupNumbers of all 3 defined groups
     // ChannelEventMask: set all three of our channel masks to the following pattern:
@@ -559,15 +558,15 @@ void HV_FADC_Obj::InitHFOForTOS(){
     //                   rest to 0.
     ChEventMaskSTRUCT ChEventMask         = { 0 };
     ChEventMask.Bit.MaskEventCurrentTrip  = 1;
-    ChEventMask.Bit.MaskEventEndOfRamp    = 1;
+    ChEventMask.Bit.MaskEventEndOfRamping = 1;
     ChEventMask.Bit.MaskEventVoltageLimit = 1;
     ChEventMask.Bit.MaskEventCurrentLimit = 1;
     ChEventMask.Bit.MaskEventEmergency    = 1;
 
     // write this ChannelEventMask to all three of our channels
-    H_SetChannelEventMask(gridChannelNumber,    ChEventMask);
-    H_SetChannelEventMask(anodeChannelNumber,   ChEventMask);
-    H_SetChannelEventMask(cathodeChannelNumber, ChEventMask);
+    H_SetChannelEventMask(gridChannelNumber,    ChEventMask.Word);
+    H_SetChannelEventMask(anodeChannelNumber,   ChEventMask.Word);
+    H_SetChannelEventMask(cathodeChannelNumber, ChEventMask.Word);
 
     // moduleEventGroupMask is a 32bit integer, where each bit
     // corresponds to the activation of one group. This means, since
@@ -973,14 +972,14 @@ int HV_FADC_Obj::H_CheckHVModuleIsGood(){
     anodeStatus.Word   = H_GetChannelStatus(anodeChannelNumber);
     cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
 
-    if ((gridStatus.Bit.IsControlledVoltage    == 1) &&
-	(gridStatus.Bit.IsOn    == 1) &&
-	(anodeStatus.Bit.IsControlledVoltage   == 1) &&
-	(anodeStatus.Bit.IsOn   == 1) &&
-	(cathodeStatus.Bit.IsControlledVoltage == 1) &&
-	(cathodeStatus.Bit.IsOn == 1)){
+    if ((gridStatus.Bit.ControlledByVoltage    == 1) &&
+	(gridStatus.Bit.isOn    == 1) &&
+	(anodeStatus.Bit.ControlledByVoltage   == 1) &&
+	(anodeStatus.Bit.isOn   == 1) &&
+	(cathodeStatus.Bit.ControlledByVoltage == 1) &&
+	(cathodeStatus.Bit.isOn == 1)){
 
-	std::cout << "All channels controlled by voltage and set to IsOn.\n" 
+	std::cout << "All channels controlled by voltage and set to isOn.\n" 
 		  << "All good, continue run." << std::endl;
 	return 0;
     }

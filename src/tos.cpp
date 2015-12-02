@@ -22,6 +22,7 @@
 
 // //STD C++
 #include <cstdlib>
+#include <string>
 
 // HV_FADC_Obj and related header files
 #include "HV_FADC_Obj.h"
@@ -52,18 +53,17 @@ int main(int argc, char *argv[])
 #endif
 
 
-    //just to be sure - initialise FADC
-    // TODO: change all this to use HV_FADC_Obj
-    // V1729a* myFADC = new V1729a_Dummy;
     bool useHV_FADC_Obj = false;
-    QString iniFilePath;
+    std::string iniFilePath;
 
-    //get parameter for the FADC use
+    //get parameter for the HV_FADC object use
     extern char* optarg;
     int option = 0;
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = true;
 
 
-    while( ( option = getopt( argc, argv, "v:g:n" ) ) != -1 ){
+    while( ( option = getopt( argc, argv, "v:n" ) ) != -1 ){
 	switch( option ){
 	case 'n' :
 	    //do not use the FADC
@@ -77,22 +77,18 @@ int main(int argc, char *argv[])
 		      << "the HV_FADC_Obj. If no input is given, the default path:\n"
 		      << "../config/HFOSettings.ini \n"
 		      << "is used. " << std::endl;
-	    QTextStream qtin(stdin);
-	    qtin >> iniFilePath;
+	    
+	    iniFilePath = getUserInput("> ", numericalInput, allowDefaultOnEmptyInput);
+	    if (iniFilePath == ""){
+		iniFilePath = "../config/HFOSettings.ini";
+	    }
 
 	    //HV_FADC_Obj *myHV_FADC_Obj = new HV_FADC_Obj(input);
 	    useHV_FADC_Obj = true;
 	    break;
 	}
-	case 'g' :
-	    // TODO: deprecated
-	    //work with a FADC via GPIB - not implemented
-	    //delete myFADC;
-	    //myFADC = new V1729a_Dummy;
-	    std::cout << std::endl << "GPIB is not supported" << std::endl << std::endl;
-	    break;
 	default:
-	    std::cout << "Invalid selection - deleting FADC pointer" << std::endl;
+	    std::cout << "Invalid command line argument" << std::endl;
 	    break;
 	} // switch( option )
     } // end of while( ( option = ... )
@@ -104,21 +100,6 @@ int main(int argc, char *argv[])
   
     //check if one wants to use the FADC
     if(useHV_FADC_Obj){
-	//std::cout << "WARNING: Still FADC parameters hardcoded in tos.cpp main()" << std::endl;
-    
-	// TODO: add these to HFOSettings.ini
-	// myFADC->setTriggerType(7);
-	// myFADC->setTriggerType(7);
-
-	// myFADC->setFrequency(2);
-	// myFADC->setPosttrig(80);
-	// myFADC->setPretrig(15000);
-
-	//myFADC->setTriggerThresholdRegisterAll(2033);
-	//myFADC->printSettings();
-
-	
-    
 	Console* consoleHV_FADC = new Console(iniFilePath);
   
 	if(consoleHV_FADC->okay()){

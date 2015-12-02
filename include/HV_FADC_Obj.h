@@ -26,6 +26,7 @@
 
 // C++
 #include <vector>
+#include <string>
 
 // QT
 #include <QString>
@@ -86,9 +87,9 @@ class HV_FADC_Obj
   public:
     // Creator
     // either create by using addresses
-    HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, QString iniFilePath);
+    HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniFilePath);
     // or reading everything from .ini file (and calling InitHFOForTOS)
-    HV_FADC_Obj(QString iniFilePath);
+    HV_FADC_Obj(std::string iniFilePath);
     // sAddress_fadc is a multiplicative number for the FADC
     // Address (which on default is set to 0x10000)
     // baseAddress_hv is the Address of the HV
@@ -117,7 +118,7 @@ class HV_FADC_Obj
     // whether the HV module is good
     // this is done every checkModuleTimeInterval (from 
     // HFOSettings.ini) seconds
-    void H_CheckHVModuleIsGood();
+    int H_CheckHVModuleIsGood();
     
     // These two functions are convenience functions, which 
     // write a group (from a GroupSTRUCT struct to the 

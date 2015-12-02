@@ -62,7 +62,7 @@ const char *tosCommands[] = {"GeneralReset",
                              "um", 
                              "SaveMatrix", 
                              "LoadMatrix", 
-                             "Trigger ", 
+                             "Trigger", 
                              "SetIP", 
                              "ShowIP", 
                              "MakeARP", 
@@ -74,7 +74,11 @@ const char *tosCommands[] = {"GeneralReset",
                              "CheckOffset", 
                              "Calibrate", 
                              "EnableFastClock", 
-                             "DisableFastClock"};
+                             "DisableFastClock",
+// HV_FADC commands
+			     "InitHFO",
+			     "InitHV_FADC",
+			     "ActivateHFO"};
 
 
 char *TOS_Command_Generator(const char *text, int state){
