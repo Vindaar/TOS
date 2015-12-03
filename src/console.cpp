@@ -202,7 +202,7 @@ void Console::CommandActivateHvFadcObj(){
 	const char *promptConfig = "Give the (relative) path to the HFOSettings.ini: ";
 	iniFilePath = getUserInput(promptConfig, numericalInput, allowDefaultOnEmptyInput);
 	if (iniFilePath == ""){
-	    iniFilePath = "../config/HFOSettings.ini";
+	    iniFilePath = "../config/HFO_settings.ini";
 	}
 	
 	_hvFadcObj = new HV_FADC_Obj(iniFilePath);
@@ -612,7 +612,20 @@ int Console::UserInterface(){
 	// ################## HV_FADC related commands ######
 	// ##################################################	
 
-	// main function to call 
+
+	else if (ein.compare("ActivateHFO") == 0)
+	{
+	    CommandActivateHvFadcObj();
+	}
+	
+	else if (ein.compare("ConnectModule") == 0)
+	{
+	    if(_hvFadcObjActive == true){
+		std::cout << _hvFadcObj->H_ConnectModule() << std::endl;
+	    }
+	}
+
+	// main function to call
 	else if ((ein.compare("InitHFO") == 0) ||
 		 (ein.compare("InitHV_FADC") == 0))
 	{
@@ -632,13 +645,24 @@ int Console::UserInterface(){
 	    if (_hvFadcObjActive == true){
 		_hvFadcObj->ShutDownHFOForTOS();
 	    }
+	    else{
+		std::cout << "HFO not initialized. Nothing to do."
+			  << std::endl;
+	    }
 	}
 
-	else if (ein.compare("ActivateHFO") == 0)
-	{
-	    CommandActivateHvFadcObj();
-	}
 
+	else if (ein.compare("CheckHVModuleIsGood") == 0){
+	    if (_hvFadcObjActive == true){
+		_hvFadcObj->H_CheckHVModuleIsGood();
+	    }
+	    else{
+		std::cout << "HFO not initialized. Nothing to do."
+			  << std::endl;
+	    }
+	}
+	
+	
 	// if no other if was true, command not found
 	else if( ein.compare("")==0 )
 	{

@@ -1,6 +1,9 @@
 #include "waitconditions.hpp"
 #include "pc.hpp"
 
+#include <chrono>
+#include <thread>
+
 
 /* Here the Consumer and Producer Threads for the multi-threaded readout are implemented
  *
@@ -190,7 +193,22 @@ void Producer::run()
 	    parent->mutexVBuffer.lock();
 	    (parent->_hvFadcObj)->F_SendSoftwareTrigger();
 	    parent->mutexVBuffer.unlock();
+
+
+		if (i % 10 == 0){
+		    std::cout << "We're in event " << i << "of whatever" << std::endl;
+		    parent->mutexVBuffer.lock();               
+		    (parent->_hvFadcObj)->H_CheckHVModuleIsGood();
+		    parent->mutexVBuffer.unlock();             
+		}
+
 	}
+
+
+
+
+
+
     
 	i++;
     
@@ -336,6 +354,9 @@ void Consumer::run()
 	{
 	    if(hits[chip+1]<0){(parent->RunIsRunning)=false;}
 	}
+
+
+
 	i++;
     }//end of while(parent->DataAcqRunning || (parent->DataInBuffer) != 0)
 

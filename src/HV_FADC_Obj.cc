@@ -18,6 +18,9 @@ HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniF
     // TODO: make sure that this baseAddress_hv is actually the one
     // given to the function and not the private int variable
     // of the object itself with the same name
+    // initialize flag to false
+    hvFadcObjSettingsReadFlag = false;
+    hvFadcObjInitFlag         = false;
 
     iniFile = QString::fromStdString(iniFilePath);
 
@@ -38,6 +41,8 @@ HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniF
     hvFadcObjCreatedFlag = true;
 
     FADC_module->reset();
+
+    ReadHFOSettings();
     
 }
 
@@ -49,15 +54,37 @@ HV_FADC_Obj::HV_FADC_Obj(std::string iniFilePath){
     // initialize Controller
     Controller.initController(0);
     
-    // set the object created flag to false
-    hvFadcObjCreatedFlag = false;
+    // set the object created flag and settings read to false
+    hvFadcObjCreatedFlag      = false;
+    hvFadcObjSettingsReadFlag = false;
+    hvFadcObjInitFlag         = false;
     // and set the ini file path variable to the given input
     iniFile = QString::fromStdString(iniFilePath);
+    
+    // read settings to be able to access addresses to create 
+    // controller, vmemodule and fadc module
+    ReadHFOSettings();
 
+
+    std::cout << "ADDRESS" << baseAddress_hv << std::endl;
+    HV_module   = new CVmeModule(&Controller, baseAddress_hv);
+
+    std::cout << "creating.. " << HV_module->IsConnected() <<std::endl;
+    std::cout << "creating2.. " << HV_module->IsConnected() <<std::endl;
+
+    FADC_module = new V1729a_VME(&Controller, sAddress_fadc);
+    
+    // now create FADC functions object
+    FADC_Functions = new HighLevelFunction_VME(FADC_module);
+
+    // set the object created flag to true
+    hvFadcObjCreatedFlag = true;
+
+    FADC_module->reset();
+
+    // now object properly created
+    
 }
-
-
-
 
 
 HV_FADC_Obj::~HV_FADC_Obj() {
@@ -68,8 +95,9 @@ HV_FADC_Obj::~HV_FADC_Obj() {
     FADC_module->reset();
     
     // TODO: check, if voltages already ramped down?
+    // yes, this
 
-    // call shut down function
+    // call shut down function, if not already shut down
     ShutDownHFOForTOS();
 
     // HV: shut down controller
@@ -80,29 +108,14 @@ HV_FADC_Obj::~HV_FADC_Obj() {
     delete(HV_module);
 }
 
+int HV_FADC_Obj::H_ConnectModule(){
+    return HV_module->IsConnected();
+}
 
-
-void HV_FADC_Obj::InitHFOForTOS(){
-    // what do we need to do? 
-    // we read the settings from a file, given to this function
-    std::cout << "Entering Init HFO for TOS" << std::endl;
-
-    // First we read the Settings file
-    // in case hvFadcObjCreatedFlag is false 
-    // we use the read settings to create the objects properly
-    
-
-    // define variables
-
-    // TODO: in IniFile, need to set Vnominal values, Inominal values
-    //       for that, first set setStop flag == 1.
-    //       Vbounds, Ibounds
-    ModuleStatusSTRUCT  moduleStatus = { 0 };
-    ModuleControlSTRUCT moduleControl = { 0 };
-    ChControlSTRUCT     channelControl = { 0 };
-    int gridChannelNumberBinary;
-    int anodeChannelNumberBinary;
-    int cathodeChannelNumberBinary;
+void HV_FADC_Obj::ReadHFOSettings(){
+    // This function reads the .ini file from the 
+    // member variable iniFile, which is set in the creator
+    // this function is called in the creator    
 
     // create path for iniFile 
     QDir dir(get_current_dir_name());
@@ -119,6 +132,9 @@ void HV_FADC_Obj::InitHFOForTOS(){
     // TODO: check if file exists
     QSettings settings(iniFile, QSettings::IniFormat);
     
+    // flag which tracks, if one or more settings was not found in the HFOsettings.ini
+    bool containsNotFlag = false;
+    
 
     // check settings object for each expected variable
     // if variable not contained, raise exception?
@@ -132,6 +148,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	baseAddress_hv = stoi(temp.toStdString(), nullptr, 16);	
     }
     else{
+	containsNotFlag = true;
 	// if setting cannot be found, set default base address
 	// defined as macro in HV_FADC_Obj.h
 	// TODO: think of some way to properly end the program
@@ -144,6 +161,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	sAddress_fadc = settings.value("sAddress_fadc").toInt();
     }
     else{
+	containsNotFlag = true;
 	sAddress_fadc = DEFAULT_S_ADDRESS_FADC;
     }
 
@@ -151,6 +169,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	setKillEnable = settings.value("setKillEnable").toBool();    
     }
     else{
+	containsNotFlag = true;
 	setKillEnable = DEFAULT_SET_KILL_ENABLE;
     }
 
@@ -158,6 +177,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeGridGroupFlag = settings.value("anodeGridGroupFlag").toBool();
     }
     else{
+	containsNotFlag = true;
 	anodeGridGroupFlag = DEFAULT_ANODE_GRID_GROUP_FLAG;
     }
 
@@ -165,6 +185,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeGridGroupMasterChannel = settings.value("anodeGridGroupMasterChannel").toInt();
     }
     else{
+	containsNotFlag = true;
 	anodeGridGroupMasterChannel = DEFAULT_ANODE_GRID_GROUP_MASTER_CHANNEL;
     }
 
@@ -172,6 +193,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeGridGroupNumber = settings.value("anodeGridGroupNumber").toInt();
     }
     else{
+	containsNotFlag = true;
 	anodeGridGroupNumber = DEFAULT_ANODE_GRID_GROUP_NUMBER;
     }
 
@@ -180,6 +202,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	monitorTripGroupFlag = settings.value("monitorTripGroupFlag").toBool();
     }
     else{
+	containsNotFlag = true;
 	monitorTripGroupFlag = DEFAULT_MONITOR_TRIP_GROUP_FLAG;
     }
 
@@ -187,6 +210,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	monitorTripGroupNumber = settings.value("monitorTripGroupNumber").toInt();
     }
     else{
+	containsNotFlag = true;
 	monitorTripGroupNumber = DEFAULT_MONITOR_TRIP_GROUP_NUMBER;
     }
 
@@ -194,6 +218,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	rampingGroupFlag = settings.value("rampingGroupFlag").toBool();
     }
     else{
+	containsNotFlag = true;
 	rampingGroupFlag = DEFAULT_RAMPING_GROUP_FLAG;
     }
 
@@ -201,6 +226,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	rampingGroupNumber = settings.value("rampingGroupNumber").toInt();
     }
     else{
+	containsNotFlag = true;
 	rampingGroupNumber = DEFAULT_RAMPING_GROUP_NUMBER;
     }
 
@@ -213,6 +239,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	gridChannelNumber = settings.value("gridChannelNumber").toInt();
     }
     else{
+	containsNotFlag = true;
 	gridChannelNumber = DEFAULT_GRID_CHANNEL_NUMBER;
     }
 
@@ -220,6 +247,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	gridVoltageSet = settings.value("gridVoltageSet").toFloat();
     }
     else{
+	containsNotFlag = true;
 	gridVoltageSet = DEFAULT_GRID_VOLTAGE_SET;
     }
 
@@ -227,6 +255,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	gridVoltageNominal = settings.value("gridVoltageNominal").toFloat();
     }
     else{
+	containsNotFlag = true;
 	gridVoltageNominal = DEFAULT_GRID_VOLTAGE_NOMINAL;
     }
 
@@ -234,6 +263,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	gridVoltageBound = settings.value("gridVoltageBound").toFloat();
     }
     else{
+	containsNotFlag = true;
 	gridVoltageBound = DEFAULT_GRID_VOLTAGE_BOUND;
     }
 
@@ -241,6 +271,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	gridCurrentSet = settings.value("gridCurrentSet").toFloat();
     }
     else{
+	containsNotFlag = true;
 	gridCurrentSet = DEFAULT_GRID_CURRENT_SET;
     }
 
@@ -253,6 +284,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	}
     }
     else{
+	containsNotFlag = true;
 	gridCurrentNominal = DEFAULT_GRID_CURRENT_NOMINAL;
     }
 
@@ -260,6 +292,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	gridCurrentBound = settings.value("gridCurrentBound").toFloat();
     }
     else{
+	containsNotFlag = true;
 	gridCurrentBound = DEFAULT_GRID_CURRENT_BOUND;
     }
 
@@ -271,6 +304,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeChannelNumber = settings.value("anodeChannelNumber").toInt();
     }
     else{
+	containsNotFlag = true;
 	anodeChannelNumber = DEFAULT_ANODE_CHANNEL_NUMBER;
     }
 
@@ -278,6 +312,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeVoltageSet = settings.value("anodeVoltageSet").toFloat();
     }
     else{
+	containsNotFlag = true;
 	anodeVoltageSet = DEFAULT_ANODE_VOLTAGE_SET;
     }
 
@@ -285,6 +320,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeVoltageNominal = settings.value("anodeVoltageNominal").toFloat();
     }
     else{
+	containsNotFlag = true;
 	anodeVoltageNominal = DEFAULT_ANODE_VOLTAGE_NOMINAL;
     }
 
@@ -292,6 +328,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeVoltageBound = settings.value("anodeVoltageBound").toFloat();
     }
     else{
+	containsNotFlag = true;
 	anodeVoltageBound = DEFAULT_ANODE_VOLTAGE_BOUND;
     }
 
@@ -299,6 +336,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeCurrentSet = settings.value("anodeCurrentSet").toFloat();
     }
     else{
+	containsNotFlag = true;
 	anodeCurrentSet = DEFAULT_ANODE_CURRENT_SET;
     }
 
@@ -306,6 +344,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeCurrentNominal = settings.value("anodeCurrentNominal").toFloat();
     }
     else{
+	containsNotFlag = true;
 	anodeCurrentNominal = DEFAULT_ANODE_CURRENT_NOMINAL;
     }
 
@@ -313,6 +352,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	anodeCurrentBound = settings.value("anodeCurrentBound").toFloat();
     }
     else{
+	containsNotFlag = true;
 	anodeCurrentBound = DEFAULT_ANODE_CURRENT_BOUND;
     }
 
@@ -324,6 +364,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	cathodeChannelNumber = settings.value("cathodeChannelNumber").toInt();
     }
     else{
+	containsNotFlag = true;
 	cathodeChannelNumber = DEFAULT_CATHODE_CHANNEL_NUMBER;
     }
 
@@ -331,6 +372,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	cathodeVoltageSet = settings.value("cathodeVoltageSet").toFloat();
     }
     else{
+	containsNotFlag = true;
 	cathodeVoltageSet = DEFAULT_CATHODE_VOLTAGE_SET;
     }
 
@@ -338,6 +380,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	cathodeVoltageNominal = settings.value("cathodeVoltageNominal").toFloat();
     }
     else{
+	containsNotFlag = true;
 	cathodeVoltageNominal = DEFAULT_CATHODE_VOLTAGE_NOMINAL;
     }
 
@@ -345,6 +388,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	cathodeVoltageBound = settings.value("cathodeVoltageBound").toFloat();
     }
     else{
+	containsNotFlag = true;
 	cathodeVoltageBound = DEFAULT_CATHODE_VOLTAGE_BOUND;
     }
 
@@ -352,6 +396,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	cathodeCurrentSet = settings.value("cathodeCurrentSet").toFloat();
     }
     else{
+	containsNotFlag = true;
 	cathodeCurrentSet = DEFAULT_CATHODE_CURRENT_SET;
     }
 
@@ -359,6 +404,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	cathodeCurrentNominal = settings.value("cathodeCurrentNominal").toFloat();
     }
     else{
+	containsNotFlag = true;
 	cathodeCurrentNominal = DEFAULT_CATHODE_CURRENT_NOMINAL;
     }
 
@@ -366,6 +412,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	cathodeCurrentBound = settings.value("cathodeCurrentBound").toFloat();
     }
     else{
+	containsNotFlag = true;
 	cathodeCurrentBound = DEFAULT_CATHODE_CURRENT_BOUND;
     }
 
@@ -378,6 +425,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	moduleVoltageRampSpeed = settings.value("moduleVoltageRampSpeed").toFloat();
     }
     else{
+	containsNotFlag = true;
 	moduleVoltageRampSpeed = DEFAULT_MODULE_VOLTAGE_RAMP_SPEED;
     }
 
@@ -385,6 +433,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	moduleCurrentRampSpeed = settings.value("moduleCurrentRampSpeed").toFloat();
     }
     else{
+	containsNotFlag = true;
 	moduleCurrentRampSpeed = DEFAULT_MODULE_CURRENT_RAMP_SPEED;
     }
 
@@ -392,6 +441,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	checkModuleTimeInterval = settings.value("checkModuleTimeInterval").toInt();
     }
     else{
+	containsNotFlag = true;
 	checkModuleTimeInterval = DEFAULT_CHECK_MODULE_TIME_INTERVAL;
     }
 
@@ -403,6 +453,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	fadcTriggerType = settings.value("fadcTriggerType").toInt();
     }
     else{
+	containsNotFlag = true;
 	fadcTriggerType = DEFAULT_FADC_TRIGGER_TYPE;
     }
 
@@ -410,6 +461,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	fadcFrequency = settings.value("fadcFrequency").toInt();
     }
     else{
+	containsNotFlag = true;
 	fadcFrequency = DEFAULT_FADC_FREQUENCY;
     }
 
@@ -417,6 +469,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	fadcPosttrig = settings.value("fadcPosttrig").toInt();
     }
     else{
+	containsNotFlag = true;
 	fadcPosttrig = DEFAULT_FADC_POSTTRIG;
     }
 
@@ -424,6 +477,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	fadcPretrig = settings.value("fadcPretrig").toInt();
     }
     else{
+	containsNotFlag = true;
 	fadcPretrig = DEFAULT_FADC_PRETRIG;
     }
 
@@ -431,11 +485,42 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	fadcTriggerThresholdRegisterAll = settings.value("fadcTriggerThresholdRegisterAll").toInt();
     }
     else{
+	containsNotFlag = true;
 	fadcTriggerThresholdRegisterAll = DEFAULT_FADC_TRIGGER_THRESHOLD_REGISTER_ALL;
     }
 
-    // use the just read settings to create the objects, if not
-    // yet created
+    // set flag to true, which says whether settings have been read
+
+    if (containsNotFlag == true){
+	std::cout << "One or more settings could not be found in the .ini file."
+		  << std::endl;
+    }
+    hvFadcObjSettingsReadFlag = true;
+
+}
+
+
+
+void HV_FADC_Obj::InitHFOForTOS(){
+    std::cout << "Entering Init HFO for TOS" << std::endl;
+
+    // First we read the Settings file
+    //     done in ReadHFOSettings() called in creator
+    // in case hvFadcObjCreatedFlag is false 
+    // we use the read settings to create the objects properly
+    
+
+    // define variables
+
+    ModuleStatusSTRUCT  moduleStatus = { 0 };
+    ModuleControlSTRUCT moduleControl = { 0 };
+    ChControlSTRUCT     channelControl = { 0 };
+    int gridChannelNumberBinary;
+    int anodeChannelNumberBinary;
+    int cathodeChannelNumberBinary;
+
+    // use the read settings (ReadHFOSettings() called in creator)
+    // to create the objects, if not yet created
     // check if FADC and HV modules have been created
     if (hvFadcObjCreatedFlag == false){
 
@@ -447,7 +532,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	// and reset FADC
         FADC_module->reset();
 
-	
+	hvFadcObjCreatedFlag = true;
     }
 
     // now we have all values to set up the HV for TOS
@@ -561,10 +646,37 @@ void HV_FADC_Obj::InitHFOForTOS(){
     ChEventMask.Bit.MaskEventCurrentLimit = 1;
     ChEventMask.Bit.MaskEventEmergency    = 1;
 
-    // write this ChannelEventMask to all three of our channels
-    H_SetChannelEventMask(gridChannelNumber,    ChEventMask.Word);
-    H_SetChannelEventMask(anodeChannelNumber,   ChEventMask.Word);
-    H_SetChannelEventMask(cathodeChannelNumber, ChEventMask.Word);
+
+
+    timeout = 1000;
+    while(timeout > 0){
+        // write this ChannelEventMask to all three of our channels
+        H_SetChannelEventMask(gridChannelNumber,    ChEventMask.Word);
+        H_SetChannelEventMask(anodeChannelNumber,   ChEventMask.Word);
+        H_SetChannelEventMask(cathodeChannelNumber, ChEventMask.Word);
+
+        uint32_t gem;
+        uint32_t aem;
+        uint32_t cem;
+
+        gem = H_GetChannelEventMask(gridChannelNumber);
+        aem = H_GetChannelEventMask(anodeChannelNumber);
+        cem = H_GetChannelEventMask(cathodeChannelNumber);
+
+	if ((gem == ChEventMask.Word) &&
+	    (aem == ChEventMask.Word) &&
+	    (cem == ChEventMask.Word)){
+	    break;
+	}
+	
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+	timeout--;
+    }
+    if (timeout == 0){
+	std::cout << "Could not set Channel event masks." << std::endl;
+    }
+    
 
     // moduleEventGroupMask is a 32bit integer, where each bit
     // corresponds to the activation of one group. This means, since
@@ -577,55 +689,7 @@ void HV_FADC_Obj::InitHFOForTOS(){
     // now we can check the channel events and group events
 
     // groups set up. now set voltages, currents
-
-
-    //****************** Set Nominal values **************************
-    
-    // first set module to stop, so we can set nominal voltages
-    // get channel grid
-    moduleControl.Word = H_GetModuleControl();
-    moduleControl.Bit.SetStop = 1;
-    H_SetModuleControl(moduleControl.Word);
-
-    // now we can set the nominal values
-    std::cout.precision(15);
-    timeout = 1000;
-    while(timeout > 0){
-	moduleStatus.Word = H_GetModuleStatus();
-
-	if(moduleStatus.Bit.IsStop == 1){
-	    // voltages
-            H_SetChannelVoltageNominal(gridChannelNumber, gridVoltageNominal);
-            H_SetChannelVoltageNominal(anodeChannelNumber, anodeVoltageNominal);
-            H_SetChannelVoltageNominal(cathodeChannelNumber, cathodeVoltageNominal);
-            // currents
-            H_SetChannelCurrentNominal(gridChannelNumber, gridCurrentNominal);
-            H_SetChannelCurrentNominal(anodeChannelNumber, anodeCurrentNominal);
-            H_SetChannelCurrentNominal(cathodeChannelNumber, cathodeCurrentNominal);
-
-	    // check if current of grid channel successfully changed from 0
-	    // if so, break from while loop
-	    float temp = H_GetChannelCurrentNominal(gridChannelNumber);
-	    if (temp != 0){
-		break;
-	    }
-	}
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));
-	timeout--;
-    }
-    if (timeout == 0){
-	std::cout << "ERROR: Could not set nominal Voltages / Currents" << std::endl;
-	std::cout << "       Module did not enter IsStop == 1         " << std::endl;
-    }
-
-    // now revert SetStop back to 0
-    moduleControl.Word = H_GetModuleControl();
-    moduleControl.Bit.SetStop = 0;
-    H_SetModuleControl(moduleControl.Word);    
-
     //****************************************************************
-
     // set voltage set
     H_SetChannelVoltageSet(gridChannelNumber, gridVoltageSet);
     H_SetChannelVoltageSet(anodeChannelNumber, anodeVoltageSet);
@@ -639,6 +703,15 @@ void HV_FADC_Obj::InitHFOForTOS(){
     // set voltage bound
     // set current bound
 
+    // before we can set the channels to ON, reset the Event Status
+    int ok;
+    ok = H_ClearAllChannelEventStatus();
+    if (ok != 0){
+	std::cout << "Could not reset Event status.\n" 
+		  << "Probably will not start ramping."
+		  << std::endl;
+    }
+
 
     timeout = 1000;
     while(timeout > 0){
@@ -649,22 +722,42 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	ChStatusSTRUCT gridStatus = { 0 };
 	ChStatusSTRUCT anodeStatus = { 0 };
 	ChStatusSTRUCT cathodeStatus = { 0 };
+        uint32_t gem;
+        uint32_t aem;
+        uint32_t cem;
+
 	gridStatus.Word    = H_GetChannelStatus(gridChannelNumber);
 	anodeStatus.Word   = H_GetChannelStatus(anodeChannelNumber);
 	cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
+
+        gem = H_GetChannelEventMask(gridChannelNumber);
+        aem = H_GetChannelEventMask(anodeChannelNumber);
+        cem = H_GetChannelEventMask(cathodeChannelNumber);
+
+        std::cout << "gem\t" << gem << std::endl;
+        std::cout << "aem\t" << aem << std::endl;
+        std::cout << "cem\t" << cem << std::endl;
+	std::cout << "ChEventMask2INNNN\t" << ChEventMask.Word << std::endl;
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+
+    
 
 	if(gridStatus.Bit.isOn == 0 ||
 	   anodeStatus.Bit.isOn == 0 ||
 	   cathodeStatus.Bit.isOn == 0){
             // can be exchanged by H_SetChannelOn(int channel)
-            channelControl.Word = H_GetChannelControl(anodeGridGroupMasterChannel);
-            channelControl.Bit.setON = 1;
-            H_SetChannelControl(anodeGridGroupMasterChannel, channelControl.Word);
-            //H_SetChannelOn(anodeGridGroupMasterChannel);
+            // channelControl.Word = H_GetChannelControl(anodeGridGroupMasterChannel);
+            // channelControl.Bit.setON = 1;
+            // H_SetChannelControl(anodeGridGroupMasterChannel, channelControl.Word);
+	    std::cout << "trying to set channels to on!" << std::endl;
+            H_SetChannelOn(anodeGridGroupMasterChannel);
 
-            channelControl.Word = H_GetChannelControl(cathodeChannelNumber);
-            channelControl.Bit.setON = 1;
-            H_SetChannelControl(cathodeChannelNumber, channelControl.Word);
+            // channelControl.Word = H_GetChannelControl(cathodeChannelNumber);
+            // channelControl.Bit.setON = 1;
+            // H_SetChannelControl(cathodeChannelNumber, channelControl.Word);
+	    H_SetChannelOn(cathodeChannelNumber);
 	}
 	else if (gridStatus.Bit.isOn == 1 &&
 		 anodeStatus.Bit.isOn == 1 &&
@@ -672,10 +765,47 @@ void HV_FADC_Obj::InitHFOForTOS(){
 	    std::cout << "All channels set to ON" << std::endl;
 	    break;
 	}
+	else{
+	    std::cout << "Status " 
+		      << gridStatus.Bit.isOn << "\t" 
+		      << anodeStatus.Bit.isOn << "\t"
+		      << cathodeStatus.Bit.isOn << std::endl;
+	}
 	std::this_thread::sleep_for(std::chrono::milliseconds(10)); 
 	timeout--;
     }
     // channels should now start to ramp
+
+
+
+
+    timeout = 1000;
+    while(timeout > 0){
+        uint32_t gem;
+        uint32_t aem;
+        uint32_t cem;
+
+        gem = H_GetChannelEventMask(gridChannelNumber);
+        aem = H_GetChannelEventMask(anodeChannelNumber);
+        cem = H_GetChannelEventMask(cathodeChannelNumber);
+
+        std::cout << "gem\t" << gem << std::endl;
+        std::cout << "aem\t" << aem << std::endl;
+        std::cout << "cem\t" << cem << std::endl;
+	std::cout << "ChEventMask2\t" << ChEventMask.Word << std::endl;
+
+	if ((gem == ChEventMask.Word) &&
+	    (aem == ChEventMask.Word) &&
+	    (cem == ChEventMask.Word)){
+	    break;
+	}
+	
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+	timeout--;
+    }
+    
+
 
 
     // before we start ramping up the HV modules, first set FADC settings
@@ -694,6 +824,8 @@ void HV_FADC_Obj::InitHFOForTOS(){
     // now check while is ramping
     bool rampUpFlag = true;
     H_CheckModuleIsRamping(rampUpFlag);
+
+    hvFadcObjInitFlag = true;
 
     // moduleStatus.Word = H_GetModuleStatus();
     // killEnabled = moduleStatus.Bit.IsKillEnable;
@@ -721,35 +853,16 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
     ChEventStatusSTRUCT gridEventStatus = { 0 };
     ChEventStatusSTRUCT anodeEventStatus = { 0 };
     ChEventStatusSTRUCT cathodeEventStatus = { 0 };
-    gridEventStatus.Word = H_GetChannelEventStatus(gridChannelNumber);
-    anodeEventStatus.Word = H_GetChannelEventStatus(anodeChannelNumber);
-    cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
-
-    // TODO: this while loop is not what I need exactly
-    timeout = 1000;
-    while(timeout>0){
-        uint16_t resetChannelEventStatus = 0;
-        H_SetChannelEventStatus(gridChannelNumber,    resetChannelEventStatus);
-        H_SetChannelEventStatus(anodeChannelNumber,   resetChannelEventStatus);
-        H_SetChannelEventStatus(cathodeChannelNumber, resetChannelEventStatus);
-        // sleep for a while...
-        std::this_thread::sleep_for(std::chrono::milliseconds(10)); 
-	gridEventStatus.Word    = H_GetChannelEventStatus(gridChannelNumber);
-	anodeEventStatus.Word   = H_GetChannelEventStatus(anodeChannelNumber);
-	cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
-	if (gridEventStatus.Bit.EventEndOfRamping    == 0 &&
-	    anodeEventStatus.Bit.EventEndOfRamping   == 0 &&
-	    cathodeEventStatus.Bit.EventEndOfRamping == 0){
-	    break;
-	}
-	timeout--;
-    }
-    if (timeout == 0){
-	std::cout << "ERROR: Timeout while trying to reset EventStatus of channels." << std::endl;
-    }
     gridEventStatus.Word    = H_GetChannelEventStatus(gridChannelNumber);
     anodeEventStatus.Word   = H_GetChannelEventStatus(anodeChannelNumber);
     cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
+
+    // reset the event status
+    int ok;
+    ok = H_ClearAllChannelEventStatus();
+    if (ok != 0){
+	std::cout << "Could not reset Event Status" << std::endl;
+    }
 
     // define rampUpFlag to differentiate between ramp up 
     // and ramp down
@@ -919,77 +1032,88 @@ int HV_FADC_Obj::H_CheckHVModuleIsGood(){
     // if module tripped / voltages bad, stop Run immediately (return -1)
     // and shut down module (if Trip, is done automatically through 
     // monitoring group)
+
+    // this function can only be called, if hvFadcObjCreatedFlag == true
+    // hvFadcObj
+    if (hvFadcObjCreatedFlag == true){
+        
+        // variables to store the current EventStatus values
+        // these will be compared to the values of the last call
+        // of this function
+        ChEventStatusSTRUCT gridEventStatus    = { 0 };
+        ChEventStatusSTRUCT anodeEventStatus   = { 0 };
+        ChEventStatusSTRUCT cathodeEventStatus = { 0 };
+
+        // first need to check whether module tripped. 
+        // check EventTrip
+        // or rather check monitoring group
+        uint32_t moduleEventGroupStatus = H_GetModuleEventGroupStatus();
+        // if != 0, some event was triggered
+        if (moduleEventGroupStatus != 0){
+	    std::cout << "One of the groups triggered an Event. Abort Run" << std::endl;
+	    std::cout << "Probably the module tripped." << std::endl;
+	    return -1;
+        }    
+
+        // this function basically only does the following:
+        // reads the current voltages and currents
+        // compares them to the values we set in the beginning
+        // additionally check whether module is in IsControlledVoltage,
+        // which should be set, if our module is at the set level
+        // and isOn is set
+
+        float gridVoltageMeasured;  
+        float anodeVoltageMeasured; 
+        float cathodeVoltageMeasured;
+        
+        gridVoltageMeasured    = H_GetChannelVoltageMeasure(gridChannelNumber);
+        anodeVoltageMeasured   = H_GetChannelVoltageMeasure(anodeChannelNumber);
+        cathodeVoltageMeasured = H_GetChannelVoltageMeasure(cathodeChannelNumber);
+
+        if ((gridVoltageMeasured    >= 0.99*gridVoltageSet)  &&
+	    (anodeVoltageMeasured   >= 0.99*anodeVoltageSet) &&
+	    (cathodeVoltageMeasured >= 0.99*cathodeVoltageSet)){
+	    std::cout << "All voltages within 1 percent of the set voltage." << std::endl;
+	    std::cout << "Grid / V\t Anode / V\t Cathode / V\n"
+		      << gridVoltageMeasured << "\t\t " 
+		      << anodeVoltageMeasured << "\t\t "
+		      << cathodeVoltageMeasured << std::endl;
+        }
+        else{
+	    std::cout << "Voltage outside of 1 percent of set voltage.\n" 
+		      << std::endl;
+	    return -1;
+        }
+
+        ChStatusSTRUCT gridStatus    = { 0 };
+        ChStatusSTRUCT anodeStatus   = { 0 };
+        ChStatusSTRUCT cathodeStatus = { 0 };
+        gridStatus.Word    = H_GetChannelStatus(gridChannelNumber);
+        anodeStatus.Word   = H_GetChannelStatus(anodeChannelNumber);
+        cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
+
+        if ((gridStatus.Bit.ControlledByVoltage    == 1) &&
+	    (gridStatus.Bit.isOn    == 1) &&
+	    (anodeStatus.Bit.ControlledByVoltage   == 1) &&
+	    (anodeStatus.Bit.isOn   == 1) &&
+	    (cathodeStatus.Bit.ControlledByVoltage == 1) &&
+	    (cathodeStatus.Bit.isOn == 1)){
+	    std::cout << "All channels controlled by voltage and set to isOn.\n" 
+		      << "All good, continue run." << std::endl;
+	    return 0;
+        }
+        else{
+	    std::cout << "One or more channels not controlled by voltage or turned off.\n" 
+		      << "Probably module already tripped.\n" 
+		      << "Stopping run immediately." << std::endl;
+	    return -1;
+        }
     
-    // variables to store the current EventStatus values
-    // these will be compared to the values of the last call
-    // of this function
-    ChEventStatusSTRUCT gridEventStatus    = { 0 };
-    ChEventStatusSTRUCT anodeEventStatus   = { 0 };
-    ChEventStatusSTRUCT cathodeEventStatus = { 0 };
-
-
-    // first need to check whether module tripped. 
-    // check EventTrip
-    // or rather check monitoring group
-    uint32_t moduleEventGroupStatus = H_GetModuleEventGroupStatus();
-    // if != 0, some event was triggered
-    if (moduleEventGroupStatus != 0){
-	std::cout << "One of the groups triggered an Event. Abort Run" << std::endl;
-	std::cout << "Probably the module tripped." << std::endl;
-	return -1;
-    }    
-
-    // this function basically only does the following:
-    // reads the current voltages and currents
-    // compares them to the values we set in the beginning
-    // additionally check whether module is in IsControlledVoltage,
-    // which should be set, if our module is at the set level
-    // and isOn is set
-
-    float gridVoltageMeasured;  
-    float anodeVoltageMeasured; 
-    float cathodeVoltageMeasured;
-    
-    gridVoltageMeasured    = H_GetChannelVoltageMeasure(gridChannelNumber);
-    anodeVoltageMeasured   = H_GetChannelVoltageMeasure(anodeChannelNumber);
-    cathodeVoltageMeasured = H_GetChannelVoltageMeasure(cathodeChannelNumber);
-
-    if ((gridVoltageMeasured    >= 0.99*gridVoltageSet)  &&
-	(anodeVoltageMeasured   >= 0.99*anodeVoltageSet) &&
-	(cathodeVoltageMeasured >= 0.99*cathodeVoltageSet)){
-	std::cout << "All voltages within 1 percent of the set voltage." << std::endl;
-    }
+    }//end if (hvFadcObjCreatedFlag == true)
     else{
-	std::cout << "Voltage outside of 1 percent of set voltage.\n" 
-		  << "Stopping run immediately." << std::endl;
+	// this should prevent seg faults
 	return -1;
     }
-
-    ChStatusSTRUCT gridStatus    = { 0 };
-    ChStatusSTRUCT anodeStatus   = { 0 };
-    ChStatusSTRUCT cathodeStatus = { 0 };
-    gridStatus.Word    = H_GetChannelStatus(gridChannelNumber);
-    anodeStatus.Word   = H_GetChannelStatus(anodeChannelNumber);
-    cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
-
-    if ((gridStatus.Bit.ControlledByVoltage    == 1) &&
-	(gridStatus.Bit.isOn    == 1) &&
-	(anodeStatus.Bit.ControlledByVoltage   == 1) &&
-	(anodeStatus.Bit.isOn   == 1) &&
-	(cathodeStatus.Bit.ControlledByVoltage == 1) &&
-	(cathodeStatus.Bit.isOn == 1)){
-
-	std::cout << "All channels controlled by voltage and set to isOn.\n" 
-		  << "All good, continue run." << std::endl;
-	return 0;
-    }
-    else{
-	std::cout << "One or more channels not controlled by voltage or turned off.\n" 
-		  << "Probably module already tripped.\n" 
-		  << "Stopping run immediately." << std::endl;
-	return -1;
-    }
-    
 }
 
 
@@ -997,43 +1121,172 @@ void HV_FADC_Obj::ShutDownHFOForTOS(){
     // this function is called upon deleting the HV_FADC_Obj or
     // and thus when shutting down TOS
 
-    std::cout << std::endl << "Starting shutdown of HV for TOS" << std::endl << std::endl;
-    
-    // TODO: ramp down
-    //       check for any Events
-    //       perform a doClear
-    //       setStatus to 0x0000 (everything off)
-    //       set KillEnable == False
-    //       
-    // ModuleStatusSTRUCT  moduleStatus = { 0 };
+
+    // only need to perform shutdown if hvFadcObjInitFlag is true
+    if(hvFadcObjInitFlag == true){
+
+        std::cout << std::endl << "Starting shutdown of HV for TOS" << std::endl << std::endl;
+        
+        // TODO: ramp down
+        //       check for any Events
+        //       perform a doClear
+        //       setStatus to 0x0000 (everything off)
+        //       set KillEnable == False
+        //       
+        // ModuleStatusSTRUCT  moduleStatus = { 0 };
+        ModuleControlSTRUCT moduleControl = { 0 };
+        ChControlSTRUCT     channelControl = { 0 };    
+
+        // ramp down voltages (use anode Grid Group master channel to ramp down group)
+        // and cathode channel
+        channelControl.Word = H_GetChannelControl(anodeGridGroupMasterChannel);
+        channelControl.Bit.setON = 0;
+        H_SetChannelControl(anodeGridGroupNumber, channelControl.Word);
+
+        channelControl.Word = H_GetChannelControl(cathodeChannelNumber);
+        channelControl.Bit.setON = 0;
+        H_SetChannelControl(cathodeChannelNumber, channelControl.Word);
+
+        // check if the module is ramping down
+        bool rampUpFlag = false;
+        H_CheckModuleIsRamping(rampUpFlag);
+
+
+        // TODO: before we perform DoClear, we should check events!
+        
+        // perform a DoClear (that is reset every event)
+        // and set Kill Enable to 0
+        moduleControl.Word = H_GetModuleControl();
+        moduleControl.Bit.DoClear = 1;
+        moduleControl.Bit.SetKillEnable = 0;
+        H_SetModuleControl(moduleControl.Word);
+        
+        // this should properly shut down the device
+        // set init flag to false again
+        hvFadcObjInitFlag = false;
+    }
+    else{
+	std::cout << "HFO was already shut down / not initialized yet." << std::endl;
+    }
+
+}
+
+
+int HV_FADC_Obj::H_ClearAllChannelEventStatus(){
+    // this function tries to reset the channel event status
+    // of all our three used channels
+    // access to the channels works over 
+
+    int timeout;
+    ChEventStatusSTRUCT gridEventStatus    = { 0 };
+    ChEventStatusSTRUCT anodeEventStatus   = { 0 };
+    ChEventStatusSTRUCT cathodeEventStatus = { 0 };
+
+    gridEventStatus.Word    = H_GetChannelEventStatus(gridChannelNumber);
+    anodeEventStatus.Word   = H_GetChannelEventStatus(anodeChannelNumber);
+    cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
+
+    if ((gridEventStatus.Word    == 0) &&
+	(anodeEventStatus.Word   == 0) &&
+	(cathodeEventStatus.Word == 0)){
+	// event status already 0. return successfully
+	return 0;
+    }
+
+    // TODO: this while loop is not what I need exactly
+    timeout = 1000;
+    while(timeout>0){
+        // uint16_t resetChannelEventStatus = 1;
+        // H_SetChannelEventStatus(gridChannelNumber,    resetChannelEventStatus);
+        // H_SetChannelEventStatus(anodeChannelNumber,   resetChannelEventStatus);
+        // H_SetChannelEventStatus(cathodeChannelNumber, resetChannelEventStatus);
+	H_ClearChannelEventStatus(gridChannelNumber);
+	H_ClearChannelEventStatus(anodeChannelNumber);
+	H_ClearChannelEventStatus(cathodeChannelNumber);
+        // sleep for a while...
+        std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_HV_SLEEP_TIME)); 
+	gridEventStatus.Word    = H_GetChannelEventStatus(gridChannelNumber);
+	anodeEventStatus.Word   = H_GetChannelEventStatus(anodeChannelNumber);
+	cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
+	if (gridEventStatus.Bit.EventEndOfRamping    == 0 &&
+	    anodeEventStatus.Bit.EventEndOfRamping   == 0 &&
+	    cathodeEventStatus.Bit.EventEndOfRamping == 0){
+	    break;
+	}
+	timeout--;
+    }
+    if (timeout == 0){
+	std::cout << "ERROR: Timeout while trying to reset EventStatus of channels." << std::endl;
+	// return error
+	return -1;
+    }
+
+    // successfully set to zero
+    return 0;
+}
+
+
+void HV_FADC_Obj::H_SetNominalValues(){
+
+    //****************** Set Nominal values **************************
+
+    int timeout;
     ModuleControlSTRUCT moduleControl = { 0 };
-    ChControlSTRUCT     channelControl = { 0 };    
+    ModuleStatusSTRUCT  moduleStatus  = { 0 };
 
-    // ramp down voltages (use anode Grid Group master channel to ramp down group)
-    // and cathode channel
-    channelControl.Word = H_GetChannelControl(anodeGridGroupMasterChannel);
-    channelControl.Bit.setON = 0;
-    H_SetChannelControl(anodeGridGroupNumber, channelControl.Word);
+    // only possible to call this function, if settings were read
+    // and hvFadc obj created
+    if ((hvFadcObjCreatedFlag      == true) &&
+	(hvFadcObjSettingsReadFlag == true)){
+        // first set module to stop, so we can set nominal voltages
+        // get channel grid
 
-    channelControl.Word = H_GetChannelControl(cathodeChannelNumber);
-    channelControl.Bit.setON = 0;
-    H_SetChannelControl(cathodeChannelNumber, channelControl.Word);
+        moduleControl.Word = H_GetModuleControl();
+        moduleControl.Bit.SetStop = 1;
+        H_SetModuleControl(moduleControl.Word);
 
-    // check if the module is ramping down
-    bool rampUpFlag = false;
-    H_CheckModuleIsRamping(rampUpFlag);
+        // now we can set the nominal values
+        std::cout.precision(15);
+        timeout = 1000;
+        while(timeout > 0){
+        	moduleStatus.Word = H_GetModuleStatus();
 
+        	if(moduleStatus.Bit.IsStop == 1){
+        	    // voltages
+                H_SetChannelVoltageNominal(gridChannelNumber, gridVoltageNominal);
+                H_SetChannelVoltageNominal(anodeChannelNumber, anodeVoltageNominal);
+                H_SetChannelVoltageNominal(cathodeChannelNumber, cathodeVoltageNominal);
+                // currents
+                H_SetChannelCurrentNominal(gridChannelNumber, gridCurrentNominal);
+                H_SetChannelCurrentNominal(anodeChannelNumber, anodeCurrentNominal);
+                H_SetChannelCurrentNominal(cathodeChannelNumber, cathodeCurrentNominal);
 
-    // TODO: before we perform DoClear, we should check events!
-    
-    // perform a DoClear (that is reset every event)
-    // and set Kill Enable to 0
-    moduleControl.Word = H_GetModuleControl();
-    moduleControl.Bit.DoClear = 1;
-    moduleControl.Bit.SetKillEnable = 0;
-    H_SetModuleControl(moduleControl.Word);
-    
-    // this should properly shut down the device
+        	    // check if current of grid channel successfully changed from 0
+        	    // if so, break from while loop
+        	    float temp = H_GetChannelCurrentNominal(gridChannelNumber);
+        	    if (temp != 0){
+        		break;
+        	    }
+        	}
+
+        	std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        	timeout--;
+        }
+        if (timeout == 0){
+        	std::cout << "ERROR: Could not set nominal Voltages / Currents" << std::endl;
+        	std::cout << "       Module did not enter IsStop == 1         " << std::endl;
+        }
+
+        // now revert SetStop back to 0
+        moduleControl.Word = H_GetModuleControl();
+        moduleControl.Bit.SetStop = 0;
+        H_SetModuleControl(moduleControl.Word);    
+    }
+    else{
+	std::cout << "Before calling SetNominalValues() the Settings need to be correctly "
+		  << "read from the .ini file and the HV_FADC object has to be created.\n"
+		  << "Nominal values NOT set." << std::endl;
+    }
 
 }
 

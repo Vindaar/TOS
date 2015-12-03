@@ -75,12 +75,12 @@ int main(int argc, char *argv[])
 	    std::cout << "Working with VME" << std::endl;
 	    std::cout << "Please give the relative path to a configuration file for "
 		      << "the HV_FADC_Obj. If no input is given, the default path:\n"
-		      << "../config/HFOSettings.ini \n"
+		      << "../config/HFO_settings.ini \n"
 		      << "is used. " << std::endl;
 	    
 	    iniFilePath = getUserInput("> ", numericalInput, allowDefaultOnEmptyInput);
 	    if (iniFilePath == ""){
-		iniFilePath = "../config/HFOSettings.ini";
+		iniFilePath = "../config/HFO_settings.ini";
 	    }
 
 	    //HV_FADC_Obj *myHV_FADC_Obj = new HV_FADC_Obj(input);

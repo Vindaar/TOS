@@ -80,6 +80,8 @@ const char *tosCommands[] = {"GeneralReset",
 			     "InitHV_FADC",
 			     "ShutdownHFO",
 			     "ActivateHFO",
+			     "CheckHVModuleIsGood",
+			     "ConnectModule",
 // FADC commands
 			     "PrintFADCSettings",
 			     "ResetFADC",

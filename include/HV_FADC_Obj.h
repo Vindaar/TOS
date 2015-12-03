@@ -80,6 +80,9 @@
 #define DEFAULT_FADC_PRETRIG                                      15000
 #define DEFAULT_FADC_TRIGGER_THRESHOLD_REGISTER_ALL               2033
 
+// HV macros
+#define DEFAULT_HV_SLEEP_TIME                                     10 // in milli seconds
+
 
 
 class HV_FADC_Obj
@@ -110,6 +113,7 @@ class HV_FADC_Obj
     //************ based on module functions ***********
     //**************************************************
 
+    void ReadHFOSettings();
     void InitHFOForTOS();
     void ShutDownHFOForTOS();
     void H_CheckModuleIsRamping(bool rampUpFlag);
@@ -119,6 +123,10 @@ class HV_FADC_Obj
     // this is done every checkModuleTimeInterval (from 
     // HFOSettings.ini) seconds
     int H_CheckHVModuleIsGood();
+
+    void H_SetNominalValues();
+    int H_ClearAllChannelEventStatus();
+    int H_ConnectModule();
     
     // These two functions are convenience functions, which 
     // write a group (from a GroupSTRUCT struct to the 
@@ -395,6 +403,8 @@ class HV_FADC_Obj
 
     // flags
     bool hvFadcObjCreatedFlag;
+    bool hvFadcObjSettingsReadFlag;
+    bool hvFadcObjInitFlag;
     bool setKillEnable;
     bool anodeGridGroupFlag;
     bool monitorTripGroupFlag;
