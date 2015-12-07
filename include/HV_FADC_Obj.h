@@ -31,6 +31,8 @@
 // QT
 #include <QString>
 
+// included for user input function
+#include "tosCommandCompletion.hpp"
 
 // define a few macros
 #define DEFAULT_BASE_ADDRESS_HV                                   0x4400
@@ -122,7 +124,8 @@ class HV_FADC_Obj
     // whether the HV module is good
     // this is done every checkModuleTimeInterval (from 
     // HFOSettings.ini) seconds
-    int H_CheckHVModuleIsGood();
+    int H_CheckHVModuleIsGood(bool verbose = true);
+    void H_DumpErrorLogToFile(int event);
 
     void H_SetNominalValues();
     int H_ClearAllChannelEventStatus();

@@ -193,26 +193,36 @@ void Producer::run()
 	    parent->mutexVBuffer.lock();
 	    (parent->_hvFadcObj)->F_SendSoftwareTrigger();
 	    parent->mutexVBuffer.unlock();
+	}
 
-
-		if (i % 10 == 0){
-		    std::cout << "We're in event " << i << "of whatever" << std::endl;
-		    parent->mutexVBuffer.lock();               
-		    (parent->_hvFadcObj)->H_CheckHVModuleIsGood();
-		    parent->mutexVBuffer.unlock();             
-		}
-
+	// increase event number
+	i++;
+    
+	//check if enough frames are recorded or if reason to stop run early
+	if ((parent->_useHvFadc) && 
+	    !(parent->_hvFadcObj == NULL) &&
+	    (i % 10 == 0))
+	{
+	    // TODO: change the frequency of this. do not want hardcoded, but rather
+	    //       based on time (input given in HFO_settings.ini)
+	    int isGood = 0;
+	    parent->mutexVBuffer.lock();
+	    isGood = (parent->_hvFadcObj)->H_CheckHVModuleIsGood();
+	    parent->mutexVBuffer.unlock();             
+	    if (isGood == -1){
+		// this means something is wrong with HV
+		// - call a function to report about problem (dump to file)
+		// - stop the run with error message
+		parent->mutexVBuffer.lock();
+		(parent->_hvFadcObj)->H_DumpErrorLogToFile(i);
+		parent->mutexVBuffer.unlock();
+		parent->StopRun();
+	    }
+	    
 	}
 
 
 
-
-
-
-    
-	i++;
-    
-	//check if enough frames are recorded
 	if (parent->runtimeFrames == 1)
 	{
 	    if (i == parent->runtime)

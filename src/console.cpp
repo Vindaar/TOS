@@ -59,14 +59,13 @@ Console::Console(std::string iniFilePath):
     std::cout<<"Enter Console::Console()"<<std::endl;
 #endif
 
-    bool useHvFadc = true;
     _hvFadcObj = new HV_FADC_Obj(iniFilePath);
 
     // now the HV_FADC_Obj should be set up and running 
     // HV voltages ramped up
 
     //init FADC
-    pc.initHV_FADC(_hvFadcObj, useHvFadc);
+    pc.initHV_FADC(_hvFadcObj, _hvFadcObjActive);
     ok = pc.okay();
     
     std::cout << "Warning: In FADC-Mode one can only use one Chip" << std::endl;
@@ -335,7 +334,7 @@ int Console::UserInterface(){
 	}
 	else if( ein.compare("Run")==0 )
 	{
-	    CommandRun();
+	    CommandRun(_hvFadcObjActive);
 	}
 	else if( ein.compare("EnableTPulse")==0 )
 	{
@@ -1986,6 +1985,9 @@ int Console::CommandRun(bool useHvFadc){
     else 
     {
 	// if Fadc not used, init FADC with NULL and call standard DoRun function
+
+	std::cout << "For some reason THIS happens?!" << std::endl;
+	std::cout << useHvFadc << std::endl;
 	pc.initHV_FADC(NULL,false);
 	result = pc.DoRun(runtimeFrames, runtime, shutter, 0, shutter_mode, run_mode);
     }

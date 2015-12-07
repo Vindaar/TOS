@@ -3,7 +3,7 @@
 // https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
 
 #ifndef _TOS_COMMAND_COMPLETION_HPP
-#define _TOS_COMMAND_COMPLETION 1
+#define _TOS_COMMAND_COMPLETION_HPP 1
 
 
 // include the necessary readline libraries
@@ -30,6 +30,11 @@ char **TOS_Command_Completion( const char *text, int start, int end);
 std::string getUserInput(const char *prompt, 
 			 bool numericalInput = true, 
 			 bool allowDefaultOnEmptyInput = true);
+
+std::string getUserInputNumericalDefault(     const char *prompt);
+std::string getUserInputNumericalNoDefault(   const char *prompt);
+std::string getUserInputNonNumericalDefault(  const char *prompt);
+std::string getUserInputNonNumericalNoDefault(const char *prompt);
 
 
 

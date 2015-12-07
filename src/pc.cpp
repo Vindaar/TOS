@@ -157,12 +157,16 @@ void PC::initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc)
 
     _useHvFadc = useHvFadc;
 
+    std::cout << "useHVFADC" << useHvFadc << std::endl;
+
     if(_useHvFadc)
     {
+	std::cout << "useHVFADC2" << useHvFadc << std::endl;
 	_hvFadcObj = hvFadcObj;
     }
     else
     {
+	std::cout << "useHVFADC3" << useHvFadc << std::endl;
 	_hvFadcObj = NULL;
     }
   
@@ -2163,8 +2167,14 @@ void PC::run()
     std::cout << "Enter: PC::run()" << std::endl;
  #endif 
   
-    if(_useHvFadc) runFADC();
-    else runOTPX();
+    if(_useHvFadc){
+	std::cout << "useHVFADCuff " << _useHvFadc << std::endl;
+	runFADC();
+    }
+    else {
+	std::cout << "useHVFADCuff 2" << _useHvFadc << std::endl;
+	runOTPX();
+    }
   
     return;
 }

@@ -157,8 +157,8 @@ char **TOS_Command_Completion(const char *text, int start, int end){
 }
 
 std::string getUserInput(const char *prompt, 
-				  bool numericalInput, 
-				  bool allowDefaultOnEmptyInput){
+			 bool numericalInput, 
+			 bool allowDefaultOnEmptyInput){
     // char *prompt: given char array is the prompt
     //               presented to the user on input
     // e.g.: prompt == "TOS> " then this will be prepended to the input.
@@ -219,3 +219,20 @@ std::string getUserInput(const char *prompt,
     return input;
 }
 
+
+// convenience functions to simply call getUserInput with certain flags
+std::string getUserInputNumericalDefault(const char *prompt){      
+    return getUserInput(prompt, true, true);
+}
+
+std::string getUserInputNumericalNoDefault(const char *prompt){    
+    return getUserInput(prompt, true, false);
+}
+
+std::string getUserInputNonNumericalDefault(const char *prompt){   
+    return getUserInput(prompt, false, true);
+}
+
+std::string getUserInputNonNumericalNoDefault(const char *prompt){ 
+    return getUserInput(prompt, false, false);
+}

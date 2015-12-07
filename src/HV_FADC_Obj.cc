@@ -6,8 +6,14 @@
 #include "const.h"
 
 
+// used to control while loops to read / write to HV and
+// to create error logs
 #include <thread>
 #include <chrono>
+#include <ctime>
+#include <iomanip>
+// used to write error logs
+#include <fstream>
 
 // either create object using addresses for FADC and HV
 HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniFilePath){
@@ -98,7 +104,20 @@ HV_FADC_Obj::~HV_FADC_Obj() {
     // yes, this
 
     // call shut down function, if not already shut down
-    ShutDownHFOForTOS();
+    int toShutdown = 0;
+    toShutdown = H_CheckHVModuleIsGood(false);
+    if (toShutdown == 0){
+	std::string input;
+	const char *prompt = "Do you wish to shutdown the HV? (y / N)";
+	input = getUserInputNonNumericalDefault(prompt);
+	if ((input.compare("y") == 0) ||
+	    (input.compare("Y") == 0)){
+	    ShutDownHFOForTOS();
+	}
+	else{
+	    std::cout << "Leaving HV turned on." << std::endl;
+	}
+    }
 
     // HV: shut down controller
     Controller.closeController();
@@ -1025,7 +1044,7 @@ void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){
 
 
 
-int HV_FADC_Obj::H_CheckHVModuleIsGood(){
+int HV_FADC_Obj::H_CheckHVModuleIsGood(bool verbose){
     // this function is called every checkModuleTimeInterval (from
     // HFOSettings.ini) seconds and checks, whether all voltages
     // are good / if any events happened
@@ -1050,8 +1069,10 @@ int HV_FADC_Obj::H_CheckHVModuleIsGood(){
         uint32_t moduleEventGroupStatus = H_GetModuleEventGroupStatus();
         // if != 0, some event was triggered
         if (moduleEventGroupStatus != 0){
-	    std::cout << "One of the groups triggered an Event. Abort Run" << std::endl;
-	    std::cout << "Probably the module tripped." << std::endl;
+	    if (verbose == true){
+		std::cout << "One of the groups triggered an Event. Abort Run" << std::endl;
+		std::cout << "Probably the module tripped." << std::endl;
+	    }
 	    return -1;
         }    
 
@@ -1073,15 +1094,19 @@ int HV_FADC_Obj::H_CheckHVModuleIsGood(){
         if ((gridVoltageMeasured    >= 0.99*gridVoltageSet)  &&
 	    (anodeVoltageMeasured   >= 0.99*anodeVoltageSet) &&
 	    (cathodeVoltageMeasured >= 0.99*cathodeVoltageSet)){
-	    std::cout << "All voltages within 1 percent of the set voltage." << std::endl;
-	    std::cout << "Grid / V\t Anode / V\t Cathode / V\n"
-		      << gridVoltageMeasured << "\t\t " 
-		      << anodeVoltageMeasured << "\t\t "
-		      << cathodeVoltageMeasured << std::endl;
+	    if (verbose == true){
+		std::cout << "All voltages within 1 percent of the set voltage." << std::endl;
+		std::cout << "Grid / V\t Anode / V\t Cathode / V\n"
+			  << gridVoltageMeasured << "\t\t " 
+			  << anodeVoltageMeasured << "\t\t "
+			  << cathodeVoltageMeasured << std::endl;
+	    }
         }
         else{
-	    std::cout << "Voltage outside of 1 percent of set voltage.\n" 
-		      << std::endl;
+	    if (verbose == true){
+		std::cout << "Voltage outside of 1 percent of set voltage.\n" 
+			  << std::endl;
+	    }
 	    return -1;
         }
 
@@ -1098,14 +1123,20 @@ int HV_FADC_Obj::H_CheckHVModuleIsGood(){
 	    (anodeStatus.Bit.isOn   == 1) &&
 	    (cathodeStatus.Bit.ControlledByVoltage == 1) &&
 	    (cathodeStatus.Bit.isOn == 1)){
-	    std::cout << "All channels controlled by voltage and set to isOn.\n" 
-		      << "All good, continue run." << std::endl;
+	    if (verbose == true){
+		std::cout << "All channels controlled by voltage and set to isOn.\n" 
+			  << "All good, continue run." << std::endl;
+	    }
 	    return 0;
+
         }
         else{
-	    std::cout << "One or more channels not controlled by voltage or turned off.\n" 
-		      << "Probably module already tripped.\n" 
-		      << "Stopping run immediately." << std::endl;
+	    if (verbose == true){
+		std::cout << "One or more channels not controlled by voltage or turned off.\n" 
+			  << "Probably module already tripped.\n" 
+			  << "See HV_error_log.txt for more information\n"
+			  << "Stopping run immediately." << std::endl;
+	    }
 	    return -1;
         }
     
@@ -1117,13 +1148,135 @@ int HV_FADC_Obj::H_CheckHVModuleIsGood(){
 }
 
 
+
+// the following function is only implemented here, because
+// std::put_time is is only supported from gcc 5.2 onwards
+// once gcc 5.2 is part of ubuntu repository, remove this function
+// and use the commented code in H_DumpErrorLogToFile instead
+// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+const std::string currentDateTime() {
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+
+    return buf;
+}
+
+void HV_FADC_Obj::H_DumpErrorLogToFile(int event){
+    // int event: if function is called from a run, we
+    //            include the event after which error log is 
+    //            created
+
+    // this function dumps an error log to (relative path)
+    // ../log/HV_error.log
+    // content is appended to file.
+    // contains: - GroupEventStatus
+    //           - ChannelEventStatus
+    //           - date & time
+
+    // create ofstream object and open file to append to it
+    std::ofstream logfile;
+    logfile.open("../log/HV_error.log", std::ios::app);
+
+    // prepare appending to file
+    logfile << "\n" << "\n" 
+	    << "######################### NEW ENTRY #########################" 
+	    << "\n" << std::endl;
+
+    // the commented code below would be nicer, but is only supported from
+    // gcc 5.2 onwards
+    // output date and time as YYYY-MM-DD hh:mm:ss using put_time and localtime
+    // // get system time as time_point
+    // std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    // // convert time_point to time_t
+    // std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    // logfile << "Error log append happened at: " << std::put_time(std::localtime(&now_c), "%F %T") <<  "\n";
+    logfile << "Error log append happened at: " << currentDateTime() <<  "\n";
+    logfile << "During event #: " << event << "\n";
+
+    
+    // now get event status of groups and channels
+    uint32_t moduleEventGroupStatus = H_GetModuleEventGroupStatus();
+
+    ChEventStatusSTRUCT gridEventStatus = { 0 };
+    ChEventStatusSTRUCT anodeEventStatus = { 0 };
+    ChEventStatusSTRUCT cathodeEventStatus = { 0 };
+    gridEventStatus.Word    = H_GetChannelEventStatus(gridChannelNumber);
+    anodeEventStatus.Word   = H_GetChannelEventStatus(anodeChannelNumber);
+    cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
+
+    logfile << "##### Event Group Status #####\n"
+	    << "type: uint32_t \n"
+	    << "Each bit corresponds to one group. If a bit is set, the "
+	    << "corresponding group had an event\n"
+	    << "moduleEventGroupStatus: " << moduleEventGroupStatus << "\n\n";
+    
+    logfile << "##### Channel Event Status #####\n"
+	    << "Grid Event Status: \n"
+	    << "\t EventInputError:          " << gridEventStatus.Bit.EventInputError << "\n"
+	    << "\t EventOnToOff:             " << gridEventStatus.Bit.EventOnToOff << "\n"
+	    << "\t EventEndOfRamping:        " << gridEventStatus.Bit.EventEndOfRamping << "\n"
+	    << "\t EventEmergency:           " << gridEventStatus.Bit.EventEmergency << "\n"
+	    << "\t EventControlledByVoltage: " << gridEventStatus.Bit.EventControlledByVoltage << "\n"
+	    << "\t EventControlledByCurrent: " << gridEventStatus.Bit.EventControlledByCurrent << "\n"
+	    << "\t EventCurrentBounds:       " << gridEventStatus.Bit.EventCurrentBounds << "\n"
+	    << "\t EventExternalInhibit:     " << gridEventStatus.Bit.EventExternalInhibit << "\n"
+	    << "\t EventCurrentTrip:         " << gridEventStatus.Bit.EventCurrentTrip << "\n"
+	    << "\t EventCurrentLimit:        " << gridEventStatus.Bit.EventCurrentLimit << "\n"
+	    << "\t EventVoltageLimit:        " << gridEventStatus.Bit.EventVoltageLimit << "\n"
+	    << "\n";
+   
+    logfile << "Anode Event Status: \n"
+	    << "\t EventInputError:          " << anodeEventStatus.Bit.EventInputError << "\n"
+	    << "\t EventOnToOff:             " << anodeEventStatus.Bit.EventOnToOff << "\n"
+	    << "\t EventEndOfRamping:        " << anodeEventStatus.Bit.EventEndOfRamping << "\n"
+	    << "\t EventEmergency:           " << anodeEventStatus.Bit.EventEmergency << "\n"
+	    << "\t EventControlledByVoltage: " << anodeEventStatus.Bit.EventControlledByVoltage << "\n"
+	    << "\t EventControlledByCurrent: " << anodeEventStatus.Bit.EventControlledByCurrent << "\n"
+	    << "\t EventCurrentBounds:       " << anodeEventStatus.Bit.EventCurrentBounds << "\n"
+	    << "\t EventExternalInhibit:     " << anodeEventStatus.Bit.EventExternalInhibit << "\n"
+	    << "\t EventCurrentTrip:         " << anodeEventStatus.Bit.EventCurrentTrip << "\n"
+	    << "\t EventCurrentLimit:        " << anodeEventStatus.Bit.EventCurrentLimit << "\n"
+	    << "\t EventVoltageLimit:        " << anodeEventStatus.Bit.EventVoltageLimit << "\n"
+	    << "\n";
+
+    logfile << "Cathode Event Status: \n"
+	    << "\t EventInputError:          " << cathodeEventStatus.Bit.EventInputError << "\n"
+	    << "\t EventOnToOff:             " << cathodeEventStatus.Bit.EventOnToOff << "\n"
+	    << "\t EventEndOfRamping:        " << cathodeEventStatus.Bit.EventEndOfRamping << "\n"
+	    << "\t EventEmergency:           " << cathodeEventStatus.Bit.EventEmergency << "\n"
+	    << "\t EventControlledByVoltage: " << cathodeEventStatus.Bit.EventControlledByVoltage << "\n"
+	    << "\t EventControlledByCurrent: " << cathodeEventStatus.Bit.EventControlledByCurrent << "\n"
+	    << "\t EventCurrentBounds:       " << cathodeEventStatus.Bit.EventCurrentBounds << "\n"
+	    << "\t EventExternalInhibit:     " << cathodeEventStatus.Bit.EventExternalInhibit << "\n"
+	    << "\t EventCurrentTrip:         " << cathodeEventStatus.Bit.EventCurrentTrip << "\n"
+	    << "\t EventCurrentLimit:        " << cathodeEventStatus.Bit.EventCurrentLimit << "\n"
+	    << "\t EventVoltageLimit:        " << cathodeEventStatus.Bit.EventVoltageLimit << "\n"
+	    << "\n";
+
+    logfile << "##### Module related #####\n"
+	    << "TO BE IMPLEMENTED \n\n";
+
+}
+
+
 void HV_FADC_Obj::ShutDownHFOForTOS(){
     // this function is called upon deleting the HV_FADC_Obj or
     // and thus when shutting down TOS
 
 
     // only need to perform shutdown if hvFadcObjInitFlag is true
-    if(hvFadcObjInitFlag == true){
+    // TODO: init flag not the correct way to decide whether shutdown or not
+    // instead of using hvFadcObjInitFlag, we can use CheckHVModuleIsGood as 
+    // a way to decide
+    int shutdown = 0;
+    shutdown = H_CheckHVModuleIsGood(false);
+
+    if(shutdown == 0){
 
         std::cout << std::endl << "Starting shutdown of HV for TOS" << std::endl << std::endl;
         

@@ -1,4 +1,3 @@
-
 /**********************************************************************/
 /*                                                        console.hpp */
 /*  TOS - Timepix Operating Software                                  */
@@ -76,7 +75,7 @@ private:
     void SetNumChips(int nChips);
 
     int CommandSetOption();
-    int CommandRun(bool useFadc = false);
+    int CommandRun(bool useHvFadc = false);
     int CommandCounting(int c);
     int CommandCountingLong();
 
