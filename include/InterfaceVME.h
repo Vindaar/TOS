@@ -9,7 +9,13 @@
 #define INTERFACEVME_H_
 
 // Wiener USB
-#include "libxxusb.h"
+#ifdef __WIN32__
+// TODO: Check if no inclusion of any header is actually correct for Windows.
+//       Included at some other place? Or simply not an issue, since library
+//       currently not used on the Windows platform?
+#else
+#include <libxxusb.h>
+#endif
 
 // Qt4
 #include <QString>
@@ -17,7 +23,6 @@
 // STD C++
 #include <iostream>
 #include <vector>
-
 
 
 

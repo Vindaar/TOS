@@ -11,7 +11,15 @@
 #include "vmecontroller.h"
 // originally using xxusbdll.h by ISEG
 // due to conflicts with libxxusb (which refers to <usb.h>)
+
+
+#ifdef __WIN32__
+#include <xxusbdll.h>
+#else
 #include <libxxusb.h>
+#endif
+
+
 
 // C libs
 #include <cstdlib>

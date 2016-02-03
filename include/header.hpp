@@ -87,6 +87,9 @@
 #ifdef __WIN32__
 # include <winsock2.h>
 # include <ws2tcpip.h>
+# include <fcntl.h>
+# include <io.h>
+# include <windows.h>
 #else
 # include <sys/socket.h>
 # include <netinet/in.h>
