@@ -977,6 +977,10 @@ int FPGA::SaveData(int pix[9][256][256]){
     //
     int x,y,b;
     int aktBit;
+    // get the preload in order to get rid of if else statements within the 
+    // 4 nested for loops...
+    // now simply add preload to aktBit
+    preload = tp.GetPreload();
 
     for (unsigned short chip = 1;chip <= 8;chip++){
 	for(y=0;y<256;++y){
@@ -990,19 +994,12 @@ int FPGA::SaveData(int pix[9][256][256]){
 	    for(b=0;b<14;++b){
 		for(x=0;x<256;++x)
 		{
-		    if (tp.GetPreload() == 1){
-			aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1)+2;
-		    }
+		    // add preload at the end; might need to change the preload
+		    // you apply on program start since if statement included 
+		    // different values for adding than actual preload value 
+		    // before
+		    aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1) + preload;
 		    // +8*tp.GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
-		    else if (tp.GetPreload() == 3){
-			aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1)+4;
-		    }
-		    else if (tp.GetPreload() == 2){
-			aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1)+3;
-		    }
-		    else {
-			aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1)+1;
-		    }
 		    if((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			pix[chip][y][x]+=1<<(13-b);
 		    }
@@ -1021,6 +1018,10 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
     //
     int x,y,b;
     int aktBit;
+    // get the preload in order to get rid of if else statements within the 
+    // 4 nested for loops...
+    // now simply add preload to aktBit
+    preload = tp.GetPreload();
 
     //for(y=0;y<256;++y)for(x=0;x<256;++x)pix[y][x]=0;
     for (unsigned short chip = 1;chip <= tp.GetNumChips() ;chip++){
@@ -1028,19 +1029,12 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
 	    for(b=0;b<14;++b){
 		for(x=0;x<256;++x)
 		{
-		    if (tp.GetPreload() == 1){
-			aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1)+2;
-		    }
+		    // add preload at the end; might need to change the preload
+		    // you apply on program start since if statement included 
+		    // different values for adding than actual preload value 
+		    // before
+		    aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1) + preload;
 		    // +8*tp.GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
-		    else if (tp.GetPreload() == 3){
-			aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1)+4;
-		    }
-		    else if (tp.GetPreload() == 2){
-			aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1)+3;
-		    }
-		    else{
-			aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1)+1;
-		    }
 		    if ((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			(*VecData)[chip][y][x]+=1<<(13-b);
 		    }
