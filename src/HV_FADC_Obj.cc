@@ -2,7 +2,6 @@
 #include <QDir>
 #include <QSettings>
 #include <QCoreApplication>
-#include <unistd.h>
 #include "const.h"
 
 
@@ -140,7 +139,16 @@ void HV_FADC_Obj::ReadHFOSettings(){
 
     // create path for iniFile 
     #ifdef __WIN32__
-    QDir dir(GetCurrentDirectory());
+    // in case of using windows, we need to call the GetCurrentDirectory function
+    // as an input it receives: DWORD WINAPI GetCurrentDirectory(_In_  DWORD  nBufferLength, _Out_ LPTSTR lpBuffer);
+    // create TCHAR and char string of length MAX_INI_PATH_LENGTH defined in header of this file
+    TCHAR string[MAX_INI_PATH_LENGTH];
+    char  char_string[MAX_INI_PATH_LENGTH];
+    // call windows function with its weird arguments
+    GetCurrentDirectory(MAX_INI_PATH_LENGTH, string);
+    // QT function needs a char string as input, cannot deal with TCHAR, thus need to convert
+    WideCharToMultiByte(CP_ACP, 0, string, wcslen(string)+1, char_string, MAX_INI_PATH_LENGTH, NULL, NULL);
+    QDir dir(char_string);
     #else
     QDir dir(get_current_dir_name());
     #endif

@@ -254,6 +254,7 @@ int Console::UserInterface(){
 	// now initialize a new std::string with the input buf
 	// in order to start the case machine
 	std::string ein(buf);
+	std::cout << "Buffer output " << ein << " " << sizeof(ein) << std::endl;
 	
 	if((ein.compare("GeneralReset")==0)||(ein.compare("1")==0)) 
 	{
@@ -298,6 +299,7 @@ int Console::UserInterface(){
 	}
 	else if( ein.compare(0,3,"2z")==0 )
 	{
+	    std::cout << "test " << ein.substr(0) << " " << ein.substr(1) << " " << ein.substr(2) << " " << std::endl;
 	    CommandCountingTime(ein.substr(3));
 	}
 	else if( ein.compare(0,3,"2f")==0 )
@@ -2451,7 +2453,7 @@ int Console::CommandLoadFSR(){
 #endif	
     int err = 0;
     bool numericalInput = false;
-    bool allowDefaultOnEmptyInput = false;
+    bool allowDefaultOnEmptyInput = true;
 
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	std::string ein;
@@ -2463,7 +2465,15 @@ int Console::CommandLoadFSR(){
 		  << "): " 
 		  << std::endl;
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	f=ein.c_str();
+	if(ein==""){
+	    // per default we wish to load the fsr.txt file
+	    f = "fsr.txt";
+	}
+	else{
+	    f=ein.c_str();
+	}
+
+	std::cout << "Trying to load file: " << f << std::endl;
 	FILE* f1=fopen(f,"r"); 
 	if (f1 == NULL) {
 	    std::cout << "File not found"

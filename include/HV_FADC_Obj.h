@@ -28,6 +28,14 @@
 #include <vector>
 #include <string>
 
+// for windows we need to include windows.h, to get GetCurrentDirectory()
+#ifdef __WIN32__
+#include <windows.h>
+#else
+// for linux we need to include unistd.h, to get get_current_dir_name()
+#include <unistd.h>
+#endif
+
 // QT
 #include <QString>
 
@@ -84,6 +92,9 @@
 
 // HV macros
 #define DEFAULT_HV_SLEEP_TIME                                     10 // in milli seconds
+
+// reading INI file macro
+#define MAX_INI_PATH_LENGTH                                       300
 
 
 
