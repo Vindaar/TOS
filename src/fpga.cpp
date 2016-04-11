@@ -980,7 +980,7 @@ int FPGA::SaveData(int pix[9][256][256]){
     // get the preload in order to get rid of if else statements within the 
     // 4 nested for loops...
     // now simply add preload to aktBit
-    preload = tp.GetPreload();
+    int preload = tp.GetPreload();
 
     for (unsigned short chip = 1;chip <= 8;chip++){
 	for(y=0;y<256;++y){
@@ -1021,7 +1021,7 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
     // get the preload in order to get rid of if else statements within the 
     // 4 nested for loops...
     // now simply add preload to aktBit
-    preload = tp.GetPreload();
+    int preload = tp.GetPreload();
 
     //for(y=0;y<256;++y)for(x=0;x<256;++x)pix[y][x]=0;
     for (unsigned short chip = 1;chip <= tp.GetNumChips() ;chip++){
