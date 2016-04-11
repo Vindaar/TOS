@@ -139,7 +139,11 @@ void HV_FADC_Obj::ReadHFOSettings(){
     // this function is called in the creator    
 
     // create path for iniFile 
+    #ifdef __WIN32__
+    QDir dir(GetCurrentDirectory());
+    #else
     QDir dir(get_current_dir_name());
+    #endif
     // TODO: check proper path
     //       or rather: add option to give full path or
     //       relative?
