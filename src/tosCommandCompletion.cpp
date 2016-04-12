@@ -158,7 +158,8 @@ char **TOS_Command_Completion(const char *text, int start, int end){
 
 std::string getUserInput(const char *prompt, 
 			 bool numericalInput, 
-			 bool allowDefaultOnEmptyInput){
+			 bool allowDefaultOnEmptyInput,
+			 std::set<std::string> *allowedStrings){
     // char *prompt: given char array is the prompt
     //               presented to the user on input
     // e.g.: prompt == "TOS> " then this will be prepended to the input.
@@ -194,10 +195,21 @@ std::string getUserInput(const char *prompt,
 		// invalid_argument exception
 		try{
 		    // do not need to use return value, only interested in 
-		    // exception 
+		    // exception
 		    std::stoi(tempStr);
-		    // if no exception is thrown, break from while loop
-		    break;
+		    // if no exception is thrown, check if we supply allowed values for 
+		    // the input. If so, check if input is in set of allowed inputs
+		    if ( (allowedStrings != NULL) &&
+			 (allowedStrings->find(tempStr) != allowedStrings->end()) ){
+			// allowedStrings is not NULL and tempStr is element of allowedStrings
+			// thus we can break from the while loop
+			break;
+		    }
+		    else if (allowedStrings == NULL){
+			// in this case we accept the input, because our only 
+			// constraint is valid numerical input
+			break;
+		    }
 		}
 		catch (const std::invalid_argument &ia) {
 		    // if this is catched, argument non numerical
@@ -206,8 +218,19 @@ std::string getUserInput(const char *prompt,
 		}
 	    }// end numericalInput
 	    else{
-		// in this case we accept all input
-		break;
+		// in this case we want a string input. check if allowedStrings is 
+		// not NULL, and if element is in set
+		if ( (allowedStrings != NULL) &&
+		     (allowedStrings->find(tempStr) != allowedStrings->end()) ){
+		    // allowedStrings is not NULL and tempStr is element of allowedStrings
+		    // thus we can break from the while loop
+		    break;
+		}
+		else if (allowedStrings == NULL){
+		    // in this case we accept the input, because our only 
+		    // constraint is a non empty string
+		    break;
+		}
 	    }
 	}//end non empty buffer
     }//end while loop
@@ -221,18 +244,18 @@ std::string getUserInput(const char *prompt,
 
 
 // convenience functions to simply call getUserInput with certain flags
-std::string getUserInputNumericalDefault(const char *prompt){      
-    return getUserInput(prompt, true, true);
+std::string getUserInputNumericalDefault(const char *prompt, std::set<std::string> *allowedStrings){
+    return getUserInput(prompt, true, true, allowedStrings);
 }
 
-std::string getUserInputNumericalNoDefault(const char *prompt){    
-    return getUserInput(prompt, true, false);
+std::string getUserInputNumericalNoDefault(const char *prompt, std::set<std::string> *allowedStrings){    
+    return getUserInput(prompt, true, false, allowedStrings);
 }
 
-std::string getUserInputNonNumericalDefault(const char *prompt){   
-    return getUserInput(prompt, false, true);
+std::string getUserInputNonNumericalDefault(const char *prompt, std::set<std::string> *allowedStrings){   
+    return getUserInput(prompt, false, true, allowedStrings);
 }
 
-std::string getUserInputNonNumericalNoDefault(const char *prompt){ 
-    return getUserInput(prompt, false, false);
+std::string getUserInputNonNumericalNoDefault(const char *prompt, std::set<std::string> *allowedStrings){ 
+    return getUserInput(prompt, false, false, allowedStrings);
 }

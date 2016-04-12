@@ -19,6 +19,9 @@
 //c++
 #include <string>
 #include <sstream>
+// set and cmath used for CountingTime()
+#include <set>
+#include <cmath>
 
 //TOS and FADC
 #include "caseHeader.h"
@@ -77,22 +80,16 @@ private:
     int CommandSetOption();
     int CommandRun(bool useHvFadc = false);
     int CommandCounting(int c);
-    int CommandCountingLong();
 
     int CommandCountingTrigger(std::string ein);
-    int CommandCountingTime(std::string ein);
+    int CommandCountingTime();
     int CommandCountingTime_fast(std::string ein);
-    int CommandCountingTime_long(std::string ein);
-    int CommandCountingTime_verylong(std::string ein);
     // same functions for FADC usage
     // slightly different implementation. Uses getInputValue() functions
     // defined in caseFunctions
     int CommandSpacing(unsigned int space);
     int CommandCountingTrigger(unsigned int time);
-    int CommandCountingTime(unsigned int time);
     int CommandCountingTime_fast(unsigned int time);
-    int CommandCountingTime_long(unsigned int time);
-    int CommandCountingTime_verylong(unsigned int time);
 
     int CommandReadOut();
     int CommandReadOut2();

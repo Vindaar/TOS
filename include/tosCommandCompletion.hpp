@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <stdexcept>
+#include <set>
 
 
 
@@ -29,12 +30,18 @@ char **TOS_Command_Completion( const char *text, int start, int end);
 // get user input function
 std::string getUserInput(const char *prompt, 
 			 bool numericalInput = true, 
-			 bool allowDefaultOnEmptyInput = true);
+			 bool allowDefaultOnEmptyInput = true,
+			 std::set<std::string> *allowedStrings = NULL);
 
-std::string getUserInputNumericalDefault(     const char *prompt);
-std::string getUserInputNumericalNoDefault(   const char *prompt);
-std::string getUserInputNonNumericalDefault(  const char *prompt);
-std::string getUserInputNonNumericalNoDefault(const char *prompt);
+// convenience function which just call getUserInput with certain flags set
+std::string getUserInputNumericalDefault(     const char *prompt,
+					      std::set<std::string> *allowedStrings = NULL);
+std::string getUserInputNumericalNoDefault(   const char *prompt,
+					      std::set<std::string> *allowedStrings = NULL);
+std::string getUserInputNonNumericalDefault(  const char *prompt,
+					      std::set<std::string> *allowedStrings = NULL);
+std::string getUserInputNonNumericalNoDefault(const char *prompt,
+					      std::set<std::string> *allowedStrings = NULL);
 
 
 

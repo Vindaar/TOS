@@ -306,13 +306,34 @@ int FPGA::CountingTrigger_fast(int time){
     return 20+err_code;
 }
 
-int FPGA::CountingTime(int time){
+int FPGA::CountingTime(int time, int modeSelector){
+    // int time:         integer in range {1, 255} 
+    // int modeSelector: integer corresponding to power to which 256 is raised
+    //                   in calculation of shutter time
+    // shutter time [µs] = (256)^n*46*time/freq[MHz]
 #if DEBUG==2
     std::cout<<"Enter FPGA::CountingTrigger()"<<std::endl;	
 #endif
     int err_code;
-    if (usefastclock) Mode=20;
-    else Mode=19;
+    // choose the correct mode depening on input given in 
+    // Console::CommandCountingTime()
+    if (usefastclock){
+	// standard
+	if      (modeSelector == 0) Mode = 20; 
+	// long 
+	else if (modeSelector == 1) Mode = 30;
+	// verylong
+	else if (modeSelector == 2) Mode = 31;
+    }
+    else {
+	// standard
+	if      (modeSelector == 0) Mode = 19;
+	//long 
+	else if (modeSelector == 1) Mode = 21;
+	//verylong
+	else if (modeSelector == 2) Mode = 22;
+    }
+
     OutgoingLength=18; 
     IncomingLength=18; 
     PacketQueueSize=1;
@@ -328,7 +349,6 @@ int FPGA::CountingTime(int time){
     return 20+err_code;
 }
 
-
 int FPGA::CountingTime_fast(int time){
 #if DEBUG==2
     std::cout<<"Enter FPGA::CountingTrigger()"<<std::endl;
@@ -343,37 +363,6 @@ int FPGA::CountingTime_fast(int time){
     return 20+err_code;
 }
 
-
-int FPGA::CountingTime_long(int time){
-#if DEBUG==2
-    std::cout<<"Enter FPGA::CountingTrigger()"<<std::endl;
-#endif
-    int err_code;
-    if (usefastclock) Mode = 30;
-    else Mode = 21;
-    OutgoingLength=18; 
-    IncomingLength=18; 
-    PacketQueueSize=1;
-    PacketBuffer[6]=time;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
-    return 20+err_code;
-}
-
-
-int FPGA::CountingTime_verylong(int time){
-#if DEBUG==2
-    std::cout<<"Enter FPGA::CountingTrigger()"<<std::endl;
-#endif
-    int err_code;
-    if (usefastclock) Mode = 31;
-    else Mode = 22;
-    OutgoingLength=18; 
-    IncomingLength=18; 
-    PacketQueueSize=1;
-    PacketBuffer[6]=time;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
-    return 20+err_code;
-}
 
 
 int FPGA::SetMatrix(){

@@ -48,7 +48,7 @@ void Producer::run()
     
 	if (parent->shutter_mode == 0){
 	    // Trigger when trigger used
-	    result=parent->fpga.CountingTime(parent->shutter);
+	    result=parent->fpga.CountingTime(parent->shutter, 0);
 	    if(result!=20){(parent->RunIsRunning)=false;}
 	}
 	if (parent->shutter_mode == 1)  {
@@ -68,12 +68,16 @@ void Producer::run()
 	}
 	if (parent->shutter_mode == 4) {
 	    // Trigger when trigger used
-	    result=parent->fpga.CountingTime_long(parent->shutter);
+	    // calling CountingTime with second argument == 1
+	    // corresponds to n = 1, power of 256
+	    result=parent->fpga.CountingTime(parent->shutter, 1);
 	    if(result!=20){(parent->RunIsRunning)=false;}
 	}
 	if (parent->shutter_mode == 5) {
 	    // Trigger when trigger used
-	    result=parent->fpga.CountingTime_verylong(parent->shutter);
+	    // calling CountingTime with second argument == 2
+	    // corresponds to n = 2, power of 256
+	    result=parent->fpga.CountingTime(parent->shutter, 2);
 	    if(result!=20){(parent->RunIsRunning)=false;}
 	}    
    

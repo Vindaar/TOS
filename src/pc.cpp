@@ -335,7 +335,7 @@ int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short c
 			fpga.tp.SetDAC(6,chip,thl);
 			fpga.WriteReadFSR();
 			usleep(10000 );
-			fpga.CountingTime(255);
+			fpga.CountingTime(255, 0);
 			std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
 			int hits = 0;
 			int result=0;
@@ -400,7 +400,9 @@ int PC::DoSCurveScan_meanChip(unsigned short voltage,int time, unsigned short st
 					fpga.tp.SetDAC(6,chip,thl);
 					fpga.WriteReadFSR();
 					usleep(400);
-					fpga.CountingTime_long(time);
+					// calling CountingTime with second argument == 1
+					// corresponds to n = 1, power of 256
+					fpga.CountingTime(time, 1);
 					int result=0;
 					std::vector<std::vector<std::vector<int> > > *VecData = new std::vector<std::vector<std::vector<int> > >(9, std::vector < std::vector<int> >(256, std::vector<int>(256,0)));
 					int x,y;
@@ -505,7 +507,9 @@ int PC::DoSCurveScan(unsigned short chip,unsigned short coarselow, unsigned shor
 				fpga.WriteReadFSR();
 				usleep(400 );
 				int ChipID = fpga.tp.GetChipIDsilent(chip);
-				fpga.CountingTime_long(time);
+				// calling CountingTime with second argument == 1
+				// corresponds to n = 1, power of 256
+				fpga.CountingTime(time, 1);
 				//usleep(20000);
 				int result=0;
 				int hits = 0;
@@ -578,7 +582,9 @@ int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned 
 	//}
 	fpga.WriteReadFSR();
 	usleep(400);
-	fpga.CountingTime_long(10);
+	// calling CountingTime with second argument == 1
+	// corresponds to n = 1, power of 256
+	fpga.CountingTime(10, 1);
 	int result = 0;
 
 	/*std::string filename[9]= {""};
@@ -1479,10 +1485,12 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 					usleep(400 );
 					int result = 0;
 					if (shuttertype==1){
-						fpga.CountingTime(time);
+					    fpga.CountingTime(time, 0);
 					}
 					else{
-						fpga.CountingTime_long(time);
+					    // calling CountingTime with second argument == 1
+					    // corresponds to n = 1, power of 256
+					    fpga.CountingTime(time, 1);
 					}
 					int meanTOT_iteration_spacing[9] = {0};
 					if (TOT == 3 or TOT == 4) {
@@ -1723,10 +1731,12 @@ int PC::TOCalib(){
 					fpga.SerialReadOut(pix_tempdata2);
 					fpga.EnableTPulse(1);
 					if (shuttertype==1){
-						fpga.CountingTime(time);
+					    fpga.CountingTime(time, 0);
 					}
 					else{
-						fpga.CountingTime_long(time);
+					    // calling CountingTime with second argument == 1
+					    // corresponds to n = 1, power of 256
+					    fpga.CountingTime(time, 1);
 					}
 					int meanTOT_iteration_spacing[9] = {0};
 					if (TOT == 3 or TOT == 4) {
@@ -2074,7 +2084,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
 
     //open shutter once
     if (shutter_mode == 0){
-	result=fpga.CountingTime(shutter);
+	result=fpga.CountingTime(shutter, 0);
 	if(result!=20){(RunIsRunning)=false;}
     }
     if (shutter_mode == 1)  {
@@ -2090,11 +2100,15 @@ int PC::DoRun(unsigned short runtimeFrames_,
 	if(result!=20){(RunIsRunning)=false;}
     }
     if (shutter_mode == 4) {
-	result=fpga.CountingTime_long(shutter);
+	// calling CountingTime with second argument == 1
+	// corresponds to n = 1, power of 256
+	result=fpga.CountingTime(shutter, 1);
 	if(result!=20){(RunIsRunning)=false;}
     }
     if (shutter_mode == 5) {
-	result=fpga.CountingTime_verylong(shutter);
+	// calling CountingTime with second argument == 2
+	// corresponds to n = 2, power of 256
+	result=fpga.CountingTime(shutter, 2);
 	if(result!=20){(RunIsRunning)=false;}
     }
   
@@ -2252,7 +2266,7 @@ void PC::runOTPX()
 	    //std::cout<<"I'm Running"<<std::endl;
 	    if (shutter_mode == 0)
 	    {
-		result=fpga.CountingTime(shutter);         //Trigger when trigger used
+		result=fpga.CountingTime(shutter, 0);         //Trigger when trigger used
 		if(result!=20){(RunIsRunning)=false;}
 	    }
 	    if (shutter_mode == 1)  
@@ -2272,12 +2286,16 @@ void PC::runOTPX()
 	    }
 	    if (shutter_mode == 4) 
 	    {
-		result=fpga.CountingTime_long(shutter);    //Trigger when trigger used
+		// calling CountingTime with second argument == 1
+		// corresponds to n = 1, power of 256
+		result=fpga.CountingTime(shutter, 1);    //Trigger when trigger used
 		if(result!=20){(RunIsRunning)=false;}
 	    }
 	    if (shutter_mode == 5)
 	    {
-		result=fpga.CountingTime_verylong(shutter); //Trigger when trigger used
+		// calling CountingTime with second argument == 2
+		// corresponds to n = 2, power of 256
+		result=fpga.CountingTime(shutter, 2); //Trigger when trigger used
 		if(result!=20){(RunIsRunning)=false;}
 	    }
 

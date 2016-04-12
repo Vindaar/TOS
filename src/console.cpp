@@ -280,11 +280,8 @@ int Console::UserInterface(){
 	{
 	    CommandCounting(0);
 	}
-	else if( (ein.compare("CountingLong")==0) ||
-		 (ein.compare("2l")==0) ) 
-	{
-	    CommandCountingLong();
-	}
+
+
 	else if( ein.compare(0,16,"CountingTrigger")==0 )
 	{
 	    CommandCountingTrigger(ein.substr(16));
@@ -293,27 +290,23 @@ int Console::UserInterface(){
 	{
 	    CommandCountingTrigger(ein.substr(3));
 	}
-	else if( ein.compare(0,13,"CountingTime")==0 )
+
+	else if( (ein.compare("CountingTime")==0) ||
+		 (ein.compare("2z")==0 ))
 	{
-	    CommandCountingTime(ein.substr(13));
-	}
-	else if( ein.compare(0,3,"2z")==0 )
-	{
-	    std::cout << "test " << ein.substr(0) << " " << ein.substr(1) << " " << ein.substr(2) << " " << std::endl;
-	    CommandCountingTime(ein.substr(3));
+	    // this function will not receive an argument anymore. Instead after being called
+	    // it will ask the user, which multiplier he wants to use (represents 
+	    // standard, long and verylong of the past)
+	    CommandCountingTime();
 	}
 	else if( ein.compare(0,3,"2f")==0 )
 	{
 	    CommandCountingTime_fast(ein.substr(3));
 	}
-	else if( ein.compare(0,3,"2l")==0 )
-	{
-	    CommandCountingTime_long(ein.substr(3));
-	}
-	else if( ein.compare(0,4,"2vl")==0 )
-	{
-	    CommandCountingTime_verylong(ein.substr(3));
-	}
+
+
+
+
 	else if( (ein.compare("ReadOut")==0)||
 		 (ein.compare("3")==0) ) 
 	{
@@ -947,10 +940,6 @@ int Console::UserInterfaceFadc()
 	CommandCounting(0);
 	break;
 
-    case 1022:
-	CommandCountingLong();
-	break;
-
     case 1023:
 	std::cout << "counting-trigger-value" << std::endl;
 	CommandCountingTrigger(getInputValue());
@@ -958,22 +947,12 @@ int Console::UserInterfaceFadc()
 
     case 1024:
 	std::cout << "counting-time-value" << std::endl;
-	CommandCountingTime(getInputValue());
+	CommandCountingTime();
 	break;
 
     case 1025:
 	std::cout << "counting-time-value fast" << std::endl;
 	CommandCountingTime_fast(getInputValue());
-	break;
-
-    case 1026:
-	std::cout << "counting-time-value long" << std::endl;
-	CommandCountingTime_long(getInputValue());
-	break;
-
-    case 1027:
-	std::cout << "counting-time-value very long" << std::endl;
-	CommandCountingTime_verylong(getInputValue());
 	break;
 
     case 1030:
@@ -1228,11 +1207,6 @@ int Console::UserInterfaceNew(bool useHvFadc){
       CommandCounting(0);
       break;
 
-      //else if((ein.compare("CountingLong")==0)||(ein.compare("2l")==0)) {CommandCountingLong();}
-    case 1022:
-      CommandCountingLong();
-      break;
-
       //else if(ein.compare(0,16,"CountingTrigger ")==0){CommandCountingTrigger(ein.substr(16));}
     case 1023:
       std::cout << "counting-trigger-value" << std::endl;
@@ -1244,7 +1218,7 @@ int Console::UserInterfaceNew(bool useHvFadc){
     case 1024:
       std::cout << "counting-time-value" << std::endl;
       //CommandCountingTime(getAllInputValue(0));
-      CommandCountingTime(getInputValue());
+      CommandCountingTime();
       break;
 
       //else if(ein.compare(0,3,"2f ")==0){CommandCountingTime_fast(ein.substr(3));}
@@ -1252,20 +1226,6 @@ int Console::UserInterfaceNew(bool useHvFadc){
       std::cout << "counting-time-value fast" << std::endl;
       //CommandCountingTime_fast(getAllInputValue(0));
       CommandCountingTime_fast(getInputValue());
-      break;
-
-      //else if(ein.compare(0,3,"2l ")==0){CommandCountingTime_long(ein.substr(3));}
-    case 1026:
-      std::cout << "counting-time-value long" << std::endl;
-      //CommandCountingTime_long(getAllInputValue(0));
-      CommandCountingTime_long(getInputValue());
-      break;
-
-      //else if(ein.compare(0,4,"2vl ")==0){CommandCountingTime_verylong(ein.substr(3));}
-    case 1027:
-      std::cout << "counting-time-value very long" << std::endl;
-      //CommandCountingTime_verylong(getAllInputValue(0));
-      CommandCountingTime_verylong(getInputValue());
       break;
 
       //else if((ein.compare("ReadOut")==0)||(ein.compare("3")==0)) {CommandReadOut();}
@@ -2029,101 +1989,6 @@ int Console::CommandCounting(int c){
     return result;
 }
 
-// TODO: take out this function or rewrite
-int Console::CommandCountingLong(){ //outdated, not used any more, rewrite!
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingLong()"<<std::endl;
-#endif
-    int result=0;
-    int n;
-    int t;
-    std::string ein="";
-    bool numericalInput           = true;
-    bool allowDefaultOnEmptyInput = true;
-
-
-    const char *promptOpeningTime = " Opening time [us] ";
-    ein = getUserInput(promptOpeningTime, numericalInput, allowDefaultOnEmptyInput);
-    if(ein==""){t=20000;}
-    else{
-	t=(unsigned int) atoi(ein.data());
-    }
-
-    const char *promptFrames = " Frames wanted ";
-    ein = getUserInput(promptFrames, numericalInput, allowDefaultOnEmptyInput);
-    if(ein==""){n=1;}
-    else{
-	n=(unsigned int) atoi(ein.data());
-    }
-
-    result=pc.fpga.GeneralReset();
-    std::cout<<"Reset done"<<std::endl;
-    result=pc.fpga.tp.LoadMatrixFromFile(pc.GetMatrixFileName(1),1);
-    std::cout<<"Matrix loaded from "<<pc.GetMatrixFileName(1)<<"\n> "<<std::flush;
-    result=CommandLoadFSR();
-    result=pc.fpga.tp.SetDAC(6,1,312);
-    result=CommandSetMatrix();
-    result=CommandWriteReadFSR();
-    result=CommandReadOut();
-    result=CommandSetMatrix();
-    result=CommandWriteReadFSR();
-    result=CommandReadOut();
-    std::cout<<"read back matrix done"<<std::endl;
-
-
-    std::ostringstream sstream;
-    for (int i=0; i<n; i++){
-	if(pc.fpga.tp.IsCounting()!=0){ErrorMessages(24);}
-	else{
-	    result=pc.fpga.Counting();
-	    if(result>20){ErrorMessages(result);}
-	    else{std::cout<<"\tCounting started\n> "<<std::flush;}
-	}
-	usleep(t);
-	if(pc.fpga.tp.IsCounting()==0){ErrorMessages(25);}
-	result=pc.fpga.CountingStop();
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCounting stopped\n> "<<std::flush;}
-	usleep(10000);
-	std::string filename[8]= {""};
-	const char* f[8];
-	for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	    filename[chip]=pc.GetDataPathName();
-	    filename[chip]+="/";
-	    filename[chip]+=pc.GetDataFileName(chip);
-	    filename[chip]+=sstream.str();
-	    sstream.str("");
-	    f[chip] = filename[chip].c_str();
-	}
-	//filename+=pc.GetDataFileName();
-	result = pc.DoReadOut2(f[1],1);
-	std::cout<<"CommandReadOut:"<<result<<std::endl;
-	if(result<0){ErrorMessages(-result);}
-	else{std::cout<<"\tReadOut accomplished\n> "<<std::flush;}
-	/*sstream<<"data"<<MeasuringCounter<<".txt";
-	  FileName=PathName+"/"; FileName+=sstream.str();
-	  sstream.str("");
-	  result=DoReadOut2(FileName.c_str());
-	*/
-	if (i%2000 == 0 && i>1){
-	    result=pc.fpga.GeneralReset();
-	    std::cout<<"Reset done"<<std::endl;
-	    //result=pc.fpga.tp.LoadMatrixFromFile(pc.GetMatrixFileName());
-	    //std::cout<<"Matrix loaded from "<<pc.GetMatrixFileName()<<"\n> "<<std::flush;
-	    //result=CommandLoadFSR();
-	    //result=pc.fpga.tp.SetDAC(6,312);
-	    result=CommandSetMatrix();
-	    result=CommandWriteReadFSR();
-	    result=CommandReadOut();
-	    result=CommandSetMatrix();
-	    result=CommandWriteReadFSR();
-	    result=CommandReadOut();
-	    std::cout<<"read back matrix done"<<std::endl;
-	}
-    }
-    return result;
-}
-
 
 int Console::CommandCountingTrigger(std::string ein){
     // default CommandCountingTrigger function
@@ -2160,37 +2025,81 @@ int Console::CommandCountingTrigger(unsigned int time){
     return 1;
 }
 
-int Console::CommandCountingTime(std::string ein){
-    // default CommandCountingTime function
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime(std::string ein)"<<ein<<std::endl;	
-#endif
-    int result=0;
-    unsigned int time;	
-    if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
-	time=(unsigned int) atoi(&ein[0]);
-    }
-    else{std::cout<<"\tNon-numerical sign\n> "<<std::flush; return 0;}
-    result=(time<256);
-    if(result){
-        result=pc.fpga.CountingTime(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTime accomplished\n> "<<std::flush;}
-    }
-    return 1;
-}
-
-int Console::CommandCountingTime(unsigned int time){
-    // CommandCountingTime function used for Fadc
+int Console::CommandCountingTime(){
+    // CommandCountingTime function, dealing with all different 'multiplier' cases 
+    // (standard, long, verylong)
 #if DEBUG==2
     std::cout<<"Enter Console::CommandCountingTime() " << time <<std::endl;	
 #endif
-    int result=0;
-    result=(time<256);
-    if(result){
-	result=pc.fpga.CountingTime(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTime accomplished\n> "<<std::flush;}
+    // use getUserInput to get the desired mode first
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = false;
+    std::string inputMode;
+    std::string inputTime;
+    int n;
+
+    std::cout << "Please choose the shutter range (choose one option from {} ):\n" 
+	      << "Standard  - n = 0 : type { standard, std, 0 } range:   1.15 µs - 293.25 µs\n"
+	      << "Long      - n = 1 : type { long,     l  , 1 } range: 294.40 µs -  75.07 ms\n"
+	      << "Very long - n = 2 : type { verylong, vl , 2 } range:  75.37 ms -  19.22 s\n"
+	      << "Shutter range is calculated by:\n"
+	      << "time [µsec] = (256)^n*46*x/freq[MHz], x of {1, 255}, freq 40 MHz (independent of clock!)"
+	      << std::endl;
+    // create set of allowed strings
+    std::set<std::string> allowedStrings = {"standard", "std", "0",
+					    "long",     "l",   "1",
+					    "verylong", "vl",  "2"};
+
+    // use default prompt. Options explained in cout before
+    inputMode = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput, &allowedStrings);
+    if( (inputMode == "standard") ||
+	(inputMode == "std"     ) ||
+	(inputMode == "0"       )){
+	n = 0;
+    }
+    else if( (inputMode == "long") ||
+	     (inputMode == "l"   ) ||
+	     (inputMode == "1"   ) ){
+	n = 1;
+    }
+    else if( (inputMode == "verylong") ||
+	     (inputMode == "vl"      ) ||
+	     (inputMode == "2"       ) ){
+	n = 2;
+    }
+    // now we should have a valid n of {0, 1, 2}
+    // get user input to get valid value of x in range of 1 to 255
+    std::set<std::string> allowedTimeStrings;
+    // fill this set with all values from 1 to 255
+    for( int l=1; l<256; l++) allowedTimeStrings.insert(std::to_string(l));
+    // set numericalInput flag to true, since we're dealing with ints
+    numericalInput = true;
+    std::cout << "Choose a time value from 1 to 255:" << std::endl;
+    inputTime = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput, &allowedTimeStrings);
+    // inputTime should now be a valid string for an integer between 1 and 255
+    int shutterTime = std::pow(256, n)*46*std::stoi(inputTime) / 40;
+    if (shutterTime > 1000000){
+	// convert µs to seconds
+	shutterTime /= 1000000;
+	std::cout << "Shutter time of " << shutterTime << " s was selected." << std::endl;
+    }
+    else if (shutterTime > 1000){
+	shutterTime /= 1000;
+	std::cout << "Shutter time of " << shutterTime << " ms was selected." << std::endl;
+    }
+    else{
+	std::cout << "Shutter time of " << shutterTime << " µs was selected." << std::endl;
+    }
+
+    // instead of calling different fpga.CountingTime functions, we
+    // will now hand a flag and a time to the normal CountingTime function
+    int result;
+    result = pc.fpga.CountingTime(std::stoi(inputTime), n);
+    if (result>20){ 
+	ErrorMessages(result); 
+    }
+    else{
+	std::cout << "\tCountingTime accomplished\n> " << std::flush;
     }
     return 1;
 }
@@ -2229,77 +2138,6 @@ int Console::CommandCountingTime_fast(unsigned int time){
     }
     return 1;
 }
-
-int Console::CommandCountingTime_long(std::string ein){
-    // default CommandCountingTime_long function
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime()"<<ein<<std::endl;
-#endif
-    int result=0;
-    unsigned int time;
-    if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
-	time=(unsigned int) atoi(&ein[0]);
-    }
-    else{std::cout<<"\tNon-numerical sign\n> "<<std::flush; return 0;}
-    result=(time<256);
-    if(result){
-        result=pc.fpga.CountingTime_long(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTime accomplished\n> "<<std::flush;}
-    }
-    return 1;
-}
-
-int Console::CommandCountingTime_long(unsigned int time){
-    // CommandCountingTime_long function used for Fadc
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime() "<< time <<std::endl;
-#endif
-    int result=0;
-    result=(time<256);
-    if(result){
-	result=pc.fpga.CountingTime_long(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTime accomplished\n> "<<std::flush;}
-    }
-    return 1;
-}
-
-int Console::CommandCountingTime_verylong(std::string ein){
-    // default CommandCountingTime_verylong function
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime()"<<ein<<std::endl;
-#endif
-    int result=0;
-    unsigned int time;
-    if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
-	time=(unsigned int) atoi(&ein[0]);
-    }
-    else{std::cout<<"\tNon-numerical sign\n> "<<std::flush; return 0;}
-    result=(time<256);
-    if(result){
-        result=pc.fpga.CountingTime_verylong(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTime accomplished\n> "<<std::flush;}
-    }
-    return 1;
-}
-
-int Console::CommandCountingTime_verylong(unsigned int time){
-    // CommandCountingTime_verylong function used for Fadc
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime() " << time <<std::endl;
-#endif
-    int result=0;
-    result=(time<256);
-    if(result){
-	result=pc.fpga.CountingTime_verylong(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTime accomplished\n> "<<std::flush;}
-    }
-    return 1;
-}
-
 
 int Console::CommandReadOut(){
 #if DEBUG==2

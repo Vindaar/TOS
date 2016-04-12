@@ -33,10 +33,8 @@ public:
     int CountingStop();
     int CountingTrigger(int time);
     int CountingTrigger_fast(int time);
-    int CountingTime(int time);
+    int CountingTime(int time, int modeSelector);
     int CountingTime_fast(int time);
-    int CountingTime_long(int time);
-    int CountingTime_verylong(int time);
     // ReadoutFadcBit: Reads out the 16th(?) fpga bit - 1 if a trigger arrived as the shutter was open, 0 otherwise
     int ReadoutFadcBit();
     // ReadoutFadcFlag: Reads out the FADC flag. 1 if the flag is set, zero otherwise
