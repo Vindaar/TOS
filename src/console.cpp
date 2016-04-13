@@ -190,7 +190,6 @@ void Console::CommandActivateHvFadcObj(){
 
 }
 
-
 int Console::UserInterface(){
 #if DEBUG==2
     std::cout<<"Enter Console::UserInterface()"<<std::endl;	
@@ -419,7 +418,7 @@ int Console::UserInterface(){
 	{
 	    CommandHelp();
 	}
-	else if( ein.compare(0,8,"spacing")==0 )
+	else if( ein.compare("spacing")==0 )
 	{
 	    CommandSpacing();
 	}
@@ -947,7 +946,7 @@ int Console::CommandSpacing(){
     //       afaiu all values 0 to 255 allowed?
     std::string input;
     unsigned int space = 0;
-    char *promptSpacing = "Please provide a spacing> ";
+    const char *promptSpacing = "Please provide a spacing> ";
     input = getUserInputNumericalNoDefault(promptSpacing);
     space = std::stoi(input);
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
@@ -1304,6 +1303,8 @@ int Console::CommandCountingTime_fast(){
     std::cout << "Enabling fast clock and calling CountingTime..." << std::endl;
     pc.fpga.UseFastClock(1);
     CommandCountingTime();
+
+    return 1;
 }
 
 int Console::CommandReadOut(){
@@ -1545,15 +1546,15 @@ int Console::CommandSetDAC(){
     std::cout<<"Enter Console::CommandSetDAC()"<<std::endl;	
 #endif	
     std::string  input;
-    char *promptDAC = "Please choose a DAC to set (#0 to #13)> ";
+    const char *promptDAC = "Please choose a DAC to set (#0 to #13)> ";
     input = getUserInputNumericalNoDefault(promptDAC);
     int dac = std::stoi(input);
 
-    char *promptChip = "Please choose a chip for which to set DAC> ";
+    const char *promptChip = "Please choose a chip for which to set DAC> ";
     input = getUserInputNumericalNoDefault(promptChip);
     unsigned short chip = std::stoi(input);
 
-    char *promptValue = "Please provide the value to set> ";
+    const char *promptValue = "Please provide the value to set> ";
     input = getUserInputNumericalNoDefault(promptValue);
     int i = std::stoi(input);
     int err = 1;
@@ -2370,7 +2371,7 @@ int Console::CommandSwitchTriggerConnection(){
 	      << std::endl;	
 #endif
     std::string input;
-    char *promptType = "Please provide a trigger connection type { tlu, lemo }> ";
+    const char *promptType = "Please provide a trigger connection type { tlu, lemo }> ";
     std::set<std::string> allowedStrings = {"tlu", "lemo"};
     input = getUserInputNonNumericalNoDefault(promptType, &allowedStrings);
     if(input.compare("tlu")==0){
@@ -2429,7 +2430,7 @@ void Console::CommandSetIP(){
     std::string str;
     std::stringstream ip;
     std::string input;
-    char *promptIP = "Please enter a new IP address> ";
+    const char *promptIP = "Please enter a new IP address> ";
     input = getUserInputNonNumericalNoDefault(promptIP);    
 
     if((input.length()>5)&&(input.length()<16)&&(input.find_first_not_of("0123456789.",0)==input.npos)){
