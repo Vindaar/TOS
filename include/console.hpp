@@ -64,8 +64,6 @@ private:
   
     //The main userinterface  
     int UserInterface();                         //< classical version
-    int UserInterfaceFadc();                     //< new version, applicable to the use of the FADC
-    int UserInterfaceNew(bool useFadc = false);  //< new version - like above - but without the FADC
 
     // Some function one can use to print error messages according to the error parameter given
     void ErrorMessages(int err);
