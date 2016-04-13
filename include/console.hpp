@@ -69,7 +69,7 @@ private:
     void ErrorMessages(int err);
 
     int CommandHelp();
-    int CommandSpacing(std::string ein);
+    int CommandSpacing();
     int CommandSetNumChips();
     // SetNumChips is the actual function, which changes the number of chips internally
     // CommandSetNumChips() calls this function after getting user input
@@ -79,15 +79,12 @@ private:
     int CommandRun(bool useHvFadc = false);
     int CommandCounting(int c);
 
-    int CommandCountingTrigger(std::string ein);
+    int CommandCountingTrigger();
     int CommandCountingTime();
-    int CommandCountingTime_fast(std::string ein);
+    int CommandCountingTime_fast();
     // same functions for FADC usage
     // slightly different implementation. Uses getInputValue() functions
     // defined in caseFunctions
-    int CommandSpacing(unsigned int space);
-    int CommandCountingTrigger(unsigned int time);
-    int CommandCountingTime_fast(unsigned int time);
 
     int CommandReadOut();
     int CommandReadOut2();
@@ -112,7 +109,7 @@ private:
   
     int CommandLoadFSR();	
     int CommandLoadThreshold();
-    int CommandSetDAC(std::string ein);
+    int CommandSetDAC();
     int CommandShowFSR();
     int CommandVarChessMatrix();
     int CommandUniformMatrix();
@@ -132,15 +129,13 @@ private:
     int CommandTOCalibFast();
     int CommandCheckOffset();
     int CommandCalibrate();				
-    int CommandSwitchTriggerConnection(std::string ein);
-    // same function for FADC usage (see above for explanation)
-    int CommandSwitchTriggerConnection(int trigCon);
+    int CommandSwitchTriggerConnection();
     void DACScanLive(char dac, int val);
 
     void CommandSpeedTest(std::string ein);
 
 		
-    void CommandSetIP(std::string ein);
+    void CommandSetIP();
 
 
     // functions related to HV_FADC object

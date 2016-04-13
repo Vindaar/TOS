@@ -204,7 +204,7 @@ int Timepix::GetMask(int y, int x, unsigned short chip){ //not used so far
 	return Mask[chip][y][x];
 }
 
-int Timepix::Spacing (unsigned int space, unsigned int step, unsigned short chip){ //when using step must go from 0 to <space*space
+int Timepix::Spacing(unsigned int space, unsigned int step, unsigned short chip){ //when using step must go from 0 to <space*space
 	int y,x = 0;
 	for(y=0;y<256;++y){
 		for(x=0;x<256;++x){

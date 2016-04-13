@@ -223,14 +223,13 @@ int Console::UserInterface(){
 	// if something else is typed, we add the command to our 
 	// command history
 	else{
-	    std::cout << buf << std::endl;
 	    add_history( buf );
 	}
 
 	// now initialize a new std::string with the input buf
 	// in order to start the case machine
 	std::string ein(buf);
-	std::cout << "Buffer output " << ein << " " << sizeof(ein) << std::endl;
+	std::cout << "test " << buf << std::endl;
 	
 	if((ein.compare("GeneralReset")==0)||(ein.compare("1")==0)) 
 	{
@@ -249,17 +248,11 @@ int Console::UserInterface(){
 	{
 	    CommandCounting(0);
 	}
-
-
-	else if( ein.compare(0,16,"CountingTrigger")==0 )
+	else if( (ein.compare("CountingTrigger") == 0) ||
+		 (ein.compare("2t") == 0) )
 	{
-	    CommandCountingTrigger(ein.substr(16));
+	    CommandCountingTrigger();
 	}
-	else if( ein.compare(0,3,"2t")==0 )
-	{
-	    CommandCountingTrigger(ein.substr(3));
-	}
-
 	else if( (ein.compare("CountingTime")==0) ||
 		 (ein.compare("2z")==0 ))
 	{
@@ -268,14 +261,10 @@ int Console::UserInterface(){
 	    // standard, long and verylong of the past)
 	    CommandCountingTime();
 	}
-	else if( ein.compare(0,3,"2f")==0 )
+	else if( ein.compare("2f")==0 )
 	{
-	    CommandCountingTime_fast(ein.substr(3));
+	    CommandCountingTime_fast();
 	}
-
-
-
-
 	else if( (ein.compare("ReadOut")==0)||
 		 (ein.compare("3")==0) ) 
 	{
@@ -381,9 +370,9 @@ int Console::UserInterface(){
 	{
 	    CommandLoadFSR();
 	}
-	else if( ein.compare(0,7,"SetDAC")==0 )
+	else if( ein.compare("SetDAC")==0 )
 	{
-	    CommandSetDAC(ein.substr(7));
+	    CommandSetDAC();
 	}
 	else if( ein.compare("ShowFSR")==0 )
 	{
@@ -406,13 +395,13 @@ int Console::UserInterface(){
 	{
 	    CommandLoadMatrix();
 	}
-	else if( ein.compare(0,8,"Trigger")==0 )
+	else if( ein.compare("Trigger")==0 )
 	{
-	    CommandSwitchTriggerConnection(ein.substr(8));
+	    CommandSwitchTriggerConnection();
 	}
-	else if( ein.compare(0,6,"SetIP")==0 )
+	else if( ein.compare("SetIP")==0 )
 	{
-	    CommandSetIP(ein.substr(6));
+	    CommandSetIP();
 	}
 	else if( ein.compare("ShowIP")==0 )
 	{
@@ -432,7 +421,7 @@ int Console::UserInterface(){
 	}
 	else if( ein.compare(0,8,"spacing")==0 )
 	{
-	    CommandSpacing(ein.substr(8));
+	    CommandSpacing();
 	}
 	else if( ein.compare("SetNumChips")==0 )
 	{
@@ -666,166 +655,173 @@ void Console::ClearFpgaExtTriggerFlag()
 
 
 void Console::ErrorMessages(int err){
-	switch(err){
-	    case 11: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by GeneralReset) - no valid file-descriptors\n> "
-			  << std::flush; 
-		break;
-	    case 12: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by GeneralReset) - timeout\n> "
-			  << std::flush; 
-		break;
-	    case 13: 
-		std::cout << "Warning "
-			  << err 
-			  << ": In FPGA::Communication (called by GeneralReset) - wrong packet-number received\n> "
-			  << std::flush; 
-		break;
-	    case 21: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by Counting) - no valid file-descriptors\n> "
-			  << std::flush; 
-		break;
-	    case 22: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by Counting) - timeout\n> "
-			  << std::flush; 
-		break;
-	    case 23: 
-		std::cout << "Warning"
-			  << err 
-			  << ": In FPGA::Communication (called by Counting) - wrong packet-number received\n> "
-			  << std::flush; 
-		break;
-	    case 24: 
-		std::cout << "Warning"
-			  << err 
-			  << ": In Console::CommandCounting - Software thinks Timepix is already counting. Nothing has be done. Stop counting before you continue. If Software is wrong and Timepix is not counting, it will have any effect.\n> "
+    switch(err){
+	case 11: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by GeneralReset) - no valid file-descriptors\n> "
+		      << std::flush; 
+	    break;
+	case 12: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by GeneralReset) - timeout\n> "
+		      << std::flush; 
+	    break;
+	case 13: 
+	    std::cout << "Warning "
+		      << err 
+		      << ": In FPGA::Communication (called by GeneralReset) - wrong packet-number received\n> "
+		      << std::flush; 
+	    break;
+	case 21: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by Counting) - no valid file-descriptors\n> "
+		      << std::flush; 
+	    break;
+	case 22: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by Counting) - timeout\n> "
+		      << std::flush; 
+	    break;
+	case 23: 
+	    std::cout << "Warning"
+		      << err 
+		      << ": In FPGA::Communication (called by Counting) - wrong packet-number received\n> "
+		      << std::flush; 
+	    break;
+	case 24: 
+	    std::cout << "Warning"
+		      << err 
+		      << ": In Console::CommandCounting - Software thinks Timepix is already counting. Nothing has be done. Stop counting before you continue. If Software is wrong and Timepix is not counting, it will have any effect.\n> "
+		      << std::flush;
+	    break;
+	case 25: 
+	    std::cout << "Warning"
+		      << err 
+		      << ": In Console::CommandCounting - Software thinks Timepix is already not-counting. Anyway, a further stop-command will be sent now."
+		      << std::endl; 
+	    break;
+	case 301: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by ReadOut) - no valid file-descriptors\n> "
+		      << std::flush; 
+	    break;
+	case 302: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by ReadOut) - timeout\n> "
+		      << std::flush; 
+	    break;
+	case 303: 
+	    std::cout << "Warning "
+		      << err 
+		      << ": In FPGA::Communication (called by ReadOut) - wrong packet-number received\n> "
+		      << std::flush; 
+	    break;
+	case 310: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::SaveData (called by ReadOut) - could not open DataFile\n> "
+		      << std::flush; 
+	    break;
+	case 41: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by SetMatrix) - no valid file-descriptors\n> "
+		      << std::flush; 
+	    break;
+	case 42: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by SetMatrix) - timeout\n> "
+		      << std::flush; 
+	    break;
+	case 43: 
+	    std::cout << "Warning "
+		      << err 
+		      << ": In FPGA::Communication (called by SetMatrix) - wrong packet-number received\n> "
+		      << std::flush; 
+	    break;
+	case 51: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by WriteReadFSR) - no valid file-descriptors\n> "
+		      << std::flush; 
+	    break;
+	case 52: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In FPGA::Communication (called by WriteReadFSR) - timeout\n> "
+		      << std::flush; 
+	    break;
+	case 53: 
+	    std::cout << "Warning "
+		      << err 
+		      << ": In FPGA::Communication (called by WriteReadFSR) - wrong packet-number received\n> "
+		      << std::flush; 
+	    break;
+	case 59: 
+	    std::cout << "Warning "
+		      << err 
+		      << ": In Timepix::ChipID (called by WriteReadFSR) - wrong ChipID -  received for one of the chips: "
+		      << pc.fpga.ErrInfo<<", expected: "
+		      << std::flush;
+	    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+		std::cout << "chip " << chip << ": " 
+			  << pc.fpga.tp.GetChipID(chip) << "\n>" 
 			  << std::flush;
-		break;
-	    case 25: 
-		std::cout << "Warning"
-			  << err 
-			  << ": In Console::CommandCounting - Software thinks Timepix is already not-counting. Anyway, a further stop-command will be sent now."
-			  << std::endl; 
-		break;
-	    case 301: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by ReadOut) - no valid file-descriptors\n> "
-			  << std::flush; 
-		break;
-	    case 302: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by ReadOut) - timeout\n> "
-			  << std::flush; 
-		break;
-	    case 303: 
-		std::cout << "Warning "
-			  << err 
-			  << ": In FPGA::Communication (called by ReadOut) - wrong packet-number received\n> "
-			  << std::flush; 
-		break;
-	    case 310: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::SaveData (called by ReadOut) - could not open DataFile\n> "
-			  << std::flush; 
-		break;
-	    case 41: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by SetMatrix) - no valid file-descriptors\n> "
-			  << std::flush; 
-		break;
-	    case 42: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by SetMatrix) - timeout\n> "
-			  << std::flush; 
-		break;
-	    case 43: 
-		std::cout << "Warning "
-			  << err 
-			  << ": In FPGA::Communication (called by SetMatrix) - wrong packet-number received\n> "
-			  << std::flush; 
-		break;
-	    case 51: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by WriteReadFSR) - no valid file-descriptors\n> "
-			  << std::flush; 
-		break;
-	    case 52: 
-		std::cout << "Error "
-			  << err 
-			  << ": In FPGA::Communication (called by WriteReadFSR) - timeout\n> "
-			  << std::flush; 
-		break;
-	    case 53: 
-		std::cout << "Warning "
-			  << err 
-			  << ": In FPGA::Communication (called by WriteReadFSR) - wrong packet-number received\n> "
-			  << std::flush; 
-		break;
-	    case 59: 
-		std::cout << "Warning "
-			  << err 
-			  << ": In Timepix::ChipID (called by WriteReadFSR) - wrong ChipID -  received for one of the chips: "
-			  << pc.fpga.ErrInfo<<", expected: "
-			  << std::flush;
-		for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-		    std::cout << "chip " << chip << ": " 
-			      << pc.fpga.tp.GetChipID(chip) << "\n>" 
-			      << std::flush;
-		}
-		break;
-	    case 61: 
-		std::cout << "Error "
-			  << err 
-			  << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal value for this dac\n> "
-			  << std::flush; 
-		break;
-	    case 62: 
-		std::cout << "Error "
-			  << err 
-			  << ": In TimePix::SetDAC (called by CommandSetDAC) - illegal DAC number\n> "
-			  << std::flush; 
-		break;
-	    case 63: 
-		std::cout << "Error "
-			  << err 
-			  << ": In Console::SenseDAC - illegal DAC number\n> "
-			  << std::flush; 
-		break;
-	    case 80: 
-		std::cout << "Error "
-			  << err 
-			  << ": In TimePix::UniformMatrix - illegal input\n> "
-			  << std::flush; 
-		break;
-	    case 81: 
-		std::cout << "Error "
-			  << err 
-			  << ": In TimePix::VarChessMatrix - illegal input\n> "
-			  << std::flush; 
-		break;
-	    case 82: 
-		std::cout << "Error "
-			  << err 
-			  << ": In PC::ThresholdNoise - invalid ThrH\n> "
-			  << std::flush; 
-		break;
-	}
+	    }
+	    break;
 
-	return;
+	case 61: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal value for this dac\n> "
+		      << std::flush; 
+	    break;
+	case 62: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In TimePix::SetDAC (called by CommandSetDAC) - illegal DAC number\n> "
+		      << std::flush; 
+	    break;
+	case 63: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In Console::SenseDAC - illegal DAC number\n> "
+		      << std::flush; 
+	    break;
+	case 64:
+	    std::cout << "Error "
+		      << err
+		      << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal chip number\n> "
+		      << std::flush;
+	    break;
+	case 80: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In TimePix::UniformMatrix - illegal input\n> "
+		      << std::flush; 
+	    break;
+	case 81: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In TimePix::VarChessMatrix - illegal input\n> "
+		      << std::flush; 
+	    break;
+	case 82: 
+	    std::cout << "Error "
+		      << err 
+		      << ": In PC::ThresholdNoise - invalid ThrH\n> "
+		      << std::flush; 
+	    break;
+    }
+
+    return;
 }
 
 
@@ -946,30 +942,19 @@ int Console::CommandHelp()
 }
 
 
-int Console::CommandSpacing(std::string ein){
-// default version of CommandSpacing
+int Console::CommandSpacing(){
+    // TODO: set a sensible allowedString value for the input
+    //       afaiu all values 0 to 255 allowed?
+    std::string input;
     unsigned int space = 0;
-    if(ein==""){space=0;}
-    else if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
-	space=(unsigned int) atoi(&ein[0]);
-    }
-    else{std::cout<<"\tNon-numerical sign\n> "<<std::flush;}
+    char *promptSpacing = "Please provide a spacing> ";
+    input = getUserInputNumericalNoDefault(promptSpacing);
+    space = std::stoi(input);
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
         pc.fpga.tp.Spacing(space,0,chip);
     }
     return 0;
 }
-
-
-
-int Console::CommandSpacing(unsigned int space){
-// Command spacing used for FADC 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	pc.fpga.tp.Spacing(space,0,chip);
-    }
-    return 0;
-}
-
 
 int Console::CommandSetNumChips(){
     // this function uses getUserInput to get the number
@@ -1195,37 +1180,37 @@ int Console::CommandCounting(int c){
 }
 
 
-int Console::CommandCountingTrigger(std::string ein){
+int Console::CommandCountingTrigger(){
     // default CommandCountingTrigger function
+    // this function is used to set the time the shutter opens after 
+    // a trigger from an external trigger
 #if DEBUG==2
-	std::cout<<"Enter Console::CommandCountingTrigger()"<<ein<<std::endl;	
+    std::cout<<"Enter Console::CommandCountingTrigger()"<<ein<<std::endl;	
 #endif
-	int result=0;
-	unsigned int time;	
-	if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
-		time=(unsigned int) atoi(&ein[0]);
-	}
-	else{std::cout<<"\tNon-numerical sign\n> "<<std::flush; return 0;}
-	result=(time<256);
-	if(result){
-        result=pc.fpga.CountingTrigger(time);
-		if(result>20){ErrorMessages(result);}
-		else{std::cout<<"\tCountingTrigger accomplished\n> "<<std::flush;}
-	}
-	return 1;
-}
-
-int Console::CommandCountingTrigger(unsigned int time){
-    // CommandCountingTrigger function used for Fadc
-#if DEBUG==2
-    std::cout<< "Enter Console::CommandCountingTrigger(unsigned int time) " << time << std::endl;	
-#endif
+    // bool variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
     int result=0;
-    result=(time<256);
-    if(result){
-	result=pc.fpga.CountingTrigger(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTrigger accomplished\n> "<<std::flush;}
+    unsigned int time;
+    std::string input;
+
+    std::cout << "Choose a time value from 1 to 255:"
+	      << "Shutter time is calculated by:\n"
+	      << "time [µsec] = 46*x/freq[MHz], x of {1, 255}, freq 40 MHz (independent of clock!)"
+	      << std::endl;
+    // create set of allowed strings
+    // get user input to get valid value of x in range of 1 to 255
+    std::set<std::string> allowedTimeStrings;
+    // fill this set with all values from 1 to 255
+    for( int l=1; l<256; l++) allowedTimeStrings.insert(std::to_string(l));
+    // use default prompt. Options explained in cout before
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput, &allowedTimeStrings);
+    result=pc.fpga.CountingTrigger(time);
+    if (result > 20){
+	ErrorMessages(result);
+    }
+    else{
+	std::cout << "\tCountingTrigger accomplished\n> " << std::flush;
     }
     return 1;
 }
@@ -1309,39 +1294,16 @@ int Console::CommandCountingTime(){
     return 1;
 }
 
-int Console::CommandCountingTime_fast(std::string ein){
+int Console::CommandCountingTime_fast(){
     // default CommandCountingTime_fast function
+    // this function simply activates the fast clock rate (80 MHz)
+    // and then calls the normal CommandCountingTime function with it enabled
 #if DEBUG==2
     std::cout<<"Enter Console::CommandCountingTime()"<<ein<<std::endl;
 #endif
-    int result=0;
-    unsigned int time;
-    if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
-	time=(unsigned int) atoi(&ein[0]);
-    }
-    else{std::cout<<"\tNon-numerical sign\n> "<<std::flush; return 0;}
-    result=(time<256);
-    if(result){
-        result=pc.fpga.CountingTime_fast(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTime accomplished\n> "<<std::flush;}
-    }
-    return 1;
-}
-
-int Console::CommandCountingTime_fast(unsigned int time){
-    // CommandCountingTime_fast function used for Fadc
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime() "<< time << std::endl;
-#endif
-    int result=0;
-    result=(time<256);
-    if(result){
-	result=pc.fpga.CountingTime_fast(time);
-	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCountingTime accomplished\n> "<<std::flush;}
-    }
-    return 1;
+    std::cout << "Enabling fast clock and calling CountingTime..." << std::endl;
+    pc.fpga.UseFastClock(1);
+    CommandCountingTime();
 }
 
 int Console::CommandReadOut(){
@@ -1578,31 +1540,37 @@ int Console::CommandLoadThreshold(){
 }
 
 
-int Console::CommandSetDAC(std::string ein){
+int Console::CommandSetDAC(){
 #if DEBUG==2
     std::cout<<"Enter Console::CommandSetDAC()"<<std::endl;	
 #endif	
-    if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
-	int pos=ein.find(" ",0); 
-	int dac=(unsigned int) atoi(&ein[0]);
-	unsigned short chip =(unsigned int) atoi(&ein[pos]);
-	int pos2=ein.find(" ",3);
-	std::cout<<"pos2="<<atoi(&ein[pos2])<<std::endl;
-	int i = (unsigned int) atoi(&ein[pos2]);
-	int err = 1;
-	if (chip > pc.fpga.tp.GetNumChips()){ 
-	    std::cout << "You only have " 
-		      << pc.fpga.tp.GetNumChips() 
-		      << " chips, please set DAC in format: DAC chip value" 
-		      << std::endl;err=0;
-	}
-	else err=pc.fpga.tp.SetDAC(dac,chip,i);
-	if(err!=1) ErrorMessages(61-err);
-	else std::cout << "DAC " << dac 
-		       << " (" << pc.fpga.tp.GetDACName(dac) << ") of chip " << chip 
-		       << " set to " << i 
-		       << std::endl;
+    std::string  input;
+    char *promptDAC = "Please choose a DAC to set (#0 to #13)> ";
+    input = getUserInputNumericalNoDefault(promptDAC);
+    int dac = std::stoi(input);
+
+    char *promptChip = "Please choose a chip for which to set DAC> ";
+    input = getUserInputNumericalNoDefault(promptChip);
+    unsigned short chip = std::stoi(input);
+
+    char *promptValue = "Please provide the value to set> ";
+    input = getUserInputNumericalNoDefault(promptValue);
+    int i = std::stoi(input);
+    int err = 1;
+
+    if (chip > pc.fpga.tp.GetNumChips()){ 
+	std::cout << "You only have " 
+		  << pc.fpga.tp.GetNumChips() 
+		  << " chips, please provide correct chip number." 
+		  << std::endl;
+	err=-3;
     }
+    else err=pc.fpga.tp.SetDAC(dac, chip, i);
+    if(err!=1) ErrorMessages(61-err);
+    else std::cout << "DAC " << dac 
+		   << " (" << pc.fpga.tp.GetDACName(dac) << ") of chip " << chip 
+		   << " set to " << i 
+		   << std::endl;
     return 1;
 }
 
@@ -2394,48 +2362,27 @@ int Console::CommandCalibrate(){
 }
 
 
-int Console::CommandSwitchTriggerConnection(std::string ein){
+int Console::CommandSwitchTriggerConnection(){
     // default CommandSwitchTriggerConnection function
 #if DEBUG==2
     std::cout << "Enter Console::CommandCountingTime()"
 	      << ein
 	      << std::endl;	
 #endif
-    if(ein.compare("tlu")==0){pc.fpga.SwitchTriggerConnection(1);}
-    else if( ein.compare("lemo")==0 ){
-	pc.fpga.SwitchTriggerConnection(0);
-    }
-    else{
-	std::cout << "\tTrigger: Unknown option \""
-		  << ein
-		  <<"\". See help\n> "
-		  <<std::flush; 
-	return 1;
-    }
-    return 0;
-}
-
-
-int Console::CommandSwitchTriggerConnection(int trigCon){
-    // CommandSwitchTriggerConnection function used for Fadc
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime() " << trigCon <<std::endl;	
-#endif
-
-    if(trigCon == 1){
-	std::cout << "set to tlu" << std::endl;
+    std::string input;
+    char *promptType = "Please provide a trigger connection type { tlu, lemo }> ";
+    std::set<std::string> allowedStrings = {"tlu", "lemo"};
+    input = getUserInputNonNumericalNoDefault(promptType, &allowedStrings);
+    if(input.compare("tlu")==0){
 	pc.fpga.SwitchTriggerConnection(1);
     }
-    else if(trigCon == 0){
+    else{
+	// if tlu is not in input, lemo is (getUserInput takes care of 
+	// only allowing strings in allowedStrings
 	pc.fpga.SwitchTriggerConnection(0);
-	std::cout << "set to lemo" << std::endl;
     }
-    else {std::cout<<"\tTrigger: Unknown option \""<< trigCon <<"\". See help\n> "<<std::flush; return 1;}
     return 0;
 }
-
-
-
 
 void Console::DACScanLive(char dac, int val){
 #if DEBUG==2
@@ -2475,19 +2422,22 @@ void Console::CommandSpeedTest(std::string ein){
 }
 
 
-void Console::CommandSetIP(std::string ein){
+void Console::CommandSetIP(){
     unsigned int i;
     int pos,n;
     int byte[4]={0};
     std::string str;
     std::stringstream ip;
+    std::string input;
+    char *promptIP = "Please enter a new IP address> ";
+    input = getUserInputNonNumericalNoDefault(promptIP);    
 
-    if((ein.length()>5)&&(ein.length()<16)&&(ein.find_first_not_of("0123456789.",0)==ein.npos)){
+    if((input.length()>5)&&(input.length()<16)&&(input.find_first_not_of("0123456789.",0)==input.npos)){
 	n=0; i=0; pos=-1;
 	while(n<3){
-	    while( (i<ein.length()) && (i-pos<4) && (ein[i]!='.') ){++i;}
-	    if(ein[i]=='.'){
-		str=ein.substr(pos+1,i-pos-1);
+	    while( (i<input.length()) && (i-pos<4) && (input[i]!='.') ){++i;}
+	    if(input[i]=='.'){
+		str=input.substr(pos+1,i-pos-1);
 		byte[n]=atoi(&str[0]);
 	    }
 	    else{
@@ -2502,14 +2452,14 @@ void Console::CommandSetIP(std::string ein){
 	    }
 	    ++n; pos=i; ++i;
 	}
-	while( (i<ein.length()) && (ein[i]!='.') ){++i;}
-	if( (ein[i]=='.') || (i-pos>4) || (i-pos==1) ){
+	while( (i<input.length()) && (input[i]!='.') ){++i;}
+	if( (input[i]=='.') || (i-pos>4) || (i-pos==1) ){
 	    std::cout << "Invalid IP\n> " 
 		      << std::flush; 
 	    return;
 	}
 	else{
-	    str=ein.substr(pos+1,i-pos-1);
+	    str=input.substr(pos+1,i-pos-1);
 	    byte[n]=atoi(&str[0]);
 	}
 	if(byte[n]>255){

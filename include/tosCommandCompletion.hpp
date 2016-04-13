@@ -27,6 +27,10 @@ char *TOS_Command_Generator (const char *text, int state);
 //static 
 char **TOS_Command_Completion( const char *text, int start, int end);
 
+// function which checks if input string is element of set of allowed strings
+int check_if_string_allowed(std::string tempStr, 
+			    std::set<std::string> *allowedStrings);
+
 // get user input function
 std::string getUserInput(const char *prompt, 
 			 bool numericalInput = true, 

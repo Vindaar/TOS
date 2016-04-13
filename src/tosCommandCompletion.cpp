@@ -14,14 +14,11 @@ const char *tosCommands[] = {"GeneralReset",
                              "CountingStop", 
                              "2s", 
                              "CountingLong", 
-                             "2l", 
                              "CountingTrigger", 
                              "2t", 
                              "CountingTime", 
                              "2z", 
                              "2f", 
-                             "2l", 
-                             "2vl", 
                              "ReadOut", 
                              "3", 
                              "ReadOut2", 
@@ -68,7 +65,7 @@ const char *tosCommands[] = {"GeneralReset",
                              "MakeARP", 
                              "quit", 
                              "help", 
-                             "spacing ", 
+                             "spacing", 
                              "SetNumChips", 
                              "SetOption", 
                              "CheckOffset", 
@@ -156,6 +153,30 @@ char **TOS_Command_Completion(const char *text, int start, int end){
     return matches;
 }
 
+int check_if_string_allowed(std::string tempStr, 
+			    std::set<std::string> *allowedStrings){
+    // this function is used to check whether the input string is element of
+    // the set of allowed strings
+    // returns 0 if string allowed
+    // returns 1 if string not allowed
+    if (allowedStrings == NULL){
+	// in this case we accept the input, because our only
+	// constraint is a non empty string
+	return 0;
+    }
+    else if ( (allowedStrings != NULL) &&
+	      (allowedStrings->find(tempStr) != allowedStrings->end()) ){
+	// allowedStrings is not NULL and tempStr is element of allowedStrings
+	// thus we can break from the while loop
+	return 0;
+    }
+    // if we have not left the function yet allowedStrings is not NULL, 
+    // but string also not in set. Thus output message
+    std::cout << "Argument not in set of allowed strings; try again"
+	      << std::endl;
+    return 1;
+}
+
 std::string getUserInput(const char *prompt, 
 			 bool numericalInput, 
 			 bool allowDefaultOnEmptyInput,
@@ -188,6 +209,7 @@ std::string getUserInput(const char *prompt,
 	    // create a temporary string to perform proper exception
 	    // handling (stoi throws exceptions, atoi does not)
 	    std::string tempStr(buf);
+	    int stringAllowed;
 
 	    // if numericalInput is set to true, check whether input is numerical
 	    if (numericalInput == true){
@@ -199,38 +221,26 @@ std::string getUserInput(const char *prompt,
 		    std::stoi(tempStr);
 		    // if no exception is thrown, check if we supply allowed values for 
 		    // the input. If so, check if input is in set of allowed inputs
-		    if ( (allowedStrings != NULL) &&
-			 (allowedStrings->find(tempStr) != allowedStrings->end()) ){
-			// allowedStrings is not NULL and tempStr is element of allowedStrings
-			// thus we can break from the while loop
-			break;
-		    }
-		    else if (allowedStrings == NULL){
-			// in this case we accept the input, because our only 
-			// constraint is valid numerical input
-			break;
-		    }
+		    stringAllowed = check_if_string_allowed(tempStr, allowedStrings);
+		    if (stringAllowed == 0) break;
 		}
 		catch (const std::invalid_argument &ia) {
 		    // if this is catched, argument non numerical
 		    std::cout << "Argument non numerical; try again" 
 			      << std::endl;
 		}
+		catch (const std::out_of_range &ia) {
+		    // if this is catched, numerical input exceeds size 
+		    // of an integer
+		    std::cout << "Numerical input exceeds size of an integer; try again"
+			      << std::endl;
+		}
 	    }// end numericalInput
 	    else{
-		// in this case we want a string input. check if allowedStrings is 
-		// not NULL, and if element is in set
-		if ( (allowedStrings != NULL) &&
-		     (allowedStrings->find(tempStr) != allowedStrings->end()) ){
-		    // allowedStrings is not NULL and tempStr is element of allowedStrings
-		    // thus we can break from the while loop
-		    break;
-		}
-		else if (allowedStrings == NULL){
-		    // in this case we accept the input, because our only 
-		    // constraint is a non empty string
-		    break;
-		}
+		// in this case we want a string input. check if allowedStrings is
+		// (not) NULL, and if element is in set of allowedStrings
+		stringAllowed = check_if_string_allowed(tempStr, allowedStrings);
+		if (stringAllowed == 0) break;
 	    }
 	}//end non empty buffer
     }//end while loop

@@ -264,6 +264,8 @@ int FPGA::CountingStop(){
     return 20+err_code;
 }
 
+// << "CountingTrigger <shutter-time>             = 2t <shutter-time>: "
+// << "open shutter after external trigger for t[µs] = 46* <shutter-time>/40 \n\t"
 
 int FPGA::CountingTrigger(int time){
 #if DEBUG==2
@@ -593,8 +595,6 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
 #endif
     if(err_code<0){return 1;} else if(err_code==0){return 2;} else{err_code=0;}
 
-    std::cout << "noch trest" << std::endl;
-	
     RecvBytes=recv(sock,RecvBuffer,PLen+18,0);
     //usleep(3000);
 #if DEBUG==1
@@ -624,8 +624,6 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     _fadcBit = RecvBuffer[10];
     if((_fadcBit == 1) && !_fadcFlag) _fadcFlag = true;
     
-    std::cout << "noch mehr test" << std::endl;
-
     ADC_ChAlert=RecvBuffer[14];
     ADC_result+=RecvBuffer[15] << 8;
     ADC_result+=RecvBuffer[16];
@@ -633,8 +631,6 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     tp.SetFADCtriggered(FADCtriggered);
     tp.SetExtraByte(ExtraByte);
     tp.SetADCresult(ADC_ChAlert,ADC_result);
-
-    std::cout << "hier nicht mehr " << std::endl;
       
     return err_code;
 }
