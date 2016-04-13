@@ -318,19 +318,19 @@ int FPGA::CountingTime(int time, int modeSelector){
     // choose the correct mode depening on input given in 
     // Console::CommandCountingTime()
     if (usefastclock){
-	// standard
+	// standard, Mode = 20 in Hex: 0x14
 	if      (modeSelector == 0) Mode = 20; 
-	// long 
+	// long,     Mode = 30 in Hex: 0x1E
 	else if (modeSelector == 1) Mode = 30;
-	// verylong
+	// verylong, Mode = 31 in Hex: 0x1F
 	else if (modeSelector == 2) Mode = 31;
     }
     else {
-	// standard
+	// standard, Mode = 19 in Hex: 0x13
 	if      (modeSelector == 0) Mode = 19;
-	//long 
+	//long,      Mode = 21 in Hex: 0x15
 	else if (modeSelector == 1) Mode = 21;
-	//verylong
+	//verylong,  Mode = 22 in Hex: 0x16
 	else if (modeSelector == 2) Mode = 22;
     }
 
@@ -576,13 +576,6 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     std::cout << "Paket gesendet "<<RecvBytes<< std::endl;
 #endif
 
-    // TODO: should be fine for linux as well?
-    std::cout<<"Sendbuffer geschrieben"<<std::endl;
-    std::cout <<"socket"<<sock<< std::endl;
-    std::cout <<"ip"<<ip<< std::endl;
-    std::cout <<"Port"<<Port<< std::endl;
-
-
     //quitusleep(3000);
     testfd=readfd;
     err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, NULL);//&timeout);
@@ -599,7 +592,8 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     if (err_code==0) std::cout << "Timeout in select" << std::endl; 
 #endif
     if(err_code<0){return 1;} else if(err_code==0){return 2;} else{err_code=0;}
-	
+
+    std::cout << "noch trest" << std::endl;
 	
     RecvBytes=recv(sock,RecvBuffer,PLen+18,0);
     //usleep(3000);
@@ -629,6 +623,8 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     FADCtriggered = RecvBuffer[10];
     _fadcBit = RecvBuffer[10];
     if((_fadcBit == 1) && !_fadcFlag) _fadcFlag = true;
+    
+    std::cout << "noch mehr test" << std::endl;
 
     ADC_ChAlert=RecvBuffer[14];
     ADC_result+=RecvBuffer[15] << 8;
@@ -637,6 +633,8 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     tp.SetFADCtriggered(FADCtriggered);
     tp.SetExtraByte(ExtraByte);
     tp.SetADCresult(ADC_ChAlert,ADC_result);
+
+    std::cout << "hier nicht mehr " << std::endl;
       
     return err_code;
 }
