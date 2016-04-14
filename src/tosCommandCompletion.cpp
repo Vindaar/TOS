@@ -188,6 +188,11 @@ std::string getUserInput(const char *prompt,
     // bool numericalInput: if this flag is set, only allow numerical input
     // bool allowDefaultOnEmptyInput: if this flag is set, allow empty input
     //                                and thus set a default value later
+    // this function provides a general 'quit' command, to leave the function
+    // call, if desired. IMPORTANT: this function can only return a string, 
+    // that means the function which calls getUserInput, needs to deal with
+    // returning to the userInterface
+    // TODO: is there maybe a smarter way to do this?
 
     char *buf;
     while ( true ){
@@ -210,6 +215,9 @@ std::string getUserInput(const char *prompt,
 	    // handling (stoi throws exceptions, atoi does not)
 	    std::string tempStr(buf);
 	    int stringAllowed;
+
+	    // the first thing to check, is whether the input is a quit command
+	    if (tempStr == "quit") break;
 
 	    // if numericalInput is set to true, check whether input is numerical
 	    if (numericalInput == true){
