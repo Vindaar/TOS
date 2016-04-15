@@ -432,9 +432,9 @@ class HV_FADC_Obj
     int checkModuleTimeInterval;
     // the event status variables which were current in the 
     // last call of H_CheckHVModuleIsGood()
-    ChEventStatusSTRUCT gridEventStatusLastIter = { 0 };
-    ChEventStatusSTRUCT anodeEventStatusLastIter = { 0 };
-    ChEventStatusSTRUCT cathodeEventStatusLastIter = { 0 };
+    ChEventStatusSTRUCT gridEventStatusLastIter;
+    ChEventStatusSTRUCT anodeEventStatusLastIter;
+    ChEventStatusSTRUCT cathodeEventStatusLastIter;
 
     
 
