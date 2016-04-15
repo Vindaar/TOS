@@ -311,25 +311,25 @@ void Timepix::UpdateFSR(){
 		for(int i=0;i<8;++i){
 			if( DACValue[chip][0] & ( 1 << i ) ) //pr�fe ob (2^x)-te Bit gesetzt ist durch Bitweises-Und mit einer "bin�ren 1 mit i angeh�ngten Nullen"
 				FSR[chip][18+1+IKrumBitPos[i]/8] += ( 1<<(7-IKrumBitPos[i]%8) ); // addiere zum Byte die Wertigkeit des aktuellen FSR-Bits
-			if( DACValue[chip][1] & (1<<i) ) FSR[chip][18+1+ DiscBitPos[i]/8]	+= 1<< (7-DiscBitPos[i]%8);
-			if( DACValue[chip][2] & (1<<i) ) FSR[chip][18+1+ PreampBitPos[i]/8]	+= 1<< (7-PreampBitPos[i]%8);
-			if( DACValue[chip][3] & (1<<i) ) FSR[chip][18+1+ BuffAnalogABitPos[i]/8]	+= 1<< (7-BuffAnalogABitPos[i]%8);
-			if( DACValue[chip][4] & (1<<i) ) FSR[chip][18+1+ BuffAnalogBBitPos[i]/8]	+= 1<< (7-BuffAnalogBBitPos[i]%8);
-			if( DACValue[chip][5] & (1<<i) ) FSR[chip][18+1+ HistBitPos[i]/8]	+= 1<< (7-HistBitPos[i]%8);
-			if( DACValue[chip][7] & (1<<i) ) FSR[chip][18+1+ VcasBitPos[i]/8]	+= 1<< (7-VcasBitPos[i]%8);
-			if( DACValue[chip][8] & (1<<i) ) FSR[chip][18+1+ FBKBitPos[i]/8]	+= 1<< (7-FBKBitPos[i]%8);
-			if( DACValue[chip][9]& (1<<i) ) FSR[chip][18+1+ GNDBitPos[i]/8]	+= 1<< (7-GNDBitPos[i]%8);
-			if( DACValue[chip][10]& (1<<i) ) FSR[chip][18+1+ THSBitPos[i]/8]	+= 1<< (7-THSBitPos[i]%8);
-			if( DACValue[chip][11]& (1<<i) ) FSR[chip][18+1+ BiasLVDSBitPos[i]/8]	+= 1<< (7-BiasLVDSBitPos[i]%8);
-			if( DACValue[chip][12]& (1<<i) ) FSR[chip][18+1+ RefLVDSBitPos[i]/8] 	+= 1<< (7-RefLVDSBitPos[i]%8);
+			if( DACValue[chip][1] & (1<<i) ) FSR[chip][18+1+ DiscBitPos[i]/8]	 += 1<< (7-DiscBitPos[i]%8);
+			if( DACValue[chip][2] & (1<<i) ) FSR[chip][18+1+ PreampBitPos[i]/8]	 += 1<< (7-PreampBitPos[i]%8);
+			if( DACValue[chip][3] & (1<<i) ) FSR[chip][18+1+ BuffAnalogABitPos[i]/8] += 1<< (7-BuffAnalogABitPos[i]%8);
+			if( DACValue[chip][4] & (1<<i) ) FSR[chip][18+1+ BuffAnalogBBitPos[i]/8] += 1<< (7-BuffAnalogBBitPos[i]%8);
+			if( DACValue[chip][5] & (1<<i) ) FSR[chip][18+1+ HistBitPos[i]/8]	 += 1<< (7-HistBitPos[i]%8);
+			if( DACValue[chip][7] & (1<<i) ) FSR[chip][18+1+ VcasBitPos[i]/8]	 += 1<< (7-VcasBitPos[i]%8);
+			if( DACValue[chip][8] & (1<<i) ) FSR[chip][18+1+ FBKBitPos[i]/8]	 += 1<< (7-FBKBitPos[i]%8);
+			if( DACValue[chip][9] & (1<<i) ) FSR[chip][18+1+ GNDBitPos[i]/8]	 += 1<< (7-GNDBitPos[i]%8);
+			if( DACValue[chip][10]& (1<<i) ) FSR[chip][18+1+ THSBitPos[i]/8]	 += 1<< (7-THSBitPos[i]%8);
+			if( DACValue[chip][11]& (1<<i) ) FSR[chip][18+1+ BiasLVDSBitPos[i]/8]	 += 1<< (7-BiasLVDSBitPos[i]%8);
+			if( DACValue[chip][12]& (1<<i) ) FSR[chip][18+1+ RefLVDSBitPos[i]/8] 	 += 1<< (7-RefLVDSBitPos[i]%8);
 		}
-		if( DACValue[chip][15] ) FSR[chip][18+1+ SenseDACPos/8] 	+= 1<< (7-SenseDACPos%8);
+		if( DACValue[chip][15] ) FSR[chip][18+1+ SenseDACPos/8] += 1<< (7-SenseDACPos%8);
 		if( DACValue[chip][16] ) FSR[chip][18+1+ ExtDACPos/8] 	+= 1<< (7-ExtDACPos%8);
 		for(int i=0;i<10;++i){if( DACValue[chip][6] & (1 << i) ) FSR[chip][18+1+THLBitPos[i]/8] += 1<<(7-THLBitPos[i]%8);}
 		//FSR[18+1+ DACCodePos[3] /8] = 3 ;
 		for(int i=0;i<4;++i){
 			if( DACValue[chip][13] & (1 << i) ) FSR[chip][18+1+CoarseBitPos[i]/8] += 1<<(7-CoarseBitPos[i]%8);
-			if( DACValue[chip][17]& (1<<i) ) FSR[chip][18+1+ DACCodePos[i]/8] 	+= 1<< (7-DACCodePos[i]%8);
+			if( DACValue[chip][17] & (1 << i) ) FSR[chip][18+1+ DACCodePos[i]/8]  += 1<<(7-DACCodePos[i]%8);
 
 		}
 			

@@ -58,12 +58,16 @@ void Producer::run()
 	}
 	if (parent->shutter_mode == 2)  {
 	    // Trigger when trigger used
-	    result=parent->fpga.CountingTime_fast(parent->shutter);
+	    parent->fpga.UseFastClock(true);
+	    result=parent->fpga.CountingTime(parent->shutter, 0);
+	    parent->fpga.UseFastClock(false);
 	    if(result!=20){(parent->RunIsRunning)=false;}
 	}
 	if (parent->shutter_mode == 3) {
 	    // Trigger when trigger used
-	    result=parent->fpga.CountingTrigger_fast(parent->shutter);
+	    parent->fpga.UseFastClock(true);
+	    result=parent->fpga.CountingTrigger(parent->shutter);
+	    parent->fpga.UseFastClock(false);
 	    if(result!=20){(parent->RunIsRunning)=false;}
 	}
 	if (parent->shutter_mode == 4) {

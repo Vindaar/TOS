@@ -152,7 +152,7 @@ void Console::CommandActivateHvFadcObj(){
 	std::string input;
 	input = getUserInput(promptNumChips, numericalInput, allowDefaultOnEmptyInput);
 	if (input == "quit") return;
-	if ((input == "y") ||
+	else if ((input == "y") ||
 	    (input == "Y")){
 	    // in this case, calls SetNumChips to set number of chips to 1
 	    SetNumChips(1);
@@ -266,10 +266,6 @@ int Console::UserInterface(){
 	    // it will ask the user, which multiplier he wants to use (represents 
 	    // standard, long and verylong of the past)
 	    CommandCountingTime();
-	}
-	else if( ein.compare("2f")==0 )
-	{
-	    CommandCountingTime_fast();
 	}
 	else if( (ein.compare("ReadOut")==0)||
 		 (ein.compare("3")==0) ) 
@@ -1071,7 +1067,7 @@ int Console::CommandRun(bool useHvFadc){
     }
 
     //Shutter mode
-    const char *promptShutterMode = "(Run)\t Shutter mode (0= untiggered, 1 = external trigger, 2 = untiggered 2x faster clock, 3 = external trigger 2x faster clock, 4 = untriggered long ,5 = untriggered very long)";
+    const char *promptShutterMode = "(Run)\t Shutter mode (0= untriggered, 1 = external trigger, 2 = untriggered 2x faster clock, 3 = external trigger 2x faster clock, 4 = untriggered long ,5 = untriggered very long)";
     input = getUserInput(promptShutterMode, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     shutter_mode = std::stoi(input);
@@ -1210,6 +1206,26 @@ int Console::CommandCountingTrigger(){
     int result=0;
     unsigned int time;
     std::string input;
+    
+    std::cout << "Do you wish to trigger with or without fastclock?"
+	      << "Standard:  type { standard,  std , s, 0 }"
+	      << "Fastclock: type { fastclock, fast, f, 1 }"
+	      << std::endl;
+    std::set<std::string> allowedClockStrings = {"standard",   "std", "s", "0",
+						 "fastclock", "fast", "f", "1"};
+    input = getUserInputNonNumericalNoDefault(_prompt, &allowedClockStrings);
+    if (input == "quit") return -1;
+    else if ( (input == "standard") ||
+	      (input == "std")      ||
+	      (input == "s")        ||
+	      (input == "0") ){
+	// activate fast clock
+	pc.fpga.UseFastClock(1);
+    }
+    else{
+	// in this case the input is a use fastclock input
+	pc.fpga.UseFastClock(0);
+    }
 
     std::cout << "Choose a time value from 1 to 255:"
 	      << "Shutter time is calculated by:\n"
@@ -1222,7 +1238,11 @@ int Console::CommandCountingTrigger(){
     for( int l=1; l<256; l++) allowedTimeStrings.insert(std::to_string(l));
     // use default prompt. Options explained in cout before
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput, &allowedTimeStrings);
-    if (input == "quit") return -1;
+    if (input == "quit"){
+	// regardless of used option, turn off fast clock to make sure
+	pc.fpga.UseFastClock(0);
+	return -1;
+    }
     result=pc.fpga.CountingTrigger(time);
     if (result > 20){
 	ErrorMessages(result);
@@ -1230,6 +1250,9 @@ int Console::CommandCountingTrigger(){
     else{
 	std::cout << "\tCountingTrigger accomplished\n> " << std::flush;
     }
+    // regardless of the used option, turn off fast clock
+    pc.fpga.UseFastClock(0);
+
     return 1;
 }
 
@@ -1242,10 +1265,35 @@ int Console::CommandCountingTime(){
     // use getUserInput to get the desired mode first
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = false;
+    std::string inputClock;
     std::string inputMode;
     std::string inputTime;
     int n;
 
+    // TODO: think about putting fast clock question to its own function, which
+    //       is called from CommandCountingTime as well as CommandCountingTrigger
+    // First check whether the user wishes to work with or without fastclock
+    std::cout << "Do you wish to trigger with or without fastclock?"
+	      << "Standard:  type { standard,  std , s, 0 }"
+	      << "Fastclock: type { fastclock, fast, f, 1 }"
+	      << std::endl;
+    std::set<std::string> allowedClockStrings = {"standard",   "std", "s", "0",
+						 "fastclock", "fast", "f", "1"};
+    inputClock = getUserInputNonNumericalNoDefault(_prompt, &allowedClockStrings);
+    if (inputClock == "quit") return -1;
+    else if ( (inputClock == "standard") ||
+	      (inputClock == "std")      ||
+	      (inputClock == "s")        ||
+	      (inputClock == "0") ){
+	// activate fast clock
+	pc.fpga.UseFastClock(1);
+    }
+    else{
+	// in this case the input is a use fastclock input
+	pc.fpga.UseFastClock(0);
+    }
+
+    // now choose shutter range
     std::cout << "Please choose the shutter range (choose one option from {} ):\n" 
 	      << "Standard  - n = 0 : type { standard, std, 0 } range:   1.15 µs - 293.25 µs\n"
 	      << "Long      - n = 1 : type { long,     l  , 1 } range: 294.40 µs -  75.07 ms\n"
@@ -1260,10 +1308,14 @@ int Console::CommandCountingTime(){
 
     // use default prompt. Options explained in cout before
     inputMode = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput, &allowedStrings);
-    if (inputMode == "quit") return -1;
-    if( (inputMode == "standard") ||
-	(inputMode == "std"     ) ||
-	(inputMode == "0"       )){
+    if (inputMode == "quit"){
+	// regardless of used option, turn off fast clock to make sure
+	pc.fpga.UseFastClock(0);
+	return -1;
+    }
+    else if( (inputMode == "standard") ||
+	     (inputMode == "std"     ) ||
+	     (inputMode == "0"       )){
 	n = 0;
     }
     else if( (inputMode == "long") ||
@@ -1285,7 +1337,11 @@ int Console::CommandCountingTime(){
     numericalInput = true;
     std::cout << "Choose a time value from 1 to 255:" << std::endl;
     inputTime = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput, &allowedTimeStrings);
-    if (inputTime == "quit") return -1;
+    if (inputTime == "quit") {
+	// regardless of used option, turn off fast clock to make sure
+	pc.fpga.UseFastClock(0);
+	return -1;
+    }
     // inputTime should now be a valid string for an integer between 1 and 255
     int shutterTime = std::pow(256, n)*46*std::stoi(inputTime) / 40;
     if (shutterTime > 1000000){
@@ -1311,22 +1367,6 @@ int Console::CommandCountingTime(){
     else{
 	std::cout << "\tCountingTime accomplished\n> " << std::flush;
     }
-    return 1;
-}
-
-int Console::CommandCountingTime_fast(){
-    // default CommandCountingTime_fast function
-    // this function simply activates the fast clock rate (80 MHz)
-    // and then calls the normal CommandCountingTime function with it enabled
-#if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime()"<<ein<<std::endl;
-#endif
-    std::cout << "Enabling fast clock and calling CountingTime..." << std::endl;
-    pc.fpga.UseFastClock(1);
-    CommandCountingTime();
-    std::cout << "Disabling fast clock..." << std::endl;    
-    pc.fpga.UseFastClock(0);
-
     return 1;
 }
 
@@ -2488,7 +2528,7 @@ int Console::CommandSwitchTriggerConnection(){
     std::set<std::string> allowedStrings = {"tlu", "lemo"};
     input = getUserInputNonNumericalNoDefault(promptType, &allowedStrings);
     if (input == "quit") return -1;
-    if(input.compare("tlu")==0){
+    else if(input.compare("tlu")==0){
 	pc.fpga.SwitchTriggerConnection(1);
     }
     else{
@@ -2547,8 +2587,7 @@ void Console::CommandSetIP(){
     const char *promptIP = "Please enter a new IP address> ";
     input = getUserInputNonNumericalNoDefault(promptIP);    
     if (input == "quit") return;
-
-    if((input.length()>5)&&(input.length()<16)&&(input.find_first_not_of("0123456789.",0)==input.npos)){
+    else if((input.length()>5)&&(input.length()<16)&&(input.find_first_not_of("0123456789.",0)==input.npos)){
 	n=0; i=0; pos=-1;
 	while(n<3){
 	    while( (i<input.length()) && (i-pos<4) && (input[i]!='.') ){++i;}

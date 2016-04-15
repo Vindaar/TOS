@@ -223,8 +223,9 @@ int FPGA::GeneralReset(){
     std::cout<<"Enter FPGA::GeneralReset()"<<std::endl;	
 #endif
     int err_code;
-    //M0=1; M1=1; Enable_IN=1; Shutter=1; Reset=0; 	//ModL= 15 = 0x0f
-    Mode=1;
+    //M0=1; M1=1; Enable_IN=1; Shutter=1; Reset=0; TODO: why is ModL=15 mentioned here?? //ModL= 15 = 0x0f
+    // General Reset 0x01
+    Mode = 0x01;
     OutgoingLength=18; 
     IncomingLength=18; 
     PacketQueueSize=1; 
@@ -238,8 +239,9 @@ int FPGA::Counting(){
     std::cout<<"Enter FPGA::Counting()"<<std::endl;	
 #endif
     int err_code;
-    //M0=1; M1=1; Enable_IN=1; Shutter=0; Reset=1; 	//ModL= 23 = 0x17
-    Mode=2;
+    //M0=1; M1=1; Enable_IN=1; Shutter=0; Reset=1; TODO: why ModL=23 mentioned here?? //ModL= 23 = 0x17
+    // Start Counting 0x02
+    Mode = 0x02;
     OutgoingLength=18; 
     IncomingLength=18; 
     PacketQueueSize=1;
@@ -254,8 +256,9 @@ int FPGA::CountingStop(){
     std::cout<<"Enter FPGA::CountingStop()"<<std::endl;	
 #endif
     int err_code;
-    //M0=1; M1=1; Enable_IN=0; Shutter=0; Reset=1; 	//ModL= 23 = 0x17
-    Mode=3;
+    //M0=1; M1=1; Enable_IN=0; Shutter=0; Reset=1; TODO: why ModL=23 mentioned here?? //ModL= 23 = 0x17
+    // Stop Counting 0x03
+    Mode = 0x03;
     OutgoingLength=18; 
     IncomingLength=18; 
     PacketQueueSize=1;  
@@ -264,44 +267,27 @@ int FPGA::CountingStop(){
     return 20+err_code;
 }
 
-// << "CountingTrigger <shutter-time>             = 2t <shutter-time>: "
+// << "CountingTrigger <shutter-time>                = 2t <shutter-time>: "
 // << "open shutter after external trigger for t[µs] = 46* <shutter-time>/40 \n\t"
 
 int FPGA::CountingTrigger(int time){
+    // int time          integer in range {1, 255}
 #if DEBUG==2
     std::cout<<"Enter FPGA::CountingTrigger()"<<std::endl;	
 #endif
     int err_code;
     //M0=1; M1=1; Enable_IN=0; Shutter=0; Reset=1; 	//ModL= 23 = 0x17
-    if (usefastclock){
-	if( TriggerConnectionIsTLU ){ Mode=29; }
-	else{ Mode=29; }
+    if (_usefastclock){
+	// Start Counting external Trigger LEMO fast clock 0x18
+	Mode = 0x18;
     }
     else{
-	if( TriggerConnectionIsTLU ){ Mode=23; }
-	else{ Mode=23; }
+	// Start Counting external Trigger LEMO 0x17
+	Mode = 0x17;
     }
     OutgoingLength=18; 
     IncomingLength=18; 
     PacketQueueSize=1;  
-    PacketBuffer[6]=time;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
-    if((err_code==0)||(err_code==3)){tp.SetCounting(0);}
-    return 20+err_code;
-}
-
-
-int FPGA::CountingTrigger_fast(int time){
-#if DEBUG==2
-    std::cout<<"Enter FPGA::CountingTrigger()"<<std::endl;
-#endif
-    int err_code;
-    //M0=1; M1=1; Enable_IN=0; Shutter=0; Reset=1; 	//ModL= 23 = 0x17
-    if(TriggerConnectionIsTLU){Mode=24;}
-    else{Mode=24;}
-    OutgoingLength=18; 
-    IncomingLength=18; 
-    PacketQueueSize=1;
     PacketBuffer[6]=time;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
     if((err_code==0)||(err_code==3)){tp.SetCounting(0);}
@@ -319,21 +305,21 @@ int FPGA::CountingTime(int time, int modeSelector){
     int err_code;
     // choose the correct mode depening on input given in 
     // Console::CommandCountingTime()
-    if (usefastclock){
+    if (_usefastclock){
 	// standard, Mode = 20 in Hex: 0x14
-	if      (modeSelector == 0) Mode = 20; 
+	if      (modeSelector == 0) Mode = 0x14;
 	// long,     Mode = 30 in Hex: 0x1E
-	else if (modeSelector == 1) Mode = 30;
+	else if (modeSelector == 1) Mode = 0x1E;
 	// verylong, Mode = 31 in Hex: 0x1F
-	else if (modeSelector == 2) Mode = 31;
+	else if (modeSelector == 2) Mode = 0x1F;
     }
     else {
 	// standard, Mode = 19 in Hex: 0x13
-	if      (modeSelector == 0) Mode = 19;
+	if      (modeSelector == 0) Mode = 0x13;
 	//long,      Mode = 21 in Hex: 0x15
-	else if (modeSelector == 1) Mode = 21;
+	else if (modeSelector == 1) Mode = 0x15;
 	//verylong,  Mode = 22 in Hex: 0x16
-	else if (modeSelector == 2) Mode = 22;
+	else if (modeSelector == 2) Mode = 0x16;
     }
 
     OutgoingLength=18; 
@@ -350,22 +336,6 @@ int FPGA::CountingTime(int time, int modeSelector){
 
     return 20+err_code;
 }
-
-int FPGA::CountingTime_fast(int time){
-#if DEBUG==2
-    std::cout<<"Enter FPGA::CountingTrigger()"<<std::endl;
-#endif
-    int err_code;
-    Mode=20;
-    OutgoingLength=18; 
-    IncomingLength=18; 
-    PacketQueueSize=1;
-    PacketBuffer[6]=time;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
-    return 20+err_code;
-}
-
-
 
 int FPGA::SetMatrix(){
 #if DEBUG==2
@@ -385,20 +355,24 @@ int FPGA::SetMatrix(){
 #endif
 
     //M0=0; M1=1; Enable_IN=0; Shutter=1; Reset=1; 	//ModL= 26 = 0x1a
-    Mode=10;
+    // Start Set Matrix 0x0A
+    Mode = 0x0A;
     OutgoingLength=18+PLen; 
     IncomingLength=18; 
     PacketQueueSize=PQueue*tp.GetNumChips();
 	
     err_code=Communication(&((*PackQueue)[0][0]),PacketBuffer);
     if(err_code>0)return 40+err_code;
-    Mode=11; OutgoingLength=18+PLen;
+    // Forward Set Matrix 0x0B
+    Mode = 0x0B; 
+    OutgoingLength=18+PLen;
 	
     for(int p=1;p<PacketQueueSize;++p){
 	//usleep(100);
 	if(p==PacketQueueSize-1){
 	    OutgoingLength=18+((256*256*14+8+256)*tp.GetNumChips())/8%PLen;
-	    Mode=12;
+	    // End Set Matrix
+	    Mode = 0x0C;
 	}
 	err_code=Communication(&((*PackQueue)[p][0]),PacketBuffer);
 	if(err_code>0)return 400+err_code;
@@ -419,8 +393,11 @@ int FPGA::WriteReadFSR(){
     for(i=18;i<18+(32*tp.GetNumChips())+2;i++)printf("%i ",PacketBuffer[i]);printf("\n");
 #endif
     //M0=1; M1=0; Enable_IN=0; Shutter=1; Reset=1; 	//ModL= 25 = 0x19
-    Mode=13;
+    // Set DAC write fsr
+    Mode = 0x0D;
     // changed to 34*tp.GetNumChips() (in Alex code was 32*...)
+    // 34 corresponds to: 256 bit (32 byte) + 8 bit (1 byte) preload and 1 more byte to process
+    // TODO: + 2 why? not sure, somehow needed?
     OutgoingLength=18+(34*tp.GetNumChips()) + 2; 
     // changed to 34*tp.GetNumChips() + 2 (in Alex code was 33*tp.GetNumChips())
     IncomingLength=18+(34*tp.GetNumChips()) + 2; 
@@ -444,7 +421,8 @@ int FPGA::WriteReadFSR(){
 int FPGA::i2creset()
 {
     int err_code;
-    Mode= 7;
+    // I²C reset 0x07
+    Mode = 0x07;
     OutgoingLength=18; 
     IncomingLength=18+400; 
     PacketQueueSize=1;
@@ -461,7 +439,8 @@ int FPGA::i2cDAC(unsigned short Umv, unsigned short DACchannel)
     std::cout<<"I2C DAC voltage bitcode: "<<bitcode1<<std::endl;
     unsigned int i2c_val = (DACchannel<<12) | bitcode1;
     tp.SetI2C(i2c_val);
-    Mode= 9;
+    // I²C DACs
+    Mode = 0x09;
     OutgoingLength=18; 
     IncomingLength=18+400; 
     PacketQueueSize=1;
@@ -475,7 +454,8 @@ int FPGA::i2cADC(unsigned short channel)
     int err_code;
     unsigned int i2c_val = channel;
     tp.SetI2C(i2c_val);
-    Mode= 14;
+    // Readout ADC 0x0E
+    Mode = 0x0E;
     OutgoingLength=18; 
     IncomingLength=18+400; 
     PacketQueueSize=1;
@@ -500,7 +480,8 @@ int FPGA::tpulse(unsigned short Npulses, unsigned short div500kHz)
     int err_code;
     unsigned int i2c_val = (Npulses<<8) | div500kHz;
     tp.SetI2C(i2c_val);
-    Mode= 15;
+    // Testpulses 0x0F
+    Mode = 0x0F;
     OutgoingLength=18; 
     IncomingLength=18+400; 
     PacketQueueSize=1;
@@ -514,8 +495,14 @@ int FPGA::EnableTPulse(int tpulse){
     std::cout<<"Enter FPGA::EnableTPulse()"<<std::endl;	
 #endif
     int err_code;
-    if(tpulse){Mode=16;}
-    else{Mode=17;}
+    if(tpulse){
+	// External Testpulses Enable  0x10
+	Mode = 0x10;
+    }
+    else{
+	// External Testpulses Disable 0x11
+	Mode = 0x11;
+    }
     OutgoingLength=18; 
     IncomingLength=18; 
     PacketQueueSize=1;
@@ -527,12 +514,20 @@ int FPGA::EnableTPulse(int tpulse){
 int FPGA::EnableFADCshutter(unsigned short FADCshutter)
 {
 #if DEBUG==2
-    std::cout<<"Enter FPGA::EnableTPulse()"<<std::endl;
+    std::cout<<"Enter FPGA::EnableTPulse()"<<std::endl; 
 #endif
     int err_code;
     tp.SetFADCshutter(FADCshutter);
-    if(FADCshutter){Mode=8;}
-    else{Mode=18;}
+    if(FADCshutter){
+	// FADC trigger closes shutter on
+	// Mode = 0x20 == 32
+	Mode = 0x20;
+    }
+    else{
+	// Mode = 0x21 == 33
+	// FADC trigger closes shutter off
+	Mode = 0x21;
+    }
     OutgoingLength=18; 
     IncomingLength=18; 
     PacketQueueSize=1;
@@ -1207,6 +1202,6 @@ int FPGA::SwitchTriggerConnection(int connection){
 }
 
 void FPGA::UseFastClock(bool use){
-	if (use == true) usefastclock= true;
-	else usefastclock = false;
+	if (use == true) _usefastclock= true;
+	else _usefastclock = false;
 }

@@ -81,7 +81,6 @@ private:
 
     int CommandCountingTrigger();
     int CommandCountingTime();
-    int CommandCountingTime_fast();
     // same functions for FADC usage
     // slightly different implementation. Uses getInputValue() functions
     // defined in caseFunctions

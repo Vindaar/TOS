@@ -32,9 +32,7 @@ public:
     int Counting();		//err_code=2x
     int CountingStop();
     int CountingTrigger(int time);
-    int CountingTrigger_fast(int time);
     int CountingTime(int time, int modeSelector);
-    int CountingTime_fast(int time);
     // ReadoutFadcBit: Reads out the 16th(?) fpga bit - 1 if a trigger arrived as the shutter was open, 0 otherwise
     int ReadoutFadcBit();
     // ReadoutFadcFlag: Reads out the FADC flag. 1 if the flag is set, zero otherwise
@@ -116,7 +114,7 @@ private:
     int SaveData(std::vector<int> *pHitArray ,int NumHits);
     int SaveData(int **pix);
     int SaveData(int hit_x_y_val[12288], int NumHits );
-    bool usefastclock;		
+    bool _usefastclock;		
 
 
 };
@@ -131,7 +129,8 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
     int err_code;
 	
     //M0=0; M1=0; Enable_IN=0; Shutter=1; Reset=1;	 //ModL= 24 = 0x18
-    Mode=4;
+    // Start Serial Readout 0x04
+    Mode = 0x04;
     OutgoingLength=18; 
     IncomingLength=18+PLen; 
     PacketQueueSize=PQueue*tp.GetNumChips();
@@ -139,7 +138,8 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
   
     if(err_code>0)return 300+err_code;
   
-    Mode=5;
+    // Forward Serial Readout 0x05
+    Mode = 5;
     for(p=1; p<PacketQueueSize; ++p)
     {
 	if(p==PacketQueueSize-1)
@@ -147,7 +147,8 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
             // only 8 bit preload instead of 10 doesnt matter here, 
 	    // as postload is enough and not completely transmitted
 	    IncomingLength=18+((256*256*14+8+256)*tp.GetNumChips())/8%PLen; 
-	    Mode=6;
+	    // End Serial Readout 0x06
+	    Mode = 0x06;
 	}
 
 	//usleep(10000);
@@ -169,7 +170,8 @@ template <typename Ausgabe> int FPGA::SerialReadOutReadSend(Ausgabe aus, unsigne
     int err_code;
 
     //M0=0; M1=0; Enable_IN=0; Shutter=1; Reset=1;	 //ModL= 24 = 0x18
-    Mode=28;
+    // Readout Chip zero suppressed output prepared 0x1C
+    Mode = 0x1C;
 
 #if DEBUG==1
     std::cout << "reading out data from chip to FPGA and sending last frame meanwhile" << std::endl;
@@ -233,7 +235,8 @@ template <typename Ausgabe> int FPGA::DataChipFPGA(Ausgabe aus){
     std::cout<<"Enter FPGA::SerialReadOut()"<<std::endl;
 #endif
     //M0=0; M1=0; Enable_IN=0; Shutter=1; Reset=1;	 //ModL= 24 = 0x18
-    Mode=26;
+    // Start readout chip zero suppressed 0x1A
+    Mode = 0x1A;
 #if DEBUG==1
     std::cout << "reading out data from chip to FPGA" << std::endl;
 #endif
@@ -252,7 +255,8 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
     int err_code;
 
     OutgoingLength=18; PacketQueueSize=PQueue; //changed: IncomingLength=18+PLen -> 18, no data in new Mode 4, only data Chip -> FPGA
-    Mode=27;
+    // Send Data 0x1B
+    Mode = 0x1B;
 #if DEBUG==1
     std::cout << "transmitting data from FPGA" << std::endl;
 #endif
