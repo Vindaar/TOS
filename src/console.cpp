@@ -1028,8 +1028,9 @@ int Console::CommandRun(bool useHvFadc){
 #endif
   
     int result = 1;
+    // TODO: probably a good idea to replace runtimeFrames variable at some point
     unsigned short runtimeFrames = 0;              //< run mode var  
-    int shutter = 128;
+    int shutterTime = 128;
     int runtime = 0;                               //< var to store the runtime or the nb of triggers
     unsigned short shutter_mode = 0;
     unsigned short run_mode = 0;
@@ -1037,11 +1038,14 @@ int Console::CommandRun(bool useHvFadc){
     // variables related to UserInput
     bool numericalInput = true;
     bool allowDefaultOnEmptyInput = false;
+    bool useFastClock;
+    bool useExternalTrigger;
     std::string inputRunParameter;
     std::string inputTrigger;
     std::string inputShutterMode;
     std::string inputShutterTime;
     std::string inputFastClock;
+    std::string inputZeroSuppression;
     std::string input;
 
 
@@ -1061,12 +1065,12 @@ int Console::CommandRun(bool useHvFadc){
     //defined runtime or trigger
     const char *promptRunParameter = "Please give parameters for run. Do you want to use a defined run time (0) or record a defined number of frames (1)?";
     std::set<std::string> allowedRunParameterStrings = {"0", "1"};
-    inputRunParameter = getUserInput(promptRunParameter, numericalInput, allowDefaultOnEmptyInput, &allowedRunParameterStrings);
+    inputRunParameter = getUserInputNumericalNoDefault(promptRunParameter, &allowedRunParameterStrings);
     if (inputRunParameter == "quit") return -1;
 
     // exception handling is done in getUserInput, thus this conversion should 
     // always work
-    runtimeFrames = std::stoi(input);
+    runtimeFrames = std::stoi(inputRunParameter);
     std::cout << "Run parameter set to: " << runtimeFrames << std::endl;
     if (runtimeFrames == 1)
     {
@@ -1089,61 +1093,82 @@ int Console::CommandRun(bool useHvFadc){
     // explanation of previous input to current input methods:
     // Shutter mode
     // 0 = untriggered, 
-    //     inputTrigger == "noexternal" && inputShutterMode == "standard" && 
+    //     inputTrigger == "noexternal" && inputShutterMode == "standard" && inputFastClock == "standard"
     // 1 = external trigger,
-    //     inputTrigger == "external"   && inputShutterMOde == "standard"
+    //     inputTrigger == "external"   && inputShutterMode == "standard" && inputFastClock == "standard"
     // 2 = untriggered 2x faster clock, 
-    //     inputTrigger == 
+    //     inputTrigger == "noexternal" && inputShutterMode == "standard" && inputFastClock == "fastclock"
     // 3 = external trigger 2x faster clock, 
+    //     inputTrigger == "external"   && inputShutterMode == "standard" && inputFastClock == "fastclock"
     // 4 = untriggered long
+    //     inputTrigger == "noexternal" && inputShutterMode == "long"     && inputFastClock == "standard"
     // 5 = untriggered very long
+    //     inputTrigger == "noexternal" && inputShutterMode == "verylong" && inputFastClock == "standard"
 
     // select fastclock, yes or no
     inputFastClock = FastClockSelection();
+    if (inputFastClock == "quit") return -1;
+    else if (inputFastClock == "standard"){
+	useFastClock = true;
+    }
+    else{
+	useFastClock = false;
+    }
 
     // select trigger, external or not
     inputTrigger = TriggerSelection();
     if (inputTrigger == "quit") return -1;
+    else if (inputTrigger == "noexternal"){
+	useExternalTrigger = false;
+    }
+    else{
+	useExternalTrigger = true;
+    }
 
     // Shutter mode
     // for the shutter mode, we can call ShutterRangeSelection()
-    inputShutterMode = ShutterRangeSelection();
-    if (inputShutterMode == "quit") return -1;
-    
-
-    const char *promptShutterMode = "(Run)\t Shutter mode (0= untriggered, 1 = external trigger, 2 = untriggered 2x faster clock, 3 = external trigger 2x faster clock, 4 = untriggered long ,5 = untriggered very long)";
-    input = getUserInput(promptShutterMode, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    shutter_mode = std::stoi(input);
-    if(shutter_mode > 5)
-    {
-	std::cout << "Shutter mode invalid -> abort" << std::endl; 
-	return 0;
+    if (useExternalTrigger == false){
+	// only if we do not use an external trigger, we allow the selection of 
+	// the different shutter modes
+	inputShutterMode = ShutterRangeSelection();
+	if (inputShutterMode == "quit") return -1;
+	else if (inputShutterMode == "standard"){
+	    shutter_mode = 0;
+	}
+	else if (inputShutterMode == "long"){
+	    shutter_mode = 1;
+	}
+	else if (inputShutterMode == "verylong"){
+	    shutter_mode = 2;
+	}
+    }
+    else{
+	shutter_mode = 0;
     }
 
-    //Shutter time
-    const char *promptShutterTime = "(Run)\t Shutter (time [µsec] = (256*)(256*)46*x/freq[MHz], x<256), x= ";
-    input = getUserInput(promptShutterTime, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    shutter = std::stoi(input);
-    if((shutter>255) || (shutter < 0))
-    {
-	std::cout << "(Run)\t Shutter value invalid" << std::endl; 
-	return 0;
-    }
+    //Shutter time; call ShutterTimeSelection with inputShutterMode (as an int) 
+    //              as argument.
+    inputShutterTime = ShutterTimeSelection(shutter_mode);
+    if (inputShutterTime == "quit") return -1;
+    shutterTime = std::stoi(inputShutterTime);
 
     //full matrix or zero surpressed
     std::cout << "(Run)\t Run mode (0 = zero suppressed, 1 = complete matrix (slow)" << std::endl;
     if(useHvFadc) std::cout << "Choose zero surpressed if you want to use the FADC" << std::endl;
-    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    run_mode = std::stoi(input);
-    if(run_mode>1)
-    {
-	std::cout << "(Run)\t Run mode higher than 1 -> abort" << std::endl; 
-	return 0;
+    std::set<std::string> allowedZeroSuppressionStrings = {"zero",     "0", 
+							   "complete", "1" };
+    inputZeroSuppression = getUserInputNonNumericalNoDefault(_prompt, 
+							     &allowedZeroSuppressionStrings);
+    if (inputZeroSuppression == "quit") return -1;
+    else if ( (inputZeroSuppression == "zero") ||
+	      (inputZeroSuppression == "0") ){
+	// in case of zero suppression, set run_mode to 0
+	run_mode = 0;
     }
-	
+    else{
+	// else, we use complete readout
+	run_mode = 1;
+    }
     /*
      * Set settings for the use of the fadc
      */
@@ -1190,15 +1215,29 @@ int Console::CommandRun(bool useHvFadc){
     }
 
     // Start measurement
-    if(useHvFadc) result = pc.DoRun(runtimeFrames, runtime, shutter, 0, shutter_mode, run_mode, useHvFadc);
-    else 
-    {
+    // TODO: finish changing Run function!
+    if(useHvFadc){
+	result = pc.DoRun(runtimeFrames, 
+			  runtime, 
+			  shutterTime, 
+			  0, 
+			  shutter_mode, 
+			  run_mode, 
+			  useFastClock, 
+			  useExternalTrigger, 
+			  useHvFadc);
+    }
+    else {
 	// if Fadc not used, init FADC with NULL and call standard DoRun function
-
-	std::cout << "For some reason THIS happens?!" << std::endl;
-	std::cout << useHvFadc << std::endl;
 	pc.initHV_FADC(NULL,false);
-	result = pc.DoRun(runtimeFrames, runtime, shutter, 0, shutter_mode, run_mode);
+	result = pc.DoRun(runtimeFrames, 
+			  runtime, 
+			  shutterTime, 
+			  0, 
+			  shutter_mode, 
+			  run_mode,
+			  useFastClock,
+			  useExternalTrigger);
     }
 
     // print error message

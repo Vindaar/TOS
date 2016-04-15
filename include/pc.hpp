@@ -67,7 +67,15 @@ public:
   
     // TODO: HV_FADC_Obj
     //DoRun: Sets all parameters nessacary and starts the run by calling PC::run()
-    int DoRun(unsigned short runtimeFrames, int runtime, int shutter, int filter, unsigned short shutter_mode, unsigned short run_mode, bool useFadc = false);
+    int DoRun(unsigned short runtimeFrames, 
+	      int runtime, 
+	      int shutter, 
+	      int filter, 
+	      unsigned short shutter_mode, 
+	      unsigned short run_mode, 
+	      bool useFastClock,
+	      bool useExternalTrigger,
+	      bool useFadc = false);
   
     void StopRun();
 		
@@ -147,10 +155,17 @@ private:
     int MeasuringCounter;
     int runtime;                                   //< var to store the runtime in sec or in nb of triggers 
     unsigned short runtimeFrames;                  //< run mode var: run for a given time or nb of triggers 
-    int shutter;
+    int shutterTime;
+    // run_mode sets whether to use zero suppressed readout or not
     unsigned short run_mode;
     int filter;
-    unsigned short shutter_mode;
+    // shutter_mode is the mode used for the shutter, as in 'standard', 'long' or 'verylong'
+    // defines the actual time the shutter is open
+    unsigned short shutter_mode; 
+    // global variables to check during a run, whether we use an external trigger
+    // and the fast clock
+    bool _useExternalTrigger;
+    bool _useFastClock;
 		 
     // for buffer to receive and write data QThread
 

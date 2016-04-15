@@ -154,19 +154,18 @@ void PC::initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc)
 #if DEBUG == 2
     std::cout << "Enter: PC::initHV_FADC()" << std::endl;
 #endif
+    // here we either initialize the HV_FADC object,
+    // or set it to NULL, based on the input bool variable
+    // useHvFadc
 
     _useHvFadc = useHvFadc;
 
-    std::cout << "useHVFADC" << useHvFadc << std::endl;
-
     if(_useHvFadc)
     {
-	std::cout << "useHVFADC2" << useHvFadc << std::endl;
 	_hvFadcObj = hvFadcObj;
     }
     else
     {
-	std::cout << "useHVFADC3" << useHvFadc << std::endl;
 	_hvFadcObj = NULL;
     }
   
@@ -2029,10 +2028,12 @@ void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, 
 
 int PC::DoRun(unsigned short runtimeFrames_, 
 	      int runtime_, 
-	      int shutter_, 
+	      int shutterTime_, 
 	      int filter_, 
-	      unsigned short shutter_mode_, 
+	      unsigned short shutter_mode_,
 	      unsigned short run_mode_, 
+	      bool useFastClock,
+	      bool useExternalTrigger,
 	      bool useHvFadc)
 {
 #if DEBUG == 2
@@ -2053,10 +2054,12 @@ int PC::DoRun(unsigned short runtimeFrames_,
     //set global vars
     runtime = runtime_;
     runtimeFrames = runtimeFrames_;
-    shutter = shutter_;
+    shutterTime = shutterTime_;
     filter = filter_;
     shutter_mode = shutter_mode_;
     run_mode = run_mode_;
+    _useFastClock = useFastClock;
+    _useExternalTrigger = useExternalTrigger;
   
     //create run directory
     time_t Time_SecondsPassed;
@@ -2090,40 +2093,25 @@ int PC::DoRun(unsigned short runtimeFrames_,
   
     MeasuringCounter = 0;
 
-    //open shutter once
-    if (shutter_mode == 0){
-	result=fpga.CountingTime(shutter, 0);
-	if(result!=20){(RunIsRunning)=false;}
-    }
-    if (shutter_mode == 1)  {
-	result=fpga.CountingTrigger(shutter);
-	if(result!=20){(RunIsRunning)=false;}
-    }
-    if (shutter_mode == 2)  {
-	fpga.UseFastClock(true);
-	result=fpga.CountingTime(shutter, 0);
+    // in case we use an external trigger, we call CountingTrigger()
+    if (_useExternalTrigger == true){
+	// set fpga.UseFastClock to the value of useFastClock
+	fpga.UseFastClock(_useFastClock);
+	result = fpga.CountingTrigger(shutterTime);
+        // after counting, deactivate fast clock variable again
 	fpga.UseFastClock(false);
 	if(result!=20){(RunIsRunning)=false;}
     }
-    if (shutter_mode == 3) {
-	fpga.UseFastClock(true);
-	result=fpga.CountingTrigger(shutter);
+    // else we call CountingTime()
+    else{
+	// set fpga.UseFastClock to the value of _useFastClock
+	fpga.UseFastClock(_useFastClock);
+	result = fpga.CountingTime(shutterTime, shutter_mode);
+        // after counting, deactivate fast clock variable again
 	fpga.UseFastClock(false);
-	if(result!=20){(RunIsRunning)=false;}
+	if(result!=20){(RunIsRunning)=false;}	    
     }
-    if (shutter_mode == 4) {
-	// calling CountingTime with second argument == 1
-	// corresponds to n = 1, power of 256
-	result=fpga.CountingTime(shutter, 1);
-	if(result!=20){(RunIsRunning)=false;}
-    }
-    if (shutter_mode == 5) {
-	// calling CountingTime with second argument == 2
-	// corresponds to n = 2, power of 256
-	result=fpga.CountingTime(shutter, 2);
-	if(result!=20){(RunIsRunning)=false;}
-    }
-  
+
     result=fpga.DataChipFPGA(result);
 
 
@@ -2276,45 +2264,25 @@ void PC::runOTPX()
 	{
 	    int result = 0;
 	    //std::cout<<"I'm Running"<<std::endl;
-	    if (shutter_mode == 0)
-	    {
-		result=fpga.CountingTime(shutter, 0);         //Trigger when trigger used
-		if(result!=20){(RunIsRunning)=false;}
-	    }
-	    if (shutter_mode == 1)  
-	    {
-		result=fpga.CountingTrigger(shutter);      //Trigger when trigger used
-		if(result!=20){(RunIsRunning)=false;}
-	    }
-	    if (shutter_mode == 2)  
-	    {
-		fpga.UseFastClock(true);
-		result=fpga.CountingTime(shutter, 0);    //Trigger when trigger used
-		fpga.UseFastClock(false);
-		if(result!=20){(RunIsRunning)=false;}
-	    }
-	    if (shutter_mode == 3) 
-	    {
-		fpga.UseFastClock(true);
-		result=fpga.CountingTrigger(shutter); //Trigger when trigger used
-		fpga.UseFastClock(false);
-		if(result!=20){(RunIsRunning)=false;}
-	    }
-	    if (shutter_mode == 4) 
-	    {
-		// calling CountingTime with second argument == 1
-		// corresponds to n = 1, power of 256
-		result=fpga.CountingTime(shutter, 1);    //Trigger when trigger used
-		if(result!=20){(RunIsRunning)=false;}
-	    }
-	    if (shutter_mode == 5)
-	    {
-		// calling CountingTime with second argument == 2
-		// corresponds to n = 2, power of 256
-		result=fpga.CountingTime(shutter, 2); //Trigger when trigger used
-		if(result!=20){(RunIsRunning)=false;}
-	    }
 
+	    // in case we use an external trigger, we call CountingTrigger()
+	    if (_useExternalTrigger == true){
+		// set fpga.UseFastClock to the value of _useFastClock
+		fpga.UseFastClock(_useFastClock);
+		result = fpga.CountingTrigger(shutterTime);
+		// after counting, deactivate fast clock variable again
+		fpga.UseFastClock(false);
+		if(result!=20){(RunIsRunning)=false;}
+	    }
+	    // else we call CountingTime()
+	    else{
+		// set fpga.UseFastClock to the value of _useFastClock
+		fpga.UseFastClock(_useFastClock);
+		result = fpga.CountingTime(shutterTime, shutter_mode);
+		// after counting, deactivate fast clock variable again
+		fpga.UseFastClock(false);
+		if(result!=20){(RunIsRunning)=false;}	    
+	    }
 
 	    //vars used to build the filenames
 	    struct   timeval  tv;

@@ -45,45 +45,24 @@ void Producer::run()
 	    std::cout << "fadc active" << std::endl;
 	}
 
-    
-	if (parent->shutter_mode == 0){
-	    // Trigger when trigger used
-	    result=parent->fpga.CountingTime(parent->shutter, 0);
-	    if(result!=20){(parent->RunIsRunning)=false;}
-	}
-	if (parent->shutter_mode == 1)  {
-	    // Trigger when trigger used
-	    result=parent->fpga.CountingTrigger(parent->shutter);
-	    if(result!=20){(parent->RunIsRunning)=false;}
-	}
-	if (parent->shutter_mode == 2)  {
-	    // Trigger when trigger used
-	    parent->fpga.UseFastClock(true);
-	    result=parent->fpga.CountingTime(parent->shutter, 0);
+	// in case we use an external trigger, we call CountingTrigger()
+	if (parent->_useExternalTrigger == true){
+	    // set fpga.UseFastClock to the value of _useFastClock
+	    parent->fpga.UseFastClock(parent->_useFastClock);
+	    result = parent->fpga.CountingTrigger(parent->shutterTime);
+	    // after counting, deactivate fast clock variable again
 	    parent->fpga.UseFastClock(false);
 	    if(result!=20){(parent->RunIsRunning)=false;}
 	}
-	if (parent->shutter_mode == 3) {
-	    // Trigger when trigger used
-	    parent->fpga.UseFastClock(true);
-	    result=parent->fpga.CountingTrigger(parent->shutter);
+	// else we call CountingTime()
+	else{
+	    // set fpga.UseFastClock to the value of _useFastClock
+	    parent->fpga.UseFastClock(parent->_useFastClock);
+	    result = parent->fpga.CountingTime(parent->shutterTime, parent->shutter_mode);
+	    // after counting, deactivate fast clock variable again
 	    parent->fpga.UseFastClock(false);
-	    if(result!=20){(parent->RunIsRunning)=false;}
+	    if(result!=20){(parent->RunIsRunning)=false;}	    
 	}
-	if (parent->shutter_mode == 4) {
-	    // Trigger when trigger used
-	    // calling CountingTime with second argument == 1
-	    // corresponds to n = 1, power of 256
-	    result=parent->fpga.CountingTime(parent->shutter, 1);
-	    if(result!=20){(parent->RunIsRunning)=false;}
-	}
-	if (parent->shutter_mode == 5) {
-	    // Trigger when trigger used
-	    // calling CountingTime with second argument == 2
-	    // corresponds to n = 2, power of 256
-	    result=parent->fpga.CountingTime(parent->shutter, 2);
-	    if(result!=20){(parent->RunIsRunning)=false;}
-	}    
    
 	parent->mutexVBuffer.lock();               
 	//If buffer is full, wait
