@@ -33,6 +33,10 @@
 #include <readline/history.h>
 #include "tosCommandCompletion.hpp"
 
+#define DEFAULT_USER_INPUT_PROMPT                   "> " 
+
+
+
 class Console{
 
 public:
@@ -64,6 +68,11 @@ private:
   
     //The main userinterface  
     int UserInterface();                         //< classical version
+    // user input interface function for fastclock, shutter range and time selection
+    std::string FastClockSelection();
+    std::string ShutterRangeSelection();
+    std::string ShutterTimeSelection(int n);
+    std::string TriggerSelection();
 
     // Some function one can use to print error messages according to the error parameter given
     void ErrorMessages(int err);
@@ -153,7 +162,7 @@ private:
     bool _hvFadcObjActive;
 
     // member variable for general command prompt for input methods
-    const char *_prompt = "> ";
+    const char *_prompt;
 
     //HighLevelFunction_VME* _fadcFunctions;   //< some additional functions for the use of the fadc
 
