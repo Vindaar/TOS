@@ -22,6 +22,12 @@ HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniF
     // V1729a_VME (FADC) instance and vmemodule (HV) instance
     // using the base Addresses
 
+    // set gridEventStatusLastIter, anodeEventStatusLastIter, cathodeEventStatusLastIter
+    // TODO: check if this is still doing what we want :)
+    gridEventStatusLastIter = { 0 };
+    anodeEventStatusLastIter = { 0 };
+    cathodeEventStatusLastIter = { 0 };
+
     // TODO: make sure that this baseAddress_hv is actually the one
     // given to the function and not the private int variable
     // of the object itself with the same name
@@ -57,6 +63,11 @@ HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniF
 HV_FADC_Obj::HV_FADC_Obj(std::string iniFilePath){
     // upon initialisation of HV_FADC_Obj, we need to initialize the
     // controller
+
+    // TODO: check if this is still doing what we want :)
+    gridEventStatusLastIter = { 0 };
+    anodeEventStatusLastIter = { 0 };
+    cathodeEventStatusLastIter = { 0 };
 
     // initialize Controller
     Controller.initController(0);
