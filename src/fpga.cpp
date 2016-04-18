@@ -568,6 +568,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     SendBuffer[16]=tp.GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
+    
     RecvBytes=send(sock,SendBuffer,OutgoingLength,0);
 #if DEBUG==1 
     std::cout << "Paket gesendet "<<RecvBytes<< std::endl;
@@ -575,7 +576,14 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
 
     //quitusleep(3000);
     testfd=readfd;
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, NULL);//&timeout);
+    
+    
+    // set the timeout to 20ms. If no answer was given until then, either chip defect 
+    // or (more likely) no chip is connected
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 20000;
+    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);
+
 #ifdef __WIN32__
     // check latest reported error status for last Windows Sockets operation that failed
     int error;
@@ -588,9 +596,20 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl; 
 #endif
-    if(err_code<0){return 1;} else if(err_code==0){return 2;} else{err_code=0;}
+    // check if timeout expired, before chip answered. in that case,
+    // select returns 0 and we return 2
+    if(err_code<0){
+	return 1;
+    } 
+    else if(err_code==0){
+	return 2;
+    } 
+    else{
+	err_code=0;
+    }
 
     RecvBytes=recv(sock,RecvBuffer,PLen+18,0);
+    std::cout << "recvBytes" << RecvBytes << std::endl;
     //usleep(3000);
 #if DEBUG==1
     std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
@@ -697,6 +716,10 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     //usleep(3000);
     testfd=readfd;
 
+    // set the timeout to 20ms. If no answer was given until then, either chip defect 
+    // or (more likely) no chip is connected
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 20000;
     err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, NULL);//&timeout);
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
@@ -815,6 +838,10 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 #endif
     testfd=readfd;
 
+    // set the timeout to 20ms. If no answer was given until then, either chip defect 
+    // or (more likely) no chip is connected
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 20000;
     err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, NULL);//&timeout);
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
