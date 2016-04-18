@@ -243,7 +243,7 @@ int Console::UserInterface(){
 	{
 	    result=pc.fpga.GeneralReset();
 	    if(result>10){ ErrorMessages(result); }
-	    else{ std::cout<<"\tGeneralReset accomplished\n> "<<std::flush; }
+	    else{ std::cout<<"\tGeneralReset accomplished\n"<<std::flush; }
 	}
     
 	else if( (ein.compare("Counting")==0) ||
@@ -409,7 +409,7 @@ int Console::UserInterface(){
 	}
 	else if( ein.compare("ShowIP")==0 )
 	{
-	    std::cout<<pc.fpga.ShowIP()<<"\n> "<<std::flush;
+	    std::cout<<pc.fpga.ShowIP()<<"\n"<<std::flush;
 	}
 	else if( ein.compare("MakeARP")==0 )
 	{
@@ -663,43 +663,43 @@ void Console::ErrorMessages(int err){
 	case 11: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by GeneralReset) - no valid file-descriptors\n> "
+		      << ": In FPGA::Communication (called by GeneralReset) - no valid file-descriptors\n"
 		      << std::flush; 
 	    break;
 	case 12: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by GeneralReset) - timeout\n> "
+		      << ": In FPGA::Communication (called by GeneralReset) - timeout\n"
 		      << std::flush; 
 	    break;
 	case 13: 
 	    std::cout << "Warning "
 		      << err 
-		      << ": In FPGA::Communication (called by GeneralReset) - wrong packet-number received\n> "
+		      << ": In FPGA::Communication (called by GeneralReset) - wrong packet-number received\n"
 		      << std::flush; 
 	    break;
 	case 21: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by Counting) - no valid file-descriptors\n> "
+		      << ": In FPGA::Communication (called by Counting) - no valid file-descriptors\n"
 		      << std::flush; 
 	    break;
 	case 22: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by Counting) - timeout\n> "
+		      << ": In FPGA::Communication (called by Counting) - timeout\n"
 		      << std::flush; 
 	    break;
 	case 23: 
 	    std::cout << "Warning"
 		      << err 
-		      << ": In FPGA::Communication (called by Counting) - wrong packet-number received\n> "
+		      << ": In FPGA::Communication (called by Counting) - wrong packet-number received\n"
 		      << std::flush; 
 	    break;
 	case 24: 
 	    std::cout << "Warning"
 		      << err 
-		      << ": In Console::CommandCounting - Software thinks Timepix is already counting. Nothing has be done. Stop counting before you continue. If Software is wrong and Timepix is not counting, it will have any effect.\n> "
+		      << ": In Console::CommandCounting - Software thinks Timepix is already counting. Nothing has be done. Stop counting before you continue. If Software is wrong and Timepix is not counting, it will have any effect.\n"
 		      << std::flush;
 	    break;
 	case 25: 
@@ -711,61 +711,61 @@ void Console::ErrorMessages(int err){
 	case 301: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by ReadOut) - no valid file-descriptors\n> "
+		      << ": In FPGA::Communication (called by ReadOut) - no valid file-descriptors\n"
 		      << std::flush; 
 	    break;
 	case 302: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by ReadOut) - timeout\n> "
+		      << ": In FPGA::Communication (called by ReadOut) - timeout\n"
 		      << std::flush; 
 	    break;
 	case 303: 
 	    std::cout << "Warning "
 		      << err 
-		      << ": In FPGA::Communication (called by ReadOut) - wrong packet-number received\n> "
+		      << ": In FPGA::Communication (called by ReadOut) - wrong packet-number received\n"
 		      << std::flush; 
 	    break;
 	case 310: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::SaveData (called by ReadOut) - could not open DataFile\n> "
+		      << ": In FPGA::SaveData (called by ReadOut) - could not open DataFile\n"
 		      << std::flush; 
 	    break;
 	case 41: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by SetMatrix) - no valid file-descriptors\n> "
+		      << ": In FPGA::Communication (called by SetMatrix) - no valid file-descriptors\n"
 		      << std::flush; 
 	    break;
 	case 42: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by SetMatrix) - timeout\n> "
+		      << ": In FPGA::Communication (called by SetMatrix) - timeout\n"
 		      << std::flush; 
 	    break;
 	case 43: 
 	    std::cout << "Warning "
 		      << err 
-		      << ": In FPGA::Communication (called by SetMatrix) - wrong packet-number received\n> "
+		      << ": In FPGA::Communication (called by SetMatrix) - wrong packet-number received\n"
 		      << std::flush; 
 	    break;
 	case 51: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by WriteReadFSR) - no valid file-descriptors\n> "
+		      << ": In FPGA::Communication (called by WriteReadFSR) - no valid file-descriptors\n"
 		      << std::flush; 
 	    break;
 	case 52: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In FPGA::Communication (called by WriteReadFSR) - timeout\n> "
+		      << ": In FPGA::Communication (called by WriteReadFSR) - timeout\n"
 		      << std::flush; 
 	    break;
 	case 53: 
 	    std::cout << "Warning "
 		      << err 
-		      << ": In FPGA::Communication (called by WriteReadFSR) - wrong packet-number received\n> "
+		      << ": In FPGA::Communication (called by WriteReadFSR) - wrong packet-number received\n"
 		      << std::flush; 
 	    break;
 	case 59: 
@@ -784,43 +784,43 @@ void Console::ErrorMessages(int err){
 	case 61: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal value for this dac\n> "
+		      << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal value for this dac\n"
 		      << std::flush; 
 	    break;
 	case 62: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In TimePix::SetDAC (called by CommandSetDAC) - illegal DAC number\n> "
+		      << ": In TimePix::SetDAC (called by CommandSetDAC) - illegal DAC number\n"
 		      << std::flush; 
 	    break;
 	case 63: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In Console::SenseDAC - illegal DAC number\n> "
+		      << ": In Console::SenseDAC - illegal DAC number\n"
 		      << std::flush; 
 	    break;
 	case 64:
 	    std::cout << "Error "
 		      << err
-		      << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal chip number\n> "
+		      << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal chip number\n"
 		      << std::flush;
 	    break;
 	case 80: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In TimePix::UniformMatrix - illegal input\n> "
+		      << ": In TimePix::UniformMatrix - illegal input\n"
 		      << std::flush; 
 	    break;
 	case 81: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In TimePix::VarChessMatrix - illegal input\n> "
+		      << ": In TimePix::VarChessMatrix - illegal input\n"
 		      << std::flush; 
 	    break;
 	case 82: 
 	    std::cout << "Error "
 		      << err 
-		      << ": In PC::ThresholdNoise - invalid ThrH\n> "
+		      << ": In PC::ThresholdNoise - invalid ThrH\n"
 		      << std::flush; 
 	    break;
     }
@@ -939,7 +939,7 @@ int Console::CommandHelp()
 
               << "DisableFastClock (default)                 =     to use 40 MHz "
               << "clock in shutter"
-              << "\n\n> " 
+              << "\n\n" 
               << std::flush; 
 
     return 1;
@@ -1211,7 +1211,7 @@ int Console::CommandRun(bool useHvFadc){
     }//end of if(useHvFadc)
 
     if(runtime==0){
-	std::cout << "\t\tRun starts now. <q> to stop\n> " << std::endl;
+	std::cout << "\t\tRun starts now. <q> to stop\n" << std::endl;
     }
 
     // Start measurement
@@ -1263,14 +1263,14 @@ int Console::CommandCounting(int c){
 	else{	
 	    result=pc.fpga.Counting();
 	    if(result>20){ErrorMessages(result);}
-	    else{std::cout<<"\tCounting started\n> "<<std::flush;}
+	    else{std::cout<<"\tCounting started\n"<<std::flush;}
 	}
     }
     else{
 	if(pc.fpga.tp.IsCounting()==0){ErrorMessages(25);}
 	result=pc.fpga.CountingStop();
 	if(result>20){ErrorMessages(result);}
-	else{std::cout<<"\tCounting stopped\n> "<<std::flush;}
+	else{std::cout<<"\tCounting stopped\n"<<std::flush;}
     }
     return result;
 }
@@ -1480,7 +1480,7 @@ int Console::CommandCountingTrigger(){
 	ErrorMessages(result);
     }
     else{
-	std::cout << "\tCountingTrigger accomplished\n> " << std::flush;
+	std::cout << "\tCountingTrigger accomplished\n" << std::flush;
     }
     // regardless of the used option, turn off fast clock
     pc.fpga.UseFastClock(0);
@@ -1548,7 +1548,7 @@ int Console::CommandCountingTime(){
 	ErrorMessages(result); 
     }
     else{
-	std::cout << "\tCountingTime accomplished\n> " << std::flush;
+	std::cout << "\tCountingTime accomplished\n" << std::flush;
     }
 
     // deactivate fastclock again
@@ -1573,7 +1573,7 @@ int Console::CommandReadOut(){
     result = pc.DoReadOut(f);
     std::cout << "CommandReadOut:" << result << std::endl;
     if(result<0){ErrorMessages(-result);}
-    else{std::cout << "\tReadOut accomplished\n> " << std::flush;}
+    else{std::cout << "\tReadOut accomplished\n" << std::flush;}
     return result;
 }
 
@@ -1595,7 +1595,7 @@ int Console::CommandReadOut2(){
 #endif    
 	std::cout<<"CommandReadOut:"<< result <<" for chip "<< chip << std::endl;
 	if(result<0){ErrorMessages(-result);}
-	else{std::cout<<"\tReadOut accomplished\n> "<<std::flush;}
+	else{std::cout<<"\tReadOut accomplished\n"<<std::flush;}
 	//filename = "";
     }
     return result;
@@ -1609,7 +1609,7 @@ int Console::CommandSetMatrix(){
     int result;
     result=pc.fpga.SetMatrix();
     if(result>40){ErrorMessages(result);}
-    else{std::cout<<"\tSetMatrix accomplished\n> "<<std::flush;}
+    else{std::cout<<"\tSetMatrix accomplished\n"<<std::flush;}
     return result;
 }
 
@@ -1630,7 +1630,7 @@ int Console::CommandSaveMatrix(){
 	if (ein == "quit") return -1;
 	f=ein.c_str();
 	pc.fpga.tp.SaveMatrixToFile(f,chip);
-	std::cout<<"Matrix saved to "<<f<<"\n> "<<std::flush;
+	std::cout<<"Matrix saved to "<<f<<"\n"<<std::flush;
     }
     return 0;
 }
@@ -1659,10 +1659,10 @@ int Console::CommandLoadMatrix(){
 	}
 	if (f1 != NULL) {
 	    pc.fpga.tp.LoadMatrixFromFile(f,chip);
-	    std::cout<<"Matrix loaded from "<<f<<"\n> "<<std::flush;
+	    std::cout<<"Matrix loaded from "<<f<<"\n"<<std::flush;
 	}
 	pc.fpga.tp.SaveMatrixToFile(pc.GetMatrixFileName(chip),chip);
-	std::cout<<"Matrix saved to program folder as "<<pc.GetMatrixFileName(chip)<<"\n> "<<std::flush;
+	std::cout<<"Matrix saved to program folder as "<<pc.GetMatrixFileName(chip)<<"\n"<<std::flush;
     }
     return 0;
 }
@@ -1677,7 +1677,7 @@ int Console::CommandWriteReadFSR(){
     for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
 	pc.fpga.tp.GetChipID(chip);
     }
-    std::cout<<"\tWriteReadFSR accomplished\n> "<<std::flush;
+    std::cout<<"\tWriteReadFSR accomplished\n"<<std::flush;
     return result;
 }
 
@@ -1699,7 +1699,7 @@ int Console::CommandSaveFSR(){
 	if (ein == "quit") return -1;
 	f=ein.c_str();
 	pc.fpga.tp.SaveFSRToFile(f,chip);
-	std::cout<<"FSR saved in "<<f<<"\n> "<<std::flush;
+	std::cout<<"FSR saved in "<<f<<"\n"<<std::flush;
     }
     return 0;
 }
@@ -1742,15 +1742,15 @@ int Console::CommandLoadFSR(){
 	if (f1 != NULL) {
 	    err=pc.fpga.tp.LoadFSRFromFile(f,chip);
 	    if(err==1){
-		std::cout << "FSR loaded from " << f << "\n> " << std::flush;
+		std::cout << "FSR loaded from " << f << "\n" << std::flush;
 	    }
 	    else{
-		std::cout << "Error in " << f << " in row " << -err << "\n> " 
+		std::cout << "Error in " << f << " in row " << -err << "\n" 
 			  << std::flush;
 	    }
 	}
 	pc.fpga.tp.SaveFSRToFile(pc.GetFSRFileName(chip),chip);
-	std::cout << "FSR saved to program folder as " << pc.GetFSRFileName(chip) << "\n> " << std::flush;
+	std::cout << "FSR saved to program folder as " << pc.GetFSRFileName(chip) << "\n" << std::flush;
     }
     return err;
 }
@@ -1786,10 +1786,10 @@ int Console::CommandLoadThreshold(){
 	    if(err==-1){ 
 		std::cout << "File " << f << " not found" << std::endl;
 	    }
-	    std::cout << "Threshold loaded from " << f << "\n> " << std::flush;
+	    std::cout << "Threshold loaded from " << f << "\n" << std::flush;
 	}
 	pc.fpga.tp.SaveThresholdToFile(pc.GetThresholdFileName(chip),chip);
-	std::cout<<"Threshold saved to program folder as "<<pc.GetThresholdFileName(chip)<<"\n> "<<std::flush;
+	std::cout<<"Threshold saved to program folder as "<<pc.GetThresholdFileName(chip)<<"\n"<<std::flush;
     }
     return err;
 }
@@ -1909,7 +1909,7 @@ int Console::CommandVarChessMatrix(){
 	wth = std::stoi(input);
 	std::cin.ignore(1);
 	err=pc.fpga.tp.VarChessMatrix(sl,wl,sp0,sp1,smask,stest,sth,wp0,wp1,wmask,wtest,wth,chip);
-	if(err==0){std::cout<<"Matrix created\n> "<<std::flush;}
+	if(err==0){std::cout<<"Matrix created\n"<<std::flush;}
 	else{ErrorMessages(80);}
     }// end for loop
     return err;
@@ -1946,9 +1946,8 @@ int Console::CommandUniformMatrix(){
 	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (input == "quit") return -1;
 	th = std::stoi(input);
-	std::cin.ignore(1);
 	err=pc.fpga.tp.UniformMatrix(p0,p1,mask,test,th,chip);
-	if(err==0){std::cout<<"Matrix created\n> "<<std::flush;}
+	if(err==0){std::cout<<"Matrix created\n"<<std::flush;}
 	else{ErrorMessages(80);}
     }
 
@@ -2755,7 +2754,7 @@ void Console::CommandSpeedTest(std::string ein){
 	    pc.SpeedTest(wdh,freq);
 	}
 	else{
-	    std::cout << "\tNon-numerical sign\nTOS> "
+	    std::cout << "\tNon-numerical sign\n"
 		      << std::flush; 
 	    return;
 	}
@@ -2782,12 +2781,12 @@ void Console::CommandSetIP(){
 		byte[n]=atoi(&str[0]);
 	    }
 	    else{
-		std::cout << "Invalid IP\n> " 
+		std::cout << "Invalid IP\n" 
 			  << std::flush; 
 		return;
 	    }
 	    if(byte[n]>255){
-		std::cout << "Invalid IP\n> "
+		std::cout << "Invalid IP\n"
 			  << std::flush; 
 		return;
 	    }
@@ -2795,7 +2794,7 @@ void Console::CommandSetIP(){
 	}
 	while( (i<input.length()) && (input[i]!='.') ){++i;}
 	if( (input[i]=='.') || (i-pos>4) || (i-pos==1) ){
-	    std::cout << "Invalid IP\n> " 
+	    std::cout << "Invalid IP\n" 
 		      << std::flush; 
 	    return;
 	}
@@ -2804,13 +2803,13 @@ void Console::CommandSetIP(){
 	    byte[n]=atoi(&str[0]);
 	}
 	if(byte[n]>255){
-	    std::cout << "Invalid IP\n> " 
+	    std::cout << "Invalid IP\n" 
 		      << std::flush; 
 	    return;
 	}   
     }
     else{
-	std::cout << "Invalid IP\n> " 
+	std::cout << "Invalid IP\n" 
 		  << std::flush; 
 	return;
     }
