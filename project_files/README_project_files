@@ -4,3 +4,5 @@ the project files listed in here may use relative paths with the root directory 
 
 also: on my linux machine, I need to use QT4 in order to create the makefile from the TOS.pro file:
 qmake-qt4 TOS.pro
+
+GENERAL WARNING: Do NOT use the Makefile provided in this directory, create your own instead! Only given as a reference!
