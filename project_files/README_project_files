@@ -1,0 +1,6 @@
+CAREFUL!
+
+the project files listed in here may use relative paths with the root directory of the git project as refernce! I.e. if you wish to use them, copy them there!
+
+also: on my linux machine, I need to use QT4 in order to create the makefile from the TOS.pro file:
+qmake-qt4 TOS.pro
