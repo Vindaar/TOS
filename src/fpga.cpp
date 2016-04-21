@@ -128,16 +128,16 @@ FPGA::FPGA():
 	// NOTE: the kernel sets the value to 2* the wanted size
 	// for 'bookkeeping' reasons 
 	// (http://man7.org/linux/man-pages/man7/socket.7.html under SO_RCVBUF)
-	// TODO: check whether windows also multiplies socket buffer size by 2!
-	//       maybe this will 'fail' on windows, because the new buffer size is
-	//       actually == DEFAULT_SOCKET_BUFFER_SIZE instead of 2 times.
-	if( (sock_recv_buf_size != 2*DEFAULT_SOCKET_BUFFER_SIZE) ||
-	    (sock_send_buf_size != 2*DEFAULT_SOCKET_BUFFER_SIZE) ){
-	    std::cout << "WARNING: new socket buffer size could not be set correctly!" 
-		      << std::endl;
+	// windows does not multiply by 2!
+	if( (sock_recv_buf_size == 2*DEFAULT_SOCKET_BUFFER_SIZE) ||
+	    (sock_recv_buf_size ==  DEFAULT_SOCKET_BUFFER_SIZE) ||
+	    (sock_send_buf_size == 2*DEFAULT_SOCKET_BUFFER_SIZE) ||
+	    (sock_send_buf_size ==   DEFAULT_SOCKET_BUFFER_SIZE) ){
+	    std::cout << "Socket buffer sizes set correctly." << std::endl;
 	}
 	else{
-	    std::cout << "Socket buffer sizes set correctly." << std::endl;
+	    std::cout << "WARNING: new socket buffer size could not be set correctly!"
+		      << std::endl;
 	}
     }
 
