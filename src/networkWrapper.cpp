@@ -16,7 +16,7 @@ int sendWrapper(int sock, unsigned char* SendBuffer, int OutgoingLength, int fla
     // after calling the function convert the result back to an unsigned char*
     int recvBytes;
 
-#ifdef __WIN32__
+//#ifdef __WIN32__
     // create a char * windows variable
     char *winSendBuffer;
     // perform a static cast from unsigned to signed char*
@@ -25,9 +25,13 @@ int sendWrapper(int sock, unsigned char* SendBuffer, int OutgoingLength, int fla
     recvBytes = send(sock, winSendBuffer, OutgoingLength, flags);
     // convert char * back to unsigned char *
     SendBuffer = reinterpret_cast<unsigned char *> (winSendBuffer);
+<<<<<<< HEAD
 #else
+=======
+//#else
+>>>>>>> 25638cc5f1bd3f4ebf788553a7a1dcbc7b931187
     recvBytes = send(sock, SendBuffer, OutgoingLength, flags);
-#endif
+//#endif
     
     return recvBytes;
 }
@@ -48,15 +52,19 @@ int recvWrapper(int sock, unsigned char* RecvBuffer, int IncomingLength, int fla
     // after calling the function convert the result back to an unsigned char*
     int recvBytes;
 
-#ifdef __WIN32__
+//#ifdef __WIN32__
     // same procedure as in sendWrapper()
     char *winRecvBuffer;
     winRecvBuffer = reinterpret_cast<char *> (RecvBuffer);
     recvBytes = recv(sock, winRecvBuffer, IncomingLength, 0);
     RecvBuffer = reinterpret_cast<unsigned char*> (winRecvBuffer);
+<<<<<<< HEAD
 #else
+=======
+//#else
+>>>>>>> 25638cc5f1bd3f4ebf788553a7a1dcbc7b931187
     recvBytes = recv(sock, RecvBuffer, IncomingLength, 0);
-#endif     
+//#endif     
 
     return recvBytes;
 }
