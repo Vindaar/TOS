@@ -56,7 +56,7 @@ int recvWrapper(int sock, unsigned char* RecvBuffer, int IncomingLength, int fla
     RecvBuffer = reinterpret_cast<unsigned char*> (winRecvBuffer);
 #else
     recvBytes = recv(sock, RecvBuffer, IncomingLength, 0);
-#endif     
+#endif
 
     return recvBytes;
 }
