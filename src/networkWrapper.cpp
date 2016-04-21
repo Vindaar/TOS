@@ -52,10 +52,10 @@ int recvWrapper(int sock, unsigned char* RecvBuffer, int IncomingLength, int fla
     // same procedure as in sendWrapper()
     char *winRecvBuffer;
     winRecvBuffer = reinterpret_cast<char *> (RecvBuffer);
-    recvBytes = recv(sock, winRecvBuffer, IncomingLength, 0);
+    recvBytes = recv(sock, winRecvBuffer, IncomingLength, flags);
     RecvBuffer = reinterpret_cast<unsigned char*> (winRecvBuffer);
 #else
-    recvBytes = recv(sock, RecvBuffer, IncomingLength, 0);
+    recvBytes = recv(sock, RecvBuffer, IncomingLength, flags);
 #endif
 
     return recvBytes;

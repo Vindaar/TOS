@@ -1,3 +1,6 @@
+#ifndef NETWORKWRAPPER
+#define NETWORKWRAPPER 1
+
 // this file provides a wrapper for the standard network communication functions.
 // used to give a common interface for windows and unix
 #ifdef __WIN32__

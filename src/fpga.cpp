@@ -573,9 +573,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
 #ifdef __WIN32__
     // check latest reported error status for last Windows Sockets operation that failed
     int error;
-    std::cout << "error code "<<err_code<< std::endl;
     error=WSAGetLastError();
-    std::cout << "error "<<error<< std::endl;
 #endif
 
 #if DEBUG==1
@@ -595,7 +593,6 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     }
 
     RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
-    std::cout << "recvBytes" << RecvBytes << std::endl;
     //usleep(3000);
 #if DEBUG==1
     std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
