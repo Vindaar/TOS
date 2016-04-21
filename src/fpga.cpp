@@ -886,12 +886,8 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 	    std::cout << "Timeout 50 ms used of chip " <<chip << std::endl;
 	    //++SoftwareCounter;
 	    
-	    // TODO: understand why different variables are given for each platform
-#ifdef __WIN32__
-            recv(sock,RecvBuffer,PLen+18,0);
-#else
-            recv(sock,SendBuffer,PLen+18,0);  //??
-#endif
+	    // NOTE: removed __WIN32__ ifdef with RecvBuffer as array
+            recv(sock,SendBuffer,PLen+18,0);  
 	    
 	    std::cout << "Packet indicating end of data transfer from Chip to "
 		      << "FPGA received" << std::endl;
