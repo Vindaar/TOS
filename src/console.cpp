@@ -395,7 +395,8 @@ int Console::UserInterface(){
 	{
 	    CommandSaveMatrix();
 	}
-	else if( ein.compare("LoadMatrix")==0 )
+	else if( (ein.compare("LoadMatrix")==0) ||
+		 (ein.compare("loadmatrix")==0) )
 	{
 	    CommandLoadMatrix();
 	}
@@ -411,7 +412,8 @@ int Console::UserInterface(){
 	{
 	    std::cout<<pc.fpga.ShowIP()<<"\n"<<std::flush;
 	}
-	else if( ein.compare("MakeARP")==0 )
+	else if( (ein.compare("MakeARP")==0) ||
+		 (ein.compare("makearp")==0) )
 	{
 	    pc.fpga.MakeARPEntry();
 	}

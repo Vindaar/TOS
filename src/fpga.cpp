@@ -13,8 +13,6 @@
 #include "networkWrapper.hpp"
 //#define DEBUG 2
 
-
-
 //C~tor
 FPGA::FPGA():
     ErrInfo(0), 
@@ -28,9 +26,6 @@ FPGA::FPGA():
     PacketQueueSize(1),
     SoftwareCounter(0), 
     FPGACounter(0),
-    // in case of a windows machine, we need signed chars, whereas
-    // for linux unsigned chars are needed. The macro differentiates
-    // both platforms
     PackQueueReceive( new std::vector<std::vector<unsigned char> >(PQueue*8, std::vector<unsigned char>(PLen+18)))
 {
     std::cout<<"constructing FPGA"<<std::endl;
@@ -81,97 +76,71 @@ FPGA::FPGA():
     //enlarge socket buffers: When you set SO_RCVBUF with setsockopt, the kernel allocates twice the
     //memory you set
 
-    int sock_buf_size;
-    int i=sizeof(sock_buf_size);
+    int sock_recv_buf_size;
+    int sock_send_buf_size;
+    int i_recv=sizeof(sock_recv_buf_size);
+    int i_send=sizeof(sock_send_buf_size);
+    
+    // now get both the send and receiver socket buffer size
+    // and set it to a value, which is 'big enough'
+    int nbytes;
+    nbytes = getsockoptWrapper(sock, 
+			       SOL_SOCKET, 
+			       SO_RCVBUF, 
+			       &sock_recv_buf_size, 
+			       (socklen_t *)&i_recv);
+    nbytes = getsockoptWrapper(sock, 
+			       SOL_SOCKET, 
+			       SO_SNDBUF, 
+			       &sock_send_buf_size, 
+			       (socklen_t *)&i_send);
+    if (sock_recv_buf_size != DEFAULT_SOCKET_BUFFER_SIZE+1){
+	// if sock buffer size is not the wanted value, set value we want
+	sock_recv_buf_size = DEFAULT_SOCKET_BUFFER_SIZE;
+	sock_send_buf_size = DEFAULT_SOCKET_BUFFER_SIZE;
+	nbytes = setsockopt(sock, 
+			    SOL_SOCKET, 
+			    SO_RCVBUF, 
+			    &sock_recv_buf_size,
+			    sizeof(sock_recv_buf_size));
+	nbytes = setsockopt(sock, 
+			    SOL_SOCKET, 
+			    SO_SNDBUF, 
+			    &sock_send_buf_size,
+			    sizeof(sock_send_buf_size));
+	i_recv = sizeof(sock_recv_buf_size);
+	i_send = sizeof(sock_send_buf_size);
 
-    // in the following lines of code, we need (char*)&sock_buf_size for windows and 
-    // &sock_buf_size for linux. In order to not have the whole code twice with only 
-    // such a small change, we define a macro:
-    // TODO: probably nicer to put the macro into header file?
-#ifdef __WIN32__
-    #define SOCKET_BUFFER_SIZE_POINTER          (char*) &sock_buf_size
-#else
-    #define SOCKET_BUFFER_SIZE_POINTER          &sock_buf_size
-#endif
+	// now perform a sanity check, if the size was correctly applied
+	// get new sizes
+	nbytes = getsockoptWrapper(sock, 
+				   SOL_SOCKET, 
+				   SO_RCVBUF, 
+				   &sock_recv_buf_size, 
+				   (socklen_t *)&i_recv);
+	nbytes = getsockoptWrapper(sock, 
+				   SOL_SOCKET, 
+				   SO_SNDBUF, 
+				   &sock_send_buf_size, 
+				   (socklen_t *)&i_send);
 
-    int nbytes; 
-    // socket receive buffer
-    nbytes = getsockopt(sock, 
-			SOL_SOCKET, 
-			SO_RCVBUF, 
-			SOCKET_BUFFER_SIZE_POINTER, 
-			(socklen_t *)&i);
-    std::cout << "socket receiver buffer size was " 
-	      << sock_buf_size 
-	      << ", success (0=yes):" 
-	      << nbytes 
-	      << "\n" << std::endl;
-    sock_buf_size = 200*sock_buf_size;
+	// and check, if the new size is 2 times the wanted size
+	// NOTE: the kernel sets the value to 2* the wanted size
+	// for 'bookkeeping' reasons 
+	// (http://man7.org/linux/man-pages/man7/socket.7.html under SO_RCVBUF)
+	// TODO: check whether windows also multiplies socket buffer size by 2!
+	//       maybe this will 'fail' on windows, because the new buffer size is
+	//       actually == DEFAULT_SOCKET_BUFFER_SIZE instead of 2 times.
+	if( (sock_recv_buf_size != 2*DEFAULT_SOCKET_BUFFER_SIZE) ||
+	    (sock_send_buf_size != 2*DEFAULT_SOCKET_BUFFER_SIZE) ){
+	    std::cout << "WARNING: new socket buffer size could not be set correctly!" 
+		      << std::endl;
+	}
+	else{
+	    std::cout << "Socket buffer sizes set correctly." << std::endl;
+	}
+    }
 
-    nbytes = setsockopt(sock, 
-			SOL_SOCKET, 
-			SO_RCVBUF, 
-			SOCKET_BUFFER_SIZE_POINTER, 
-			sizeof(sock_buf_size));
-    i=sizeof(sock_buf_size);
-
-    nbytes = getsockopt(sock, 
-			SOL_SOCKET, 
-			SO_RCVBUF, 
-			SOCKET_BUFFER_SIZE_POINTER, 
-			(socklen_t *)&i);
-    std::cout << "socket receiver buffer size changed to " 
-	      << sock_buf_size 
-	      << ", success (0=yes):" 
-	      << nbytes 
-	      << "\n" << std::endl;
-
-    // socket send buffer
-    nbytes = getsockopt(sock, 
-			SOL_SOCKET, 
-			SO_SNDBUF, 
-			SOCKET_BUFFER_SIZE_POINTER, 
-			(socklen_t *)&i);
-    std::cout << "socket sender buffer size was " 
-	      << sock_buf_size 
-	      << ", success (0=yes):" 
-	      << nbytes 
-	      << "\n" << std::endl;
-    sock_buf_size = 200*sock_buf_size;
-
-    nbytes = setsockopt(sock, 
-			SOL_SOCKET, 
-			SO_SNDBUF, 
-			SOCKET_BUFFER_SIZE_POINTER, 
-			sizeof(sock_buf_size));
-    i=sizeof(sock_buf_size);
-
-    nbytes = getsockopt(sock, 
-			SOL_SOCKET, 
-			SO_SNDBUF, 
-			SOCKET_BUFFER_SIZE_POINTER, 
-			(socklen_t *)&i);
-    // ?? the following line printed "socket receiver buffer size changed to" previously
-    //    assume (input SO_SNDBUF to setsockopt) that sender buffer size was meant. Changed
-    // TODO: check if correct
-    std::cout << "socket sender buffer size changed to " 
-	      << sock_buf_size 
-	      << ", success (0=yes):" 
-	      << nbytes 
-	      << "\n" << std::endl;
-
-    // TODO: understand why same function is being called again with same arguments?!
-    nbytes = getsockopt(sock, 
-			SOL_SOCKET, 
-			SO_SNDBUF, 
-			SOCKET_BUFFER_SIZE_POINTER, 
-			(socklen_t *)&i);
-    // TODO: should also be sender instead of receiver?
-    std::cout << "socket receiver buffer size changed to " 
-	      << sock_buf_size 
-	      <<", success (0=yes):" 
-	      << nbytes 
-	      << "\n" << std::endl;
 }
 
 

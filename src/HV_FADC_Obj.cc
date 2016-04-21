@@ -4,9 +4,6 @@
 #include <QCoreApplication>
 #include "const.h"
 
-
-// FUN TEST
-
 // used to control while loops to read / write to HV and
 // to create error logs
 #include <thread>

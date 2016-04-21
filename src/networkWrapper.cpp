@@ -60,3 +60,49 @@ int recvWrapper(int sock, unsigned char* RecvBuffer, int IncomingLength, int fla
 
     return recvBytes;
 }
+
+int getsockoptWrapper(int sock, int level, int optname, int *sock_buf_size_pointer, socklen_t *optlen_pointer){
+    // this function acts as wrapper for the getsockopt function to have a common interface
+    // for windows and unix
+    // int sock: socket number
+    // int level: socket level
+    // int optname: send or receive buffer
+    // int* sock_buf_size_pointer: pointer to int in which socket buffer size is saved
+    // socklen_t *optlen_pointer: pointer to size of socket buffer length variable
+    int nbytes;
+
+#ifdef __WIN32__
+    // similar procedure to sendWrapper()
+    char *win_sock_buf_size_pointer;
+    win_sock_buf_size_pointer = reinterpret_cast<char *> (sock_buf_size_pointer);
+    nbytes = getsockopt(sock, level, optname, win_sock_buf_size_pointer, optlen_pointer);
+    sock_buf_size_pointer = reinterpret_cast<int *> (win_sock_buf_size_pointer);
+#else
+    nbytes = getsockopt(sock, level, optname, sock_buf_size_pointer, optlen_pointer);
+#endif
+    
+    return nbytes;
+}
+
+int setsockoptWrapper(int sock, int level, int optname, int *sock_buf_size_pointer, socklen_t optlen){
+    // this function acts as wrapper for the setsockopt function to have a common interface
+    // for windows and unix
+    // int sock: socket number
+    // int level: socket level
+    // int optname: send or receive buffer
+    // int* sock_buf_size_pointer: pointer to int in which socket buffer size is saved
+    // socklen_t optlen: size of socket buffer length variable
+    int nbytes;
+
+#ifdef __WIN32__
+    // similar procedure to sendWrapper()
+    char *win_sock_buf_size_pointer;
+    win_sock_buf_size_pointer = reinterpret_cast<char *> (sock_buf_size_pointer);
+    nbytes = setsockopt(sock, level, optname, win_sock_buf_size_pointer, optlen);
+    sock_buf_size_pointer = reinterpret_cast<int *> (win_sock_buf_size_pointer);
+#else
+    nbytes = setsockopt(sock, level, optname, sock_buf_size_pointer, optlen);
+# endif
+    
+    return nbytes;
+}
