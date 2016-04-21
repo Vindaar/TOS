@@ -94,20 +94,20 @@ FPGA::FPGA():
 			       SO_SNDBUF, 
 			       &sock_send_buf_size, 
 			       (socklen_t *)&i_send);
-    if (sock_recv_buf_size != DEFAULT_SOCKET_BUFFER_SIZE+1){
+    if (sock_recv_buf_size != DEFAULT_SOCKET_BUFFER_SIZE){
 	// if sock buffer size is not the wanted value, set value we want
 	sock_recv_buf_size = DEFAULT_SOCKET_BUFFER_SIZE;
 	sock_send_buf_size = DEFAULT_SOCKET_BUFFER_SIZE;
-	nbytes = setsockopt(sock, 
-			    SOL_SOCKET, 
-			    SO_RCVBUF, 
-			    &sock_recv_buf_size,
-			    sizeof(sock_recv_buf_size));
-	nbytes = setsockopt(sock, 
-			    SOL_SOCKET, 
-			    SO_SNDBUF, 
-			    &sock_send_buf_size,
-			    sizeof(sock_send_buf_size));
+	nbytes = setsockoptWrapper(sock, 
+				   SOL_SOCKET, 
+				   SO_RCVBUF, 
+				   &sock_recv_buf_size,
+				   sizeof(sock_recv_buf_size));
+	nbytes = setsockoptWrapper(sock, 
+				   SOL_SOCKET, 
+				   SO_SNDBUF, 
+				   &sock_send_buf_size,
+				   sizeof(sock_send_buf_size));
 	i_recv = sizeof(sock_recv_buf_size);
 	i_send = sizeof(sock_send_buf_size);
 
