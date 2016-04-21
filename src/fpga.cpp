@@ -10,6 +10,7 @@
 /**********************************************************************/
 
 #include "fpga.hpp"
+#include "networkWrapper.hpp"
 //#define DEBUG 2
 
 
@@ -30,11 +31,7 @@ FPGA::FPGA():
     // in case of a windows machine, we need signed chars, whereas
     // for linux unsigned chars are needed. The macro differentiates
     // both platforms
-#ifdef __WIN32__
-    PackQueueReceive( new std::vector<std::vector<char> >(PQueue*8, std::vector<char>(PLen+18)) )
-#else
     PackQueueReceive( new std::vector<std::vector<unsigned char> >(PQueue*8, std::vector<unsigned char>(PLen+18)))
-#endif //endif ifdef __WIN32__
 {
     std::cout<<"constructing FPGA"<<std::endl;
 
@@ -342,17 +339,10 @@ int FPGA::SetMatrix(){
     std::cout<<"Enter FPGA::SetMatrix()"<<std::endl;	
 #endif
 
-#ifdef __WIN32__
-    int err_code;
-    std::vector<std::vector<char> > *PackQueue = new std::vector<std::vector<char> >(PQueue*tp.GetNumChips(), std::vector<char>(PLen+18));
-    //tp.PackMatrix(PacketQueue);
-    tp.PackMatrix(PackQueue);
-#else
     int err_code;
     std::vector<std::vector<unsigned char> > *PackQueue = new std::vector<std::vector<unsigned char> >(PQueue*tp.GetNumChips(), std::vector<unsigned char>(PLen+18));
     //tp.PackMatrix(PacketQueue);
     tp.PackMatrix(PackQueue);
-#endif
 
     //M0=0; M1=1; Enable_IN=0; Shutter=1; Reset=1; 	//ModL= 26 = 0x1a
     // Start Set Matrix 0x0A
@@ -544,11 +534,7 @@ int FPGA::EnableFADCshutter(unsigned short FADCshutter)
    3: received packet has wrong packet-number
 */
 
-#ifdef __WIN32__
-int FPGA::Communication(char* SendBuffer, char* RecvBuffer)
-#else
 int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
-#endif
 {
 #if DEBUG==2
     std::cout<<"Enter FPGA::Communication()"<<std::endl;	
@@ -569,7 +555,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
     
-    RecvBytes=send(sock,SendBuffer,OutgoingLength,0);
+    RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
 #if DEBUG==1 
     std::cout << "Paket gesendet "<<RecvBytes<< std::endl;
 #endif
@@ -608,7 +594,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
 	err_code=0;
     }
 
-    RecvBytes=recv(sock,RecvBuffer,PLen+18,0);
+    RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
     std::cout << "recvBytes" << RecvBytes << std::endl;
     //usleep(3000);
 #if DEBUG==1
@@ -683,11 +669,7 @@ void FPGA::ClearFadcFlag(){
 }
 
 
-#ifdef __WIN32__
-int FPGA::Communication2(char* SendBuffer, char* RecvBuffer, int HitsMode, unsigned short chip)
-#else
 int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip)
-#endif
 {
 
 #if DEBUG==2
@@ -709,7 +691,7 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     SendBuffer[16]=tp.GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
-    RecvBytes=send(sock,SendBuffer,OutgoingLength,0);
+    RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
 #if DEBUG==1
     std::cout << "Paket gesendet "<<RecvBytes<< std::endl;
 #endif
@@ -736,7 +718,7 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     }
 
 
-    RecvBytes=recv(sock,RecvBuffer,PLen+18,0);
+    RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
     //usleep(3000);
 #if DEBUG==1
     std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
@@ -765,7 +747,7 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
 	std::cout << "Timeout 10 sec used" << std::endl;
 #endif
 	//++SoftwareCounter;
-	RecvBytes=recv(sock,RecvBuffer,PLen+18,0);
+	RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
 
 #if DEBUG==1
 	std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
@@ -806,11 +788,7 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     else return err_code;
 }
 
-#ifdef __WIN32__
-int FPGA::CommunicationReadSend(char* SendBuffer, char* RecvBuffer, int HitsMode, unsigned short chip)
-#else
 int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip)
-#endif
 {
 
 #if DEBUG==2
@@ -832,7 +810,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     SendBuffer[16]=tp.GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
-    RecvBytes=send(sock,SendBuffer,OutgoingLength,0);
+    RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
 #if DEBUG==1
     std::cout << "Paket gesendet " << RecvBytes << std::endl;
 #endif
@@ -850,7 +828,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     if(err_code<0){return 1;} else if(err_code==0){return 2;} else{err_code=0;}
 
 
-    RecvBytes=recv(sock,RecvBuffer,PLen+18,0);
+    RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
 #if DEBUG==1
     std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
     std::cout << "RecvBuffer[1]:" << RecvBuffer[1] 
@@ -887,7 +865,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 	    //++SoftwareCounter;
 	    
 	    // NOTE: removed __WIN32__ ifdef with RecvBuffer as array
-            recv(sock,SendBuffer,PLen+18,0);  
+            recvWrapper(sock,SendBuffer,PLen+18,0);  
 	    
 	    std::cout << "Packet indicating end of data transfer from Chip to "
 		      << "FPGA received" << std::endl;

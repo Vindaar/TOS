@@ -14,15 +14,9 @@
 class Timepix{
 	public:
 		Timepix();
-#ifdef __WIN32__
-        int GetFSR(char* FSR_);
-        int ChipID(char* ReplyPacket,unsigned short chip);
-        int PackMatrix(std::vector<std::vector< char> > *PackQueue);
-#else
        int GetFSR(unsigned char* FSR_);
        int ChipID(unsigned char* ReplyPacket,unsigned short chip);
        int PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue);
-#endif
 		int SaveFSRToFile(const char* filename, unsigned short chip);
 		int LoadFSRFromFile(const char* filename, unsigned short chip);
 		int SaveThresholdToFile(const char* filename, unsigned short chip);

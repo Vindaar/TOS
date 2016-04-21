@@ -84,6 +84,8 @@
 	#include <stdio.h>
 	#include <iomanip>
 	//#include <exception>
+// TODO: check which packages are only needed for select(), recv() and send()
+//       which are reimplemented with a wrapper in networkWrapper.hpp
 #ifdef __WIN32__
 # include <winsock2.h>
 # include <ws2tcpip.h>

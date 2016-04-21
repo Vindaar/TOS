@@ -92,21 +92,12 @@ private:
     int FPGACounter; 
     int HitsMode;
 
-#ifdef __WIN32__
-    char PacketBuffer[PLen+18];        //Buffer fuer send, bzw bei SetMatrix fuer receive
-    char PacketQueue[PQueue][PLen+18]; //Buffer fuer receive (alle Pakete bei ReadOut), bzw fuer send (alle Pakete) bei SetMatrix
-    std::vector<std::vector<char> > *PackQueueReceive;// = new std::vector<std::vector<unsigned char> >(PQueue, std::vector<unsigned char>(PLen+18));
-    int Communication( char* Bsend,  char* Brecv); 	//err_code=x
-    int Communication2(char* Bsend,  char* Brecv, int numHits, unsigned short chip); 	//err_code=x
-    int CommunicationReadSend(char* Bsend, char* Brecv, int numHits, unsigned short chip); 	//err_code=x
-#else
     unsigned char PacketBuffer[PLen+18]; //Buffer fuer send, bzw bei SetMatrix fuer receive
     unsigned char PacketQueue[PQueue][PLen+18]; //Buffer fuer receive (alle Pakete bei ReadOut), bzw fuer send (alle Pakete) bei SetMatrix
     std::vector<std::vector<unsigned char> > *PackQueueReceive;// = new std::vector<std::vector<unsigned char> >(PQueue, std::vector<unsigned char>(PLen+18));
     int Communication( unsigned char* Bsend, unsigned char* Brecv); 	//err_code=x
     int Communication2(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip); 	//err_code=x
     int CommunicationReadSend(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip); 	//err_code=x
-#endif
     int SaveData(const char* filename);						//err_code=x
     int SaveData(int pix[9][256][256]);
     int SaveData(std::vector<std::vector<std::vector<int> > > *VecData);
