@@ -30,7 +30,9 @@ HEADERS += include/caseHeader.h \
            include/High-Level-functions_VME.h \
            include/FADCConstants_V1729a.h \
            include/const.h \
-           include/tosCommandCompletion.hpp
+           include/tosCommandCompletion.hpp \
+           include/networkWrapper.hpp
+
            
 SOURCES += src/caseFunctions.cc \
            src/console.cpp \
@@ -47,7 +49,8 @@ SOURCES += src/caseFunctions.cc \
            src/vmusb.cpp \
            src/vmemodule.cpp \
            src/High-Level-functions_VME.cc \
-           src/tosCommandCompletion.cpp
+           src/tosCommandCompletion.cpp \
+           src/networkWrapper.cpp
 
 LIBS += -Wl,--no-as-needed \
         -Wl,--rpath=/usr/local/lib \
@@ -55,7 +58,31 @@ LIBS += -Wl,--no-as-needed \
         -lreadline
 
 
-#external headers
+# external QT headers
 INCLUDEPATH += /usr/include/qt4/QtCore 
 
+# win32 and unix variables should be decideded automatically by qmake!
+# just calling qmake-qt4 TOS.pro should suffice
+windows|win32{
+    message(Compiling for windows)
+
+    # for windows add readline library, which needs to be put into 
+    # include folder
+    HEADERS += include/readline/readline.h
+
+    LIBS += -Wl,-Bdynamic -lreadline \
+            -lws2_32
+
+    QMAKE_LFLAGS_WINDOWS += -Wl,--stack,10000000
+    QMAKE_LFLAGS    += -static -static-libgcc
+    CONFIG += staticlib
+    INCLUDEPATH += $$PWD/../../../../Qt/Tools/mingw491_32/i686-w64-mingw32/lib
+    DEPENDPATH += $$PWD/../../../../Qt/Tools/mingw491_32/i686-w64-mingw32/lib
+    INCLUDEPATH +=-L"C:\Program Files (x86)\GnuWin32\lib"
+    DEPENDPATH += "C:\Program Files (x86)\GnuWin32\lib"
+}
+
+linux|unix{
+    message(Compiling for linux)
+}
 

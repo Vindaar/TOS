@@ -1,7 +1,6 @@
 # gitignore file
 tmp/*
 Makefile
-TOS.pro
 HV_FADC_Object.pro
 HV_FADC_Object.pro.user
 <<<<<<< HEAD
