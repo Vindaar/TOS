@@ -574,10 +574,10 @@ int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned 
 	if(thl%100 == 0) std::cout<<"Thp="<<thp<<" (16=Eq); coarse:"<<coarse<<" , thl:"<<thl<<std::endl; //commented in
 	fpga.GeneralReset();
 	//for (unsigned short chip = 1;chip <= fpga.tp.GetNumChips() ;chip++){
-		fpga.tp.LoadFSRFromFile(GetFSRFileName(chp),chp);
-		fpga.tp.SetDAC(6,chp,thl);
-		if (ths!=0) {fpga.tp.SetDAC(10,chp,ths);}
-		fpga.tp.SetDAC(13,chp,coarse);
+	fpga.tp.LoadFSRFromFile(GetFSRFileName(chp),chp);
+	fpga.tp.SetDAC(6,chp,thl);
+	if (ths!=0) {fpga.tp.SetDAC(10,chp,ths);}
+	fpga.tp.SetDAC(13,chp,coarse);
 	//}
 	fpga.WriteReadFSR();
 	usleep(400);
@@ -2464,12 +2464,14 @@ void PC::readoutFadc(std::string filePath, std::vector<int> fadcParams, std::vec
     outFile << "#Data:" << std::endl;
 
 
+    // TODO: why unsigned int used? problematic, since channels is int.
+    // -> changed iData and iVector to int
     //"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
-    for(unsigned int iData = 0; iData < 3*channels; iData++)
+    for(int iData = 0; iData < 3*channels; iData++)
       outFile << "#" << fadcData[iData] << std::endl;
     
     //print the actual data to file
-    for(unsigned int iVector = 3*channels; iVector < 2563*channels; iVector++)
+    for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
       outFile << fadcData[iVector] << std::endl;
           
     //"skip the remaining data points
@@ -2533,7 +2535,7 @@ const char* PC::GetDataFileName(unsigned short chip){
 	else if (chip == 6){return Data6FileName.c_str();}
 	else if (chip == 7){return Data7FileName.c_str();}
 	else if (chip == 8){return Data8FileName.c_str();}
-	else return false;
+	else return "";
 
 }
 const char* PC::GetRunFileName(){
@@ -2548,7 +2550,7 @@ const char* PC::GetFSRFileName(unsigned short chip){
 	else if (chip == 6){return FSR6FileName.c_str();}
 	else if (chip == 7){return FSR7FileName.c_str();}
 	else if (chip == 8){return FSR8FileName.c_str();}
-	else return false;
+	else return "";
 }
 const char* PC::GetMatrixFileName(unsigned short chip){
 	if (chip == 1){return MatrixFileName.c_str();}
@@ -2559,7 +2561,7 @@ const char* PC::GetMatrixFileName(unsigned short chip){
 	else if (chip == 6){return Matrix6FileName.c_str();}
 	else if (chip == 7){return Matrix7FileName.c_str();}
 	else if (chip == 8){return Matrix8FileName.c_str();}
-	else return false;
+	else return "";
 }
 const char* PC::GetDACScanFileName(){
 	return DACScanFileName.c_str();
@@ -2573,7 +2575,7 @@ const char* PC::GetThresholdFileName(unsigned short chip){
 	else if (chip == 6){return Threshold6FileName.c_str();}
 	else if (chip == 7){return Threshold7FileName.c_str();}
 	else if (chip == 8){return Threshold8FileName.c_str();}
-	else return false;
+	else return "";
 }
 const char* PC::GetTOTCalibFileName(unsigned short chip){
 	if (chip == 1){return TOTCalibFileName.c_str();}
@@ -2584,7 +2586,7 @@ const char* PC::GetTOTCalibFileName(unsigned short chip){
 	else if (chip == 6){return TOTCalib6FileName.c_str();}
 	else if (chip == 7){return TOTCalib7FileName.c_str();}
 	else if (chip == 8){return TOTCalib8FileName.c_str();}
-	else return false;
+	else return "";
 }
 
 const char* PC::GetTOACalibFileName(unsigned short chip){
@@ -2596,7 +2598,7 @@ const char* PC::GetTOACalibFileName(unsigned short chip){
 	else if (chip == 6){return TOACalib6FileName.c_str();}
 	else if (chip == 7){return TOACalib7FileName.c_str();}
 	else if (chip == 8){return TOACalib8FileName.c_str();}
-	else return false;
+	else return "";
 }
 
 const char* PC::GetMaskFileName(unsigned short chip){
@@ -2608,7 +2610,7 @@ const char* PC::GetMaskFileName(unsigned short chip){
 	else if (chip == 6){return Mask6FileName.c_str();}
 	else if (chip == 7){return Mask7FileName.c_str();}
 	else if (chip == 8){return Mask8FileName.c_str();}
-	else return false;
+	else return "";
 }
 
 

@@ -172,6 +172,7 @@ unsigned int Timepix::GetDAC(unsigned int dac, unsigned short chip){
 #if DEBUG==2
 	std::cout<<"Enter Timepix::GetDAC()"<<std::endl;	
 #endif	
+	// TODO: dac < 0, doesn't make any sense, since dac is an unsigned int!
 	if((dac<0)&&(dac>16)) {return -1;}
 	return DACValue[chip][dac];
 }
@@ -601,19 +602,19 @@ unsigned short Timepix::GetADCchannel(){
 unsigned short Timepix::GetADCalert(){
 	return ADC_alert_global;
 }
-unsigned short Timepix::SetFADCshutter(unsigned short FADCshutter){
+void Timepix::SetFADCshutter(unsigned short FADCshutter){
 	FADCshutter_global = FADCshutter;
 }
 unsigned short Timepix::GetFADCshutter(){
 	return FADCshutter_global;
 }
-unsigned short Timepix::SetExtraByte(unsigned short ExtraByte){
+void Timepix::SetExtraByte(unsigned short ExtraByte){
 	ExtraByte_global = ExtraByte;
 }
 unsigned short Timepix::GetExtraByte(){
 	return ExtraByte_global;
 }
-unsigned short Timepix::SetFADCtriggered(unsigned short FADCtriggered){
+void Timepix::SetFADCtriggered(unsigned short FADCtriggered){
 	FADCtriggered_global = FADCtriggered;
 }
 unsigned short Timepix::SetFADCtriggered(){

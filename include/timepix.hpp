@@ -57,11 +57,11 @@ class Timepix{
 		unsigned short GetADCresult();
 		unsigned short GetADCchannel();
 		unsigned short GetADCalert();
-		unsigned short SetFADCshutter(unsigned short FADCshutter);
+		void SetFADCshutter(unsigned short FADCshutter);
 		unsigned short GetFADCshutter();
-		unsigned short SetExtraByte(unsigned short ExtraByte);
+		void SetExtraByte(unsigned short ExtraByte);
 		unsigned short GetExtraByte();
-		unsigned short SetFADCtriggered(unsigned short FADCtriggered);
+		void SetFADCtriggered(unsigned short FADCtriggered);
 		unsigned short SetFADCtriggered();
 
 	private:

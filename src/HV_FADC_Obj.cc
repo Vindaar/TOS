@@ -553,9 +553,11 @@ void HV_FADC_Obj::InitHFOForTOS(){
 
     // define variables
 
+    // TODO: channelControl and moduleControl currently not in use
+    //       might be a good idea to implement and check them
     ModuleStatusSTRUCT  moduleStatus = { 0 };
-    ModuleControlSTRUCT moduleControl = { 0 };
-    ChControlSTRUCT     channelControl = { 0 };
+    // ModuleControlSTRUCT moduleControl = { 0 };
+    // ChControlSTRUCT     channelControl = { 0 };
     int gridChannelNumberBinary;
     int anodeChannelNumberBinary;
     int cathodeChannelNumberBinary;
@@ -1081,9 +1083,12 @@ int HV_FADC_Obj::H_CheckHVModuleIsGood(bool verbose){
         // variables to store the current EventStatus values
         // these will be compared to the values of the last call
         // of this function
-        ChEventStatusSTRUCT gridEventStatus    = { 0 };
-        ChEventStatusSTRUCT anodeEventStatus   = { 0 };
-        ChEventStatusSTRUCT cathodeEventStatus = { 0 };
+
+	// TODO: event status variables currently not in use
+	//       might be a good idea to implement and check
+        // ChEventStatusSTRUCT gridEventStatus    = { 0 };
+        // ChEventStatusSTRUCT anodeEventStatus   = { 0 };
+        // ChEventStatusSTRUCT cathodeEventStatus = { 0 };
 
         // first need to check whether module tripped. 
         // check EventTrip

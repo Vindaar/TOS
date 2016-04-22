@@ -1496,8 +1496,6 @@ int Console::CommandCountingTime(){
     std::cout<<"Enter Console::CommandCountingTime() " << time <<std::endl;	
 #endif
     // use getUserInput to get the desired mode first
-    bool numericalInput = false;
-    bool allowDefaultOnEmptyInput = false;
     std::string inputClock;
     std::string inputMode;
     std::string inputTime;
@@ -1529,7 +1527,9 @@ int Console::CommandCountingTime(){
     else if( (inputMode == "long") ){
 	n = 1;
     }
-    else if( (inputMode == "verylong") ){
+    else{
+	// since ShutterRangeSelection makes sure only specific input is allowed,
+	// the only other option is verylong. So set n = 2
 	n = 2;
     }
     // now we should have a valid n of {0, 1, 2}

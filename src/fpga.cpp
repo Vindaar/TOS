@@ -16,10 +16,10 @@
 //C~tor
 FPGA::FPGA():
     ErrInfo(0), 
-    ok(1), 
-    TriggerConnectionIsTLU(0), 
     _fadcBit(0),
     _fadcFlag(false), 
+    ok(1), 
+    TriggerConnectionIsTLU(0), 
     Mode(0),
     IncomingLength(0), 
     OutgoingLength(0), 
@@ -81,48 +81,51 @@ FPGA::FPGA():
     int i_recv=sizeof(sock_recv_buf_size);
     int i_send=sizeof(sock_send_buf_size);
     
+    // TODO: ? instead of performing a sanity check, one could in principle only
+    //       check the return value of setsockopt (if 0 returned, all good, else 
+    //       -1 returned)
+
     // now get both the send and receiver socket buffer size
     // and set it to a value, which is 'big enough'
-    int nbytes;
-    nbytes = getsockoptWrapper(sock, 
-			       SOL_SOCKET, 
-			       SO_RCVBUF, 
-			       &sock_recv_buf_size, 
-			       (socklen_t *)&i_recv);
-    nbytes = getsockoptWrapper(sock, 
-			       SOL_SOCKET, 
-			       SO_SNDBUF, 
-			       &sock_send_buf_size, 
-			       (socklen_t *)&i_send);
+    getsockoptWrapper(sock, 
+		      SOL_SOCKET, 
+		      SO_RCVBUF, 
+		      &sock_recv_buf_size, 
+		      (socklen_t *)&i_recv);
+    getsockoptWrapper(sock, 
+		      SOL_SOCKET, 
+		      SO_SNDBUF, 
+		      &sock_send_buf_size, 
+		      (socklen_t *)&i_send);
     if (sock_recv_buf_size != DEFAULT_SOCKET_BUFFER_SIZE){
 	// if sock buffer size is not the wanted value, set value we want
 	sock_recv_buf_size = DEFAULT_SOCKET_BUFFER_SIZE;
 	sock_send_buf_size = DEFAULT_SOCKET_BUFFER_SIZE;
-	nbytes = setsockoptWrapper(sock, 
-				   SOL_SOCKET, 
-				   SO_RCVBUF, 
-				   &sock_recv_buf_size,
-				   sizeof(sock_recv_buf_size));
-	nbytes = setsockoptWrapper(sock, 
-				   SOL_SOCKET, 
-				   SO_SNDBUF, 
-				   &sock_send_buf_size,
-				   sizeof(sock_send_buf_size));
+	setsockoptWrapper(sock, 
+			  SOL_SOCKET, 
+			  SO_RCVBUF, 
+			  &sock_recv_buf_size,
+			  sizeof(sock_recv_buf_size));
+	setsockoptWrapper(sock, 
+			  SOL_SOCKET, 
+			  SO_SNDBUF, 
+			  &sock_send_buf_size,
+			  sizeof(sock_send_buf_size));
 	i_recv = sizeof(sock_recv_buf_size);
 	i_send = sizeof(sock_send_buf_size);
 
 	// now perform a sanity check, if the size was correctly applied
 	// get new sizes
-	nbytes = getsockoptWrapper(sock, 
-				   SOL_SOCKET, 
-				   SO_RCVBUF, 
-				   &sock_recv_buf_size, 
-				   (socklen_t *)&i_recv);
-	nbytes = getsockoptWrapper(sock, 
-				   SOL_SOCKET, 
-				   SO_SNDBUF, 
-				   &sock_send_buf_size, 
-				   (socklen_t *)&i_send);
+	getsockoptWrapper(sock, 
+			  SOL_SOCKET, 
+			  SO_RCVBUF, 
+			  &sock_recv_buf_size, 
+			  (socklen_t *)&i_recv);
+	getsockoptWrapper(sock, 
+			  SOL_SOCKET, 
+			  SO_SNDBUF, 
+			  &sock_send_buf_size, 
+			  (socklen_t *)&i_send);
 
 	// and check, if the new size is 2 times the wanted size
 	// NOTE: the kernel sets the value to 2* the wanted size
