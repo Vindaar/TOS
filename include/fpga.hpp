@@ -27,11 +27,11 @@ class FPGA{
 public:
 
     //C'tor
-    FPGA();
+    FPGA(Timepix *tp_pointer);
     //D'tor
     ~FPGA();
 
-    Timepix tp;
+    Timepix *tp;
     int ErrInfo;
     int okay();
     int GeneralReset(); 	//err_code=1x
@@ -130,7 +130,7 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
     Mode = 0x04;
     OutgoingLength=18; 
     IncomingLength=18+PLen; 
-    PacketQueueSize=PQueue*tp.GetNumChips();
+    PacketQueueSize=PQueue*tp->GetNumChips();
     err_code=Communication(PacketBuffer,&((*PackQueueReceive)[0][0]));
   
     if(err_code>0)return 300+err_code;
@@ -143,7 +143,7 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
 	{
             // only 8 bit preload instead of 10 doesnt matter here, 
 	    // as postload is enough and not completely transmitted
-	    IncomingLength=18+((256*256*14+8+256)*tp.GetNumChips())/8%PLen; 
+	    IncomingLength=18+((256*256*14+8+256)*tp->GetNumChips())/8%PLen; 
 	    // End Serial Readout 0x06
 	    Mode = 0x06;
 	}

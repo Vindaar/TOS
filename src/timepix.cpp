@@ -12,11 +12,13 @@
 
 #include "timepix.hpp"
 
-Timepix::Timepix(){
+Timepix::Timepix(int nbOfChips){
 	
 #if DEBUG==2
 	std::cout<<"Enter Timepix::Timepix()"<<std::endl;	
 #endif
+	// use constructor argument to set the number of chips
+	NumChips = nbOfChips;
 
 	// temporary integer variable for number of chips to set chip ID to a
 	// sensible value, if the current number is 'standard'
@@ -41,7 +43,6 @@ Timepix::Timepix(){
 		_chipIdOffset = DEFAULT_CHIP_ID_OFFSET_1_CHIP;
 	}
 
-	
 	int x,y;
 	
 	DACCodes[0]=15;	DACNames[0]="IKrum";
@@ -109,7 +110,7 @@ Timepix::Timepix(){
 	
 	for(x=0;x<32;x++){CTPRBitPos[x]= 255-(144 +x) -0;}
 	for(x=0;x<10;x++){THLBitPos[x]= 255-( 100 +x) -0;}
-	for(x=0;x<24;x++){ChipIDBitPos[x]= 255-( _chipIdOffset + x);} // hard coded, put 193 for octoboard to get chipIDs back correctly
+	for(x=0;x<24;x++){ChipIDBitPos[x]= 255-( _chipIdOffset + x);} 
 	
 	for (int i = 1; i <= 8; i++){ChipID_[i]=0;}
 	NumberDefPixel=0;
@@ -165,7 +166,8 @@ int Timepix::SaveFSRToFile(const char* filename, unsigned short chip){
 	std::cout<<"Enter Timepix::SaveFSRToFile()"<<std::endl;	
 #endif
 	int i;
-	std::fstream f; f.open(filename,std::fstream::out);
+	std::fstream f; 
+	f.open(filename,std::fstream::out);
 	if(!f.is_open()) {return 0;}
 	for(i=0;i<18;i++){ 
 		f << DACNames[i] << " " << DACValue[chip][i] << std::endl;
@@ -196,8 +198,7 @@ unsigned int Timepix::GetDAC(unsigned int dac, unsigned short chip){
 #if DEBUG==2
 	std::cout<<"Enter Timepix::GetDAC()"<<std::endl;	
 #endif	
-	// TODO: dac < 0, doesn't make any sense, since dac is an unsigned int!
-	if((dac<0)&&(dac>16)) {return -1;}
+	if(dac>16) {return -1;}
 	return DACValue[chip][dac];
 }
 

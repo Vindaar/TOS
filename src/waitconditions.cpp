@@ -47,20 +47,20 @@ void Producer::run()
 
 	// in case we use an external trigger, we call CountingTrigger()
 	if (parent->_useExternalTrigger == true){
-	    // set fpga.UseFastClock to the value of _useFastClock
-	    parent->fpga.UseFastClock(parent->_useFastClock);
-	    result = parent->fpga.CountingTrigger(parent->shutterTime);
+	    // set fpga->UseFastClock to the value of _useFastClock
+	    parent->fpga->UseFastClock(parent->_useFastClock);
+	    result = parent->fpga->CountingTrigger(parent->shutterTime);
 	    // after counting, deactivate fast clock variable again
-	    parent->fpga.UseFastClock(false);
+	    parent->fpga->UseFastClock(false);
 	    if(result!=20){(parent->RunIsRunning)=false;}
 	}
 	// else we call CountingTime()
 	else{
-	    // set fpga.UseFastClock to the value of _useFastClock
-	    parent->fpga.UseFastClock(parent->_useFastClock);
-	    result = parent->fpga.CountingTime(parent->shutterTime, parent->shutter_mode);
+	    // set fpga->UseFastClock to the value of _useFastClock
+	    parent->fpga->UseFastClock(parent->_useFastClock);
+	    result = parent->fpga->CountingTime(parent->shutterTime, parent->shutter_mode);
 	    // after counting, deactivate fast clock variable again
-	    parent->fpga.UseFastClock(false);
+	    parent->fpga->UseFastClock(false);
 	    if(result!=20){(parent->RunIsRunning)=false;}	    
 	}
    
@@ -77,21 +77,21 @@ void Producer::run()
 	{
 	    parent->mutexVBuffer.lock();             
 	    //if there was a trigger from the fadc: stop data taking and readout the chip and fadc event
-	    if((parent->fpga.ReadoutFadcFlag()) == 1)
+	    if((parent->fpga->ReadoutFadcFlag()) == 1)
 	    {
 		fadcReadout = true;
-		parent->fpga.ClearFadcFlag();
+		parent->fpga->ClearFadcFlag();
 	    }
 	    parent->mutexVBuffer.unlock();           
 
 	    // TODO: check what this means?!
 	    //To FIX the readout problem
-	    parent->fpga.DataChipFPGA(result);
+	    parent->fpga->DataChipFPGA(result);
 	}
  
     
 	//Producer filling the VBuffer (or a readout vec) for the readout
-	for (unsigned short chip = 0; chip < parent->fpga.tp.GetNumChips(); chip++)
+	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
 	{
 	    std::vector<int> *dataVec  = new std::vector<int>(12288+1,0);
 	    std::cout << "Producer run " 
@@ -106,10 +106,10 @@ void Producer::run()
 	    //To FIX the readout problem
 	    // TODO: understand this
 	    if(parent->_useHvFadc){
-		parent->fpga.DataFPGAPC(dataVec,chip+1);
+		parent->fpga->DataFPGAPC(dataVec,chip+1);
 	    }
 	    else{
-		parent->fpga.SerialReadOutReadSend(dataVec,chip+1);
+		parent->fpga->SerialReadOutReadSend(dataVec,chip+1);
 	    }
 	    std::cout << "Producer NumHits chip: " << chip+1 
 		      << " " << dataVec->at(0) 
@@ -248,7 +248,7 @@ void Consumer::run()
     while(parent->DataAcqRunning || (parent->DataInBuffer) != 0)
     {
 	std::string FileName[9] = {""};
-	for (unsigned short chip = 1;chip <= parent->fpga.tp.GetNumChips() ;chip++){
+	for (unsigned short chip = 1;chip <= parent->fpga->tp->GetNumChips() ;chip++){
 	    sstream << "data" << i << "_" << chip << ".txt";
 	    FileName[chip]=parent->PathName+"/"; 
 	    FileName[chip]+=sstream.str();
@@ -294,7 +294,7 @@ void Consumer::run()
 	//create output file
 	FILE* f2 = fopen(FileName2.c_str(),"w");
 
-	for (unsigned short chip = 0; chip < parent->fpga.tp.GetNumChips(); chip++)
+	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
 	{
 	    int NumHits = ((parent->Vbuffer)[(i % parent->BufferSize)][chip])->at(0);
 	    std::cout << "Consumer run " << i 
@@ -347,12 +347,10 @@ void Consumer::run()
 	parent->mutexVBuffer.unlock();
 
 
-	for (unsigned short chip = 0; chip < parent->fpga.tp.GetNumChips(); chip++)
+	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
 	{
 	    if(hits[chip+1]<0){(parent->RunIsRunning)=false;}
 	}
-
-
 
 	i++;
     }//end of while(parent->DataAcqRunning || (parent->DataInBuffer) != 0)

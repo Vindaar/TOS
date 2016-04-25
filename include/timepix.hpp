@@ -17,10 +17,15 @@
 #define DEFAULT_CHIP_ID_OFFSET_1_CHIP               188
 #define DEFAULT_CHIP_ID_OFFSET_7_CHIPS              192
 #define DEFAULT_CHIP_ID_OFFSET_8_CHIPS              193
+// define some macros for the size of arrays
+#define DEFAULT_FSR_SIZE                            52
+#define DEFAULT_NUM_DACS                            18
+#define DEFAULT_NUM_DAC_CODES                       13
+#define DEFAULT_MAX_NUM_CHIPS                       9
 
 class Timepix{
 public:
-    Timepix();
+    Timepix(int nbOfChips);
     int GetFSR(unsigned char* FSR_);
     int ChipID(unsigned char* ReplyPacket,unsigned short chip);
     int PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue);
@@ -79,19 +84,19 @@ public:
 private:
     void UpdateFSR();
 		
-    unsigned char FSR[9][52];
+    unsigned char FSR[DEFAULT_MAX_NUM_CHIPS][DEFAULT_FSR_SIZE];
 		
     // DAC-Werte
-    unsigned int DACValue[9][18];
-    std::string DACNames[18];
-    int DACCodes[13];
-    int ChipID_[9];
-    std::string ChipLetter[9];
-    int ChipNumber[9];
-    int ChipWaver[9];
-    int ChipType_[9];
+    unsigned int DACValue[DEFAULT_MAX_NUM_CHIPS][DEFAULT_NUM_DACS];
+    std::string DACNames[DEFAULT_NUM_DACS];
+    int DACCodes[DEFAULT_NUM_DAC_CODES];
+    int ChipID_[DEFAULT_MAX_NUM_CHIPS];
+    std::string ChipLetter[DEFAULT_MAX_NUM_CHIPS];
+    int ChipNumber[DEFAULT_MAX_NUM_CHIPS];
+    int ChipWaver[DEFAULT_MAX_NUM_CHIPS];
+    int ChipType_[DEFAULT_MAX_NUM_CHIPS];
     int NumberDefPixel;
-    int DefPixel[256][256];
+    int **DefPixel[256][256];
     int IsCounting_;
 
     // chip ID offset (offset for bitstream of chip ID in header of communication)
@@ -104,7 +109,11 @@ private:
     int SenseDACPos, ExtDACPos, DACCodePos[4];
 		
     // Setup der einzelnen Pixel
-    unsigned char P0[9][256][256], P1[9][256][256], Mask[9][256][256], Test[9][256][256], ThrH[9][256][256];
+    unsigned char P0[DEFAULT_MAX_NUM_CHIPS][256][256];
+    unsigned char P1[DEFAULT_MAX_NUM_CHIPS][256][256]; 
+    unsigned char Mask[DEFAULT_MAX_NUM_CHIPS][256][256]; 
+    unsigned char Test[DEFAULT_MAX_NUM_CHIPS][256][256]; 
+    unsigned char ThrH[DEFAULT_MAX_NUM_CHIPS][256][256];
     unsigned short NumChips;
     unsigned short Preload_global;
     unsigned short Option_global;

@@ -58,7 +58,10 @@ public:
 private:
 
     //declaration of a pc var - the communication with the fpga is done by this class
-    PC pc;
+    // use a pointer for pc. Create object in console constructor, delete in destructor
+    PC *pc;
+    // console owns a timepix pointer, which is handed to the PC constructor
+    Timepix *_tp;
     
     int ok;              //< some check var to work with pc 
     int _nbOfChips;      //< the number of chips one wants to use

@@ -38,7 +38,10 @@ class PC:public QThread{
 public:
 
     //C'tor
-    PC();
+    PC(Timepix *tp);
+
+    //D'tor
+    ~PC();
 
     //initilise FADC (or don't)
     // TODO: change to use HV_FADC_Obj instead
@@ -46,7 +49,7 @@ public:
 
     void initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc = true);
   
-    FPGA fpga;
+    FPGA *fpga;
     int DoReadOut(const char* filename[9]);
     int DoReadOut2(const char* filename, unsigned short chip);
     // TODO: HV_FADC_Obj

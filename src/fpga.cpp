@@ -14,17 +14,17 @@
 //#define DEBUG 2
 
 //C~tor
-FPGA::FPGA():
-    ErrInfo(0), 
+FPGA::FPGA(Timepix *tp_pointer_from_parent):
+    ErrInfo(0),
     _fadcBit(0),
-    _fadcFlag(false), 
-    ok(1), 
-    TriggerConnectionIsTLU(0), 
+    _fadcFlag(false),
+    ok(1),
+    TriggerConnectionIsTLU(0),
     Mode(0),
-    IncomingLength(0), 
+    IncomingLength(0),
     OutgoingLength(0), 
     PacketQueueSize(1),
-    SoftwareCounter(0), 
+    SoftwareCounter(0),
     FPGACounter(0),
     PackQueueReceive( new std::vector<std::vector<unsigned char> >(PQueue*8, std::vector<unsigned char>(PLen+18)))
 {
@@ -33,6 +33,9 @@ FPGA::FPGA():
 #if DEBUG==2
     std::cout<<"Enter FPGA::FPGA()"<<std::endl;	
 #endif //endif if DEBUG==2
+    // and now set the timepix object pointer the FPGA object owns to the one
+    // we hand to it via the constructor
+    tp = tp_pointer_from_parent;
 
     int err_code;
     sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -215,7 +218,7 @@ int FPGA::Counting(){
     IncomingLength=18; 
     PacketQueueSize=1;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
-    if((err_code==0)||(err_code==3)){tp.SetCounting(1);}
+    if((err_code==0)||(err_code==3)){tp->SetCounting(1);}
     return 20+err_code;
 }
 
@@ -232,7 +235,7 @@ int FPGA::CountingStop(){
     IncomingLength=18; 
     PacketQueueSize=1;  
     err_code=Communication(PacketBuffer,PacketQueue[0]);
-    if((err_code==0)||(err_code==3)){tp.SetCounting(0);}
+    if((err_code==0)||(err_code==3)){tp->SetCounting(0);}
     return 20+err_code;
 }
 
@@ -259,7 +262,7 @@ int FPGA::CountingTrigger(int time){
     PacketQueueSize=1;  
     PacketBuffer[6]=time;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
-    if((err_code==0)||(err_code==3)){tp.SetCounting(0);}
+    if((err_code==0)||(err_code==3)){tp->SetCounting(0);}
     return 20+err_code;
 }
 
@@ -297,9 +300,9 @@ int FPGA::CountingTime(int time, int modeSelector){
     PacketBuffer[6]=time;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
 
-    if (tp.GetFADCshutter()==1)
+    if (tp->GetFADCshutter()==1)
     {
-	int i2cresult = (tp.GetI2cResult() << 8) + tp.GetExtraByte();
+	int i2cresult = (tp->GetI2cResult() << 8) + tp->GetExtraByte();
 	std::cout << "FADC trigger at " << i2cresult << " clock cycles."<<std::endl;
     }
 
@@ -312,16 +315,16 @@ int FPGA::SetMatrix(){
 #endif
 
     int err_code;
-    std::vector<std::vector<unsigned char> > *PackQueue = new std::vector<std::vector<unsigned char> >(PQueue*tp.GetNumChips(), std::vector<unsigned char>(PLen+18));
-    //tp.PackMatrix(PacketQueue);
-    tp.PackMatrix(PackQueue);
+    std::vector<std::vector<unsigned char> > *PackQueue = new std::vector<std::vector<unsigned char> >(PQueue*tp->GetNumChips(), std::vector<unsigned char>(PLen+18));
+    //tp->PackMatrix(PacketQueue);
+    tp->PackMatrix(PackQueue);
 
     //M0=0; M1=1; Enable_IN=0; Shutter=1; Reset=1; 	//ModL= 26 = 0x1a
     // Start Set Matrix 0x0A
     Mode = 0x0A;
     OutgoingLength=18+PLen; 
     IncomingLength=18; 
-    PacketQueueSize=PQueue*tp.GetNumChips();
+    PacketQueueSize=PQueue*tp->GetNumChips();
 	
     err_code=Communication(&((*PackQueue)[0][0]),PacketBuffer);
     if(err_code>0)return 40+err_code;
@@ -332,7 +335,7 @@ int FPGA::SetMatrix(){
     for(int p=1;p<PacketQueueSize;++p){
 	//usleep(100);
 	if(p==PacketQueueSize-1){
-	    OutgoingLength=18+((256*256*14+8+256)*tp.GetNumChips())/8%PLen;
+	    OutgoingLength=18+((256*256*14+8+256)*tp->GetNumChips())/8%PLen;
 	    // End Set Matrix
 	    Mode = 0x0C;
 	}
@@ -349,26 +352,26 @@ int FPGA::WriteReadFSR(){
     std::cout<<"Enter FPGA::WriteReadFSR()\n"<<std::flush;
 #endif
     int err_code;
-    tp.GetFSR(PacketBuffer);
+    tp->GetFSR(PacketBuffer);
 #if DEBUG>0
     int i;
-    for(i=18;i<18+(32*tp.GetNumChips())+2;i++)printf("%i ",PacketBuffer[i]);printf("\n");
+    for(i=18;i<18+(32*tp->GetNumChips())+2;i++)printf("%i ",PacketBuffer[i]);printf("\n");
 #endif
     //M0=1; M1=0; Enable_IN=0; Shutter=1; Reset=1; 	//ModL= 25 = 0x19
     // Set DAC write fsr
     Mode = 0x0D;
-    // changed to 34*tp.GetNumChips() (in Alex code was 32*...)
+    // changed to 34*tp->GetNumChips() (in Alex code was 32*...)
     // 34 corresponds to: 256 bit (32 byte) + 8 bit (1 byte) preload and 1 more byte to process
     // TODO: + 2 why? not sure, somehow needed?
-    OutgoingLength=18+(34*tp.GetNumChips()) + 2; 
-    // changed to 34*tp.GetNumChips() + 2 (in Alex code was 33*tp.GetNumChips())
-    IncomingLength=18+(34*tp.GetNumChips()) + 2; 
+    OutgoingLength=18+(34*tp->GetNumChips()) + 2; 
+    // changed to 34*tp->GetNumChips() + 2 (in Alex code was 33*tp->GetNumChips())
+    IncomingLength=18+(34*tp->GetNumChips()) + 2; 
     PacketQueueSize=1;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
     if(err_code>0)return 50+err_code;
-    for (unsigned short chip = 1;chip <= tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= tp->GetNumChips() ;chip++){
 	if (err_code>0) {err_code = err_code;}
-	else err_code=tp.ChipID(PacketQueue[0],chip);
+	else err_code=tp->ChipID(PacketQueue[0],chip);
 	//std::cout<<"WriteReadFSR:"<<err_code<<std::endl;
     }
     if(err_code>0){
@@ -400,7 +403,7 @@ int FPGA::i2cDAC(unsigned short Umv, unsigned short DACchannel)
     if (Umv == 0) {bitcode1 = 0;}
     std::cout<<"I2C DAC voltage bitcode: "<<bitcode1<<std::endl;
     unsigned int i2c_val = (DACchannel<<12) | bitcode1;
-    tp.SetI2C(i2c_val);
+    tp->SetI2C(i2c_val);
     // I²C DACs
     Mode = 0x09;
     OutgoingLength=18; 
@@ -415,22 +418,22 @@ int FPGA::i2cADC(unsigned short channel)
 {
     int err_code;
     unsigned int i2c_val = channel;
-    tp.SetI2C(i2c_val);
+    tp->SetI2C(i2c_val);
     // Readout ADC 0x0E
     Mode = 0x0E;
     OutgoingLength=18; 
     IncomingLength=18+400; 
     PacketQueueSize=1;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
-    double ADCmV = 2.0818*tp.GetADCresult()+56.15;
+    double ADCmV = 2.0818*tp->GetADCresult()+56.15;
     std::cout<< "ADC conversion result of channel " 
-	     << tp.GetADCchannel() 
+	     << tp->GetADCchannel() 
 	     << " is " 
-	     << tp.GetADCresult() 
+	     << tp->GetADCresult() 
 	     << " which is " 
 	     << ADCmV 
 	     << " mV with alert flag "
-	     << tp.GetADCalert() 
+	     << tp->GetADCalert() 
 	     << std::endl;
 
     return ADCmV;
@@ -441,7 +444,7 @@ int FPGA::tpulse(unsigned short Npulses, unsigned short div500kHz)
 {
     int err_code;
     unsigned int i2c_val = (Npulses<<8) | div500kHz;
-    tp.SetI2C(i2c_val);
+    tp->SetI2C(i2c_val);
     // Testpulses 0x0F
     Mode = 0x0F;
     OutgoingLength=18; 
@@ -479,7 +482,7 @@ int FPGA::EnableFADCshutter(unsigned short FADCshutter)
     std::cout<<"Enter FPGA::EnableTPulse()"<<std::endl; 
 #endif
     int err_code;
-    tp.SetFADCshutter(FADCshutter);
+    tp->SetFADCshutter(FADCshutter);
     if(FADCshutter){
 	// FADC trigger closes shutter on
 	// Mode = 0x20 == 32
@@ -518,12 +521,12 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     SendBuffer[2]=IncomingLength/256;
     SendBuffer[3]=IncomingLength%256;
     SendBuffer[4]=Mode;
-    SendBuffer[7]=tp.GetNumChips();
-    SendBuffer[9]=tp.GetPreload();
-    SendBuffer[10]=tp.GetOption();
-    SendBuffer[14]=tp.GetI2C()/65536;
-    SendBuffer[15]=tp.GetI2C()/256;
-    SendBuffer[16]=tp.GetI2C()%256;
+    SendBuffer[7]=tp->GetNumChips();
+    SendBuffer[9]=tp->GetPreload();
+    SendBuffer[10]=tp->GetOption();
+    SendBuffer[14]=tp->GetI2C()/65536;
+    SendBuffer[15]=tp->GetI2C()/256;
+    SendBuffer[16]=tp->GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
     
@@ -597,9 +600,9 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     ADC_result+=RecvBuffer[15] << 8;
     ADC_result+=RecvBuffer[16];
     ExtraByte = RecvBuffer[17];
-    tp.SetFADCtriggered(FADCtriggered);
-    tp.SetExtraByte(ExtraByte);
-    tp.SetADCresult(ADC_ChAlert,ADC_result);
+    tp->SetFADCtriggered(FADCtriggered);
+    tp->SetExtraByte(ExtraByte);
+    tp->SetADCresult(ADC_ChAlert,ADC_result);
       
     return err_code;
 }
@@ -651,13 +654,13 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     SendBuffer[2]=IncomingLength/256;
     SendBuffer[3]=IncomingLength%256;
     SendBuffer[4]=Mode;
-    SendBuffer[7]=tp.GetNumChips();
+    SendBuffer[7]=tp->GetNumChips();
     SendBuffer[8]=chip;
-    SendBuffer[9]=tp.GetPreload();
-    SendBuffer[10]=tp.GetOption();
-    SendBuffer[14]=tp.GetI2C()/65536;
-    SendBuffer[15]=tp.GetI2C()/256;
-    SendBuffer[16]=tp.GetI2C()%256;
+    SendBuffer[9]=tp->GetPreload();
+    SendBuffer[10]=tp->GetOption();
+    SendBuffer[14]=tp->GetI2C()/65536;
+    SendBuffer[15]=tp->GetI2C()/256;
+    SendBuffer[16]=tp->GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
     RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
@@ -770,13 +773,13 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     SendBuffer[2]=IncomingLength/256;
     SendBuffer[3]=IncomingLength%256;
     SendBuffer[4]=Mode;
-    SendBuffer[7]=tp.GetNumChips();
+    SendBuffer[7]=tp->GetNumChips();
     SendBuffer[8]=chip;
-    SendBuffer[9]=tp.GetPreload();
-    SendBuffer[10]=tp.GetOption();
-    SendBuffer[14]=tp.GetI2C()/65536;
-    SendBuffer[15]=tp.GetI2C()/256;
-    SendBuffer[16]=tp.GetI2C()%256;
+    SendBuffer[9]=tp->GetPreload();
+    SendBuffer[10]=tp->GetOption();
+    SendBuffer[14]=tp->GetI2C()/65536;
+    SendBuffer[15]=tp->GetI2C()/256;
+    SendBuffer[16]=tp->GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
     RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
@@ -824,7 +827,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 50000;
-    if (chip == tp.GetNumChips()){
+    if (chip == tp->GetNumChips()){
 	if (HitsMode==2 or Hits*4 <PLen) {
 	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);//&timeout);
 #if DEBUG==1
@@ -928,7 +931,7 @@ int FPGA::SaveData(int pix[9][256][256]){
     // get the preload in order to get rid of if else statements within the 
     // 4 nested for loops...
     // now simply add preload to aktBit
-    int preload = tp.GetPreload();
+    int preload = tp->GetPreload();
 
     for (unsigned short chip = 1;chip <= 8;chip++){
 	for(y=0;y<256;++y){
@@ -937,7 +940,7 @@ int FPGA::SaveData(int pix[9][256][256]){
 	    }
 	}
     }
-    for (unsigned short chip = 1;chip <= tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= tp->GetNumChips() ;chip++){
 	for(y=0;y<256;++y){
 	    for(b=0;b<14;++b){
 		for(x=0;x<256;++x)
@@ -946,8 +949,8 @@ int FPGA::SaveData(int pix[9][256][256]){
 		    // you apply on program start since if statement included 
 		    // different values for adding than actual preload value 
 		    // before
-		    aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1) + preload;
-		    // +8*tp.GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
+		    aktBit=y*256*14+b*256+(255-x)+8*tp->GetNumChips()+((256*256*14)+256)*(chip-1) + preload;
+		    // +8*tp->GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
 		    if((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			pix[chip][y][x]+=1<<(13-b);
 		    }
@@ -969,10 +972,10 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
     // get the preload in order to get rid of if else statements within the 
     // 4 nested for loops...
     // now simply add preload to aktBit
-    int preload = tp.GetPreload();
+    int preload = tp->GetPreload();
 
     //for(y=0;y<256;++y)for(x=0;x<256;++x)pix[y][x]=0;
-    for (unsigned short chip = 1;chip <= tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= tp->GetNumChips() ;chip++){
 	for(y=0;y<256;++y){
 	    for(b=0;b<14;++b){
 		for(x=0;x<256;++x)
@@ -981,8 +984,8 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
 		    // you apply on program start since if statement included 
 		    // different values for adding than actual preload value 
 		    // before
-		    aktBit=y*256*14+b*256+(255-x)+8*tp.GetNumChips()+((256*256*14)+256)*(chip-1) + preload;
-		    // +8*tp.GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
+		    aktBit=y*256*14+b*256+(255-x)+8*tp->GetNumChips()+((256*256*14)+256)*(chip-1) + preload;
+		    // +8*tp->GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
 		    if ((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			(*VecData)[chip][y][x]+=1<<(13-b);
 		    }

@@ -31,23 +31,33 @@ Console::Console():
 #if DEBUG==2
     std::cout<<"Enter Console::Console()"<<std::endl;
 #endif
-
-    ok = pc.okay();
-    std::string input="";
-  
-    //get nb of chips
+    // before we create the pc object, we ask for the number of chips
     const char *prompt = "How many chips are on your board? (1-8)";
-    input = getUserInput(prompt);
+    std::set<std::string> allowedNumChips;
+    std::string input;
+    // make sure only 1 to 8 chips are typed in. More than 9 (due to illogical
+    // numbering of chips starting from 1 instead of 0) and we will get a
+    // segmentation fault in the timepix creator. Size of arrays for chips
+    // are hardcoded at the moment to allow for 9 chips.
+    for(int l = 1; l < 9; l++) allowedNumChips.insert(std::to_string(l));
+    input = getUserInputNumericalDefault(prompt, &allowedNumChips);
     if(input==""){_nbOfChips=1;}
     else{
 	_nbOfChips=(unsigned short) atoi(&input[0]);
     }
     std::cout << "Number of Chips: " << _nbOfChips << std::endl << std::endl;
+
+    // create a pointer to a timepix object, with the correct number of chips
+    _tp = new Timepix(_nbOfChips);
+    // and now create a PC object and hand it the timepix object pointer
+    pc = new PC(_tp);
+
+    ok = pc->okay();
     input.clear();
  
     //get preload bytes
     _preload = getPreload();
-    pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
+    pc->fpga->tp->SetNumChips(_nbOfChips,_preload);
 }
 
 Console::Console(std::string iniFilePath):
@@ -60,21 +70,25 @@ Console::Console(std::string iniFilePath):
 #if DEBUG==2
     std::cout<<"Enter Console::Console()"<<std::endl;
 #endif
-
+    // create a pointer to a timepix object, with the correct number of chips
+    _tp = new Timepix(_nbOfChips);
+    // and now create a PC object and hand it the timepix object pointer
+    pc = new PC(_tp);
+    
     _hvFadcObj = new HV_FADC_Obj(iniFilePath);
 
     // now the HV_FADC_Obj should be set up and running 
     // HV voltages ramped up
 
     //init FADC
-    pc.initHV_FADC(_hvFadcObj, _hvFadcObjActive);
-    ok = pc.okay();
+    pc->initHV_FADC(_hvFadcObj, _hvFadcObjActive);
+    ok = pc->okay();
     
     std::cout << "Warning: In FADC-Mode one can only use one Chip" << std::endl;
 
     //get preoload
     _preload = getPreload();
-    pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
+    pc->fpga->tp->SetNumChips(_nbOfChips,_preload);
 }
 
 
@@ -84,6 +98,8 @@ Console::~Console()
     if(_hvFadcObjActive){
         delete _hvFadcObj;
     }
+    delete pc;
+    delete _tp;
 }
 
 
@@ -115,9 +131,9 @@ void Console::ConsoleMain(){
 #if DEBUG==2
     std::cout<<"Enter Console::ConsoleMain()"<<std::endl;	
 #endif	
-    //pc.fpga.tp.SaveFSRToFile(FSRFileName.c_str());
-    //pc.fpga.tp.ChessMatrix(48,112);
-    //pc.fpga.tp.SaveMatrixToFile(MatrixFileName.c_str());
+    //pc->fpga->tp->SaveFSRToFile(FSRFileName.c_str());
+    //pc->fpga->tp->ChessMatrix(48,112);
+    //pc->fpga->tp->SaveMatrixToFile(MatrixFileName.c_str());
 
     //call the main "command-function" w or wo FADC commands
 
@@ -188,8 +204,8 @@ void Console::CommandActivateHvFadcObj(){
 	_hvFadcObj = new HV_FADC_Obj(iniFilePath);
 	
 	//init FADC
-	pc.initHV_FADC(_hvFadcObj, _hvFadcObjActive);
-	ok = pc.okay();
+	pc->initHV_FADC(_hvFadcObj, _hvFadcObjActive);
+	ok = pc->okay();
     }
 
 
@@ -241,7 +257,7 @@ int Console::UserInterface(){
 	
 	if((ein.compare("GeneralReset")==0)||(ein.compare("1")==0)) 
 	{
-	    result=pc.fpga.GeneralReset();
+	    result=pc->fpga->GeneralReset();
 	    if(result>10){ ErrorMessages(result); }
 	    else{ std::cout<<"\tGeneralReset accomplished\n"<<std::flush; }
 	}
@@ -295,11 +311,11 @@ int Console::UserInterface(){
 	}
 	else if( ein.compare("EnableTPulse")==0 )
 	{
-	    pc.fpga.EnableTPulse(1);
+	    pc->fpga->EnableTPulse(1);
 	}
 	else if( ein.compare("DisableTPulse")==0 )
 	{
-	    pc.fpga.EnableTPulse(0);
+	    pc->fpga->EnableTPulse(0);
 	}
 	else if( ein.compare("EnableFADCshutter")==0 )
 	{
@@ -307,7 +323,7 @@ int Console::UserInterface(){
 	}
 	else if( ein.compare("DisableFADCshutter")==0 )
 	{
-	    pc.fpga.EnableFADCshutter(0);
+	    pc->fpga->EnableFADCshutter(0);
 	}
 	else if( ein.compare("DACScan")==0 )
 	{
@@ -410,12 +426,12 @@ int Console::UserInterface(){
 	}
 	else if( ein.compare("ShowIP")==0 )
 	{
-	    std::cout<<pc.fpga.ShowIP()<<"\n"<<std::flush;
+	    std::cout<<pc->fpga->ShowIP()<<"\n"<<std::flush;
 	}
 	else if( (ein.compare("MakeARP")==0) ||
 		 (ein.compare("makearp")==0) )
 	{
-	    pc.fpga.MakeARPEntry();
+	    pc->fpga->MakeARPEntry();
 	}
 	else if( ein.compare("quit")==0 )
 	{
@@ -451,11 +467,11 @@ int Console::UserInterface(){
 	}
 	else if( ein.compare("EnableFastClock")==0 )
 	{
-	    pc.fpga.UseFastClock(1);
+	    pc->fpga->UseFastClock(1);
 	}
 	else if( ein.compare("DisableFastClock")==0 )
 	{
-	    pc.fpga.UseFastClock(0);
+	    pc->fpga->UseFastClock(0);
 	}
 
 	
@@ -648,19 +664,19 @@ int Console::UserInterface(){
 
 int Console::ReadoutFpgaExtTriggerBit()
 {
-  return pc.fpga.ReadoutFadcBit();
+  return pc->fpga->ReadoutFadcBit();
 }
 
 
 int Console::ReadoutFpgaExtTriggerFlag()
 {
-  return pc.fpga.ReadoutFadcFlag();
+  return pc->fpga->ReadoutFadcFlag();
 }
 
 
 void Console::ClearFpgaExtTriggerFlag()
 {
-  pc.fpga.ClearFadcFlag();
+  pc->fpga->ClearFadcFlag();
 }
 
 
@@ -778,11 +794,11 @@ void Console::ErrorMessages(int err){
 	    std::cout << "Warning "
 		      << err 
 		      << ": In Timepix::ChipID (called by WriteReadFSR) - wrong ChipID -  received for one of the chips: "
-		      << pc.fpga.ErrInfo<<", expected: "
+		      << pc->fpga->ErrInfo<<", expected: "
 		      << std::flush;
-	    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+	    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 		std::cout << "chip " << chip << ": " 
-			  << pc.fpga.tp.GetChipID(chip) << "\n>" 
+			  << pc->fpga->tp->GetChipID(chip) << "\n>" 
 			  << std::flush;
 	    }
 	    break;
@@ -961,8 +977,8 @@ int Console::CommandSpacing(){
     input = getUserInputNumericalNoDefault(promptSpacing);
     if (input == "quit") return -1;
     space = std::stoi(input);
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-        pc.fpga.tp.Spacing(space,0,chip);
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+        pc->fpga->tp->Spacing(space,0,chip);
     }
     return 0;
 }
@@ -999,11 +1015,11 @@ void Console::SetNumChips(int nChips){
     _nbOfChips = nChips;
 
     _preload = getPreload();
-    pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
-    pc.fpga.WriteReadFSR();
-    pc.fpga.WriteReadFSR();
-    for (unsigned short chip = 1; chip <= pc.fpga.tp.GetNumChips(); chip++){
-	pc.fpga.tp.GetChipID(chip);
+    pc->fpga->tp->SetNumChips(_nbOfChips,_preload);
+    pc->fpga->WriteReadFSR();
+    pc->fpga->WriteReadFSR();
+    for (unsigned short chip = 1; chip <= pc->fpga->tp->GetNumChips(); chip++){
+	pc->fpga->tp->GetChipID(chip);
     }
 }
 
@@ -1018,11 +1034,11 @@ int Console::CommandSetOption(){
     else{
 	option=(unsigned short) atoi(&ein[0]);
     }
-    pc.fpga.tp.SetOption(option);
-    pc.fpga.WriteReadFSR();
-    pc.fpga.WriteReadFSR();
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	pc.fpga.tp.GetChipID(chip);
+    pc->fpga->tp->SetOption(option);
+    pc->fpga->WriteReadFSR();
+    pc->fpga->WriteReadFSR();
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	pc->fpga->tp->GetChipID(chip);
     }
     return 0;
 }
@@ -1198,7 +1214,7 @@ int Console::CommandRun(bool useHvFadc){
 	else{
 	    if(_nbOfChips != 1) std::cout << "WARNING: Nb of chips set to one - preload-value is kept as " << _preload << std::endl;
 	    _nbOfChips = 1;
-	    pc.fpga.tp.SetNumChips(_nbOfChips,_preload);
+	    pc->fpga->tp->SetNumChips(_nbOfChips,_preload);
 
 	    //print fadc settings
 	    _hvFadcObj->FADC_Functions->printSettings();
@@ -1223,7 +1239,7 @@ int Console::CommandRun(bool useHvFadc){
     // Start measurement
     // TODO: finish changing Run function!
     if(useHvFadc){
-	result = pc.DoRun(runtimeFrames, 
+	result = pc->DoRun(runtimeFrames, 
 			  runtime, 
 			  shutterTime, 
 			  0, 
@@ -1235,8 +1251,8 @@ int Console::CommandRun(bool useHvFadc){
     }
     else {
 	// if Fadc not used, init FADC with NULL and call standard DoRun function
-	pc.initHV_FADC(NULL,false);
-	result = pc.DoRun(runtimeFrames, 
+	pc->initHV_FADC(NULL,false);
+	result = pc->DoRun(runtimeFrames, 
 			  runtime, 
 			  shutterTime, 
 			  0, 
@@ -1265,16 +1281,16 @@ int Console::CommandCounting(int c){
 #endif
     int result=0;
     if(c!=0){
-	if(pc.fpga.tp.IsCounting()!=0){ErrorMessages(24);}
+	if(pc->fpga->tp->IsCounting()!=0){ErrorMessages(24);}
 	else{	
-	    result=pc.fpga.Counting();
+	    result=pc->fpga->Counting();
 	    if(result>20){ErrorMessages(result);}
 	    else{std::cout<<"\tCounting started\n"<<std::flush;}
 	}
     }
     else{
-	if(pc.fpga.tp.IsCounting()==0){ErrorMessages(25);}
-	result=pc.fpga.CountingStop();
+	if(pc->fpga->tp->IsCounting()==0){ErrorMessages(25);}
+	result=pc->fpga->CountingStop();
 	if(result>20){ErrorMessages(result);}
 	else{std::cout<<"\tCounting stopped\n"<<std::flush;}
     }
@@ -1463,11 +1479,11 @@ int Console::CommandCountingTrigger(){
     if (inputClock == "quit") return -1;
     else if ( inputClock == "fastclock" ){
 	// activate fast clock
-	pc.fpga.UseFastClock(1);
+	pc->fpga->UseFastClock(1);
     }
     else{
 	// in this case the input is a use fastclock input
-	pc.fpga.UseFastClock(0);
+	pc->fpga->UseFastClock(0);
     }
 
     // 
@@ -1477,11 +1493,11 @@ int Console::CommandCountingTrigger(){
     inputTime = ShutterTimeSelection(0);
     if (inputTime == "quit"){
 	// regardless of used option, turn off fast clock to make sure
-	pc.fpga.UseFastClock(0);
+	pc->fpga->UseFastClock(0);
 	return -1;
     }
     time = std::stoi(inputTime);
-    result=pc.fpga.CountingTrigger(time);
+    result=pc->fpga->CountingTrigger(time);
     if (result > 20){
 	ErrorMessages(result);
     }
@@ -1489,7 +1505,7 @@ int Console::CommandCountingTrigger(){
 	std::cout << "\tCountingTrigger accomplished\n" << std::flush;
     }
     // regardless of the used option, turn off fast clock
-    pc.fpga.UseFastClock(0);
+    pc->fpga->UseFastClock(0);
     return 1;
 }
 
@@ -1510,11 +1526,11 @@ int Console::CommandCountingTime(){
     if (inputClock == "quit") return -1;
     else if ( inputClock == "fastclock" ){
 	// activate fast clock
-	pc.fpga.UseFastClock(1);
+	pc->fpga->UseFastClock(1);
     }
     else{
 	// in this case the input is a use fastclock input
-	pc.fpga.UseFastClock(0);
+	pc->fpga->UseFastClock(0);
     }
 
     // now choose shutter range
@@ -1522,7 +1538,7 @@ int Console::CommandCountingTime(){
     inputMode = ShutterRangeSelection();
     if (inputMode == "quit"){
 	// regardless of used option, turn off fast clock to make sure
-	pc.fpga.UseFastClock(0);
+	pc->fpga->UseFastClock(0);
 	return -1;
     }
     else if( (inputMode == "standard") ){
@@ -1542,14 +1558,14 @@ int Console::CommandCountingTime(){
     inputTime = ShutterTimeSelection(n);
     if (inputTime == "quit") {
 	// regardless of used option, turn off fast clock to make sure
-	pc.fpga.UseFastClock(0);
+	pc->fpga->UseFastClock(0);
 	return -1;
     }
     // inputTime should now be a valid string for an integer between 1 and 255
-    // instead of calling different fpga.CountingTime functions, we
+    // instead of calling different fpga->CountingTime functions, we
     // will now hand a flag and a time to the normal CountingTime function
     int result;
-    result = pc.fpga.CountingTime(std::stoi(inputTime), n);
+    result = pc->fpga->CountingTime(std::stoi(inputTime), n);
     if (result>20){ 
 	ErrorMessages(result); 
     }
@@ -1558,7 +1574,7 @@ int Console::CommandCountingTime(){
     }
 
     // deactivate fastclock again
-    pc.fpga.UseFastClock(0);
+    pc->fpga->UseFastClock(0);
     return 1;
 }
 
@@ -1570,13 +1586,13 @@ int Console::CommandReadOut(){
     std::string filename[9]= {""};
     const char* f[9];
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	filename[chip]=pc.GetDataPathName();
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	filename[chip]=pc->GetDataPathName();
 	filename[chip]+="/";
-	filename[chip]+=pc.GetDataFileName(chip);
+	filename[chip]+=pc->GetDataFileName(chip);
 	f[chip] = filename[chip].c_str();
     }
-    result = pc.DoReadOut(f);
+    result = pc->DoReadOut(f);
     std::cout << "CommandReadOut:" << result << std::endl;
     if(result<0){ErrorMessages(-result);}
     else{std::cout << "\tReadOut accomplished\n" << std::flush;}
@@ -1589,13 +1605,13 @@ int Console::CommandReadOut2(){
     std::cout << "Enter Console::CommandReadOut()" << std::endl;
 #endif
     int result = 0;
-    pc.fpga.DataChipFPGA(result);
+    pc->fpga->DataChipFPGA(result);
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	std::string filename=pc.GetDataPathName();
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	std::string filename=pc->GetDataPathName();
 	filename+="/";
-	filename+=pc.GetDataFileName(chip);
-	result = pc.DoReadOut2(filename.c_str(),chip);
+	filename+=pc->GetDataFileName(chip);
+	result = pc->DoReadOut2(filename.c_str(),chip);
 #if DEBUG==2
 	std::cout << "DEBUG: Filename: " << filename << std::endl;
 #endif    
@@ -1613,7 +1629,7 @@ int Console::CommandSetMatrix(){
     std::cout<<"Enter Console::CommandSetMatrix()"<<std::endl;	
 #endif
     int result;
-    result=pc.fpga.SetMatrix();
+    result=pc->fpga->SetMatrix();
     if(result>40){ErrorMessages(result);}
     else{std::cout<<"\tSetMatrix accomplished\n"<<std::flush;}
     return result;
@@ -1623,19 +1639,19 @@ int Console::CommandSaveMatrix(){
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = false;
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc.GetMatrixFileName(chip);
+	const char* f=pc->GetMatrixFileName(chip);
 	std::cout << "Matrix filename for chip "
 		  << chip 
 		  << ": (press ENTER to save in "
-		  << pc.GetMatrixFileName(chip) 
+		  << pc->GetMatrixFileName(chip) 
 		  << "): " 
 		  << std::endl;
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (ein == "quit") return -1;
 	f=ein.c_str();
-	pc.fpga.tp.SaveMatrixToFile(f,chip);
+	pc->fpga->tp->SaveMatrixToFile(f,chip);
 	std::cout<<"Matrix saved to "<<f<<"\n"<<std::flush;
     }
     return 0;
@@ -1646,13 +1662,13 @@ int Console::CommandLoadMatrix(){
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = false;
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc.GetMatrixFileName(chip);
+	const char* f=pc->GetMatrixFileName(chip);
 	std::cout << "Matrix filename for chip "
 		  << chip
 		  << " (press ENTER to load from "
-		  << pc.GetMatrixFileName(chip) 
+		  << pc->GetMatrixFileName(chip) 
 		  << "): " 
 		  << std::endl;
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
@@ -1664,11 +1680,11 @@ int Console::CommandLoadMatrix(){
 	    return -1;
 	}
 	if (f1 != NULL) {
-	    pc.fpga.tp.LoadMatrixFromFile(f,chip);
+	    pc->fpga->tp->LoadMatrixFromFile(f,chip);
 	    std::cout<<"Matrix loaded from "<<f<<"\n"<<std::flush;
 	}
-	pc.fpga.tp.SaveMatrixToFile(pc.GetMatrixFileName(chip),chip);
-	std::cout<<"Matrix saved to program folder as "<<pc.GetMatrixFileName(chip)<<"\n"<<std::flush;
+	pc->fpga->tp->SaveMatrixToFile(pc->GetMatrixFileName(chip),chip);
+	std::cout<<"Matrix saved to program folder as "<<pc->GetMatrixFileName(chip)<<"\n"<<std::flush;
     }
     return 0;
 }
@@ -1679,9 +1695,9 @@ int Console::CommandWriteReadFSR(){
     std::cout<<"Enter Console::CommandWriteReadFSR()\n"<<std::flush;
 #endif
     int result;
-    result=pc.fpga.WriteReadFSR();
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	pc.fpga.tp.GetChipID(chip);
+    result=pc->fpga->WriteReadFSR();
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	pc->fpga->tp->GetChipID(chip);
     }
     std::cout<<"\tWriteReadFSR accomplished\n"<<std::flush;
     return result;
@@ -1692,19 +1708,19 @@ int Console::CommandSaveFSR(){
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = false;
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc.GetFSRFileName(chip);
+	const char* f=pc->GetFSRFileName(chip);
 	std::cout << "FSR filename for chip "
 		  << chip
 		  << ": (press ENTER to save in " 
-		  << pc.GetFSRFileName(chip) 
+		  << pc->GetFSRFileName(chip) 
 		  << "): " 
 		  << std::endl;
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (ein == "quit") return -1;
 	f=ein.c_str();
-	pc.fpga.tp.SaveFSRToFile(f,chip);
+	pc->fpga->tp->SaveFSRToFile(f,chip);
 	std::cout<<"FSR saved in "<<f<<"\n"<<std::flush;
     }
     return 0;
@@ -1719,13 +1735,13 @@ int Console::CommandLoadFSR(){
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = true;
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc.GetFSRFileName(chip);
+	const char* f=pc->GetFSRFileName(chip);
 	std::cout << "FSR filename for chip "
 		  << chip
 		  << " (press ENTER to load from "
-		  << pc.GetFSRFileName(chip) 
+		  << pc->GetFSRFileName(chip) 
 		  << "): " 
 		  << std::endl;
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
@@ -1746,7 +1762,7 @@ int Console::CommandLoadFSR(){
 	    return -1;
 	}
 	if (f1 != NULL) {
-	    err=pc.fpga.tp.LoadFSRFromFile(f,chip);
+	    err=pc->fpga->tp->LoadFSRFromFile(f,chip);
 	    if(err==1){
 		std::cout << "FSR loaded from " << f << "\n" << std::flush;
 	    }
@@ -1755,8 +1771,8 @@ int Console::CommandLoadFSR(){
 			  << std::flush;
 	    }
 	}
-	pc.fpga.tp.SaveFSRToFile(pc.GetFSRFileName(chip),chip);
-	std::cout << "FSR saved to program folder as " << pc.GetFSRFileName(chip) << "\n" << std::flush;
+	pc->fpga->tp->SaveFSRToFile(pc->GetFSRFileName(chip),chip);
+	std::cout << "FSR saved to program folder as " << pc->GetFSRFileName(chip) << "\n" << std::flush;
     }
     return err;
 }
@@ -1770,13 +1786,13 @@ int Console::CommandLoadThreshold(){
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = false;
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc.GetThresholdFileName(chip);
+	const char* f=pc->GetThresholdFileName(chip);
 	std::cout << "Threshold filename for chip "
 		  << chip
 		  << " (press ENTER to load from "
-		  << pc.GetThresholdFileName(chip) 
+		  << pc->GetThresholdFileName(chip) 
 		  << "): " 
 		  << std::endl;
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
@@ -1788,14 +1804,14 @@ int Console::CommandLoadThreshold(){
 	    return -1;
 	}
 	if (f1 != NULL) {
-	    err=pc.fpga.tp.LoadThresholdFromFile(f,chip);
+	    err=pc->fpga->tp->LoadThresholdFromFile(f,chip);
 	    if(err==-1){ 
 		std::cout << "File " << f << " not found" << std::endl;
 	    }
 	    std::cout << "Threshold loaded from " << f << "\n" << std::flush;
 	}
-	pc.fpga.tp.SaveThresholdToFile(pc.GetThresholdFileName(chip),chip);
-	std::cout<<"Threshold saved to program folder as "<<pc.GetThresholdFileName(chip)<<"\n"<<std::flush;
+	pc->fpga->tp->SaveThresholdToFile(pc->GetThresholdFileName(chip),chip);
+	std::cout<<"Threshold saved to program folder as "<<pc->GetThresholdFileName(chip)<<"\n"<<std::flush;
     }
     return err;
 }
@@ -1822,17 +1838,17 @@ int Console::CommandSetDAC(){
     int i = std::stoi(input);
     int err = 1;
 
-    if (chip > pc.fpga.tp.GetNumChips()){ 
+    if (chip > pc->fpga->tp->GetNumChips()){ 
 	std::cout << "You only have " 
-		  << pc.fpga.tp.GetNumChips() 
+		  << pc->fpga->tp->GetNumChips() 
 		  << " chips, please provide correct chip number." 
 		  << std::endl;
 	err=-3;
     }
-    else err=pc.fpga.tp.SetDAC(dac, chip, i);
+    else err=pc->fpga->tp->SetDAC(dac, chip, i);
     if(err!=1) ErrorMessages(61-err);
     else std::cout << "DAC " << dac 
-		   << " (" << pc.fpga.tp.GetDACName(dac) << ") of chip " << chip 
+		   << " (" << pc->fpga->tp->GetDACName(dac) << ") of chip " << chip 
 		   << " set to " << i 
 		   << std::endl;
     return 1;
@@ -1840,9 +1856,9 @@ int Console::CommandSetDAC(){
 
 
 int Console::CommandShowFSR(){
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	for(unsigned int i=0;i<18;i++){
-	    std::cout << "\t" << pc.fpga.tp.GetDACName(i) << " \t " << pc.fpga.tp.GetDAC(i,chip) << std::endl;
+	    std::cout << "\t" << pc->fpga->tp->GetDACName(i) << " \t " << pc->fpga->tp->GetDAC(i,chip) << std::endl;
 	}
     }
     return 0;
@@ -1863,7 +1879,7 @@ int Console::CommandVarChessMatrix(){
     bool allowDefaultOnEmptyInput = false;
     std::string input;
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::cout<<"Chip Number "<<chip<<std::endl;
 	std::cout<<"\t Number cols per field="<<std::flush;
 	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
@@ -1914,7 +1930,7 @@ int Console::CommandVarChessMatrix(){
 	if (input == "quit") return -1;
 	wth = std::stoi(input);
 	std::cin.ignore(1);
-	err=pc.fpga.tp.VarChessMatrix(sl,wl,sp0,sp1,smask,stest,sth,wp0,wp1,wmask,wtest,wth,chip);
+	err=pc->fpga->tp->VarChessMatrix(sl,wl,sp0,sp1,smask,stest,sth,wp0,wp1,wmask,wtest,wth,chip);
 	if(err==0){std::cout<<"Matrix created\n"<<std::flush;}
 	else{ErrorMessages(80);}
     }// end for loop
@@ -1930,7 +1946,7 @@ int Console::CommandUniformMatrix(){
     bool allowDefaultOnEmptyInput = false;
     std::string input;
 
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::cout<<"Chip Number "<<chip<<std::endl;
 	std::cout<<"\t P0="<<std::flush;
 	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
@@ -1952,7 +1968,7 @@ int Console::CommandUniformMatrix(){
 	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (input == "quit") return -1;
 	th = std::stoi(input);
-	err=pc.fpga.tp.UniformMatrix(p0,p1,mask,test,th,chip);
+	err=pc->fpga->tp->UniformMatrix(p0,p1,mask,test,th,chip);
 	if(err==0){std::cout<<"Matrix created\n"<<std::flush;}
 	else{ErrorMessages(80);}
     }
@@ -1975,8 +1991,8 @@ int Console::CommandFADCshutter(){
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     closeshutter = std::stoi(input);
-    pc.fpga.tp.SetI2C(closeshutter);
-    pc.fpga.EnableFADCshutter(1);
+    pc->fpga->tp->SetI2C(closeshutter);
+    pc->fpga->EnableFADCshutter(1);
     return 0;
 }
 
@@ -1992,7 +2008,7 @@ int Console::CommandDACScan(){
 
     int DacsOn[14]={1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     unsigned short chip;
-    std::cout << "Which chip do you want to DAC scan? (1-" << pc.fpga.tp.GetNumChips() << ") " << std::flush;
+    std::cout << "Which chip do you want to DAC scan? (1-" << pc->fpga->tp->GetNumChips() << ") " << std::flush;
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     chip = std::stoi(input);
@@ -2065,7 +2081,7 @@ int Console::CommandDACScan(){
 	}
     }
 
-    pc.DoDACScan(DACstoScan, chip);
+    pc->DoDACScan(DACstoScan, chip);
     return 0;
 
 }
@@ -2080,7 +2096,7 @@ int Console::CommandTHLScan(){
     unsigned short chip;
     unsigned short coarselow;
     unsigned short coarsehigh;
-    std::cout << "Which chip do you want to THL scan? (1-" << pc.fpga.tp.GetNumChips() << ") " << std::flush;
+    std::cout << "Which chip do you want to THL scan? (1-" << pc->fpga->tp->GetNumChips() << ") " << std::flush;
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     chip = std::stoi(input);
@@ -2092,7 +2108,7 @@ int Console::CommandTHLScan(){
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     coarsehigh = std::stoi(input);
-    pc.DoTHLScan(chip,coarselow,coarsehigh);
+    pc->DoTHLScan(chip,coarselow,coarsehigh);
     return 0;
 }
 
@@ -2106,7 +2122,7 @@ int Console::CommandSCurve(){
     unsigned short coarselow = 7;
     unsigned short coarsehigh = 7;
     int time = 255;
-    std::cout << "Which chip do you want to THL scan to write the files for the S-Curve scan? (1-" << pc.fpga.tp.GetNumChips() << ") " << std::flush;
+    std::cout << "Which chip do you want to THL scan to write the files for the S-Curve scan? (1-" << pc->fpga->tp->GetNumChips() << ") " << std::flush;
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     chip = std::stoi(input);
@@ -2122,7 +2138,7 @@ int Console::CommandSCurve(){
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     coarsehigh = std::stoi(input);
-    pc.DoSCurveScan(chip,coarselow,coarsehigh,time);
+    pc->DoSCurveScan(chip,coarselow,coarsehigh,time);
     return 0;
 }
 
@@ -2141,7 +2157,7 @@ int Console::CommandSCurveFast(){
     std::cout << "Hello, this is fast S-Curve scan. I will do a THL scan and "
 	      << "count how many counts there are in average on the chips. "
 	      << "Scan will be done for one chip after the other from chip 1 to " 
-	      <<  pc.fpga.tp.GetNumChips() 
+	      <<  pc->fpga->tp->GetNumChips() 
 	      << ") " 
 	      << std::flush;
     std::cout << "Warning: Only CTPR = 1 will be used. Hence only column x = 0, "
@@ -2162,7 +2178,7 @@ int Console::CommandSCurveFast(){
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     time       = std::stoi(input);
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::cout << "Start (lower) THL for chip " << chip << " " << std::flush;
 	input          = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (input == "quit") return -1;
@@ -2172,13 +2188,13 @@ int Console::CommandSCurveFast(){
 	if (input == "quit") return -1;
 	StopTHL[chip]  = std::stoi(input);
     }
-    pc.DoSCurveScan_meanChip(voltage,time,StartTHL,StopTHL,offset);
+    pc->DoSCurveScan_meanChip(voltage,time,StartTHL,StopTHL,offset);
     return 0;
 }
 
 
 int Console::Commandi2creset(){
-    pc.fpga.i2creset();
+    pc->fpga->i2creset();
     return 0;
 }
 
@@ -2197,7 +2213,7 @@ int Console::Commandi2cDAC(){
     input = getUserInput(promptDACvoltage, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     Umv   = std::stoi(input);
-    pc.fpga.i2cDAC(Umv, DACchannel);
+    pc->fpga->i2cDAC(Umv, DACchannel);
     return 0;
 }
 
@@ -2211,7 +2227,7 @@ int Console::Commandi2cADC(){
     input = getUserInput(promptADCchannel, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     std::cout << "ADC channel is: " << channel << std::endl;
-    pc.fpga.i2cADC(channel);
+    pc->fpga->i2cADC(channel);
     return 0;
 }
 
@@ -2230,7 +2246,7 @@ int Console::CommandTpulse(){
     input     = getUserInput(promptFreqTestPulse, numericalInput, allowDefaultOnEmptyInput);    
     if (input == "quit") return -1;
     div500kHz = std::stoi(input);
-    pc.fpga.tpulse(Npulses, div500kHz);
+    pc->fpga->tpulse(Npulses, div500kHz);
     return 0;
 }
 
@@ -2243,7 +2259,7 @@ int Console::CommandDoTHSopt(){
 
     std::string ein0="";
     std::cout << "Hello, this is THS optimisation.  You have " 
-	      << pc.fpga.tp.GetNumChips() 
+	      << pc->fpga->tp->GetNumChips() 
 	      << " chips, for which of them do you want to do the optimization? "
 	      << "Put 0 if you want to go for all of them one after the other. " 
 	      << std::endl;
@@ -2325,11 +2341,11 @@ int Console::CommandDoTHSopt(){
 	}
     }
     if (chp == 0){
-	for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	    pc.DoTHSopt(doTHeq, pix_per_row_THeq, chip, ths, ext_coarse, max_thl, min_thl);
+	for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	    pc->DoTHSopt(doTHeq, pix_per_row_THeq, chip, ths, ext_coarse, max_thl, min_thl);
 	}
     }
-    else pc.DoTHSopt(doTHeq, pix_per_row_THeq, chp, ths, ext_coarse, max_thl, min_thl);
+    else pc->DoTHSopt(doTHeq, pix_per_row_THeq, chp, ths, ext_coarse, max_thl, min_thl);
     return 0;
 }
 
@@ -2343,7 +2359,7 @@ int Console::CommandThresholdEqNoiseCenter(){
     short min_thl = 0;
 
     std::cout << "You have " 
-	      << pc.fpga.tp.GetNumChips() 
+	      << pc->fpga->tp->GetNumChips() 
 	      << "chips, for which of them do you want to do the threshold "
 	      << "equalisation? Put 0 if you want to go for all of them "
 	      << "one after the other." 
@@ -2356,7 +2372,7 @@ int Console::CommandThresholdEqNoiseCenter(){
     }
     std::cout << "chip " << chp << std::endl;
     std::cout << " You have " 
-	      << pc.fpga.tp.GetNumChips() 
+	      << pc->fpga->tp->GetNumChips() 
 	      << " chips, equalisation will be done for chip " 
 	      << chp 
 	      << std::flush;
@@ -2397,17 +2413,17 @@ int Console::CommandThresholdEqNoiseCenter(){
 	}
     }
     if (chp == 0){
-	for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	    pc.DoThresholdEqCenter(pix_per_row, chip, ext_coarse, max_thl, min_thl);
+	for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	    pc->DoThresholdEqCenter(pix_per_row, chip, ext_coarse, max_thl, min_thl);
 	}
     }
-    else pc.DoThresholdEqCenter(pix_per_row, chp, ext_coarse, max_thl, min_thl);
+    else pc->DoThresholdEqCenter(pix_per_row, chp, ext_coarse, max_thl, min_thl);
     return 0;
 }
 
 
 int Console::CommandTOCalib(){
-    pc.TOCalib();
+    pc->TOCalib();
     return 0;
 }
 
@@ -2434,7 +2450,7 @@ int Console::CommandTOCalibFast(){
 	      << "want to do another voltage if you use the external pulser. "
 	      << std::endl;
     std::cout << "You have "
-	      << pc.fpga.tp.GetNumChips() 
+	      << pc->fpga->tp->GetNumChips() 
 	      <<" chips, all of them will be calibrated at the same time. "
 	      << std::endl;
     const char *promptExtIntPulser = "Do you want to use the external (0, default) or internal (1) pulser? ";
@@ -2480,13 +2496,13 @@ int Console::CommandTOCalibFast(){
     }
     std::cout << "Ok, lets start!" << std::endl;
 
-    pc.TOCalibFast(pix_per_row, shuttertype, time, TOT, internalPulser);
+    pc->TOCalibFast(pix_per_row, shuttertype, time, TOT, internalPulser);
     return 0;
 }
 
 
 int Console::CommandCheckOffset(){
-    unsigned short usepreload = pc.CheckOffset();
+    unsigned short usepreload = pc->CheckOffset();
     std::cout << "Use preload " << usepreload << std::endl;
     return 0;
 }
@@ -2527,7 +2543,7 @@ int Console::CommandCalibrate(){
     std::string ein1="";
     std::cout << ""  << std::endl;
     std::cout << "You have " 
-	      <<  pc.fpga.tp.GetNumChips() 
+	      <<  pc->fpga->tp->GetNumChips() 
 	      << " chips" 
 	      << std::endl;
     std::cout << "Which chips do you want to calibrate? Put 0 if you want to "
@@ -2627,7 +2643,7 @@ int Console::CommandCalibrate(){
     input      = getUserInput(_prompt, true, false);
     if (input == "quit") return -1;
     time       = std::stoi(input);
-    for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::cout << "End (upper) THL for chip "   << chip << ": " << std::flush;
 	input          = getUserInput(_prompt, true, false);
 	if (input == "quit") return -1;
@@ -2646,7 +2662,7 @@ int Console::CommandCalibrate(){
 		  << "pulser will be used): "
 		  << std::endl;
 	std::cout << "You have "
-		  << pc.fpga.tp.GetNumChips() 
+		  << pc->fpga->tp->GetNumChips() 
 		  <<" chips, all of them will be calibrated at the same time. " 
 		  << std::endl;
 	std::cout << "For the spacing: How many pixel per row at same time? "
@@ -2687,21 +2703,21 @@ int Console::CommandCalibrate(){
 	std::cout << "Ok, lets start!"<<std::endl;
     }
     if (chp == 0){
-	for (unsigned short chip = 1;chip <= pc.fpga.tp.GetNumChips() ;chip++){
-	    pc.DoTHSopt(0, 0, chip, ths, ext_coarse, max_thl, min_thl);
-	    pc.DoThresholdEqCenter(pix_per_row, chip, ext_coarse, max_thl, min_thl);
+	for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	    pc->DoTHSopt(0, 0, chip, ths, ext_coarse, max_thl, min_thl);
+	    pc->DoThresholdEqCenter(pix_per_row, chip, ext_coarse, max_thl, min_thl);
 	}
     }
     else {
-	pc.DoTHSopt(0, 0, chp, ths, ext_coarse, max_thl, min_thl);
-	pc.DoThresholdEqCenter(pix_per_row, chp, ext_coarse, max_thl, min_thl);
+	pc->DoTHSopt(0, 0, chp, ths, ext_coarse, max_thl, min_thl);
+	pc->DoThresholdEqCenter(pix_per_row, chp, ext_coarse, max_thl, min_thl);
     }
-    pc.DoSCurveScan_meanChip(voltage, time, StartTHL, StopTHL, offset);
+    pc->DoSCurveScan_meanChip(voltage, time, StartTHL, StopTHL, offset);
     if (doTOT == 1) {
-	pc.TOCalibFast(pix_per_rowTO, shuttertype, timeTO, 0, internalPulser);
+	pc->TOCalibFast(pix_per_rowTO, shuttertype, timeTO, 0, internalPulser);
     }
     if (doTOA == 1) {
-	pc.TOCalibFast(pix_per_rowTO, shuttertype, timeTO, 1, internalPulser);
+	pc->TOCalibFast(pix_per_rowTO, shuttertype, timeTO, 1, internalPulser);
     }
     return 0;
 }
@@ -2720,12 +2736,12 @@ int Console::CommandSwitchTriggerConnection(){
     input = getUserInputNonNumericalNoDefault(promptType, &allowedStrings);
     if (input == "quit") return -1;
     else if(input.compare("tlu")==0){
-	pc.fpga.SwitchTriggerConnection(1);
+	pc->fpga->SwitchTriggerConnection(1);
     }
     else{
 	// if tlu is not in input, lemo is (getUserInput takes care of 
 	// only allowing strings in allowedStrings
-	pc.fpga.SwitchTriggerConnection(0);
+	pc->fpga->SwitchTriggerConnection(0);
     }
     return 0;
 }
@@ -2734,7 +2750,7 @@ void Console::DACScanLive(char dac, int val){
 #if DEBUG==2
     std::cout<<"Enter Console::CommandDACScanLive()"<<std::endl;	
 #endif
-    if(dac>=0){std::cout << std::endl << pc.fpga.tp.GetDACName((unsigned int) dac) << "\n";}
+    if(dac>=0){std::cout << std::endl << pc->fpga->tp->GetDACName((unsigned int) dac) << "\n";}
     std::cout << val << "   ";
 }
 
@@ -2757,7 +2773,7 @@ void Console::CommandSpeedTest(std::string ein){
 	    pos=ein.find(" ",1);
 	    wdh=atoi(&ein[0]);
 	    freq=atoi(&ein[pos]);
-	    pc.SpeedTest(wdh,freq);
+	    pc->SpeedTest(wdh,freq);
 	}
 	else{
 	    std::cout << "\tNon-numerical sign\n"
@@ -2821,7 +2837,7 @@ void Console::CommandSetIP(){
     }
 
     ip<<byte[0]<<'.'<<byte[1]<<'.'<<byte[2]<<'.'<<byte[3];
-    pc.fpga.SetIP(ip.str());
+    pc->fpga->SetIP(ip.str());
 }
 
 
@@ -2847,7 +2863,7 @@ void Console::CommandSetChipIdOffset(){
 	newChipIdOffset = std::stoi(input);
     }
     
-    pc.fpga.tp.SetChipIDOffset(newChipIdOffset);
+    pc->fpga->tp->SetChipIDOffset(newChipIdOffset);
 
     // to make sure that the new offset is good, read the Chip ID; done by calling CommandWriteReadFSR()
     std::cout << "Checking if new chip ID offset is good... calling WriteReadFSR()..." << std::endl;
