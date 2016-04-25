@@ -17,6 +17,30 @@ Timepix::Timepix(){
 #if DEBUG==2
 	std::cout<<"Enter Timepix::Timepix()"<<std::endl;	
 #endif
+
+	// temporary integer variable for number of chips to set chip ID to a
+	// sensible value, if the current number is 'standard'
+	int tempNumChips;
+	tempNumChips = GetNumChips();
+	switch(tempNumChips)
+	{
+	    case 1:
+		_chipIdOffset = DEFAULT_CHIP_ID_OFFSET_1_CHIP;
+		break;
+	    case 7:
+		_chipIdOffset = DEFAULT_CHIP_ID_OFFSET_7_CHIPS;
+		break;
+	    case 8:
+		_chipIdOffset = DEFAULT_CHIP_ID_OFFSET_8_CHIPS;
+		break;
+	    default:
+		// in case we have a different number of chips, set it
+		std::cout << "Number of chips neither 1, 7 nor 8.\n"
+			  << "Setting ChipIdOffset to default value for 1 chip"
+			  << std::endl;
+		_chipIdOffset = DEFAULT_CHIP_ID_OFFSET_1_CHIP;
+	}
+
 	
 	int x,y;
 	
@@ -85,7 +109,7 @@ Timepix::Timepix(){
 	
 	for(x=0;x<32;x++){CTPRBitPos[x]= 255-(144 +x) -0;}
 	for(x=0;x<10;x++){THLBitPos[x]= 255-( 100 +x) -0;}
-	for(x=0;x<24;x++){ChipIDBitPos[x]= 255-( 188 +x);} // hard coded, put 193 for octoboard to get chipIDs back correctly
+	for(x=0;x<24;x++){ChipIDBitPos[x]= 255-( _chipIdOffset + x);} // hard coded, put 193 for octoboard to get chipIDs back correctly
 	
 	for (int i = 1; i <= 8; i++){ChipID_[i]=0;}
 	NumberDefPixel=0;
@@ -619,4 +643,14 @@ void Timepix::SetFADCtriggered(unsigned short FADCtriggered){
 }
 unsigned short Timepix::SetFADCtriggered(){
 	return FADCtriggered_global;
+}
+
+void Timepix::SetChipIDOffset(int ChipIdOffset){
+    // run over all 24 bits and set ChipIDBitPos array to new value of chip ID Bit pos
+    _chipIdOffset = ChipIdOffset;
+    
+    for(int x = 0; x < 24; x++){
+	ChipIDBitPos[x]= 255-(_chipIdOffset +x );
+    } 
+    // now the array should be set to a new value
 }

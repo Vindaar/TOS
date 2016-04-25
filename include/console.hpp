@@ -104,6 +104,11 @@ private:
     //write files containing the values of the DAC control panel
     int CommandSaveFSR();
 
+    // convenience function to set the chip ID offset, which defines the offset
+    // for the chip id (for the bitstream of the chip communication; different for different
+    // number of chips)
+    void CommandSetChipIdOffset();
+
     /* ReadoutFpgaExtTriggerBit: Reads out the 16th(?) fpga bit - 1 if a trigger arrived at the 
      * extern-trigger-input as the shutter was open, 0 otherwise
      */

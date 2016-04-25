@@ -70,6 +70,7 @@ const char *tosCommands[] = {"GeneralReset",
                              "SetOption", 
                              "CheckOffset", 
                              "Calibrate", 
+			     "SetChipIDOffset",
                              "EnableFastClock", 
                              "DisableFastClock",
 // HV_FADC commands

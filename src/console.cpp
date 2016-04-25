@@ -445,6 +445,10 @@ int Console::UserInterface(){
 	{
 	    CommandCalibrate();
 	}
+	else if( ein.compare("SetChipIDOffset")==0 )
+	{
+	    CommandSetChipIdOffset();
+	}
 	else if( ein.compare("EnableFastClock")==0 )
 	{
 	    pc.fpga.UseFastClock(1);
@@ -2818,4 +2822,34 @@ void Console::CommandSetIP(){
 
     ip<<byte[0]<<'.'<<byte[1]<<'.'<<byte[2]<<'.'<<byte[3];
     pc.fpga.SetIP(ip.str());
+}
+
+
+void Console::CommandSetChipIdOffset(){
+    // this function asks the user for input on the Chip ID offset (for the timepix class)
+    std::set<std::string> allowedChipIdOffsets; 
+    // fill this set with all values from 1 to 255
+    for( int l=1; l<256; l++) allowedChipIdOffsets.insert(std::to_string(l));
+    std::string input;
+    std::cout << "Please enter a new Chip ID offset for the timepix chip. Choose from x = {1, 255}\n"
+	      << "Typical values:\n"
+	      << "1 chip:  188\n"
+	      << "7 chips: 192\n"
+	      << "8 chips: 193"
+	      << std::endl;
+    input = getUserInputNumericalNoDefault(_prompt, &allowedChipIdOffsets);
+
+    int newChipIdOffset;
+    if (input == "quit"){
+	return;
+    }
+    else{
+	newChipIdOffset = std::stoi(input);
+    }
+    
+    pc.fpga.tp.SetChipIDOffset(newChipIdOffset);
+
+    // to make sure that the new offset is good, read the Chip ID; done by calling CommandWriteReadFSR()
+    std::cout << "Checking if new chip ID offset is good... calling WriteReadFSR()..." << std::endl;
+    CommandWriteReadFSR();
 }
