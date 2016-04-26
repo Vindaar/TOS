@@ -94,6 +94,8 @@ void Producer::run()
 	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
 	{
 	    std::vector<int> *dataVec  = new std::vector<int>(12288+1,0);
+
+	    #if DEBUG==2
 	    std::cout << "Producer run " 
 		      << i 
 		      <<" adding bufferentry: " 
@@ -101,6 +103,7 @@ void Producer::run()
 		      << " chip: " 
 		      << chip+1 
 		      << std::endl;
+	    #endif
 
 	    //chip readout
 	    //To FIX the readout problem
@@ -111,9 +114,11 @@ void Producer::run()
 	    else{
 		parent->fpga->SerialReadOutReadSend(dataVec,chip+1);
 	    }
+	    #if DEBUG==2
 	    std::cout << "Producer NumHits chip: " << chip+1 
 		      << " " << dataVec->at(0) 
 		      << std::endl;
+	    #endif
 
 	    //send events without fadc signal to the consumer or ...
 	    //To FIX the readout problem
@@ -229,7 +234,9 @@ void Producer::run()
     }//end of while(parent->IsRunning())
 
     parent->DataAcqRunning = false;
+    #if DEBUG==2
     std::cout << "Producer while loop ended"<< std::endl;
+    #endif
 }
 
 
@@ -305,6 +312,7 @@ void Consumer::run()
 
 	    hits[chip+1] = ((((parent->Vbuffer[(i % parent->BufferSize)][chip]))->size()) - 1)/3;
 
+	    #if DEBUG==2
 	    if (parent->IsRunning()){
 		std::cout << "IsRunning is true, Consumer run " 
 			  << i << " hits: " 
@@ -315,6 +323,7 @@ void Consumer::run()
 			  << i << " hits: " 
 			  << hits[chip+1] << std::endl;
 	    }
+	    #endif
 
 	    //if there is a problem with the output file: ...
 	    if(f2 == NULL) 
@@ -334,7 +343,6 @@ void Consumer::run()
       
 	    //delete recorded data after printing it
 	    delete (parent->Vbuffer)[(i % parent->BufferSize)][chip];
-	    std::cout << "deleted" << std::endl;
 	}//close for (unsigned short chip = 0;chip < p...
 
 	fclose(f2);
