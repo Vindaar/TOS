@@ -2190,11 +2190,9 @@ void PC::run()
  #endif 
   
     if(_useHvFadc){
-	std::cout << "useHVFADCuff " << _useHvFadc << std::endl;
 	runFADC();
     }
     else {
-	std::cout << "useHVFADCuff 2" << _useHvFadc << std::endl;
 	runOTPX();
     }
   
@@ -2220,7 +2218,9 @@ void PC::runFADC()
 	DataAcqRunning = true;
 	Consumer consumer(this);
 	producer.start();
+	#if DEBUG==2
 	std::cout << "runFADC: Producer start" << std::endl;
+	#endif
 	consumer.start();
 	//producer.wait();
 	//consumer.wait();
@@ -2257,12 +2257,16 @@ void PC::runOTPX()
 	DataAcqRunning = true;
 	Consumer consumer(this);
 	producer.start();
+	#if DEBUG==2
 	std::cout << "runOTPX: Producer start" << std::endl;
+	#endif
 	consumer.start();
 	//producer.wait();
 	//consumer.wait();
 	consumer.wait();
+	#if DEBUG==2
 	std::cout << "runOTPX: consumer ended"<< std::endl;
+	#endif
 	std::cout<<"Press ENTER to close run "<<std::flush;
     }
     //complete matrix readout
@@ -2357,7 +2361,7 @@ void PC::runOTPX()
 	    }
 	}//end of: while(IsRunning)
     
-   
+	
 	std::cout << "runOTPX: Run finshed: " << MeasuringCounter << "\n> "<<std::endl;
 	std::cout<<"Press ENTER to close run "<<std::flush;
     }//end of else{ ... (Full Matrix readout)
