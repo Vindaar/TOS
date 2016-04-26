@@ -1,65 +1,74 @@
 
-/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/timepix.hpp,4107
-class Timepix{Timepix14,754
-		unsigned char FSR[9][52];FSR76,3655
-		unsigned int DACValue[9][18];DACValue79,3701
-		std::string DACNames[18];DACNames80,3733
-		int DACCodes[13];DACCodes81,3761
-		int ChipID_[9];ChipID_82,3781
-		std::string ChipLetter[9];ChipLetter83,3799
-		int ChipNumber[9];ChipNumber84,3828
-		int ChipWaver[9];ChipWaver85,3849
-		int ChipType_[9];ChipType_86,3869
-		int NumberDefPixel;NumberDefPixel87,3889
-		int DefPixel[256][256];DefPixel88,3911
-		int IsCounting_;IsCounting_89,3937
-		int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];IKrumBitPos92,3985
-		int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];DiscBitPos92,3985
-		int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];PreampBitPos92,3985
-		int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];BuffAnalogABitPos92,3985
-		int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];BuffAnalogBBitPos92,3985
-		int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];HistBitPos92,3985
-		int THLBitPos[10], CoarseBitPos[4];THLBitPos93,4098
-		int THLBitPos[10], CoarseBitPos[4];CoarseBitPos93,4098
-		int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];VcasBitPos94,4136
-		int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];FBKBitPos94,4136
-		int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];GNDBitPos94,4136
-		int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];CTPRBitPos94,4136
-		int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];THSBitPos94,4136
-		int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];BiasLVDSBitPos94,4136
-		int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];RefLVDSBitPos94,4136
-		int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];ChipIDBitPos94,4136
-		int SenseDACPos, ExtDACPos, DACCodePos[4];SenseDACPos95,4270
-		int SenseDACPos, ExtDACPos, DACCodePos[4];ExtDACPos95,4270
-		int SenseDACPos, ExtDACPos, DACCodePos[4];DACCodePos95,4270
-		unsigned char P0[9][256][256], P1[9][256][256], Mask[9][256][256], Test[9][256][256], ThrH[9][256][256];P098,4349
-		unsigned char P0[9][256][256], P1[9][256][256], Mask[9][256][256], Test[9][256][256], ThrH[9][256][256];P198,4349
-		unsigned char P0[9][256][256], P1[9][256][256], Mask[9][256][256], Test[9][256][256], ThrH[9][256][256];Mask98,4349
-		unsigned char P0[9][256][256], P1[9][256][256], Mask[9][256][256], Test[9][256][256], ThrH[9][256][256];Test98,4349
-		unsigned char P0[9][256][256], P1[9][256][256], Mask[9][256][256], Test[9][256][256], ThrH[9][256][256];ThrH98,4349
-		unsigned short NumChips;NumChips99,4456
-		unsigned short Preload_global;Preload_global100,4483
-		unsigned short Option_global;Option_global101,4516
-		unsigned int I2C_global;I2C_global102,4548
-		int i2c_result_global;i2c_result_global103,4575
-		unsigned short ADC_channel_global;ADC_channel_global104,4600
-		unsigned short ADC_alert_global;ADC_alert_global105,4637
-		unsigned short ADC_result_global;ADC_result_global106,4672
-		unsigned short FADCshutter_global;FADCshutter_global107,4708
-		unsigned short FADCtriggered_global;FADCtriggered_global108,4745
-		unsigned short ExtraByte_global;ExtraByte_global109,4784
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/timepix.hpp,4672
+#define DEFAULT_CHIP_ID_OFFSET_1_CHIP DEFAULT_CHIP_ID_OFFSET_1_CHIP17,833
+#define DEFAULT_CHIP_ID_OFFSET_7_CHIPS DEFAULT_CHIP_ID_OFFSET_7_CHIPS18,889
+#define DEFAULT_CHIP_ID_OFFSET_8_CHIPS DEFAULT_CHIP_ID_OFFSET_8_CHIPS19,945
+#define DEFAULT_FSR_SIZE DEFAULT_FSR_SIZE21,1046
+#define DEFAULT_NUM_DACS DEFAULT_NUM_DACS22,1101
+#define DEFAULT_NUM_DAC_CODES DEFAULT_NUM_DAC_CODES23,1156
+#define DEFAULT_MAX_NUM_CHIPS DEFAULT_MAX_NUM_CHIPS24,1211
+class Timepix{Timepix26,1266
+    unsigned char FSR[DEFAULT_MAX_NUM_CHIPS][DEFAULT_FSR_SIZE];FSR87,4181
+    unsigned int DACValue[DEFAULT_MAX_NUM_CHIPS][DEFAULT_NUM_DACS];DACValue90,4265
+    std::string DACNames[DEFAULT_NUM_DACS];DACNames91,4333
+    int DACCodes[DEFAULT_NUM_DAC_CODES];DACCodes92,4377
+    int ChipID_[DEFAULT_MAX_NUM_CHIPS];ChipID_93,4418
+    std::string ChipLetter[DEFAULT_MAX_NUM_CHIPS];ChipLetter94,4458
+    int ChipNumber[DEFAULT_MAX_NUM_CHIPS];ChipNumber95,4509
+    int ChipWaver[DEFAULT_MAX_NUM_CHIPS];ChipWaver96,4552
+    int ChipType_[DEFAULT_MAX_NUM_CHIPS];ChipType_97,4594
+    int NumberDefPixel;NumberDefPixel98,4636
+    int **DefPixel[256][256];DefPixel99,4660
+    int IsCounting_;IsCounting_100,4690
+    int _chipIdOffset;_chipIdOffset103,4795
+    int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];IKrumBitPos106,4849
+    int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];DiscBitPos106,4849
+    int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];PreampBitPos106,4849
+    int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];BuffAnalogABitPos106,4849
+    int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];BuffAnalogBBitPos106,4849
+    int IKrumBitPos[8], DiscBitPos[8], PreampBitPos[8], BuffAnalogABitPos[8], BuffAnalogBBitPos[8], HistBitPos[8];HistBitPos106,4849
+    int THLBitPos[10], CoarseBitPos[4];THLBitPos107,4964
+    int THLBitPos[10], CoarseBitPos[4];CoarseBitPos107,4964
+    int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];VcasBitPos108,5004
+    int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];FBKBitPos108,5004
+    int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];GNDBitPos108,5004
+    int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];CTPRBitPos108,5004
+    int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];THSBitPos108,5004
+    int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];BiasLVDSBitPos108,5004
+    int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];RefLVDSBitPos108,5004
+    int VcasBitPos[8], FBKBitPos[8], GNDBitPos[8], CTPRBitPos[32], THSBitPos[8], BiasLVDSBitPos[8], RefLVDSBitPos[8], ChipIDBitPos[24];ChipIDBitPos108,5004
+    int SenseDACPos, ExtDACPos, DACCodePos[4];SenseDACPos109,5140
+    int SenseDACPos, ExtDACPos, DACCodePos[4];ExtDACPos109,5140
+    int SenseDACPos, ExtDACPos, DACCodePos[4];DACCodePos109,5140
+    unsigned char P0[DEFAULT_MAX_NUM_CHIPS][256][256];P0112,5223
+    unsigned char P1[DEFAULT_MAX_NUM_CHIPS][256][256]; P1113,5278
+    unsigned char Mask[DEFAULT_MAX_NUM_CHIPS][256][256]; Mask114,5334
+    unsigned char Test[DEFAULT_MAX_NUM_CHIPS][256][256]; Test115,5392
+    unsigned char ThrH[DEFAULT_MAX_NUM_CHIPS][256][256];ThrH116,5450
+    unsigned short NumChips;NumChips117,5507
+    unsigned short Preload_global;Preload_global118,5536
+    unsigned short Option_global;Option_global119,5571
+    unsigned int I2C_global;I2C_global120,5605
+    int i2c_result_global;i2c_result_global121,5634
+    unsigned short ADC_channel_global;ADC_channel_global122,5661
+    unsigned short ADC_alert_global;ADC_alert_global123,5700
+    unsigned short ADC_result_global;ADC_result_global124,5737
+    unsigned short FADCshutter_global;FADCshutter_global125,5775
+    unsigned short FADCtriggered_global;FADCtriggered_global126,5814
+    unsigned short ExtraByte_global;ExtraByte_global127,5855
 
-/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/console.hpp,554
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/console.hpp,585
 #define _CONSOLE_HPP _CONSOLE_HPP13,752
 #define DEFAULT_USER_INPUT_PROMPT DEFAULT_USER_INPUT_PROMPT36,1173
 class Console{Console40,1234
-    PC pc;pc61,1723
-    int ok;              //< some check var to work with pc ok63,1739
-    int _nbOfChips;      //< the number of chips one wants to use_nbOfChips64,1800
-    int _preload;        //< nb of preload bits - used to fix some bugs_preload65,1866
-    HV_FADC_Obj* _hvFadcObj;_hvFadcObj161,4975
-    bool _hvFadcObjActive;_hvFadcObjActive162,5004
-    const char *_prompt;_prompt165,5100
+    PC *pc;pc62,1811
+    Timepix *_tp;_tp64,1900
+    int ok;              //< some check var to work with pc ok66,1923
+    int _nbOfChips;      //< the number of chips one wants to use_nbOfChips67,1984
+    int _preload;        //< nb of preload bits - used to fix some bugs_preload68,2050
+    HV_FADC_Obj* _hvFadcObj;_hvFadcObj169,5392
+    bool _hvFadcObjActive;_hvFadcObjActive170,5421
+    const char *_prompt;_prompt173,5517
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/const.h,15642
 #define CONST_HCONST_H2,16
@@ -785,97 +794,97 @@ class InterfaceVME {InterfaceVME35,526
 	usb_dev_handle* m_usbDev;m_usbDev69,1150
 	std::vector<xxusb_device_type> m_deviceVec;m_deviceVec71,1178
 
-/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/pc.hpp,5385
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/pc.hpp,5386
 #define _PC_HPP _PC_HPP14,748
 class PC:public QThread{PC34,1027
-    FPGA fpga;fpga49,1385
-    bool _useHvFadc;                           //< true if a FADC is used, false otherwise_useHvFadc118,4424
-    HV_FADC_Obj* _hvFadcObj;                           //< The HV_FADC-Pointer. If no HV_FADC_Obj is used, it will be set to 0_hvFadcObj119,4515
-    int ok;ok146,5906
-    volatile bool RunIsRunning; //< True if one records data, false otherwise (maybe also true if one wants to...)RunIsRunning148,5919
-    QMutex mutexRun;            //< Var to ensure no other var is accesed by two threads at the same timemutexRun149,6034
-    int LFSR_LookUpTable[16384];LFSR_LookUpTable154,6267
-    int MeasuringCounter;MeasuringCounter155,6300
-    int runtime;                                   //< var to store the runtime in sec or in nb of triggers runtime156,6326
-    unsigned short runtimeFrames;                  //< run mode var: run for a given time or nb of triggers runtimeFrames157,6435
-    int shutterTime;shutterTime158,6544
-    unsigned short run_mode;run_mode160,6632
-    int filter;filter161,6661
-    unsigned short shutter_mode; shutter_mode164,6821
-    bool _useExternalTrigger;_useExternalTrigger167,6963
-    bool _useFastClock;_useFastClock168,6993
-    int BufferSize;BufferSize172,7074
-    std::vector<std::vector< std::vector<int>* > > Vbuffer;Vbuffer173,7094
-    QWaitCondition bufferNotEmpty;bufferNotEmpty175,7155
-    QWaitCondition bufferNotFull;bufferNotFull176,7190
-    QMutex mutexVBuffer;mutexVBuffer177,7224
-    int DataInBuffer;DataInBuffer178,7249
-    volatile bool DataAcqRunning;DataAcqRunning179,7271
-    std::string PathName;PathName182,7346
-    std::string FileName;FileName183,7372
-    std::string TOSPathName;TOSPathName184,7398
-    std::string DataPathName;DataPathName185,7427
-    std::string DataFileName;DataFileName187,7459
-    std::string Data2FileName;Data2FileName188,7489
-    std::string Data3FileName;Data3FileName189,7520
-    std::string Data4FileName;Data4FileName190,7551
-    std::string Data5FileName;Data5FileName191,7582
-    std::string Data6FileName;Data6FileName192,7613
-    std::string Data7FileName;Data7FileName193,7644
-    std::string Data8FileName;Data8FileName194,7675
-    std::string DataCompleteName;DataCompleteName196,7709
-    std::string RunFileName;RunFileName197,7743
-    std::string FSRPathName;FSRPathName199,7773
-    std::string FSRFileName;FSRFileName200,7802
-    std::string FSR2FileName;FSR2FileName201,7831
-    std::string FSR3FileName;FSR3FileName202,7861
-    std::string FSR4FileName;FSR4FileName203,7891
-    std::string FSR5FileName;FSR5FileName204,7921
-    std::string FSR6FileName;FSR6FileName205,7951
-    std::string FSR7FileName;FSR7FileName206,7981
-    std::string FSR8FileName;FSR8FileName207,8011
-    std::string matrixPathName;matrixPathName209,8042
-    std::string MatrixFileName;MatrixFileName210,8074
-    std::string Matrix2FileName;Matrix2FileName211,8106
-    std::string Matrix3FileName;Matrix3FileName212,8139
-    std::string Matrix4FileName;Matrix4FileName213,8172
-    std::string Matrix5FileName;Matrix5FileName214,8205
-    std::string Matrix6FileName;Matrix6FileName215,8238
-    std::string Matrix7FileName;Matrix7FileName216,8271
-    std::string Matrix8FileName;Matrix8FileName217,8304
-    std::string DACScanFileName;DACScanFileName219,8338
-    std::string ThresholdFileName;ThresholdFileName221,8372
-    std::string Threshold2FileName;Threshold2FileName222,8407
-    std::string Threshold3FileName;Threshold3FileName223,8443
-    std::string Threshold4FileName;Threshold4FileName224,8479
-    std::string Threshold5FileName;Threshold5FileName225,8515
-    std::string Threshold6FileName;Threshold6FileName226,8551
-    std::string Threshold7FileName;Threshold7FileName227,8587
-    std::string Threshold8FileName;Threshold8FileName228,8623
-    std::string MaskFileName;MaskFileName230,8662
-    std::string Mask2FileName;Mask2FileName231,8692
-    std::string Mask3FileName;Mask3FileName232,8723
-    std::string Mask4FileName;Mask4FileName233,8754
-    std::string Mask5FileName;Mask5FileName234,8785
-    std::string Mask6FileName;Mask6FileName235,8816
-    std::string Mask7FileName;Mask7FileName236,8847
-    std::string Mask8FileName;Mask8FileName237,8878
-    std::string TOTCalibFileName; TOTCalibFileName239,8912
-    std::string TOTCalib2FileName; TOTCalib2FileName240,8947
-    std::string TOTCalib3FileName; TOTCalib3FileName241,8983
-    std::string TOTCalib4FileName; TOTCalib4FileName242,9019
-    std::string TOTCalib5FileName; TOTCalib5FileName243,9055
-    std::string TOTCalib6FileName; TOTCalib6FileName244,9091
-    std::string TOTCalib7FileName; TOTCalib7FileName245,9127
-    std::string TOTCalib8FileName;TOTCalib8FileName246,9163
-    std::string TOACalibFileName; TOACalibFileName248,9200
-    std::string TOACalib2FileName; TOACalib2FileName249,9235
-    std::string TOACalib3FileName; TOACalib3FileName250,9271
-    std::string TOACalib4FileName; TOACalib4FileName251,9307
-    std::string TOACalib5FileName; TOACalib5FileName252,9343
-    std::string TOACalib6FileName; TOACalib6FileName253,9379
-    std::string TOACalib7FileName; TOACalib7FileName254,9415
-    std::string TOACalib8FileName;TOACalib8FileName255,9451
+    FPGA *fpga;fpga52,1420
+    bool _useHvFadc;                           //< true if a FADC is used, false otherwise_useHvFadc121,4460
+    HV_FADC_Obj* _hvFadcObj;                           //< The HV_FADC-Pointer. If no HV_FADC_Obj is used, it will be set to 0_hvFadcObj122,4551
+    int ok;ok149,5942
+    volatile bool RunIsRunning; //< True if one records data, false otherwise (maybe also true if one wants to...)RunIsRunning151,5955
+    QMutex mutexRun;            //< Var to ensure no other var is accesed by two threads at the same timemutexRun152,6070
+    int LFSR_LookUpTable[16384];LFSR_LookUpTable157,6303
+    int MeasuringCounter;MeasuringCounter158,6336
+    int runtime;                                   //< var to store the runtime in sec or in nb of triggers runtime159,6362
+    unsigned short runtimeFrames;                  //< run mode var: run for a given time or nb of triggers runtimeFrames160,6471
+    int shutterTime;shutterTime161,6580
+    unsigned short run_mode;run_mode163,6668
+    int filter;filter164,6697
+    unsigned short shutter_mode; shutter_mode167,6857
+    bool _useExternalTrigger;_useExternalTrigger170,6999
+    bool _useFastClock;_useFastClock171,7029
+    int BufferSize;BufferSize175,7110
+    std::vector<std::vector< std::vector<int>* > > Vbuffer;Vbuffer176,7130
+    QWaitCondition bufferNotEmpty;bufferNotEmpty178,7191
+    QWaitCondition bufferNotFull;bufferNotFull179,7226
+    QMutex mutexVBuffer;mutexVBuffer180,7260
+    int DataInBuffer;DataInBuffer181,7285
+    volatile bool DataAcqRunning;DataAcqRunning182,7307
+    std::string PathName;PathName185,7382
+    std::string FileName;FileName186,7408
+    std::string TOSPathName;TOSPathName187,7434
+    std::string DataPathName;DataPathName188,7463
+    std::string DataFileName;DataFileName190,7495
+    std::string Data2FileName;Data2FileName191,7525
+    std::string Data3FileName;Data3FileName192,7556
+    std::string Data4FileName;Data4FileName193,7587
+    std::string Data5FileName;Data5FileName194,7618
+    std::string Data6FileName;Data6FileName195,7649
+    std::string Data7FileName;Data7FileName196,7680
+    std::string Data8FileName;Data8FileName197,7711
+    std::string DataCompleteName;DataCompleteName199,7745
+    std::string RunFileName;RunFileName200,7779
+    std::string FSRPathName;FSRPathName202,7809
+    std::string FSRFileName;FSRFileName203,7838
+    std::string FSR2FileName;FSR2FileName204,7867
+    std::string FSR3FileName;FSR3FileName205,7897
+    std::string FSR4FileName;FSR4FileName206,7927
+    std::string FSR5FileName;FSR5FileName207,7957
+    std::string FSR6FileName;FSR6FileName208,7987
+    std::string FSR7FileName;FSR7FileName209,8017
+    std::string FSR8FileName;FSR8FileName210,8047
+    std::string matrixPathName;matrixPathName212,8078
+    std::string MatrixFileName;MatrixFileName213,8110
+    std::string Matrix2FileName;Matrix2FileName214,8142
+    std::string Matrix3FileName;Matrix3FileName215,8175
+    std::string Matrix4FileName;Matrix4FileName216,8208
+    std::string Matrix5FileName;Matrix5FileName217,8241
+    std::string Matrix6FileName;Matrix6FileName218,8274
+    std::string Matrix7FileName;Matrix7FileName219,8307
+    std::string Matrix8FileName;Matrix8FileName220,8340
+    std::string DACScanFileName;DACScanFileName222,8374
+    std::string ThresholdFileName;ThresholdFileName224,8408
+    std::string Threshold2FileName;Threshold2FileName225,8443
+    std::string Threshold3FileName;Threshold3FileName226,8479
+    std::string Threshold4FileName;Threshold4FileName227,8515
+    std::string Threshold5FileName;Threshold5FileName228,8551
+    std::string Threshold6FileName;Threshold6FileName229,8587
+    std::string Threshold7FileName;Threshold7FileName230,8623
+    std::string Threshold8FileName;Threshold8FileName231,8659
+    std::string MaskFileName;MaskFileName233,8698
+    std::string Mask2FileName;Mask2FileName234,8728
+    std::string Mask3FileName;Mask3FileName235,8759
+    std::string Mask4FileName;Mask4FileName236,8790
+    std::string Mask5FileName;Mask5FileName237,8821
+    std::string Mask6FileName;Mask6FileName238,8852
+    std::string Mask7FileName;Mask7FileName239,8883
+    std::string Mask8FileName;Mask8FileName240,8914
+    std::string TOTCalibFileName; TOTCalibFileName242,8948
+    std::string TOTCalib2FileName; TOTCalib2FileName243,8983
+    std::string TOTCalib3FileName; TOTCalib3FileName244,9019
+    std::string TOTCalib4FileName; TOTCalib4FileName245,9055
+    std::string TOTCalib5FileName; TOTCalib5FileName246,9091
+    std::string TOTCalib6FileName; TOTCalib6FileName247,9127
+    std::string TOTCalib7FileName; TOTCalib7FileName248,9163
+    std::string TOTCalib8FileName;TOTCalib8FileName249,9199
+    std::string TOACalibFileName; TOACalibFileName251,9236
+    std::string TOACalib2FileName; TOACalib2FileName252,9271
+    std::string TOACalib3FileName; TOACalib3FileName253,9307
+    std::string TOACalib4FileName; TOACalib4FileName254,9343
+    std::string TOACalib5FileName; TOACalib5FileName255,9379
+    std::string TOACalib6FileName; TOACalib6FileName256,9415
+    std::string TOACalib7FileName; TOACalib7FileName257,9451
+    std::string TOACalib8FileName;TOACalib8FileName258,9487
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/vmusb.h,1482
 #define __VMUSB_H__VMUSB_H6,102
@@ -967,6 +976,9 @@ class V1729a_VME : public V1729a, public vme::DeviceVME{V1729a_VME52,1349
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/gui.hpp,56
 #define _GUI_HPP _GUI_HPP13,748
 class GUI{GUI19,812
+
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/networkWrapper.hpp,44
+#define NETWORKWRAPPER NETWORKWRAPPER2,23
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/HV_FADC_Obj.h,6830
 #define HV_FADC_Obj_H HV_FADC_Obj_H2,22
@@ -1088,40 +1100,38 @@ class V1729a{V1729a38,1075
   V1729a(){};V1729a43,1112
   virtual ~V1729a(){};~V1729a46,1139
 
-/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/fpga.hpp,2505
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/fpga.hpp,2143
 #define _FPGA_HPP_FPGA_HPP12,748
-class FPGA{FPGA18,814
-    Timepix tp;tp28,887
-    int ErrInfo;ErrInfo29,903
-    int _fadcBit;                 //< set to 1 if a signal was detected on the trigger in input/ 0 otherwise_fadcBit68,2314
-    bool _fadcFlag;               //< true if _fadcBit was set to 1 since the flag was cleared the last time _fadcFlag69,2423
-    int ok;ok70,2533
-    int TriggerConnectionIsTLU;TriggerConnectionIsTLU71,2545
-    int sock, Port; sock72,2577
-    int sock, Port; Port72,2577
-    std::string ip;ip74,2617
-    fd_set readfd,testfd; 	 readfd78,2786
-    fd_set readfd,testfd; 	 testfd78,2786
-    struct timeval timeout; 	//< Zeitvariable fuer Timeout bei Kommunikation mit FPGAtimeout79,2815
-    struct sockaddr_in sckadd;	//< in netinet/in.h definierte Struktur fuer IP-Adressensckadd80,2901
-    unsigned char Mode;Mode83,3082
-    int IncomingLength;IncomingLength88,3257
-    int OutgoingLength;OutgoingLength89,3281
-    int PacketQueueSize; PacketQueueSize90,3305
-    int SoftwareCounter; SoftwareCounter91,3331
-    int FPGACounter; FPGACounter92,3357
-    int HitsMode;HitsMode93,3379
-    char PacketBuffer[PLen+18];        //Buffer fuer send, bzw bei SetMatrix fuer receivePacketBuffer96,3415
-    char PacketQueue[PQueue][PLen+18]; //Buffer fuer receive (alle Pakete bei ReadOut), bzw fuer send (alle Pakete) bei SetMatrixPacketQueue97,3505
-    std::vector<std::vector<char> > *PackQueueReceive;// = new std::vector<std::vector<unsigned char> >(PQueue, std::vector<unsigned char>(PLen+18));PackQueueReceive98,3635
-    unsigned char PacketBuffer[PLen+18]; //Buffer fuer send, bzw bei SetMatrix fuer receivePacketBuffer103,4060
-    unsigned char PacketQueue[PQueue][PLen+18]; //Buffer fuer receive (alle Pakete bei ReadOut), bzw fuer send (alle Pakete) bei SetMatrixPacketQueue104,4152
-    std::vector<std::vector<unsigned char> > *PackQueueReceive;// = new std::vector<std::vector<unsigned char> >(PQueue, std::vector<unsigned char>(PLen+18));PackQueueReceive105,4291
-    bool _usefastclock;		_usefastclock117,5144
-template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)SerialReadOut122,5176
-template <typename Ausgabe> int FPGA::SerialReadOutReadSend(Ausgabe aus, unsigned short chip)SerialReadOutReadSend163,6277
-template <typename Ausgabe> int FPGA::DataChipFPGA(Ausgabe aus){DataChipFPGA233,8246
-template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chip){DataFPGAPC251,8907
+#define DEFAULT_SOCKET_BUFFER_SIZE DEFAULT_SOCKET_BUFFER_SIZE22,995
+class FPGA{FPGA24,1050
+    Timepix *tp;tp34,1142
+    int ErrInfo;ErrInfo35,1159
+    int _fadcBit;                 //< set to 1 if a signal was detected on the trigger in input/ 0 otherwise_fadcBit74,2570
+    bool _fadcFlag;               //< true if _fadcBit was set to 1 since the flag was cleared the last time _fadcFlag75,2679
+    int ok;ok76,2789
+    int TriggerConnectionIsTLU;TriggerConnectionIsTLU77,2801
+    int sock, Port; sock78,2833
+    int sock, Port; Port78,2833
+    std::string ip;ip80,2873
+    fd_set readfd,testfd; 	 readfd84,3042
+    fd_set readfd,testfd; 	 testfd84,3042
+    struct timeval timeout; 	//< Zeitvariable fuer Timeout bei Kommunikation mit FPGAtimeout85,3071
+    struct sockaddr_in sckadd;	//< in netinet/in.h definierte Struktur fuer IP-Adressensckadd86,3157
+    unsigned char Mode;Mode89,3338
+    int IncomingLength;IncomingLength94,3513
+    int OutgoingLength;OutgoingLength95,3537
+    int PacketQueueSize; PacketQueueSize96,3561
+    int SoftwareCounter; SoftwareCounter97,3587
+    int FPGACounter; FPGACounter98,3613
+    int HitsMode;HitsMode99,3635
+    unsigned char PacketBuffer[PLen+18]; //Buffer fuer send, bzw bei SetMatrix fuer receivePacketBuffer101,3654
+    unsigned char PacketQueue[PQueue][PLen+18]; //Buffer fuer receive (alle Pakete bei ReadOut), bzw fuer send (alle Pakete) bei SetMatrixPacketQueue102,3746
+    std::vector<std::vector<unsigned char> > *PackQueueReceive;// = new std::vector<std::vector<unsigned char> >(PQueue, std::vector<unsigned char>(PLen+18));PackQueueReceive103,3885
+    bool _usefastclock;		_usefastclock114,4731
+template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)SerialReadOut119,4763
+template <typename Ausgabe> int FPGA::SerialReadOutReadSend(Ausgabe aus, unsigned short chip)SerialReadOutReadSend160,5866
+template <typename Ausgabe> int FPGA::DataChipFPGA(Ausgabe aus){DataChipFPGA237,8083
+template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chip){DataFPGAPC255,8744
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/include/tosCommandCompletion.hpp,71
 #define _TOS_COMMAND_COMPLETION_HPP _TOS_COMMAND_COMPLETION_HPP6,224
@@ -1161,13 +1171,19 @@ CHK_DIR_EXISTS= test -dCHK_DIR_EXISTS37,1462
 MKDIR         = mkdir -pMKDIR38,1486
 OBJECTS_DIR   = tmp/OBJECTS_DIR42,1538
 SOURCES       = src/caseFunctions.cc \SOURCES46,1575
-OBJECTS       = tmp/caseFunctions.o \OBJECTS62,1945
-DIST          = /usr/share/qt4/mkspecs/common/unix.conf \DIST78,2287
-QMAKE_TARGET  = TOSQMAKE_TARGET103,3486
-DESTDIR       = bin/DESTDIR104,3506
-TARGET        = bin/TOSTARGET105,3527
+OBJECTS       = tmp/caseFunctions.o \OBJECTS62,1956
+DIST          = /usr/share/qt4/mkspecs/common/unix.conf \DIST78,2309
+QMAKE_TARGET  = TOSQMAKE_TARGET103,3508
+DESTDIR       = bin/DESTDIR104,3528
+TARGET        = bin/TOSTARGET105,3549
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/bin/recompile.sh,0
+
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/networkWrapper.cpp,475
+int sendWrapper(int sock, unsigned char* SendBuffer, int OutgoingLength, int flags){sendWrapper4,124
+int recvWrapper(int sock, unsigned char* RecvBuffer, int IncomingLength, int flags){recvWrapper36,1315
+int getsockoptWrapper(int sock, int level, int optname, int *sock_buf_size_pointer, socklen_t *optlen_pointer){getsockoptWrapper64,2336
+int setsockoptWrapper(int sock, int level, int optname, int *sock_buf_size_pointer, socklen_t optlen){setsockoptWrapper87,3335
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/InterfaceVME.cc,683
 namespace vme {vme19,197
@@ -1183,177 +1199,177 @@ void InterfaceVME::init( int devNr ){init202,3593
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/waitconditions.cpp,66
 void Producer::run()run14,203
-void Consumer::run()run239,7478
+void Consumer::run()run246,7582
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/tosCommandCompletion.cpp,989
 const char *tosCommands[] = {"GeneralReset", tosCommands9,325
-char *TOS_Command_Generator(const char *text, int state){TOS_Command_Generator119,4347
-char **TOS_Command_Completion(const char *text, int start, int end){TOS_Command_Completion143,4855
-int check_if_string_allowed(std::string tempStr, check_if_string_allowed156,5320
-std::string getUserInput(const char *prompt, getUserInput180,6219
-std::string getUserInputNumericalDefault(const char *prompt, std::set<std::string> *allowedStrings){getUserInputNumericalDefault265,9449
-std::string getUserInputNumericalNoDefault(const char *prompt, std::set<std::string> *allowedStrings){    getUserInputNumericalNoDefault269,9614
-std::string getUserInputNonNumericalDefault(const char *prompt, std::set<std::string> *allowedStrings){   getUserInputNonNumericalDefault273,9786
-std::string getUserInputNonNumericalNoDefault(const char *prompt, std::set<std::string> *allowedStrings){ getUserInputNonNumericalNoDefault277,9958
+char *TOS_Command_Generator(const char *text, int state){TOS_Command_Generator120,4374
+char **TOS_Command_Completion(const char *text, int start, int end){TOS_Command_Completion144,4882
+int check_if_string_allowed(std::string tempStr, check_if_string_allowed157,5347
+std::string getUserInput(const char *prompt, getUserInput181,6246
+std::string getUserInputNumericalDefault(const char *prompt, std::set<std::string> *allowedStrings){getUserInputNumericalDefault266,9476
+std::string getUserInputNumericalNoDefault(const char *prompt, std::set<std::string> *allowedStrings){    getUserInputNumericalNoDefault270,9641
+std::string getUserInputNonNumericalDefault(const char *prompt, std::set<std::string> *allowedStrings){   getUserInputNonNumericalDefault274,9813
+std::string getUserInputNonNumericalNoDefault(const char *prompt, std::set<std::string> *allowedStrings){ getUserInputNonNumericalNoDefault278,9985
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/HV_FADC_Obj.cc,14805
-HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniFilePath){HV_FADC_Obj20,381
-HV_FADC_Obj::HV_FADC_Obj(std::string iniFilePath){HV_FADC_Obj63,1890
-HV_FADC_Obj::~HV_FADC_Obj() {~HV_FADC_Obj108,3286
-int HV_FADC_Obj::H_ConnectModule(){H_ConnectModule142,4143
-void HV_FADC_Obj::ReadHFOSettings(){ReadHFOSettings146,4219
-void HV_FADC_Obj::InitHFOForTOS(){InitHFOForTOS548,16256
-void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){H_CheckModuleIsRamping887,28716
-int HV_FADC_Obj::H_CheckHVModuleIsGood(bool verbose){H_CheckHVModuleIsGood1072,36595
-const std::string currentDateTime() {currentDateTime1182,40825
-void HV_FADC_Obj::H_DumpErrorLogToFile(int event){H_DumpErrorLogToFile1194,41165
-void HV_FADC_Obj::ShutDownHFOForTOS(){ShutDownHFOForTOS1292,46622
-int HV_FADC_Obj::H_ClearAllChannelEventStatus(){H_ClearAllChannelEventStatus1353,48795
-void HV_FADC_Obj::H_SetNominalValues(){H_SetNominalValues1407,50837
-GroupSTRUCT HV_FADC_Obj::H_GetFlexGroup(int group){H_GetFlexGroup1473,53269
-void HV_FADC_Obj::H_SetFlexGroup(int group, GroupSTRUCT groupObject){H_SetFlexGroup1490,53879
-void         HV_FADC_Obj::F_Reset() throw(){F_Reset1516,54508
-void         HV_FADC_Obj::F_StartAcquisition() throw(){F_StartAcquisition1520,54582
-void         HV_FADC_Obj::F_SetFrequency( const unsigned short& frequency ) throw(){F_SetFrequency1524,54678
-unsigned int HV_FADC_Obj::F_GetFrequency() throw(){F_GetFrequency1528,54810
-void HV_FADC_Obj::F_SetReadMode( const unsigned short& mode ) throw(){F_SetReadMode1532,54905
-unsigned int HV_FADC_Obj::F_GetReadMode() throw(){F_GetReadMode1536,55017
-unsigned int HV_FADC_Obj::F_GetFPGAVersion() throw(){F_GetFPGAVersion1540,55110
-void         HV_FADC_Obj::F_SetTriggerThresholdDACAll(const unsigned int threshold) throw(){F_SetTriggerThresholdDACAll1545,55270
-unsigned int HV_FADC_Obj::F_GetTriggerThresholdDACAll() throw(){F_GetTriggerThresholdDACAll1549,55421
-void         HV_FADC_Obj::F_SetTriggerThresholdDACPerChannel(const unsigned short chNb, const unsigned int threshold) throw(){F_SetTriggerThresholdDACPerChannel1553,55542
-unsigned int HV_FADC_Obj::F_GetTriggerThresholdDACPerChannel(const unsigned short chNb) throw(){F_GetTriggerThresholdDACPerChannel1557,55740
-void         HV_FADC_Obj::F_LoadTriggerThresholdDAC() throw(){F_LoadTriggerThresholdDAC1561,55904
-unsigned int HV_FADC_Obj::F_GetTriggerRecord() throw(){F_GetTriggerRecord1565,56014
-void         HV_FADC_Obj::F_SendSoftwareTrigger() throw(){F_SendSoftwareTrigger1569,56117
-void         HV_FADC_Obj::F_SetPretrig( const unsigned short& bits ) throw(){F_SetPretrig1573,56219
-unsigned short HV_FADC_Obj::F_GetPretrig() throw(){F_GetPretrig1577,56337
-void         HV_FADC_Obj::F_SetPosttrig( const unsigned short& bits ) throw(){F_SetPosttrig1581,56430
-unsigned int HV_FADC_Obj::F_GetPosttrig() throw(){F_GetPosttrig1585,56550
-void         HV_FADC_Obj::F_SetTriggerType( const unsigned short& type ) throw(){F_SetTriggerType1589,56643
-unsigned short HV_FADC_Obj::F_GetTriggerType() throw(){F_GetTriggerType1593,56769
-void         HV_FADC_Obj::F_SetTriggerChannelSource( const unsigned short& mask ) throw(){F_SetTriggerChannelSource1597,56870
-unsigned short HV_FADC_Obj::F_GetTriggerChannelSource() throw(){F_GetTriggerChannelSource1601,57014
-unsigned short HV_FADC_Obj::F_GetModeRegister() throw(){F_GetModeRegister1606,57183
-void           HV_FADC_Obj::F_SetModeRegister(const unsigned short& mode) throw(){F_SetModeRegister1610,57286
-void           HV_FADC_Obj::F_SetColToRead( const unsigned short& col ) throw(){F_SetColToRead1614,57412
-unsigned short HV_FADC_Obj::F_GetColToRead() throw(){F_GetColToRead1618,57534
-void           HV_FADC_Obj::F_SetChannelMask( const unsigned short& mask ) throw(){F_SetChannelMask1622,57631
-unsigned short HV_FADC_Obj::F_GetChannelMask() throw(){F_GetChannelMask1626,57759
-void           HV_FADC_Obj::F_SetNbOfChannels(const unsigned short& nbOfChannels) throw(){F_SetNbOfChannels1630,57860
-unsigned short HV_FADC_Obj::F_GetNbOfChannels() throw(){F_GetNbOfChannels1634,58002
-void           HV_FADC_Obj::F_SetPostStopLatency( const unsigned short& latency ) throw(){F_SetPostStopLatency1638,58105
-unsigned short HV_FADC_Obj::F_GetPostStopLatency() throw(){F_GetPostStopLatency1642,58247
-void           HV_FADC_Obj::F_SetPostLatencyPretrig( const unsigned short& latency ) throw(){F_SetPostLatencyPretrig1646,58356
-unsigned short HV_FADC_Obj::F_GetPostLatencyPretrig() throw(){F_GetPostLatencyPretrig1650,58504
-void           HV_FADC_Obj::F_SetRAMAddress( const unsigned short& add ) throw(){F_SetRAMAddress1654,58619
-unsigned short HV_FADC_Obj::F_GetRAMAddress() throw(){F_GetRAMAddress1658,58743
-std::vector< int > HV_FADC_Obj::F_GetAllData( const unsigned short& nbChannels) throw(){F_GetAllData1662,58842
-std::vector< int > HV_FADC_Obj::F_GetAllDataBlockMode() throw(){F_GetAllDataBlockMode1666,58983
-int            HV_FADC_Obj::F_GetDataAt( const unsigned short& add ) throw(){F_GetDataAt1670,59098
-void           HV_FADC_Obj::F_ReleaseInterrupt() throw(){F_ReleaseInterrupt1675,59273
-bool           HV_FADC_Obj::F_ReadDeviceInterrupt() throw(){F_ReadDeviceInterrupt1679,59371
-bool           HV_FADC_Obj::F_ReadInterrupt() throw(){F_ReadInterrupt1683,59482
-int    HV_FADC_Obj::H_GetModuleDeviceClass(void){H_GetModuleDeviceClass1695,59826
-uint32_t HV_FADC_Obj::H_GetModulePlacedChannels(void){H_GetModulePlacedChannels1699,59925
-int    HV_FADC_Obj::H_GetModuleSerialNumber(void){H_GetModuleSerialNumber1703,60032
-uint32_t HV_FADC_Obj::H_GetModuleFirmwareRelease(void){H_GetModuleFirmwareRelease1707,60133
-void   HV_FADC_Obj::H_DoClear(void){H_DoClear1712,60243
-void   HV_FADC_Obj::H_SetModuleBaseAddress(uint16_t ba){H_SetModuleBaseAddress1717,60310
-float  HV_FADC_Obj::H_GetModuleTemperature(void){H_GetModuleTemperature1722,60412
-float  HV_FADC_Obj::H_GetModuleSupplyP5(void){H_GetModuleSupplyP51726,60511
-float  HV_FADC_Obj::H_GetModuleSupplyP12(void){H_GetModuleSupplyP121730,60604
-float  HV_FADC_Obj::H_GetModuleSupplyN12(void){H_GetModuleSupplyN121734,60699
-uint32_t HV_FADC_Obj::H_GetModuleAdcSamplesPerSecond(void){H_GetModuleAdcSamplesPerSecond1739,60795
-void   HV_FADC_Obj::H_SetModuleAdcSamplesPerSecond(uint32_t sps){H_SetModuleAdcSamplesPerSecond1743,60912
-uint32_t HV_FADC_Obj::H_GetModuleDigitalFilter(void){H_GetModuleDigitalFilter1747,61031
-void   HV_FADC_Obj::H_SetModuleDigitalFilter(uint32_t filter){H_SetModuleDigitalFilter1751,61136
-float  HV_FADC_Obj::H_GetModuleVoltageLimit(void){H_GetModuleVoltageLimit1756,61250
-float  HV_FADC_Obj::H_GetModuleCurrentLimit(void){H_GetModuleCurrentLimit1760,61351
-uint32_t HV_FADC_Obj::H_GetModuleStatus(void){H_GetModuleStatus1765,61453
-uint32_t HV_FADC_Obj::H_GetModuleEventStatus(void){H_GetModuleEventStatus1769,61544
-void   HV_FADC_Obj::H_SetModuleEventStatus(uint32_t status){H_SetModuleEventStatus1773,61645
-uint32_t HV_FADC_Obj::H_GetModuleEventChannelStatus(void){H_GetModuleEventChannelStatus1777,61754
-void   HV_FADC_Obj::H_ClearModuleEventChannelStatus(void){H_ClearModuleEventChannelStatus1781,61869
-uint32_t HV_FADC_Obj::H_GetModuleEventChannelMask(void){H_GetModuleEventChannelMask1785,61979
-void   HV_FADC_Obj::H_SetModuleEventChannelMask(uint32_t mask){H_SetModuleEventChannelMask1789,62090
-uint32_t HV_FADC_Obj::H_GetModuleEventGroupStatus(void){H_GetModuleEventGroupStatus1793,62205
-uint32_t HV_FADC_Obj::HV_FADC_Obj::H_GetModuleEventGroupMask(void){H_GetModuleEventGroupMask1797,62316
-void   HV_FADC_Obj::H_SetModuleEventGroupMask(uint32_t mask){H_SetModuleEventGroupMask1801,62436
-void   HV_FADC_Obj::H_ClearModuleEventGroupStatus(void){H_ClearModuleEventGroupStatus1805,62547
-uint32_t HV_FADC_Obj::H_GetModuleEventMask(void){H_GetModuleEventMask1809,62653
-void   HV_FADC_Obj::H_SetModuleEventMask(uint32_t mask){H_SetModuleEventMask1813,62750
-uint32_t HV_FADC_Obj::H_GetModuleControl(void){H_GetModuleControl1817,62851
-void   HV_FADC_Obj::H_SetModuleControl(uint32_t control){H_SetModuleControl1821,62944
-float  HV_FADC_Obj::H_GetModuleVoltageRampSpeed(void){H_GetModuleVoltageRampSpeed1826,63048
-void   HV_FADC_Obj::H_SetModuleVoltageRampSpeed(float vramp){H_SetModuleVoltageRampSpeed1830,63157
-float  HV_FADC_Obj::H_GetModuleCurrentRampSpeed(void){H_GetModuleCurrentRampSpeed1834,63271
-void   HV_FADC_Obj::H_SetModuleCurrentRampSpeed(float iramp){H_SetModuleCurrentRampSpeed1838,63380
-bool   HV_FADC_Obj::H_GetModuleKillEnable(void){H_GetModuleKillEnable1843,63495
-void   HV_FADC_Obj::H_SetModuleKillEnable(bool enable){H_SetModuleKillEnable1847,63592
-int    HV_FADC_Obj::H_GetModuleChannelNumber(void){H_GetModuleChannelNumber1852,63696
-void   HV_FADC_Obj::H_SetModuleEmergencyOff(void){H_SetModuleEmergencyOff1857,63800
-void   HV_FADC_Obj::H_ClearModuleEmergencyOff(void){H_ClearModuleEmergencyOff1861,63894
-uint32_t HV_FADC_Obj::H_GetModuleRestartTime(void){H_GetModuleRestartTime1866,63993
-void   HV_FADC_Obj::H_SetModuleRestartTime(uint32_t restartTime){H_SetModuleRestartTime1870,64094
-void   HV_FADC_Obj::H_SetAllChannelsOn(void){H_SetAllChannelsOn1875,64214
-void   HV_FADC_Obj::H_SetAllChannelsOff(void){H_SetAllChannelsOff1879,64298
-void   HV_FADC_Obj::H_SetAllChannelsVoltageSet(float vset){H_SetAllChannelsVoltageSet1883,64384
-void   HV_FADC_Obj::H_SetAllChannelsCurrentSet(float iset){H_SetAllChannelsCurrentSet1887,64494
-uint32_t HV_FADC_Obj::H_GetChannelStatus(int channel){H_GetChannelStatus1893,64684
-uint32_t HV_FADC_Obj::H_GetChannelEventStatus(int channel){H_GetChannelEventStatus1897,64791
-void   HV_FADC_Obj::H_SetChannelEventStatus(int channel, uint32_t status){H_SetChannelEventStatus1901,64908
-uint32_t HV_FADC_Obj::H_GetChannelEventMask(int channel){H_GetChannelEventMask1905,65041
-void   HV_FADC_Obj::H_SetChannelEventMask(int channel, uint32_t mask){H_SetChannelEventMask1909,65154
-uint32_t HV_FADC_Obj::H_GetChannelControl(int channel){H_GetChannelControl1913,65279
-void   HV_FADC_Obj::H_SetChannelControl(int channel, uint32_t control){H_SetChannelControl1917,65388
-void HV_FADC_Obj::H_SetChannelEmergencyOff(int channel){H_SetChannelEmergencyOff1921,65515
-void   HV_FADC_Obj::H_ClearChannelEmergencyOff(int channel){H_ClearChannelEmergencyOff1925,65623
-float  HV_FADC_Obj::H_GetChannelVoltageNominal(int channel){H_GetChannelVoltageNominal1930,65738
-float  HV_FADC_Obj::H_GetChannelCurrentNominal(int channel){H_GetChannelCurrentNominal1934,65859
-float  HV_FADC_Obj::H_GetChannelVoltageSet(int channel){H_GetChannelVoltageSet1939,65981
-void   HV_FADC_Obj::H_SetChannelVoltageSet(int channel, float vset){H_SetChannelVoltageSet1943,66094
-float  HV_FADC_Obj::H_GetChannelVoltageMeasure(int channel){H_GetChannelVoltageMeasure1947,66218
-float  HV_FADC_Obj::H_GetChannelCurrentSet(int channel){H_GetChannelCurrentSet1951,66339
-void   HV_FADC_Obj::H_SetChannelCurrentSet(int channel, float iset){H_SetChannelCurrentSet1955,66452
-float  HV_FADC_Obj::H_GetChannelCurrentMeasure(int channel){H_GetChannelCurrentMeasure1959,66576
-float  HV_FADC_Obj::H_GetChannelVoltageIlkMaxSet(int channel){H_GetChannelVoltageIlkMaxSet1964,66698
-void   HV_FADC_Obj::H_SetChannelVoltageIlkMaxSet(int channel, float ilkmax){H_SetChannelVoltageIlkMaxSet1968,66823
-float  HV_FADC_Obj::H_GetChannelVoltageIlkMinSet(int channel){H_GetChannelVoltageIlkMinSet1972,66963
-void   HV_FADC_Obj::H_SetChannelVoltageIlkMinSet(int channel, float ilkmin){H_SetChannelVoltageIlkMinSet1976,67088
-float  HV_FADC_Obj::H_GetChannelCurrentIlkMaxSet(int channel){H_GetChannelCurrentIlkMaxSet1981,67229
-void   HV_FADC_Obj::H_SetChannelCurrentIlkMaxSet(int channel, float ilkmax){H_SetChannelCurrentIlkMaxSet1985,67354
-float  HV_FADC_Obj::H_GetChannelCurrentIlkMinSet(int channel){H_GetChannelCurrentIlkMinSet1989,67494
-void   HV_FADC_Obj::H_SetChannelCurrentIlkMinSet(int channel, float ilkmin){H_SetChannelCurrentIlkMinSet1993,67619
-void   HV_FADC_Obj::H_SetChannelOn(int channel){H_SetChannelOn1998,67760
-void   HV_FADC_Obj::H_SetChannelOff(int channel){H_SetChannelOff2002,67850
-QString HV_FADC_Obj::H_FormatVoltage(double v){H_FormatVoltage2008,68022
-QString HV_FADC_Obj::H_FormatVoltageUnit(double v){H_FormatVoltageUnit2012,68113
-QString HV_FADC_Obj::H_GetVoltageUnit(void){H_GetVoltageUnit2016,68212
-QString HV_FADC_Obj::H_FormatCurrent(double i){H_FormatCurrent2021,68301
-QString HV_FADC_Obj::H_FormatCurrentUnit(double i){H_FormatCurrentUnit2025,68392
-QString HV_FADC_Obj::H_GetCurrentUnit(void){H_GetCurrentUnit2029,68491
-uint32_t HV_FADC_Obj::H_GetModuleIlkOutStatus(void){H_GetModuleIlkOutStatus2035,68659
-uint32_t HV_FADC_Obj::H_GetModuleIlkOutControl(void){H_GetModuleIlkOutControl2039,68762
-void   HV_FADC_Obj::H_SetModuleIlkOutControl(uint32_t control){H_SetModuleIlkOutControl2043,68867
-uint32_t HV_FADC_Obj::H_GetModuleIlkOutCount(void){H_GetModuleIlkOutCount2047,68982
-uint32_t HV_FADC_Obj::H_GetModuleIlkOutLastTrigger(void){H_GetModuleIlkOutLastTrigger2051,69083
-uint32_t HV_FADC_Obj::H_GetModuleIlkOutChnActualActive(void){H_GetModuleIlkOutChnActualActive2055,69196
-uint32_t HV_FADC_Obj::H_GetModuleIlkOutChnEverTriggered(void){H_GetModuleIlkOutChnEverTriggered2059,69317
-uint32_t HV_FADC_Obj::H_GetModuleFlexGroupMemberList(int group){H_GetModuleFlexGroupMemberList2065,69520
-void   HV_FADC_Obj::H_SetModuleFlexGroupMemberList(int group, uint32_t member){H_SetModuleFlexGroupMemberList2069,69647
-uint32_t HV_FADC_Obj::H_GetModuleFlexGroupType(int group){H_GetModuleFlexGroupType2073,69790
-void   HV_FADC_Obj::H_SetModuleFlexGroupType(int group, uint32_t type){H_SetModuleFlexGroupType2077,69905
-float  HV_FADC_Obj::H_GetChannelVoltageHardwareNominal(int channel){H_GetChannelVoltageHardwareNominal2082,70033
-void   HV_FADC_Obj::H_SetChannelVoltageNominal(int channel, float maxset){H_SetChannelVoltageNominal2086,70170
-float  HV_FADC_Obj::H_GetChannelCurrentHardwareNominal(int channel){H_GetChannelCurrentHardwareNominal2090,70306
-void   HV_FADC_Obj::H_SetChannelCurrentNominal(int channel, float maxset){H_SetChannelCurrentNominal2094,70443
-void   HV_FADC_Obj::H_SetModuleSpecialControlCommand(uint32_t command){H_SetModuleSpecialControlCommand2100,70659
-uint32_t HV_FADC_Obj::H_GetModuleSpecialControlCommand(void){H_GetModuleSpecialControlCommand2104,70790
-uint32_t HV_FADC_Obj::H_GetModuleSpecialControlStatus(void){H_GetModuleSpecialControlStatus2108,70911
-void   HV_FADC_Obj::H_SendHexLine(QByteArray record){H_SendHexLine2112,71030
-void   HV_FADC_Obj::H_ProgramModuleBaseAddress(uint16_t address){H_ProgramModuleBaseAddress2116,71123
-uint16_t HV_FADC_Obj::H_VerifyModuleBaseAddress(void){H_VerifyModuleBaseAddress2120,71242
+HV_FADC_Obj::HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniFilePath){HV_FADC_Obj17,367
+HV_FADC_Obj::HV_FADC_Obj(std::string iniFilePath){HV_FADC_Obj60,1876
+HV_FADC_Obj::~HV_FADC_Obj() {~HV_FADC_Obj105,3272
+int HV_FADC_Obj::H_ConnectModule(){H_ConnectModule139,4129
+void HV_FADC_Obj::ReadHFOSettings(){ReadHFOSettings143,4205
+void HV_FADC_Obj::InitHFOForTOS(){InitHFOForTOS545,16242
+void HV_FADC_Obj::H_CheckModuleIsRamping(bool rampUpFlag){H_CheckModuleIsRamping886,28837
+int HV_FADC_Obj::H_CheckHVModuleIsGood(bool verbose){H_CheckHVModuleIsGood1071,36716
+const std::string currentDateTime() {currentDateTime1184,41064
+void HV_FADC_Obj::H_DumpErrorLogToFile(int event){H_DumpErrorLogToFile1196,41404
+void HV_FADC_Obj::ShutDownHFOForTOS(){ShutDownHFOForTOS1294,46861
+int HV_FADC_Obj::H_ClearAllChannelEventStatus(){H_ClearAllChannelEventStatus1355,49034
+void HV_FADC_Obj::H_SetNominalValues(){H_SetNominalValues1409,51076
+GroupSTRUCT HV_FADC_Obj::H_GetFlexGroup(int group){H_GetFlexGroup1475,53508
+void HV_FADC_Obj::H_SetFlexGroup(int group, GroupSTRUCT groupObject){H_SetFlexGroup1492,54118
+void         HV_FADC_Obj::F_Reset() throw(){F_Reset1518,54747
+void         HV_FADC_Obj::F_StartAcquisition() throw(){F_StartAcquisition1522,54821
+void         HV_FADC_Obj::F_SetFrequency( const unsigned short& frequency ) throw(){F_SetFrequency1526,54917
+unsigned int HV_FADC_Obj::F_GetFrequency() throw(){F_GetFrequency1530,55049
+void HV_FADC_Obj::F_SetReadMode( const unsigned short& mode ) throw(){F_SetReadMode1534,55144
+unsigned int HV_FADC_Obj::F_GetReadMode() throw(){F_GetReadMode1538,55256
+unsigned int HV_FADC_Obj::F_GetFPGAVersion() throw(){F_GetFPGAVersion1542,55349
+void         HV_FADC_Obj::F_SetTriggerThresholdDACAll(const unsigned int threshold) throw(){F_SetTriggerThresholdDACAll1547,55509
+unsigned int HV_FADC_Obj::F_GetTriggerThresholdDACAll() throw(){F_GetTriggerThresholdDACAll1551,55660
+void         HV_FADC_Obj::F_SetTriggerThresholdDACPerChannel(const unsigned short chNb, const unsigned int threshold) throw(){F_SetTriggerThresholdDACPerChannel1555,55781
+unsigned int HV_FADC_Obj::F_GetTriggerThresholdDACPerChannel(const unsigned short chNb) throw(){F_GetTriggerThresholdDACPerChannel1559,55979
+void         HV_FADC_Obj::F_LoadTriggerThresholdDAC() throw(){F_LoadTriggerThresholdDAC1563,56143
+unsigned int HV_FADC_Obj::F_GetTriggerRecord() throw(){F_GetTriggerRecord1567,56253
+void         HV_FADC_Obj::F_SendSoftwareTrigger() throw(){F_SendSoftwareTrigger1571,56356
+void         HV_FADC_Obj::F_SetPretrig( const unsigned short& bits ) throw(){F_SetPretrig1575,56458
+unsigned short HV_FADC_Obj::F_GetPretrig() throw(){F_GetPretrig1579,56576
+void         HV_FADC_Obj::F_SetPosttrig( const unsigned short& bits ) throw(){F_SetPosttrig1583,56669
+unsigned int HV_FADC_Obj::F_GetPosttrig() throw(){F_GetPosttrig1587,56789
+void         HV_FADC_Obj::F_SetTriggerType( const unsigned short& type ) throw(){F_SetTriggerType1591,56882
+unsigned short HV_FADC_Obj::F_GetTriggerType() throw(){F_GetTriggerType1595,57008
+void         HV_FADC_Obj::F_SetTriggerChannelSource( const unsigned short& mask ) throw(){F_SetTriggerChannelSource1599,57109
+unsigned short HV_FADC_Obj::F_GetTriggerChannelSource() throw(){F_GetTriggerChannelSource1603,57253
+unsigned short HV_FADC_Obj::F_GetModeRegister() throw(){F_GetModeRegister1608,57422
+void           HV_FADC_Obj::F_SetModeRegister(const unsigned short& mode) throw(){F_SetModeRegister1612,57525
+void           HV_FADC_Obj::F_SetColToRead( const unsigned short& col ) throw(){F_SetColToRead1616,57651
+unsigned short HV_FADC_Obj::F_GetColToRead() throw(){F_GetColToRead1620,57773
+void           HV_FADC_Obj::F_SetChannelMask( const unsigned short& mask ) throw(){F_SetChannelMask1624,57870
+unsigned short HV_FADC_Obj::F_GetChannelMask() throw(){F_GetChannelMask1628,57998
+void           HV_FADC_Obj::F_SetNbOfChannels(const unsigned short& nbOfChannels) throw(){F_SetNbOfChannels1632,58099
+unsigned short HV_FADC_Obj::F_GetNbOfChannels() throw(){F_GetNbOfChannels1636,58241
+void           HV_FADC_Obj::F_SetPostStopLatency( const unsigned short& latency ) throw(){F_SetPostStopLatency1640,58344
+unsigned short HV_FADC_Obj::F_GetPostStopLatency() throw(){F_GetPostStopLatency1644,58486
+void           HV_FADC_Obj::F_SetPostLatencyPretrig( const unsigned short& latency ) throw(){F_SetPostLatencyPretrig1648,58595
+unsigned short HV_FADC_Obj::F_GetPostLatencyPretrig() throw(){F_GetPostLatencyPretrig1652,58743
+void           HV_FADC_Obj::F_SetRAMAddress( const unsigned short& add ) throw(){F_SetRAMAddress1656,58858
+unsigned short HV_FADC_Obj::F_GetRAMAddress() throw(){F_GetRAMAddress1660,58982
+std::vector< int > HV_FADC_Obj::F_GetAllData( const unsigned short& nbChannels) throw(){F_GetAllData1664,59081
+std::vector< int > HV_FADC_Obj::F_GetAllDataBlockMode() throw(){F_GetAllDataBlockMode1668,59222
+int            HV_FADC_Obj::F_GetDataAt( const unsigned short& add ) throw(){F_GetDataAt1672,59337
+void           HV_FADC_Obj::F_ReleaseInterrupt() throw(){F_ReleaseInterrupt1677,59512
+bool           HV_FADC_Obj::F_ReadDeviceInterrupt() throw(){F_ReadDeviceInterrupt1681,59610
+bool           HV_FADC_Obj::F_ReadInterrupt() throw(){F_ReadInterrupt1685,59721
+int    HV_FADC_Obj::H_GetModuleDeviceClass(void){H_GetModuleDeviceClass1697,60065
+uint32_t HV_FADC_Obj::H_GetModulePlacedChannels(void){H_GetModulePlacedChannels1701,60164
+int    HV_FADC_Obj::H_GetModuleSerialNumber(void){H_GetModuleSerialNumber1705,60271
+uint32_t HV_FADC_Obj::H_GetModuleFirmwareRelease(void){H_GetModuleFirmwareRelease1709,60372
+void   HV_FADC_Obj::H_DoClear(void){H_DoClear1714,60482
+void   HV_FADC_Obj::H_SetModuleBaseAddress(uint16_t ba){H_SetModuleBaseAddress1719,60549
+float  HV_FADC_Obj::H_GetModuleTemperature(void){H_GetModuleTemperature1724,60651
+float  HV_FADC_Obj::H_GetModuleSupplyP5(void){H_GetModuleSupplyP51728,60750
+float  HV_FADC_Obj::H_GetModuleSupplyP12(void){H_GetModuleSupplyP121732,60843
+float  HV_FADC_Obj::H_GetModuleSupplyN12(void){H_GetModuleSupplyN121736,60938
+uint32_t HV_FADC_Obj::H_GetModuleAdcSamplesPerSecond(void){H_GetModuleAdcSamplesPerSecond1741,61034
+void   HV_FADC_Obj::H_SetModuleAdcSamplesPerSecond(uint32_t sps){H_SetModuleAdcSamplesPerSecond1745,61151
+uint32_t HV_FADC_Obj::H_GetModuleDigitalFilter(void){H_GetModuleDigitalFilter1749,61270
+void   HV_FADC_Obj::H_SetModuleDigitalFilter(uint32_t filter){H_SetModuleDigitalFilter1753,61375
+float  HV_FADC_Obj::H_GetModuleVoltageLimit(void){H_GetModuleVoltageLimit1758,61489
+float  HV_FADC_Obj::H_GetModuleCurrentLimit(void){H_GetModuleCurrentLimit1762,61590
+uint32_t HV_FADC_Obj::H_GetModuleStatus(void){H_GetModuleStatus1767,61692
+uint32_t HV_FADC_Obj::H_GetModuleEventStatus(void){H_GetModuleEventStatus1771,61783
+void   HV_FADC_Obj::H_SetModuleEventStatus(uint32_t status){H_SetModuleEventStatus1775,61884
+uint32_t HV_FADC_Obj::H_GetModuleEventChannelStatus(void){H_GetModuleEventChannelStatus1779,61993
+void   HV_FADC_Obj::H_ClearModuleEventChannelStatus(void){H_ClearModuleEventChannelStatus1783,62108
+uint32_t HV_FADC_Obj::H_GetModuleEventChannelMask(void){H_GetModuleEventChannelMask1787,62218
+void   HV_FADC_Obj::H_SetModuleEventChannelMask(uint32_t mask){H_SetModuleEventChannelMask1791,62329
+uint32_t HV_FADC_Obj::H_GetModuleEventGroupStatus(void){H_GetModuleEventGroupStatus1795,62444
+uint32_t HV_FADC_Obj::HV_FADC_Obj::H_GetModuleEventGroupMask(void){H_GetModuleEventGroupMask1799,62555
+void   HV_FADC_Obj::H_SetModuleEventGroupMask(uint32_t mask){H_SetModuleEventGroupMask1803,62675
+void   HV_FADC_Obj::H_ClearModuleEventGroupStatus(void){H_ClearModuleEventGroupStatus1807,62786
+uint32_t HV_FADC_Obj::H_GetModuleEventMask(void){H_GetModuleEventMask1811,62892
+void   HV_FADC_Obj::H_SetModuleEventMask(uint32_t mask){H_SetModuleEventMask1815,62989
+uint32_t HV_FADC_Obj::H_GetModuleControl(void){H_GetModuleControl1819,63090
+void   HV_FADC_Obj::H_SetModuleControl(uint32_t control){H_SetModuleControl1823,63183
+float  HV_FADC_Obj::H_GetModuleVoltageRampSpeed(void){H_GetModuleVoltageRampSpeed1828,63287
+void   HV_FADC_Obj::H_SetModuleVoltageRampSpeed(float vramp){H_SetModuleVoltageRampSpeed1832,63396
+float  HV_FADC_Obj::H_GetModuleCurrentRampSpeed(void){H_GetModuleCurrentRampSpeed1836,63510
+void   HV_FADC_Obj::H_SetModuleCurrentRampSpeed(float iramp){H_SetModuleCurrentRampSpeed1840,63619
+bool   HV_FADC_Obj::H_GetModuleKillEnable(void){H_GetModuleKillEnable1845,63734
+void   HV_FADC_Obj::H_SetModuleKillEnable(bool enable){H_SetModuleKillEnable1849,63831
+int    HV_FADC_Obj::H_GetModuleChannelNumber(void){H_GetModuleChannelNumber1854,63935
+void   HV_FADC_Obj::H_SetModuleEmergencyOff(void){H_SetModuleEmergencyOff1859,64039
+void   HV_FADC_Obj::H_ClearModuleEmergencyOff(void){H_ClearModuleEmergencyOff1863,64133
+uint32_t HV_FADC_Obj::H_GetModuleRestartTime(void){H_GetModuleRestartTime1868,64232
+void   HV_FADC_Obj::H_SetModuleRestartTime(uint32_t restartTime){H_SetModuleRestartTime1872,64333
+void   HV_FADC_Obj::H_SetAllChannelsOn(void){H_SetAllChannelsOn1877,64453
+void   HV_FADC_Obj::H_SetAllChannelsOff(void){H_SetAllChannelsOff1881,64537
+void   HV_FADC_Obj::H_SetAllChannelsVoltageSet(float vset){H_SetAllChannelsVoltageSet1885,64623
+void   HV_FADC_Obj::H_SetAllChannelsCurrentSet(float iset){H_SetAllChannelsCurrentSet1889,64733
+uint32_t HV_FADC_Obj::H_GetChannelStatus(int channel){H_GetChannelStatus1895,64923
+uint32_t HV_FADC_Obj::H_GetChannelEventStatus(int channel){H_GetChannelEventStatus1899,65030
+void   HV_FADC_Obj::H_SetChannelEventStatus(int channel, uint32_t status){H_SetChannelEventStatus1903,65147
+uint32_t HV_FADC_Obj::H_GetChannelEventMask(int channel){H_GetChannelEventMask1907,65280
+void   HV_FADC_Obj::H_SetChannelEventMask(int channel, uint32_t mask){H_SetChannelEventMask1911,65393
+uint32_t HV_FADC_Obj::H_GetChannelControl(int channel){H_GetChannelControl1915,65518
+void   HV_FADC_Obj::H_SetChannelControl(int channel, uint32_t control){H_SetChannelControl1919,65627
+void HV_FADC_Obj::H_SetChannelEmergencyOff(int channel){H_SetChannelEmergencyOff1923,65754
+void   HV_FADC_Obj::H_ClearChannelEmergencyOff(int channel){H_ClearChannelEmergencyOff1927,65862
+float  HV_FADC_Obj::H_GetChannelVoltageNominal(int channel){H_GetChannelVoltageNominal1932,65977
+float  HV_FADC_Obj::H_GetChannelCurrentNominal(int channel){H_GetChannelCurrentNominal1936,66098
+float  HV_FADC_Obj::H_GetChannelVoltageSet(int channel){H_GetChannelVoltageSet1941,66220
+void   HV_FADC_Obj::H_SetChannelVoltageSet(int channel, float vset){H_SetChannelVoltageSet1945,66333
+float  HV_FADC_Obj::H_GetChannelVoltageMeasure(int channel){H_GetChannelVoltageMeasure1949,66457
+float  HV_FADC_Obj::H_GetChannelCurrentSet(int channel){H_GetChannelCurrentSet1953,66578
+void   HV_FADC_Obj::H_SetChannelCurrentSet(int channel, float iset){H_SetChannelCurrentSet1957,66691
+float  HV_FADC_Obj::H_GetChannelCurrentMeasure(int channel){H_GetChannelCurrentMeasure1961,66815
+float  HV_FADC_Obj::H_GetChannelVoltageIlkMaxSet(int channel){H_GetChannelVoltageIlkMaxSet1966,66937
+void   HV_FADC_Obj::H_SetChannelVoltageIlkMaxSet(int channel, float ilkmax){H_SetChannelVoltageIlkMaxSet1970,67062
+float  HV_FADC_Obj::H_GetChannelVoltageIlkMinSet(int channel){H_GetChannelVoltageIlkMinSet1974,67202
+void   HV_FADC_Obj::H_SetChannelVoltageIlkMinSet(int channel, float ilkmin){H_SetChannelVoltageIlkMinSet1978,67327
+float  HV_FADC_Obj::H_GetChannelCurrentIlkMaxSet(int channel){H_GetChannelCurrentIlkMaxSet1983,67468
+void   HV_FADC_Obj::H_SetChannelCurrentIlkMaxSet(int channel, float ilkmax){H_SetChannelCurrentIlkMaxSet1987,67593
+float  HV_FADC_Obj::H_GetChannelCurrentIlkMinSet(int channel){H_GetChannelCurrentIlkMinSet1991,67733
+void   HV_FADC_Obj::H_SetChannelCurrentIlkMinSet(int channel, float ilkmin){H_SetChannelCurrentIlkMinSet1995,67858
+void   HV_FADC_Obj::H_SetChannelOn(int channel){H_SetChannelOn2000,67999
+void   HV_FADC_Obj::H_SetChannelOff(int channel){H_SetChannelOff2004,68089
+QString HV_FADC_Obj::H_FormatVoltage(double v){H_FormatVoltage2010,68261
+QString HV_FADC_Obj::H_FormatVoltageUnit(double v){H_FormatVoltageUnit2014,68352
+QString HV_FADC_Obj::H_GetVoltageUnit(void){H_GetVoltageUnit2018,68451
+QString HV_FADC_Obj::H_FormatCurrent(double i){H_FormatCurrent2023,68540
+QString HV_FADC_Obj::H_FormatCurrentUnit(double i){H_FormatCurrentUnit2027,68631
+QString HV_FADC_Obj::H_GetCurrentUnit(void){H_GetCurrentUnit2031,68730
+uint32_t HV_FADC_Obj::H_GetModuleIlkOutStatus(void){H_GetModuleIlkOutStatus2037,68898
+uint32_t HV_FADC_Obj::H_GetModuleIlkOutControl(void){H_GetModuleIlkOutControl2041,69001
+void   HV_FADC_Obj::H_SetModuleIlkOutControl(uint32_t control){H_SetModuleIlkOutControl2045,69106
+uint32_t HV_FADC_Obj::H_GetModuleIlkOutCount(void){H_GetModuleIlkOutCount2049,69221
+uint32_t HV_FADC_Obj::H_GetModuleIlkOutLastTrigger(void){H_GetModuleIlkOutLastTrigger2053,69322
+uint32_t HV_FADC_Obj::H_GetModuleIlkOutChnActualActive(void){H_GetModuleIlkOutChnActualActive2057,69435
+uint32_t HV_FADC_Obj::H_GetModuleIlkOutChnEverTriggered(void){H_GetModuleIlkOutChnEverTriggered2061,69556
+uint32_t HV_FADC_Obj::H_GetModuleFlexGroupMemberList(int group){H_GetModuleFlexGroupMemberList2067,69759
+void   HV_FADC_Obj::H_SetModuleFlexGroupMemberList(int group, uint32_t member){H_SetModuleFlexGroupMemberList2071,69886
+uint32_t HV_FADC_Obj::H_GetModuleFlexGroupType(int group){H_GetModuleFlexGroupType2075,70029
+void   HV_FADC_Obj::H_SetModuleFlexGroupType(int group, uint32_t type){H_SetModuleFlexGroupType2079,70144
+float  HV_FADC_Obj::H_GetChannelVoltageHardwareNominal(int channel){H_GetChannelVoltageHardwareNominal2084,70272
+void   HV_FADC_Obj::H_SetChannelVoltageNominal(int channel, float maxset){H_SetChannelVoltageNominal2088,70409
+float  HV_FADC_Obj::H_GetChannelCurrentHardwareNominal(int channel){H_GetChannelCurrentHardwareNominal2092,70545
+void   HV_FADC_Obj::H_SetChannelCurrentNominal(int channel, float maxset){H_SetChannelCurrentNominal2096,70682
+void   HV_FADC_Obj::H_SetModuleSpecialControlCommand(uint32_t command){H_SetModuleSpecialControlCommand2102,70898
+uint32_t HV_FADC_Obj::H_GetModuleSpecialControlCommand(void){H_GetModuleSpecialControlCommand2106,71029
+uint32_t HV_FADC_Obj::H_GetModuleSpecialControlStatus(void){H_GetModuleSpecialControlStatus2110,71150
+void   HV_FADC_Obj::H_SendHexLine(QByteArray record){H_SendHexLine2114,71269
+void   HV_FADC_Obj::H_ProgramModuleBaseAddress(uint16_t address){H_ProgramModuleBaseAddress2118,71362
+uint16_t HV_FADC_Obj::H_VerifyModuleBaseAddress(void){H_VerifyModuleBaseAddress2122,71481
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/caseFunctions.cc,492
 void printGeneralCommands(bool fadcActive)printGeneralCommands8,79
@@ -1365,98 +1381,98 @@ unsigned short getShortInputValue()getShortInputValue206,9658
 template<class T> T getAllInputValue(T err)getAllInputValue227,10203
 int turnString2Int(std::string inputString)turnString2Int248,10695
 
-/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/fpga.cpp,2220
-FPGA::FPGA():FPGA18,780
-    #define SOCKET_BUFFER_SIZE_POINTER SOCKET_BUFFER_SIZE_POINTER95,3102
-FPGA::~FPGA(){~FPGA182,5447
-void FPGA::SetIP(std::string ip_){SetIP190,5559
-std::string FPGA::ShowIP(){ShowIP195,5610
-void FPGA::MakeARPEntry(){MakeARPEntry200,5657
-int FPGA::okay(){okay213,5915
-int FPGA::GeneralReset(){GeneralReset221,6021
-int FPGA::Counting(){Counting237,6451
-int FPGA::CountingStop(){CountingStop254,6925
-int FPGA::CountingTrigger(int time){CountingTrigger273,7568
-int FPGA::CountingTime(int time, int modeSelector){CountingTime297,8241
-int FPGA::SetMatrix(){SetMatrix340,9619
-int FPGA::WriteReadFSR(){WriteReadFSR385,10954
-int FPGA::i2creset()i2creset421,12136
-int FPGA::i2cDAC(unsigned short Umv, unsigned short DACchannel)i2cDAC434,12377
-int FPGA::i2cADC(unsigned short channel)i2cADC452,12883
-int FPGA::tpulse(unsigned short Npulses, unsigned short div500kHz)tpulse478,13496
-int FPGA::EnableTPulse(int tpulse){EnableTPulse493,13860
-int FPGA::EnableFADCshutter(unsigned short FADCshutter)EnableFADCshutter514,14288
-int FPGA::Communication(char* SendBuffer, char* RecvBuffer)Communication548,15126
-int FPGA::ReadoutFadcBit(){ReadoutFadcBit653,18289
-int FPGA::ReadoutFadcFlag(){ReadoutFadcFlag662,18480
-void FPGA::ClearFadcFlag(){ClearFadcFlag677,18665
-int FPGA::Communication2(char* SendBuffer, char* RecvBuffer, int HitsMode, unsigned short chip)Communication2687,18828
-int FPGA::CommunicationReadSend(char* SendBuffer, char* RecvBuffer, int HitsMode, unsigned short chip)CommunicationReadSend810,22464
-int FPGA::SaveData(const char* filename){SaveData937,26298
-int FPGA::SaveData(int pix[9][256][256]){SaveData978,27196
-int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){SaveData1019,28410
-int FPGA::SaveData(int pix[256][256], int NumHits){SaveData1053,29583
-int FPGA::SaveData(std::vector<int> *pHitArray, int NumHits ){SaveData1098,30786
-int FPGA::SaveData(int hit_x_y_val[12288] ,int NumHits){SaveData1149,32354
-int FPGA::SaveData(int **pix){SaveData1195,33698
-int FPGA::SwitchTriggerConnection(int connection){SwitchTriggerConnection1223,34178
-void FPGA::UseFastClock(bool use){UseFastClock1231,34397
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/fpga.cpp,2229
+FPGA::FPGA(Timepix *tp_pointer_from_parent):FPGA17,808
+FPGA::~FPGA(){~FPGA154,4918
+void FPGA::SetIP(std::string ip_){SetIP162,5030
+std::string FPGA::ShowIP(){ShowIP167,5081
+void FPGA::MakeARPEntry(){MakeARPEntry172,5128
+int FPGA::okay(){okay185,5386
+int FPGA::GeneralReset(){GeneralReset193,5492
+int FPGA::Counting(){Counting209,5922
+int FPGA::CountingStop(){CountingStop226,6397
+int FPGA::CountingTrigger(int time){CountingTrigger245,7041
+int FPGA::CountingTime(int time, int modeSelector){CountingTime269,7715
+int FPGA::SetMatrix(){SetMatrix312,9096
+int FPGA::WriteReadFSR(){WriteReadFSR350,10185
+int FPGA::i2creset()i2creset386,11376
+int FPGA::i2cDAC(unsigned short Umv, unsigned short DACchannel)i2cDAC399,11617
+int FPGA::i2cADC(unsigned short channel)i2cADC417,12124
+int FPGA::tpulse(unsigned short Npulses, unsigned short div500kHz)tpulse443,12742
+int FPGA::EnableTPulse(int tpulse){EnableTPulse458,13107
+int FPGA::EnableFADCshutter(unsigned short FADCshutter)EnableFADCshutter479,13535
+int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)Communication512,14357
+int FPGA::ReadoutFadcBit(){ReadoutFadcBit611,17314
+int FPGA::ReadoutFadcFlag(){ReadoutFadcFlag620,17505
+void FPGA::ClearFadcFlag(){ClearFadcFlag635,17690
+int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip)Communication2644,17836
+int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip)CommunicationReadSend763,21373
+int FPGA::SaveData(const char* filename){SaveData885,25056
+int FPGA::SaveData(int pix[9][256][256]){SaveData926,25954
+int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){SaveData967,27172
+int FPGA::SaveData(int pix[256][256], int NumHits){SaveData1001,28349
+int FPGA::SaveData(std::vector<int> *pHitArray, int NumHits ){SaveData1046,29552
+int FPGA::SaveData(int hit_x_y_val[12288] ,int NumHits){SaveData1099,31148
+int FPGA::SaveData(int **pix){SaveData1145,32492
+int FPGA::SwitchTriggerConnection(int connection){SwitchTriggerConnection1173,32972
+void FPGA::UseFastClock(bool use){UseFastClock1181,33191
 
-/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/pc.cpp,4390
-PC::PC():_useHvFadc(false),PC17,753
-void PC::initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc)initHV_FADC152,4167
-int PC::okay(){okay177,4586
-int PC::DoReadOut(const char* filename[9]){DoReadOut184,4681
-int PC::DoReadOut2(const char* filename, unsigned short chip){DoReadOut2220,5881
-int PC::DoDACScan(int DACstoScan,unsigned short chip) {DoDACScan246,6736
-int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh){DoTHLScan323,8867
-int PC::DoSCurveScan_meanChip(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset){DoSCurveScan_meanChip352,9712
-int PC::DoSCurveScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh, int time){DoSCurveScan482,14524
-void PC::DACScanHistogram(void* PointerToObject, char dac, int bit, int val){DACScanHistogram561,17221
-int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned int step, unsigned short pix_per_row, short ***p3DArray, int sum[256][256], int hit_counter[256][256], short thp, unsigned short chp){THscan573,17600
-int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl){ //untill now only one chip at same timeDoTHSopt627,19722
-		#define x_length x_length634,20022
-		#define y_length y_length635,20045
-		#define thl_length thl_length636,20068
-int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl){DoThresholdEqCenter947,31097
-	#define x_length x_length953,31338
-	#define y_length y_length954,31360
-	#define thl_length thl_length955,31382
-int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsigned short time, unsigned short TOT, unsigned short internalPulser){TOCalibFast1389,46820
-int PC::TOCalib(){TOCalib1642,58479
-unsigned short PC::CheckOffset(){CheckOffset1879,69080
-void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a){Histogramm1934,70842
-void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup ){Histogramm1963,71468
-void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup, int* inf ){Histogramm1994,72168
-int PC::DoRun(unsigned short runtimeFrames_, DoRun2029,73106
-void PC::StopRun(){StopRun2159,76681
-bool PC::IsRunning()IsRunning2167,76774
-void PC::run()run2178,76909
-void PC::runFADC()runFADC2198,77208
-void PC::runOTPX()runOTPX2234,78013
-void PC::readoutFadc(std::string filePath, std::vector<int> fadcParams, std::vector<int> *chipData, std::vector<int>fadcData)readoutFadc2361,81562
-bool PC::SetDataPathName(std::string DataPath){SetDataPathName2489,85615
-bool PC::SetDataFileName(std::string DataFile){SetDataFileName2493,85703
-bool PC::SetRunFileName(std::string RunFile){SetRunFileName2497,85791
-bool PC::SetFSRFileName(std::string FSRFile){SetFSRFileName2501,85875
-bool PC::SetMatrixFileName(std::string MatrixFile){SetMatrixFileName2505,85959
-bool PC::SetDACScanFileName(std::string DACScanFile){SetDACScanFileName2509,86055
-bool PC::SetThresholdFileName(std::string ThresholdFile){SetThresholdFileName2513,86155
-bool PC::SetMaskFileName(std::string MaskFile){SetMaskFileName2517,86263
-const char* PC::GetTOSPathName(){GetTOSPathName2521,86351
-const char* PC::GetDataPathName(){GetDataPathName2524,86416
-const char* PC::GetDataFileName(unsigned short chip){GetDataFileName2527,86483
-const char* PC::GetRunFileName(){GetRunFileName2539,86970
-const char* PC::GetFSRFileName(unsigned short chip){GetFSRFileName2542,87035
-const char* PC::GetMatrixFileName(unsigned short chip){GetMatrixFileName2553,87512
-const char* PC::GetDACScanFileName(){GetDACScanFileName2564,88016
-const char* PC::GetThresholdFileName(unsigned short chip){GetThresholdFileName2567,88089
-const char* PC::GetTOTCalibFileName(unsigned short chip){GetTOTCalibFileName2578,88620
-const char* PC::GetTOACalibFileName(unsigned short chip){GetTOACalibFileName2590,89143
-const char* PC::GetMaskFileName(unsigned short chip){GetMaskFileName2602,89666
-void PC::MakeBMP(int arr[256][256]){MakeBMP2615,90154
-void PC::MakeBMP(int **arr){MakeBMP2663,91778
-void PC::SpeedTest(int wdh, int freq){ //outdated, not used any moreSpeedTest2710,93393
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/pc.cpp,4407
+PC::PC(Timepix *tp):PC17,753
+PC::~PC(){~PC131,3911
+void PC::initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc)initHV_FADC160,4372
+int PC::okay(){okay185,4791
+int PC::DoReadOut(const char* filename[9]){DoReadOut192,4886
+int PC::DoReadOut2(const char* filename, unsigned short chip){DoReadOut2228,6090
+int PC::DoDACScan(int DACstoScan,unsigned short chip) {DoDACScan254,6946
+int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh){DoTHLScan331,9123
+int PC::DoSCurveScan_meanChip(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset){DoSCurveScan_meanChip360,9981
+int PC::DoSCurveScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh, int time){DoSCurveScan490,14832
+void PC::DACScanHistogram(void* PointerToObject, char dac, int bit, int val){DACScanHistogram569,17561
+int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned int step, unsigned short pix_per_row, short ***p3DArray, int sum[256][256], int hit_counter[256][256], short thp, unsigned short chp){THscan581,17940
+int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl){ //untill now only one chip at same timeDoTHSopt635,20076
+		#define x_length x_length642,20376
+		#define y_length y_length643,20399
+		#define thl_length thl_length644,20422
+int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl){DoThresholdEqCenter955,31505
+	#define x_length x_length961,31746
+	#define y_length y_length962,31768
+	#define thl_length thl_length963,31790
+int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsigned short time, unsigned short TOT, unsigned short internalPulser){TOCalibFast1397,47305
+int PC::TOCalib(){TOCalib1650,59038
+unsigned short PC::CheckOffset(){CheckOffset1887,69705
+void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a){Histogramm1942,71488
+void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup ){Histogramm1971,72114
+void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup, int* inf ){Histogramm2002,72814
+int PC::DoRun(unsigned short runtimeFrames_, DoRun2037,73752
+void PC::StopRun(){StopRun2167,77343
+bool PC::IsRunning()IsRunning2175,77436
+void PC::run()run2186,77571
+void PC::runFADC()runFADC2204,77753
+void PC::runOTPX()runOTPX2242,78580
+void PC::readoutFadc(std::string filePath, std::vector<int> fadcParams, std::vector<int> *chipData, std::vector<int>fadcData)readoutFadc2373,82181
+bool PC::SetDataPathName(std::string DataPath){SetDataPathName2503,86333
+bool PC::SetDataFileName(std::string DataFile){SetDataFileName2507,86421
+bool PC::SetRunFileName(std::string RunFile){SetRunFileName2511,86509
+bool PC::SetFSRFileName(std::string FSRFile){SetFSRFileName2515,86593
+bool PC::SetMatrixFileName(std::string MatrixFile){SetMatrixFileName2519,86677
+bool PC::SetDACScanFileName(std::string DACScanFile){SetDACScanFileName2523,86773
+bool PC::SetThresholdFileName(std::string ThresholdFile){SetThresholdFileName2527,86873
+bool PC::SetMaskFileName(std::string MaskFile){SetMaskFileName2531,86981
+const char* PC::GetTOSPathName(){GetTOSPathName2535,87069
+const char* PC::GetDataPathName(){GetDataPathName2538,87134
+const char* PC::GetDataFileName(unsigned short chip){GetDataFileName2541,87201
+const char* PC::GetRunFileName(){GetRunFileName2553,87685
+const char* PC::GetFSRFileName(unsigned short chip){GetFSRFileName2556,87750
+const char* PC::GetMatrixFileName(unsigned short chip){GetMatrixFileName2567,88224
+const char* PC::GetDACScanFileName(){GetDACScanFileName2578,88725
+const char* PC::GetThresholdFileName(unsigned short chip){GetThresholdFileName2581,88798
+const char* PC::GetTOTCalibFileName(unsigned short chip){GetTOTCalibFileName2592,89326
+const char* PC::GetTOACalibFileName(unsigned short chip){GetTOACalibFileName2604,89846
+const char* PC::GetMaskFileName(unsigned short chip){GetMaskFileName2616,90366
+void PC::MakeBMP(int arr[256][256]){MakeBMP2629,90851
+void PC::MakeBMP(int **arr){MakeBMP2677,92475
+void PC::SpeedTest(int wdh, int freq){ //outdated, not used any moreSpeedTest2724,94090
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/tos.cpp,108
 const WORD MAX_CONSOLE_LINES = 500;MAX_CONSOLE_LINES35,1601
@@ -1662,65 +1678,66 @@ QString CVmUsb::errorString(void)errorString236,5242
 QString CVmUsb::controllerName(void)controllerName241,5307
 QString CVmUsb::information(void)information246,5379
 
-/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/console.cpp,3670
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/console.cpp,3746
 Console::Console():Console24,1221
-Console::Console(std::string iniFilePath):Console53,1934
-Console::~Console()~Console82,2586
-unsigned short Console::getPreload()getPreload90,2671
-int Console::okay(){okay106,3053
-void Console::ConsoleMain(){ConsoleMain114,3165
-void Console::CommandActivateHvFadcObj(){CommandActivateHvFadcObj131,3577
-int Console::UserInterface(){UserInterface198,5717
-int Console::ReadoutFpgaExtTriggerBit()ReadoutFpgaExtTriggerBit643,17953
-int Console::ReadoutFpgaExtTriggerFlag()ReadoutFpgaExtTriggerFlag649,18034
-void Console::ClearFpgaExtTriggerFlag()ClearFpgaExtTriggerFlag655,18117
-void Console::ErrorMessages(int err){ErrorMessages661,18190
-int Console::CommandHelp()CommandHelp832,23182
-int Console::CommandSpacing(){CommandSpacing949,29164
-int Console::CommandSetNumChips(){CommandSetNumChips964,29684
-void Console::SetNumChips(int nChips){SetNumChips986,30258
-int Console::CommandSetOption(){CommandSetOption1005,30962
-int Console::CommandRun(bool useHvFadc){CommandRun1025,31464
-int Console::CommandCounting(int c){CommandCounting1256,39303
-std::string Console::TriggerSelection(){TriggerSelection1278,39872
-std::string Console::FastClockSelection(){FastClockSelection1307,40905
-std::string Console::ShutterRangeSelection(){ShutterRangeSelection1339,42009
-std::string Console::ShutterTimeSelection(int n){ShutterTimeSelection1384,43717
-int Console::CommandCountingTrigger(){CommandCountingTrigger1443,46037
-int Console::CommandCountingTime(){CommandCountingTime1490,47509
-int Console::CommandReadOut(){CommandReadOut1559,49668
-int Console::CommandReadOut2(){CommandReadOut21581,50300
-int Console::CommandSetMatrix(){CommandSetMatrix1605,50996
-int Console::CommandSaveMatrix(){CommandSaveMatrix1616,51288
-int Console::CommandLoadMatrix(){CommandLoadMatrix1639,51928
-int Console::CommandWriteReadFSR(){CommandWriteReadFSR1671,52868
-int Console::CommandSaveFSR(){CommandSaveFSR1685,53238
-int Console::CommandLoadFSR(){CommandLoadFSR1708,53860
-int Console::CommandLoadThreshold(){CommandLoadThreshold1759,55190
-int Console::CommandSetDAC(){CommandSetDAC1798,56364
-int Console::CommandShowFSR(){CommandShowFSR1836,57563
-int Console::CommandVarChessMatrix(){CommandVarChessMatrix1846,57834
-int Console::CommandUniformMatrix(){CommandUniformMatrix1918,60660
-int Console::CommandFADCshutter(){CommandFADCshutter1958,62003
-int Console::CommandDACScan(){CommandDACScan1978,62726
-int Console::CommandTHLScan(){CommandTHLScan2068,66274
-int Console::CommandSCurve(){CommandSCurve2093,67227
-int Console::CommandSCurveFast(){CommandSCurveFast2124,68490
-int Console::Commandi2creset(){Commandi2creset2174,70679
-int Console::Commandi2cDAC(){Commandi2cDAC2180,70753
-int Console::Commandi2cADC(){Commandi2cADC2199,71474
-int Console::CommandTpulse(){CommandTpulse2213,71924
-int Console::CommandDoTHSopt(){CommandDoTHSopt2232,72668
-int Console::CommandThresholdEqNoiseCenter(){CommandThresholdEqNoiseCenter2331,75808
-int Console::CommandTOCalib(){CommandTOCalib2403,78148
-int Console::CommandTOCalibFast(){CommandTOCalibFast2409,78215
-int Console::CommandCheckOffset(){CommandCheckOffset2482,80993
-int Console::CommandCalibrate(){CommandCalibrate2489,81156
-int Console::CommandSwitchTriggerConnection(){CommandSwitchTriggerConnection2704,88506
-void Console::DACScanLive(char dac, int val){DACScanLive2727,89264
-void Console::WrapperToDACScanLive(void* PointerToObject, char dac, int val){WrapperToDACScanLive2736,89524
-void Console::CommandSpeedTest(std::string ein){CommandSpeedTest2745,89783
-void Console::CommandSetIP(){CommandSetIP2765,90200
+Console::Console(std::string iniFilePath):Console63,2625
+Console::~Console()~Console96,3494
+unsigned short Console::getPreload()getPreload106,3610
+int Console::okay(){okay122,3992
+void Console::ConsoleMain(){ConsoleMain130,4104
+void Console::CommandActivateHvFadcObj(){CommandActivateHvFadcObj147,4525
+int Console::UserInterface(){UserInterface214,6667
+int Console::ReadoutFpgaExtTriggerBit()ReadoutFpgaExtTriggerBit665,19077
+int Console::ReadoutFpgaExtTriggerFlag()ReadoutFpgaExtTriggerFlag671,19160
+void Console::ClearFpgaExtTriggerFlag()ClearFpgaExtTriggerFlag677,19245
+void Console::ErrorMessages(int err){ErrorMessages683,19320
+int Console::CommandHelp()CommandHelp854,24320
+int Console::CommandSpacing(){CommandSpacing971,30302
+int Console::CommandSetNumChips(){CommandSetNumChips986,30828
+void Console::SetNumChips(int nChips){SetNumChips1008,31402
+int Console::CommandSetOption(){CommandSetOption1027,32119
+int Console::CommandRun(bool useHvFadc){CommandRun1047,32634
+int Console::CommandCounting(int c){CommandCounting1278,40479
+std::string Console::TriggerSelection(){TriggerSelection1300,41058
+std::string Console::FastClockSelection(){FastClockSelection1329,42091
+std::string Console::ShutterRangeSelection(){ShutterRangeSelection1361,43195
+std::string Console::ShutterTimeSelection(int n){ShutterTimeSelection1406,44903
+int Console::CommandCountingTrigger(){CommandCountingTrigger1465,47223
+int Console::CommandCountingTime(){CommandCountingTime1512,48705
+int Console::CommandReadOut(){CommandReadOut1581,50896
+int Console::CommandReadOut2(){CommandReadOut21603,51534
+int Console::CommandSetMatrix(){CommandSetMatrix1627,52238
+int Console::CommandSaveMatrix(){CommandSaveMatrix1638,52532
+int Console::CommandLoadMatrix(){CommandLoadMatrix1661,53180
+int Console::CommandWriteReadFSR(){CommandWriteReadFSR1693,54133
+int Console::CommandSaveFSR(){CommandSaveFSR1707,54511
+int Console::CommandLoadFSR(){CommandLoadFSR1730,55141
+int Console::CommandLoadThreshold(){CommandLoadThreshold1781,56484
+int Console::CommandSetDAC(){CommandSetDAC1820,57671
+int Console::CommandShowFSR(){CommandShowFSR1858,58882
+int Console::CommandVarChessMatrix(){CommandVarChessMatrix1868,59162
+int Console::CommandUniformMatrix(){CommandUniformMatrix1940,61994
+int Console::CommandFADCshutter(){CommandFADCshutter1980,63343
+int Console::CommandDACScan(){CommandDACScan2000,64071
+int Console::CommandTHLScan(){CommandTHLScan2090,67623
+int Console::CommandSCurve(){CommandSCurve2115,68580
+int Console::CommandSCurveFast(){CommandSCurveFast2146,69847
+int Console::Commandi2creset(){Commandi2creset2196,72043
+int Console::Commandi2cDAC(){Commandi2cDAC2202,72119
+int Console::Commandi2cADC(){Commandi2cADC2221,72842
+int Console::CommandTpulse(){CommandTpulse2235,73294
+int Console::CommandDoTHSopt(){CommandDoTHSopt2254,74040
+int Console::CommandThresholdEqNoiseCenter(){CommandThresholdEqNoiseCenter2353,77188
+int Console::CommandTOCalib(){CommandTOCalib2425,79539
+int Console::CommandTOCalibFast(){CommandTOCalibFast2431,79607
+int Console::CommandCheckOffset(){CommandCheckOffset2504,82389
+int Console::CommandCalibrate(){CommandCalibrate2511,82553
+int Console::CommandSwitchTriggerConnection(){CommandSwitchTriggerConnection2726,89922
+void Console::DACScanLive(char dac, int val){DACScanLive2749,90684
+void Console::WrapperToDACScanLive(void* PointerToObject, char dac, int val){WrapperToDACScanLive2758,90947
+void Console::CommandSpeedTest(std::string ein){CommandSpeedTest2767,91206
+void Console::CommandSetIP(){CommandSetIP2787,91624
+void Console::CommandSetChipIdOffset(){CommandSetChipIdOffset2844,92961
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/vmecontroller.cpp,656
 CVmeController::CVmeController()CVmeController3,30
@@ -1733,57 +1750,55 @@ QString CVmeController::errorString(void)errorString30,472
 QString CVmeController::controllerName(void)controllerName35,536
 QString CVmeController::information(void)information40,603
 
-/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/timepix.cpp,4430
-Timepix::Timepix(){Timepix15,756
-int Timepix::GetFSR(char* FSR_){GetFSR107,3762
-int Timepix::GetFSR(unsigned char* FSR_){GetFSR124,4114
-int Timepix::LoadFSRFromFile(const char* filename, unsigned short chip){LoadFSRFromFile141,4528
-int Timepix::SaveFSRToFile(const char* filename, unsigned short chip){SaveFSRToFile158,4976
-int Timepix::SetDAC(unsigned int dac, unsigned short chip, unsigned int value){SetDAC173,5354
-unsigned int Timepix::GetDAC(unsigned int dac, unsigned short chip){GetDAC190,5960
-int Timepix::MaskPixel(int x, int y, int m, unsigned short chip){ //not used so farMaskPixel198,6169
-int Timepix::GetMask(int y, int x, unsigned short chip){ //not used so farGetMask203,6361
-int Timepix::Spacing(unsigned int space, unsigned int step, unsigned short chip){ //when using step must go from 0 to <space*spaceSpacing207,6465
-int Timepix::SpacingCalib (unsigned int stepCTPR, unsigned int stepRow, unsigned int pix_per_row, unsigned short chip){ //only for TOcalib, matrix was set to all test, mask = 0SpacingCalib223,6803
-int Timepix::Spacing_row (unsigned int step, unsigned int pix_per_row, unsigned short chip){ //step from 0 to <(256/pix_per_col), y are the rowSpacing_row235,7180
-int Timepix::Spacing_row_TPulse (unsigned int step, unsigned int pix_per_row, unsigned short chip){ //step from 0 to <(256/pix_per_col), y are the rowSpacing_row_TPulse251,7616
-int Timepix::IsCounting(){IsCounting268,8123
-int Timepix::SetCounting(int counting){SetCounting275,8249
-std::string Timepix::GetDACName(unsigned int dac){GetDACName283,8417
-int Timepix::GetDACCode(unsigned int dac){GetDACCode291,8614
-void Timepix::UpdateFSR(){UpdateFSR302,9079
-void Timepix::SetFSRBit(int bit, bool b){SetFSRBit341,11564
-int Timepix::ChipID(char* ReplyPacket, unsigned short chip){ChipID351,11994
-int Timepix::ChipID(unsigned char* ReplyPacket, unsigned short chip){ChipID410,14297
-bool Timepix::SetChipID(int id, std::string IDLetter,int IDNumber, int IDWaver, int chipType, unsigned short chip){SetChipID470,16774
-int Timepix::GetChipID(unsigned short chip){GetChipID475,17075
-int Timepix::GetChipIDsilent(unsigned short chip){GetChipIDsilent480,17345
-int Timepix::SaveThresholdToFile(const char* filename, unsigned short chip){SaveThresholdToFile484,17422
-int Timepix::LoadThresholdFromFile(const char* filename, unsigned short chip){LoadThresholdFromFile500,17802
-int Timepix::SaveMatrixToFile(const char* filename,unsigned short Chip){SaveMatrixToFile515,18175
-int Timepix::LoadMatrixFromFile(const char* filename, unsigned short chip){LoadMatrixFromFile534,18758
-int Timepix::UniformMatrix(unsigned char P0_, unsigned char P1_, unsigned char Mask_, unsigned char Test_, unsigned char ThrH_, unsigned short Chip){UniformMatrix550,19249
-int Timepix::VarChessMatrix(int sl,int wl,int sp0,int sp1,int smask,int stest,int sth,int wp0,int wp1,int wmask,int wtest,int wth, unsigned short Chip){VarChessMatrix567,19745
-int Timepix::PackMatrix(std::vector<std::vector<char> > *PackQueue){PackMatrix596,20480
-int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){PackMatrix635,22974
-int Timepix::SetNumChips(unsigned short Chips,unsigned short preload){SetNumChips675,25644
-int Timepix::SetOption(unsigned short option){SetOption681,25774
-unsigned short Timepix::GetNumChips(){GetNumChips686,25861
-unsigned short Timepix::GetPreload(){GetPreload690,25921
-unsigned short Timepix::GetOption(){GetOption694,25986
-int Timepix::SetI2C(unsigned int i2c_val){SetI2C698,26049
-unsigned int Timepix::GetI2C(){GetI2C703,26130
-int Timepix::SetADCresult(unsigned short ADC_ChAlert, unsigned short ADC_result){SetADCresult707,26185
-int Timepix::GetI2cResult(){GetI2cResult714,26487
-unsigned short Timepix::GetADCresult(){GetADCresult718,26546
-unsigned short Timepix::GetADCchannel(){GetADCchannel721,26615
-unsigned short Timepix::GetADCalert(){GetADCalert724,26686
-unsigned short Timepix::SetFADCshutter(unsigned short FADCshutter){SetFADCshutter727,26753
-unsigned short Timepix::GetFADCshutter(){GetFADCshutter730,26858
-unsigned short Timepix::SetExtraByte(unsigned short ExtraByte){SetExtraByte733,26930
-unsigned short Timepix::GetExtraByte(){GetExtraByte736,27027
-unsigned short Timepix::SetFADCtriggered(unsigned short FADCtriggered){SetFADCtriggered739,27095
-unsigned short Timepix::SetFADCtriggered(){SetFADCtriggered742,27208
+/home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/timepix.cpp,4271
+Timepix::Timepix(int nbOfChips){Timepix15,756
+int Timepix::GetFSR(unsigned char* FSR_){GetFSR131,4455
+int Timepix::LoadFSRFromFile(const char* filename, unsigned short chip){LoadFSRFromFile147,4862
+int Timepix::SaveFSRToFile(const char* filename, unsigned short chip){SaveFSRToFile164,5310
+int Timepix::SetDAC(unsigned int dac, unsigned short chip, unsigned int value){SetDAC180,5690
+unsigned int Timepix::GetDAC(unsigned int dac, unsigned short chip){GetDAC197,6296
+int Timepix::MaskPixel(int x, int y, int m, unsigned short chip){ //not used so farMaskPixel205,6494
+int Timepix::GetMask(int y, int x, unsigned short chip){ //not used so farGetMask210,6686
+int Timepix::Spacing(unsigned int space, unsigned int step, unsigned short chip){ //when using step must go from 0 to <space*spaceSpacing214,6790
+int Timepix::SpacingCalib (unsigned int stepCTPR, unsigned int stepRow, unsigned int pix_per_row, unsigned short chip){ //only for TOcalib, matrix was set to all test, mask = 0SpacingCalib230,7128
+int Timepix::Spacing_row (unsigned int step, unsigned int pix_per_row, unsigned short chip){ //step from 0 to <(256/pix_per_col), y are the rowSpacing_row242,7505
+int Timepix::Spacing_row_TPulse (unsigned int step, unsigned int pix_per_row, unsigned short chip){ //step from 0 to <(256/pix_per_col), y are the rowSpacing_row_TPulse258,7941
+int Timepix::IsCounting(){IsCounting275,8448
+int Timepix::SetCounting(int counting){SetCounting282,8574
+std::string Timepix::GetDACName(unsigned int dac){GetDACName290,8742
+int Timepix::GetDACCode(unsigned int dac){GetDACCode298,8939
+void Timepix::UpdateFSR(){UpdateFSR309,9404
+void Timepix::SetFSRBit(int bit, bool b){SetFSRBit348,11889
+int Timepix::ChipID(unsigned char* ReplyPacket, unsigned short chip){ChipID357,12302
+bool Timepix::SetChipID(int id, std::string IDLetter,int IDNumber, int IDWaver, int chipType, unsigned short chip){SetChipID415,14771
+int Timepix::GetChipID(unsigned short chip){GetChipID420,15072
+int Timepix::GetChipIDsilent(unsigned short chip){GetChipIDsilent425,15342
+int Timepix::SaveThresholdToFile(const char* filename, unsigned short chip){SaveThresholdToFile429,15419
+int Timepix::LoadThresholdFromFile(const char* filename, unsigned short chip){LoadThresholdFromFile445,15799
+int Timepix::SaveMatrixToFile(const char* filename,unsigned short Chip){SaveMatrixToFile460,16172
+int Timepix::LoadMatrixFromFile(const char* filename, unsigned short chip){LoadMatrixFromFile479,16755
+int Timepix::UniformMatrix(unsigned char P0_, unsigned char P1_, unsigned char Mask_, unsigned char Test_, unsigned char ThrH_, unsigned short Chip){UniformMatrix495,17246
+int Timepix::VarChessMatrix(int sl,int wl,int sp0,int sp1,int smask,int stest,int sth,int wp0,int wp1,int wmask,int wtest,int wth, unsigned short Chip){VarChessMatrix512,17742
+int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){PackMatrix541,18463
+int Timepix::SetNumChips(unsigned short Chips,unsigned short preload){SetNumChips578,20996
+int Timepix::SetOption(unsigned short option){SetOption584,21126
+unsigned short Timepix::GetNumChips(){GetNumChips589,21213
+unsigned short Timepix::GetPreload(){GetPreload593,21273
+unsigned short Timepix::GetOption(){GetOption597,21338
+int Timepix::SetI2C(unsigned int i2c_val){SetI2C601,21401
+unsigned int Timepix::GetI2C(){GetI2C606,21482
+int Timepix::SetADCresult(unsigned short ADC_ChAlert, unsigned short ADC_result){SetADCresult610,21537
+int Timepix::GetI2cResult(){GetI2cResult617,21839
+unsigned short Timepix::GetADCresult(){GetADCresult621,21898
+unsigned short Timepix::GetADCchannel(){GetADCchannel624,21967
+unsigned short Timepix::GetADCalert(){GetADCalert627,22038
+void Timepix::SetFADCshutter(unsigned short FADCshutter){SetFADCshutter630,22105
+unsigned short Timepix::GetFADCshutter(){GetFADCshutter633,22200
+void Timepix::SetExtraByte(unsigned short ExtraByte){SetExtraByte636,22272
+unsigned short Timepix::GetExtraByte(){GetExtraByte639,22359
+void Timepix::SetFADCtriggered(unsigned short FADCtriggered){SetFADCtriggered642,22427
+unsigned short Timepix::SetFADCtriggered(){SetFADCtriggered645,22530
+void Timepix::SetChipIDOffset(int ChipIdOffset){SetChipIDOffset649,22607
 
 /home/schmidt/HV_FADC/TOS_merged_V6_3_1_wV1729/src/DeviceVME.cc,552
 namespace vme {vme16,176

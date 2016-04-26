@@ -196,6 +196,8 @@ std::string getUserInput(const char *prompt,
     // TODO: is there maybe a smarter way to do this?
 
     char *buf;
+    // add the user input to the history
+//    add_history( buf );
     while ( true ){
 	buf = readline(prompt);
 
@@ -216,6 +218,10 @@ std::string getUserInput(const char *prompt,
 	    // handling (stoi throws exceptions, atoi does not)
 	    std::string tempStr(buf);
 	    int stringAllowed;
+
+	    // first of all add this command to the history
+	    add_history(buf);
+
 
 	    // the first thing to check, is whether the input is a quit command
 	    if (tempStr == "quit") break;

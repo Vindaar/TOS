@@ -14,9 +14,6 @@
 #include <stdexcept>
 #include <set>
 
-
-
-
 // the following array contains all possible TOS commands
 // TODO: change const char array to something nicer
 extern const char *tosCommands[];

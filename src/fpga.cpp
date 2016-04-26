@@ -674,7 +674,7 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     // or (more likely) no chip is connected
     timeout.tv_sec = 0;
     timeout.tv_usec = 20000;
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, NULL);//&timeout);
+    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl;
@@ -710,9 +710,10 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     _fadcBit = RecvBuffer[16];
     if((_fadcBit == 1) && !_fadcFlag) _fadcFlag = true;
   
-    struct timeval timeout;
+    // set the timeout to 20ms. If no answer was given until then, either chip defect 
+    // or (more likely) no chip is connected
     timeout.tv_sec = 0;
-    timeout.tv_usec = 50000;
+    timeout.tv_usec = 20000;
     if (HitsMode==2) {
 	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);//&timeout);
 #if DEBUG==1
@@ -792,7 +793,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     // or (more likely) no chip is connected
     timeout.tv_sec = 0;
     timeout.tv_usec = 20000;
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, NULL);//&timeout);
+    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl;

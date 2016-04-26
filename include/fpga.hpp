@@ -194,8 +194,13 @@ template <typename Ausgabe> int FPGA::SerialReadOutReadSend(Ausgabe aus, unsigne
 
     // number of Packets: round up division, -1 because first packet allready arrived
     int packets = (((Hits*4)+PLen-1)/PLen)-1; 
+    // in case of exactly 350 hits (which fit into a single package!) we set the number of still to
+    // come packages to 1, so as to receive another package
+    // why? not exactly clear
     if (Hits==PLen/4){packets = 1;}
+    #if DEBUG==1
     std::cout << "Number of packets: " << packets << " for chip " << chip << std::endl;
+    #endif
     if (packets == 0){
 	//IncomingLength=18+PLen;
 	//err_code=CommunicationReadSend(PacketBuffer,&((*PackQueueReceive)[0][0]),2);
@@ -203,7 +208,9 @@ template <typename Ausgabe> int FPGA::SerialReadOutReadSend(Ausgabe aus, unsigne
     else {
 	for (p=0;p<packets;++p)
 	{
+	    #if DEBUG==1
 	    std::cout << "packet Number: " << p << ""<< std::endl;
+	    #endif
 	    if (p == packets-1) 
 	    {
 		IncomingLength = (18+((Hits)*4)%PLen);
@@ -257,7 +264,7 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 #if DEBUG==1
     std::cout << "transmitting data from FPGA" << std::endl;
 #endif
-    IncomingLength=18+PLen; //added as changed above
+    IncomingLength=18+PLen; //added as changed above 
     int NumHits=Communication2(PacketBuffer,&((*PackQueueReceive)[0][0]),1,chip); // first packet
     //std::cout << "Chip: "<<chip <<" Hits: "<< NumHits <<std::endl;
     int Hits;
@@ -268,6 +275,9 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 	Hits =NumHits;
     }
 
+    // in case of exactly 350 hits (which fit into a single package!) we set the number of still to
+    // come packages to 1, so as to receive another package
+    // why? not exactly clear
     int packets = (((Hits*4)+PLen-1)/PLen)-1; // number of Packets: round up division, -1 because first packet allready arrived
     if (Hits==PLen/4){packets = 1;}
     //std::cout << "Number of packets: " << packets << ""<< std::endl;
