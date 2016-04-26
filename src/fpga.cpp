@@ -832,15 +832,17 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);//&timeout);
 #if DEBUG==1
 	    std::cout << "Timeout 50 ms used" << std::endl;
-#endif
 	    std::cout << "Timeout 50 ms used of chip " <<chip << std::endl;
+#endif
 	    //++SoftwareCounter;
 	    
 	    // NOTE: removed __WIN32__ ifdef with RecvBuffer as array
             recvWrapper(sock,SendBuffer,PLen+18,0);  
 	    
+	    #if DEBUG==1
 	    std::cout << "Packet indicating end of data transfer from Chip to "
 		      << "FPGA received" << std::endl;
+	    #endif
 
 #if DEBUG==1
 	    std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
@@ -866,12 +868,12 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 
 #if DEBUG==1
     std::cout << "Number of Hits: " << Hits << ""<< std::endl;
-#endif
     std::cout << "Communication Info: Number of Hits: " << Hits 
 	      << " on chip " << chip
 	      << " , HitsMode: " << HitsMode 
 	      << " , FPGA storage used: " << Storage 
 	      << " , " <<  std::endl;
+#endif
     if (HitsMode==1) {
 	return Hits;
     }
@@ -1087,7 +1089,9 @@ int FPGA::SaveData(std::vector<int> *pHitArray, int NumHits ){
 	    }
 	}
     }
+    #if DEBUG==2
     std::cout << "Save Data: Number of Hits: " << NumHits << ""<< std::endl;
+    #endif
     return 0;
 }
 

@@ -307,12 +307,14 @@ void Consumer::run()
 	    std::cout << "Consumer run " << i 
 		      << " Numhits: " << NumHits 
 		      << " on chip " << chip+1 
+		#if DEBUG==1
 		      << " buffer entry: " << i % parent->BufferSize 
+		#endif
 		      << std::endl;
 
 	    hits[chip+1] = ((((parent->Vbuffer[(i % parent->BufferSize)][chip]))->size()) - 1)/3;
 
-	    #if DEBUG==2
+	    #if DEBUG==1
 	    if (parent->IsRunning()){
 		std::cout << "IsRunning is true, Consumer run " 
 			  << i << " hits: " 
