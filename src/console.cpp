@@ -305,7 +305,8 @@ int Console::UserInterface(){
 	{
 	    CommandWriteReadFSR();
 	}
-	else if( ein.compare("Run")==0 )
+	else if( (ein.compare("Run")==0) ||
+		 (ein.compare("run")==0) )
 	{
 	    CommandRun(_hvFadcObjActive);
 	}

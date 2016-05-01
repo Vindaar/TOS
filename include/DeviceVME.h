@@ -16,38 +16,18 @@
 // project files
 #include "vmusb.h"
 
-
-
 namespace vme {
-
-
-
-
-
 // Forward declarations (namespace vme)
-class InterfaceVME;
+    class InterfaceVME;
+    class DeviceVME {
 
-
-
-
-
-
-
-
-
-class DeviceVME {
-
-public:
-
+      public:
 	/// C'tor
-    DeviceVME( CVmUsb *Controller, int baseAddr = 0x10000 );
-
+	DeviceVME( CVmUsb *Controller, int baseAddr = 0x10000 );
 	/// D'tor
 	virtual ~DeviceVME();
 
-
-protected:
-
+      protected:
 	// --- Protected methods --- //
 
 	int read32( int addrOffset, int addrMod = 0x0D );
@@ -65,9 +45,7 @@ protected:
 	CVmUsb *m_Controller;
 
 	//std::auto_ptr<InterfaceVME> m_interface;
-
-
-}; // end of class DeviceVME
+    }; // end of class DeviceVME
 
 } // end of namespace vme
 

@@ -35,10 +35,8 @@ namespace vme {
 class InterfaceVME {
 
 public:
-
 	/// C'tor
         InterfaceVME( int devNr ); // former devNr=0
-
 	/// D'tor
 	virtual ~InterfaceVME();
 
@@ -53,15 +51,9 @@ public:
 	bool isIrq();
 
 protected:
-
 	// --- Protected methods --- //
-
 	void init( int devNr );
-
-	
-
 	// --- Protected variables --- //
-
 	QString m_serialNumber;
 
 	const int MAX_USB_DEV;
@@ -69,7 +61,6 @@ protected:
 	usb_dev_handle* m_usbDev;
 
 	std::vector<xxusb_device_type> m_deviceVec;
-
 
 }; // end of class InterfaceVME
 
