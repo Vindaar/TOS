@@ -27,7 +27,7 @@
 #include <string>
 
 // HV_FADC_Obj and related header files
-#include "HV_FADC_Obj.h"
+#include "hvFadcManager.hpp"
 #include <QTextStream>
 #include <QString>
 
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 #endif
 
 
-    bool useHV_FADC_Obj = false;
+    bool useHvFadcManager = false;
     std::string iniFilePath;
 
     //get parameter for the HV_FADC object use
@@ -123,15 +123,15 @@ int main(int argc, char *argv[])
 	switch( option ){
 	case 'n' :
 	    //do not use the FADC
-	    std::cout << "Working without HV_FADC_Obj" << std::endl;
+	    std::cout << "Working without hvFadcManager" << std::endl;
 	    break;
 	case 'v' :
 	{
 	    //work with a FADC via VME
 	    std::cout << "Working with VME" << std::endl;
 	    std::cout << "Please give the relative path to a configuration file for "
-		      << "the HV_FADC_Obj. If no input is given, the default path:\n"
-		      << "../config/HFO_settings.ini \n"
+		      << "the hvFadcManger. If no input is given, the default path:\n"
+		      << "../config/HFM_settings.ini \n"
 		      << "is used. " << std::endl;
 	    
 	    iniFilePath = getUserInput("> ", numericalInput, allowDefaultOnEmptyInput);
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 	    }
 
 	    //HV_FADC_Obj *myHV_FADC_Obj = new HV_FADC_Obj(input);
-	    useHV_FADC_Obj = true;
+	    useHvFadcManager = true;
 	    break;
 	}
 	default:
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
   
     //check if one wants to use the FADC
-    if(useHV_FADC_Obj){
+    if(useHvFadcManager){
 	Console* consoleHV_FADC = new Console(iniFilePath);
   
 	if(consoleHV_FADC->okay()){

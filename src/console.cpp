@@ -24,8 +24,8 @@
 Console::Console():
          _nbOfChips(0),
          _preload(0),
-         _hvFadcObj(NULL),
-         _hvFadcObjActive(false),
+         _hvFadcManager(NULL),
+         _hvFadcManagerActive(false),
 	 _prompt(DEFAULT_USER_INPUT_PROMPT)
 {
 #if DEBUG==2
@@ -64,7 +64,7 @@ Console::Console(std::string iniFilePath):
     _nbOfChips(1),
     _preload(0),
     // _fadc(dev),
-    _hvFadcObjActive(true),
+    _hvFadcManagerActive(true),
     _prompt(DEFAULT_USER_INPUT_PROMPT)
 {
 #if DEBUG==2
@@ -75,13 +75,13 @@ Console::Console(std::string iniFilePath):
     // and now create a PC object and hand it the timepix object pointer
     pc = new PC(_tp);
     
-    _hvFadcObj = new HV_FADC_Obj(iniFilePath);
+    _hvFadcManager = new hvFadcManager(iniFilePath);
 
     // now the HV_FADC_Obj should be set up and running 
     // HV voltages ramped up
 
     //init FADC
-    pc->initHV_FADC(_hvFadcObj, _hvFadcObjActive);
+    pc->initHV_FADC(_hvFadcManager, _hvFadcManagerActive);
     ok = pc->okay();
     
     std::cout << "Warning: In FADC-Mode one can only use one Chip" << std::endl;
@@ -95,8 +95,8 @@ Console::Console(std::string iniFilePath):
 
 Console::~Console()
 {
-    if(_hvFadcObjActive){
-        delete _hvFadcObj;
+    if(_hvFadcManagerActive){
+        delete _hvFadcManager;
     }
     delete pc;
     delete _tp;
@@ -144,8 +144,8 @@ void Console::ConsoleMain(){
 }
 
 
-void Console::CommandActivateHvFadcObj(){
-    // this function activates the usage of the HV_FADC object
+void Console::CommandActivateHvFadcManager(){
+    // this function activates the usage of the HV_FADC manager
     // after TOS was called without command line arguments 
     // e.g. not with ./TOS -v
     // This function does
@@ -153,18 +153,18 @@ void Console::CommandActivateHvFadcObj(){
     //           - check if only 1 chip in use, if so, continue
     //           - else ask if to change number of chips --> call SetNumChips
     //       - ask for config file to use to initialize HV_FADC object
-    //       - set _hvFadcObjActive flag to true
-    //       - initialize _hvFadcObj
+    //       - set _hvFadcManagerActive flag to true
+    //       - initialize _hvFadcManager
 
     // flags and variables for getUserInput 
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = true;
     std::string input;
-    bool activateHFO = true;
+    bool activateHFM = true;
 
     
     if (_nbOfChips != 1){
-	std::cout << "Usage of HFO (HV_FADC Object) currently limited to use of 1 chip" 
+	std::cout << "Usage of HFM (HV_FADC Manager) currently limited to use of 1 chip" 
 		  << std::endl;
 	const char *promptNumChips = "Do you wish to set the number of Chips to 1? (y / N)";
 	std::string input;
@@ -180,31 +180,31 @@ void Console::CommandActivateHvFadcObj(){
 		 (input == "n") ||
 		 (input == "N")){
 	    std::cout << "Number of chips will not be changed.\n"
-		      << "Will not activate HFO" << std::endl;
-	    activateHFO = false;
+		      << "Will not activate HFM" << std::endl;
+	    activateHFM = false;
 	}
     }
-    // number of chips is either 1 or we will not activate HFO
-    if (activateHFO == true){
-	// will activate HFO
+    // number of chips is either 1 or we will not activate HFM
+    if (activateHFM == true){
+	// will activate HFM
 	std::string iniFilePath;
 
-	const char *promptConfig = "Give the (relative) path to the HFOSettings.ini: ";
+	const char *promptConfig = "Give the (relative) path to the HFMSettings.ini: ";
 	iniFilePath = getUserInput(promptConfig, numericalInput, allowDefaultOnEmptyInput);
 	if (iniFilePath == "quit") return;
 	if (iniFilePath == ""){
-	    iniFilePath = "../config/HFO_settings.ini";
+	    iniFilePath = "../config/HFM_settings.ini";
 	}
 
 
-	// set HFO flag to active (only after last user input call!)
-	_hvFadcObjActive = true;
+	// set HFM flag to active (only after last user input call!)
+	_hvFadcManagerActive = true;
 	
 	
-	_hvFadcObj = new HV_FADC_Obj(iniFilePath);
+	_hvFadcManager = new hvFadcManager(iniFilePath);
 	
 	//init FADC
-	pc->initHV_FADC(_hvFadcObj, _hvFadcObjActive);
+	pc->initHV_FADC(_hvFadcManager, _hvFadcManagerActive);
 	ok = pc->okay();
     }
 
@@ -308,7 +308,7 @@ int Console::UserInterface(){
 	else if( (ein.compare("Run")==0) ||
 		 (ein.compare("run")==0) )
 	{
-	    CommandRun(_hvFadcObjActive);
+	    CommandRun(_hvFadcManagerActive);
 	}
 	else if( ein.compare("EnableTPulse")==0 )
 	{
@@ -481,110 +481,110 @@ int Console::UserInterface(){
 	// ##################################################
 	
 	else if (ein.compare("PrintFADCSettings") == 0){
-	    _hvFadcObj->FADC_Functions->printSettings();
+	    _hvFadcManager->FADC_Functions->printSettings();
 	}
 	else if (ein.compare("ResetFADC") == 0){
-	    _hvFadcObj->F_Reset();
+	    _hvFadcManager->F_Reset();
 	}
 	else if ((ein.compare("StartFadcAcquisition") == 0) ||
 		 (ein.compare("StartFadcAcq")         == 0)){
-	    _hvFadcObj->F_StartAcquisition();
+	    _hvFadcManager->F_StartAcquisition();
 	}
 	else if (ein.compare("SendFadcSoftwareTrigger") == 0){
-	    _hvFadcObj->F_SendSoftwareTrigger();	    
+	    _hvFadcManager->F_SendSoftwareTrigger();	    
 	}
 	else if (ein.compare("ReadFadcInterrupt") == 0){
-	    std::cout << "Interrupt: " << _hvFadcObj->F_ReadInterrupt() << std::endl;
+	    std::cout << "Interrupt: " << _hvFadcManager->F_ReadInterrupt() << std::endl;
 	}
 	else if (ein.compare("ReleaseFadcInterrupt") == 0){
-	    _hvFadcObj->F_ReleaseInterrupt();
+	    _hvFadcManager->F_ReleaseInterrupt();
 	}
 	else if (ein.compare("SetFadcTriggerThresholdDACAll") == 0){
-	    _hvFadcObj->F_SetTriggerThresholdDACAll( getInputValue() );
+	    _hvFadcManager->F_SetTriggerThresholdDACAll( getInputValue() );
 	}
 	else if (ein.compare("GetFadcTriggerPerChannel") == 0){
 	    std::cout << "getTriggerThreshold perChannel:" << std::endl;
-	    std::cout << "Channel 1: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(0) << std::endl;
-	    std::cout << "Channel 2: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(1) << std::endl;
-	    std::cout << "Channel 3: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(2) << std::endl;
-	    std::cout << "Channel 4: " <<  _hvFadcObj->F_GetTriggerThresholdDACPerChannel(3) << std::endl;
-	    std::cout << "getTriggerThreshold All: " << _hvFadcObj->F_GetTriggerThresholdDACAll() << std::endl << std::endl;
+	    std::cout << "Channel 1: " <<  _hvFadcManager->F_GetTriggerThresholdDACPerChannel(0) << std::endl;
+	    std::cout << "Channel 2: " <<  _hvFadcManager->F_GetTriggerThresholdDACPerChannel(1) << std::endl;
+	    std::cout << "Channel 3: " <<  _hvFadcManager->F_GetTriggerThresholdDACPerChannel(2) << std::endl;
+	    std::cout << "Channel 4: " <<  _hvFadcManager->F_GetTriggerThresholdDACPerChannel(3) << std::endl;
+	    std::cout << "getTriggerThreshold All: " << _hvFadcManager->F_GetTriggerThresholdDACAll() << std::endl << std::endl;
 	}
 	else if (ein.compare("SetFadcTriggerThresholdRegisterAll") == 0){
 	    std::cout << "setTriggerThresholdRegisterAll returns: " 
-		      <<  _hvFadcObj->FADC_Functions->setTriggerThresholdRegisterAll( getInputValue() ) << std::endl;
+		      <<  _hvFadcManager->FADC_Functions->setTriggerThresholdRegisterAll( getInputValue() ) << std::endl;
 	}
 	else if (ein.compare("GetFadcTriggerThresholdRegister") == 0){
-	    _hvFadcObj->FADC_Functions->getTriggerThresholdRegister();
+	    _hvFadcManager->FADC_Functions->getTriggerThresholdRegister();
 	}
 	else if (ein.compare("LoadFadcTriggerThresholdDAC") == 0){
-	    _hvFadcObj->F_LoadTriggerThresholdDAC();
+	    _hvFadcManager->F_LoadTriggerThresholdDAC();
 	}
 	else if (ein.compare("SetFadcTriggerType") == 0){
-	    _hvFadcObj->F_SetTriggerType( getInputValue() );
+	    _hvFadcManager->F_SetTriggerType( getInputValue() );
 	}
 	else if (ein.compare("GetFadcTriggerType") == 0){
-	    std::cout << "Trigger type: " << _hvFadcObj->F_GetTriggerType() << std::endl;
+	    std::cout << "Trigger type: " << _hvFadcManager->F_GetTriggerType() << std::endl;
 	}
 	else if (ein.compare("SetFadcTriggerChannelSource") == 0){
-	    _hvFadcObj->F_SetTriggerChannelSource( getInputValue() );
+	    _hvFadcManager->F_SetTriggerChannelSource( getInputValue() );
 	}
 	else if (ein.compare("GetFadcTriggerChannelSource") == 0){
-	    std::cout << "Trigger channel source: " << _hvFadcObj->F_GetTriggerChannelSource() << std::endl;
+	    std::cout << "Trigger channel source: " << _hvFadcManager->F_GetTriggerChannelSource() << std::endl;
 	}
 	else if (ein.compare("SetFadcPostTrig") == 0){
-	    _hvFadcObj->F_SetPosttrig( getInputValue() );
+	    _hvFadcManager->F_SetPosttrig( getInputValue() );
 	}
 	else if (ein.compare("GetFadcPostTrig") == 0){
-	    std::cout << "Posttrig: " << _hvFadcObj->F_GetPosttrig() << std::endl;
+	    std::cout << "Posttrig: " << _hvFadcManager->F_GetPosttrig() << std::endl;
 	}
 	else if (ein.compare("SetFadcPreTrig") == 0){
-	    _hvFadcObj->F_SetPretrig( getInputValue() );
+	    _hvFadcManager->F_SetPretrig( getInputValue() );
 	}
 	else if (ein.compare("GetFadcPreTrig") == 0){
-	    std::cout << "Pretrig: " << _hvFadcObj->F_GetPretrig() << std::endl;
+	    std::cout << "Pretrig: " << _hvFadcManager->F_GetPretrig() << std::endl;
 	}
 	else if (ein.compare("SetFadcChannelMask") == 0){
-	    _hvFadcObj->F_SetChannelMask( getInputValue() );
+	    _hvFadcManager->F_SetChannelMask( getInputValue() );
 	}
 	else if (ein.compare("GetFadcChannelMask") == 0){
-	    std::cout << "Channel mask: " << _hvFadcObj->F_GetChannelMask() << std::endl;
+	    std::cout << "Channel mask: " << _hvFadcManager->F_GetChannelMask() << std::endl;
 	}
 	else if (ein.compare("SetFadcNumberOfChannels") == 0){
-	    _hvFadcObj->F_SetNbOfChannels(getInputValue());
+	    _hvFadcManager->F_SetNbOfChannels(getInputValue());
 	}
 	else if (ein.compare("GetFadcNumberOfChannels") == 0){
-	    std::cout << "#Channels: " << _hvFadcObj->F_GetNbOfChannels() << std::endl;
+	    std::cout << "#Channels: " << _hvFadcManager->F_GetNbOfChannels() << std::endl;
 	}
 	else if (ein.compare("SetFadcModeRegister") == 0){
-	    _hvFadcObj->F_SetModeRegister(static_cast<const unsigned short>(getInputValue()));
+	    _hvFadcManager->F_SetModeRegister(static_cast<const unsigned short>(getInputValue()));
 	}
 	else if (ein.compare("GetFadcModeRegister") == 0){
-	    std::cout << "mode register: " << _hvFadcObj->F_GetModeRegister() << std::endl;
+	    std::cout << "mode register: " << _hvFadcManager->F_GetModeRegister() << std::endl;
 	}
 	else if (ein.compare("SetFadcFrequency") == 0){
-	    _hvFadcObj->F_SetFrequency( getInputValue() );
+	    _hvFadcManager->F_SetFrequency( getInputValue() );
 	}
 	else if (ein.compare("GetFadcFrequency") == 0){
-	    std::cout << "Frequency: " << _hvFadcObj->F_GetFrequency() << std::endl;
+	    std::cout << "Frequency: " << _hvFadcManager->F_GetFrequency() << std::endl;
 	}
 	else if (ein.compare("SetFadcReadMode") == 0){
-	    _hvFadcObj->F_SetReadMode( getInputValue() );
+	    _hvFadcManager->F_SetReadMode( getInputValue() );
 	}
 	else if (ein.compare("GetFadcReadMode") == 0){
-	    std::cout << "Read mode: " << _hvFadcObj->F_GetReadMode() << std::endl;
+	    std::cout << "Read mode: " << _hvFadcManager->F_GetReadMode() << std::endl;
 	}
 	else if (ein.compare("SetFadcPostStopLatency") == 0){
-	    _hvFadcObj->F_SetPostStopLatency( getInputValue() );
+	    _hvFadcManager->F_SetPostStopLatency( getInputValue() );
 	}
 	else if (ein.compare("GetFadcPostStopLatency") == 0){
-	    std::cout << "Post stop latency: " << _hvFadcObj->F_GetPostStopLatency() << std::endl;
+	    std::cout << "Post stop latency: " << _hvFadcManager->F_GetPostStopLatency() << std::endl;
 	}
 	else if (ein.compare("SetFadcPostLatencyPreTrig") == 0){
-	    _hvFadcObj->F_SetPostLatencyPretrig( getInputValue() );
+	    _hvFadcManager->F_SetPostLatencyPretrig( getInputValue() );
 	}
 	else if (ein.compare("GetFadcPostLatencyPretrig()") == 0){
-	    std::cout << "Post latency pretrig: " << _hvFadcObj->F_GetPostLatencyPretrig() << std::endl;
+	    std::cout << "Post latency pretrig: " << _hvFadcManager->F_GetPostLatencyPretrig() << std::endl;
 	}
 
 	// ##################################################
@@ -592,51 +592,51 @@ int Console::UserInterface(){
 	// ##################################################	
 
 
-	else if (ein.compare("ActivateHFO") == 0)
+	else if (ein.compare("ActivateHFM") == 0)
 	{
-	    CommandActivateHvFadcObj();
+	    CommandActivateHvFadcManager();
 	}
 	
 	else if (ein.compare("ConnectModule") == 0)
 	{
-	    if(_hvFadcObjActive == true){
-		std::cout << _hvFadcObj->H_ConnectModule() << std::endl;
+	    if(_hvFadcManagerActive == true){
+		std::cout << _hvFadcManager->H_ConnectModule() << std::endl;
 	    }
 	}
 
 	// main function to call
-	else if ((ein.compare("InitHFO") == 0) ||
+	else if ((ein.compare("InitHFM") == 0) ||
 		 (ein.compare("InitHV_FADC") == 0))
 	{
 	    // if the HV_FADC object is initialized
-	    if(_hvFadcObjActive == true){
-		_hvFadcObj->InitHFOForTOS();
+	    if(_hvFadcManagerActive == true){
+		_hvFadcManager->InitHFMForTOS();
 	    }
 	    // if it is not initialized
 	    else{
 		std::cout << "Currently not using HV_FADC Object \n" 
-			  << "Call ActivateHFO command and try again"
+			  << "Call ActivateHFM command and try again"
 			  << std::endl;
 	    }
 	}
 
-	else if (ein.compare("ShutdownHFO") == 0){
-	    if (_hvFadcObjActive == true){
-		_hvFadcObj->ShutDownHFOForTOS();
+	else if (ein.compare("ShutdownHFM") == 0){
+	    if (_hvFadcManagerActive == true){
+		_hvFadcManager->ShutDownHFMForTOS();
 	    }
 	    else{
-		std::cout << "HFO not initialized. Nothing to do."
+		std::cout << "HFM not initialized. Nothing to do."
 			  << std::endl;
 	    }
 	}
 
 
 	else if (ein.compare("CheckHVModuleIsGood") == 0){
-	    if (_hvFadcObjActive == true){
-		_hvFadcObj->H_CheckHVModuleIsGood();
+	    if (_hvFadcManagerActive == true){
+		_hvFadcManager->H_CheckHVModuleIsGood();
 	    }
 	    else{
-		std::cout << "HFO not initialized. Nothing to do."
+		std::cout << "HFM not initialized. Nothing to do."
 			  << std::endl;
 	    }
 	}
@@ -1218,7 +1218,7 @@ int Console::CommandRun(bool useHvFadc){
 	    pc->fpga->tp->SetNumChips(_nbOfChips,_preload);
 
 	    //print fadc settings
-	    _hvFadcObj->FADC_Functions->printSettings();
+	    _hvFadcManager->FADC_Functions->printSettings();
 
 	    std::cout << "Return to main menu to change some Fadc settings? 1 = y, 0 = n \n" 
 		      << "If yes, this aborts the run."
@@ -1271,7 +1271,7 @@ int Console::CommandRun(bool useHvFadc){
     }
   
     //FIXME: drop this?
-    if((!useHvFadc) && _hvFadcObjActive) return 1;
+    if((!useHvFadc) && _hvFadcManagerActive) return 1;
     else return 0;	
 }//end CommandRun
 

@@ -16,7 +16,7 @@
 
 PC::PC(Timepix *tp):
     _useHvFadc(false),
-    _hvFadcObj(NULL),
+    _hvFadcManager(NULL),
     BufferSize(80),
     Vbuffer( BufferSize, std::vector<std::vector<int>* >( 8))
 {
@@ -157,7 +157,7 @@ PC::~PC(){
 // }
 
 
-void PC::initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc)
+void PC::initHV_FADC(hvFadcManager* hvFadcManager, bool useHvFadc)
 {
 #if DEBUG == 2
     std::cout << "Enter: PC::initHV_FADC()" << std::endl;
@@ -170,11 +170,11 @@ void PC::initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc)
 
     if(_useHvFadc)
     {
-	_hvFadcObj = hvFadcObj;
+	_hvFadcManager = hvFadcManager;
     }
     else
     {
-	_hvFadcObj = NULL;
+	_hvFadcManager = NULL;
     }
   
     return;

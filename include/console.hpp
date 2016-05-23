@@ -29,13 +29,14 @@
 //FADC stuff
 #include "High-Level-functions_VME.h"
 
+// HV FADC manager
+#include "hvFadcManager.hpp"
+
 // include readline history library to achieve command completion etc
 #include <readline/history.h>
 #include "tosCommandCompletion.hpp"
 
 #define DEFAULT_USER_INPUT_PROMPT                   "> " 
-
-
 
 class Console{
 
@@ -155,7 +156,7 @@ private:
 
 
     // functions related to HV_FADC object
-    void CommandActivateHvFadcObj();
+    void CommandActivateHvFadcManager();
 
 
     //
@@ -166,8 +167,8 @@ private:
     //V1729a* _fadc;                           //< fadc pointer
     //bool _fadcActive;                        //< check var. true if a fadc is used, false otherwise
     
-    HV_FADC_Obj* _hvFadcObj;
-    bool _hvFadcObjActive;
+    hvFadcManager* _hvFadcManager;
+    bool _hvFadcManagerActive;
 
     // member variable for general command prompt for input methods
     const char *_prompt;
