@@ -1594,7 +1594,8 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 				}
 				stddevTOT_[chip] = sqrt(sumstd[chip]);
 			}
-			meanTOT1.push_back(meanTOT_[1]/4);stddevTOT1.push_back(stddevTOT_[1]);
+			meanTOT1.push_back(meanTOT_[1]/4);
+			stddevTOT1.push_back(stddevTOT_[1]);
 			if (fpga->tp->GetNumChips() > 1) {meanTOT2.push_back(meanTOT_[2]/4);stddevTOT2.push_back(stddevTOT_[2]);}
 			if (fpga->tp->GetNumChips() > 2) {meanTOT3.push_back(meanTOT_[3]/4);stddevTOT3.push_back(stddevTOT_[3]);}
 			if (fpga->tp->GetNumChips() > 3) {meanTOT4.push_back(meanTOT_[4]/4);stddevTOT4.push_back(stddevTOT_[4]);}
@@ -1836,7 +1837,8 @@ int PC::TOCalib(){
 				}
 				stddevTOT_[chip] = sqrt(sumstd[chip]);
 			}
-			meanTOT1.push_back(meanTOT_[1]/4);stddevTOT1.push_back(stddevTOT_[1]);
+			meanTOT1.push_back(meanTOT_[1]/4);
+			stddevTOT1.push_back(stddevTOT_[1]);
 			if (fpga->tp->GetNumChips() > 1) {meanTOT2.push_back(meanTOT_[2]/4);stddevTOT2.push_back(stddevTOT_[2]);}
 			if (fpga->tp->GetNumChips() > 2) {meanTOT3.push_back(meanTOT_[3]/4);stddevTOT3.push_back(stddevTOT_[3]);}
 			if (fpga->tp->GetNumChips() > 3) {meanTOT4.push_back(meanTOT_[4]/4);stddevTOT4.push_back(stddevTOT_[4]);}
