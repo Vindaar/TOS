@@ -1749,7 +1749,7 @@ int Console::CommandLoadFSR(){
 	if (ein == "quit") return -1;
 	if(ein==""){
 	    // per default we wish to load the fsr.txt file
-	    f = "fsr.txt";
+	    f = pc->GetFSRFileName(chip);
 	}
 	else{
 	    f=ein.c_str();
