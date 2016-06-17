@@ -1785,7 +1785,7 @@ int Console::CommandLoadThreshold(){
 #endif	
     int err = 0;
     bool numericalInput = false;
-    bool allowDefaultOnEmptyInput = false;
+    bool allowDefaultOnEmptyInput = true;
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
@@ -1798,7 +1798,13 @@ int Console::CommandLoadThreshold(){
 		  << std::endl;
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (ein == "quit") return -1;
-	f=ein.c_str();
+	if(ein==""){
+	    // per default we wish to load the fsr.txt file
+	    f = pc->GetThresholdFileName(chip);
+	}
+	else{
+	    f=ein.c_str();
+	}
 	FILE* f1=fopen(f,"r");
 	if(f1==NULL) {
 	    std::cout << "File not found" << std::endl;
