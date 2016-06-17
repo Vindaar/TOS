@@ -82,7 +82,7 @@ private:
      * testfd testet ob dort ein Paket angekommen ist
      */
     fd_set readfd,testfd; 	 
-    struct timeval timeout; 	//< Zeitvariable fuer Timeout bei Kommunikation mit FPGA
+    struct timeval _timeout; 	//< Zeitvariable fuer Timeout bei Kommunikation mit FPGA
     struct sockaddr_in sckadd;	//< in netinet/in.h definierte Struktur fuer IP-Adressen
 		
     //		unsigned char M0,M1,Enable_IN,Shutter,Reset,Enable_Test;  // Modus(=Control)-Bits
@@ -101,9 +101,9 @@ private:
     unsigned char PacketBuffer[PLen+18]; //Buffer fuer send, bzw bei SetMatrix fuer receive
     unsigned char PacketQueue[PQueue][PLen+18]; //Buffer fuer receive (alle Pakete bei ReadOut), bzw fuer send (alle Pakete) bei SetMatrix
     std::vector<std::vector<unsigned char> > *PackQueueReceive;// = new std::vector<std::vector<unsigned char> >(PQueue, std::vector<unsigned char>(PLen+18));
-    int Communication( unsigned char* Bsend, unsigned char* Brecv); 	//err_code=x
-    int Communication2(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip); 	//err_code=x
-    int CommunicationReadSend(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip); 	//err_code=x
+    int Communication( unsigned char* Bsend, unsigned char* Brecv, int timeout = 2e5); 	                                 //err_code=x
+    int Communication2(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip, int timeout = 2e5);        //err_code=x
+    int CommunicationReadSend(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip, int timeout = 2e5); //err_code=x
     int SaveData(const char* filename);						//err_code=x
     int SaveData(int pix[9][256][256]);
     int SaveData(std::vector<std::vector<std::vector<int> > > *VecData);

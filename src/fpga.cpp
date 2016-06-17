@@ -52,8 +52,8 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
     FD_SET(0,&readfd); //0=stdin -> Lesen von der Konsole
 #endif
 
-    timeout.tv_sec =5; 
-    timeout.tv_usec =10000;
+    _timeout.tv_sec =5; 
+    _timeout.tv_usec =10000;
     sckadd.sin_family = AF_INET; 
     sckadd.sin_port = htons(Port);
 
@@ -207,6 +207,8 @@ int FPGA::GeneralReset(){
 
 
 int FPGA::Counting(){
+    // this function simply starts counting and leaves the shutter open
+    // until we manually close it again
 #if DEBUG==2
     std::cout<<"Enter FPGA::Counting()"<<std::endl;	
 #endif
@@ -217,7 +219,9 @@ int FPGA::Counting(){
     OutgoingLength=18; 
     IncomingLength=18; 
     PacketQueueSize=1;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
+    // we set timeout to 0 as to say that we do not want a timeout
+    int timeout = 0;
+    err_code=Communication(PacketBuffer,PacketQueue[0], timeout);
     if((err_code==0)||(err_code==3)){tp->SetCounting(1);}
     return 20+err_code;
 }
@@ -261,7 +265,9 @@ int FPGA::CountingTrigger(int time){
     IncomingLength=18; 
     PacketQueueSize=1;  
     PacketBuffer[6]=time;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
+    // TODO: check if this is reasonable here!!!
+    int timeout = 256*46*time / 40;
+    err_code=Communication(PacketBuffer,PacketQueue[0], timeout);
     if((err_code==0)||(err_code==3)){tp->SetCounting(0);}
     return 20+err_code;
 }
@@ -298,7 +304,9 @@ int FPGA::CountingTime(int time, int modeSelector){
     IncomingLength=18; 
     PacketQueueSize=1;
     PacketBuffer[6]=time;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
+    // using time and modeSelector we can calculate a good timeout value
+    int timeout = std::pow(256, modeSelector)*46*time / 40;
+    err_code=Communication(PacketBuffer,PacketQueue[0], timeout);
 
     if (tp->GetFADCshutter()==1)
     {
@@ -505,15 +513,16 @@ int FPGA::EnableFADCshutter(unsigned short FADCshutter)
    returns error-code
    0: allright, a nice and inspiring conversation with a complete handshake
    1: error in function select() - no valid file-descriptors
-   2: timeout in select() - FPGA is not answering in time
+   2: _timeout in select() - FPGA is not answering in time
    3: received packet has wrong packet-number
 */
 
-int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
+int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, int timeout)
 {
 #if DEBUG==2
     std::cout<<"Enter FPGA::Communication()"<<std::endl;	
 #endif
+    // the timeout integer can be handed to the function to set the timeout. Given in mu seconds
     int err_code;
     int RecvBytes;
     SendBuffer[0]=SoftwareCounter; (SoftwareCounter<255) ? ++SoftwareCounter : SoftwareCounter=0;
@@ -538,12 +547,19 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     //quitusleep(3000);
     testfd=readfd;
     
-    
-    // set the timeout to 20ms. If no answer was given until then, either chip defect 
+
+    // check if the timeout integer was set to 0 (meaning no timeout or not)
+    // set the timeout to timeout. If no answer was given until then, either chip defect 
     // or (more likely) no chip is connected
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 20000;
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);
+    if (timeout == 0){
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = 0;
+    }
+    else{
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = timeout;
+    }
+    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
 
 #ifdef __WIN32__
     // check latest reported error status for last Windows Sockets operation that failed
@@ -555,7 +571,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer)
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl; 
 #endif
-    // check if timeout expired, before chip answered. in that case,
+    // check if _timeout expired, before chip answered. in that case,
     // select returns 0 and we return 2
     if(err_code<0){
 	return 1;
@@ -641,7 +657,7 @@ void FPGA::ClearFadcFlag(){
 }
 
 
-int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip)
+int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip, int timeout)
 {
 
 #if DEBUG==2
@@ -670,11 +686,18 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     //usleep(3000);
     testfd=readfd;
 
-    // set the timeout to 20ms. If no answer was given until then, either chip defect 
+    // check if the timeout integer was set to 0 (meaning no timeout or not)
+    // set the timeout to timeout. If no answer was given until then, either chip defect 
     // or (more likely) no chip is connected
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 20000;
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);
+    if (timeout == 0){
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = 0;
+    }
+    else{
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = timeout;
+    }
+    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl;
@@ -710,12 +733,19 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     _fadcBit = RecvBuffer[16];
     if((_fadcBit == 1) && !_fadcFlag) _fadcFlag = true;
   
-    // set the timeout to 20ms. If no answer was given until then, either chip defect 
+    // check if the timeout integer was set to 0 (meaning no timeout or not)
+    // set the timeout to timeout. If no answer was given until then, either chip defect 
     // or (more likely) no chip is connected
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 20000;
+    if (timeout == 0){
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = 0;
+    }
+    else{
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = timeout;
+    }
     if (HitsMode==2) {
-	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);//&timeout);
+	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);//&timeout);
 #if DEBUG==1
 	std::cout << "Timeout 10 sec used" << std::endl;
 #endif
@@ -761,7 +791,7 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     else return err_code;
 }
 
-int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip)
+int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip, int timeout)
 {
 
 #if DEBUG==2
@@ -789,11 +819,18 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 #endif
     testfd=readfd;
 
-    // set the timeout to 20ms. If no answer was given until then, either chip defect 
+    // check if the timeout integer was set to 0 (meaning no timeout or not)
+    // set the timeout to timeout. If no answer was given until then, either chip defect 
     // or (more likely) no chip is connected
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 20000;
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);
+    if (timeout == 0){
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = 0;
+    }
+    else{
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = timeout;
+    }
+    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl;
@@ -825,15 +862,16 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     Hits+=RecvBuffer[12];
     int Storage = RecvBuffer[13];
 
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 50000;
+    // TODO: take this out, if all works
+    // no need to set timeout here again
+    //_timeout.tv_sec = 0;
+    //_timeout.tv_usec = 50000;
     if (chip == tp->GetNumChips()){
 	if (HitsMode==2 or Hits*4 <PLen) {
-	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &timeout);//&timeout);
+	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);//&timeout);
 #if DEBUG==1
-	    std::cout << "Timeout 50 ms used" << std::endl;
-	    std::cout << "Timeout 50 ms used of chip " <<chip << std::endl;
+	    std::cout << "Timeout " << timeout << " mu s used" << std::endl;
+	    //std::cout << "Timeout 50 ms used of chip " <<chip << std::endl;
 #endif
 	    //++SoftwareCounter;
 	    
