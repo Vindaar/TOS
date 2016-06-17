@@ -358,7 +358,7 @@ int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short c
 			fpga->DataChipFPGA(result);
 			hits = fpga->DataFPGAPC(data,chip);
 			usleep(20000);
-			std::cout<<"Coarse: "<<coarse<<" THL: "<< thl <<std::endl;
+			std::cout << "Hits: " << hits <<  "    Coarse: "<<coarse<<"    THL: "<< thl <<std::endl;
 			delete data;
 		}
 	}
