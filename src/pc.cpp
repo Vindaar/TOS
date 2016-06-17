@@ -91,6 +91,15 @@ PC::PC(Timepix *tp):
     Threshold6FileName="threshold6.txt";
     Threshold7FileName="threshold7.txt";
     Threshold8FileName="threshold8.txt";
+
+    ThresholdMeansFileName="thresholdMeans.txt";
+    ThresholdMeans2FileName="thresholdMeans2.txt";
+    ThresholdMeans3FileName="thresholdMeans3.txt";
+    ThresholdMeans4FileName="thresholdMeans4.txt";
+    ThresholdMeans5FileName="thresholdMeans5.txt";
+    ThresholdMeans6FileName="thresholdMeans6.txt";
+    ThresholdMeans7FileName="thresholdMeans7.txt";
+    ThresholdMeans8FileName="thresholdMeans8.txt";
   
     MaskFileName="mask.txt";
     Mask2FileName="mask2.txt";
@@ -1360,7 +1369,7 @@ int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, shor
 		meanEqrms=sqrt(meanEqsum/(meanEqcounter-1));
 		std::cout<<"For equalisation: meanEq is: "<<meanEqmean<<" rms is: "<<meanEqrms<<" counter: "<<meanEqcounter<<std::endl;
 
-		f.open("ThresholdMeans.txt",std::fstream::out);
+		f.open(GetThresholdMeansFileName(chp),std::fstream::out);
 		if(f.is_open()){
 			for(y=0;y<256;y++){
 				for(x=0;x<256;x++){
@@ -2589,6 +2598,17 @@ const char* PC::GetThresholdFileName(unsigned short chip){
 	else if (chip == 6){return Threshold6FileName.c_str();}
 	else if (chip == 7){return Threshold7FileName.c_str();}
 	else if (chip == 8){return Threshold8FileName.c_str();}
+	else return "";
+}
+const char* PC::GetThresholdMeansFileName(unsigned short chip){
+	if (chip == 1){return ThresholdMeansFileName.c_str();}
+	else if (chip == 2){return ThresholdMeans2FileName.c_str();}
+	else if (chip == 3){return ThresholdMeans3FileName.c_str();}
+	else if (chip == 4){return ThresholdMeans4FileName.c_str();}
+	else if (chip == 5){return ThresholdMeans5FileName.c_str();}
+	else if (chip == 6){return ThresholdMeans6FileName.c_str();}
+	else if (chip == 7){return ThresholdMeans7FileName.c_str();}
+	else if (chip == 8){return ThresholdMeans8FileName.c_str();}
 	else return "";
 }
 const char* PC::GetTOTCalibFileName(unsigned short chip){

@@ -101,6 +101,7 @@ public:
     const char* GetMatrixFileName(unsigned short chip);
     const char* GetDACScanFileName();
     const char* GetThresholdFileName(unsigned short chip);
+    const char* GetThresholdMeansFileName(unsigned short chip);
     const char* GetTOTCalibFileName(unsigned short chip);
     const char* GetTOACalibFileName(unsigned short chip);
     const char* GetMaskFileName(unsigned short chip);
@@ -229,6 +230,15 @@ private:
     std::string Threshold6FileName;
     std::string Threshold7FileName;
     std::string Threshold8FileName;
+
+    std::string ThresholdMeansFileName;
+    std::string ThresholdMeans2FileName;
+    std::string ThresholdMeans3FileName;
+    std::string ThresholdMeans4FileName;
+    std::string ThresholdMeans5FileName;
+    std::string ThresholdMeans6FileName;
+    std::string ThresholdMeans7FileName;
+    std::string ThresholdMeans8FileName;
   
     std::string MaskFileName;
     std::string Mask2FileName;
