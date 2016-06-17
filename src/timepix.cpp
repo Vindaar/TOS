@@ -29,6 +29,9 @@ Timepix::Timepix(int nbOfChips){
 	    case 1:
 		_chipIdOffset = DEFAULT_CHIP_ID_OFFSET_1_CHIP;
 		break;
+	    case 3:
+		_chipIdOffset = DEFAULT_CHIP_ID_OFFSET_3_CHIPS;
+		break;
 	    case 7:
 		_chipIdOffset = DEFAULT_CHIP_ID_OFFSET_7_CHIPS;
 		break;

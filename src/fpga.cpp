@@ -210,7 +210,7 @@ int FPGA::Counting(){
     // this function simply starts counting and leaves the shutter open
     // until we manually close it again
 #if DEBUG==2
-    std::cout<<"Enter FPGA::Counting()"<<std::endl;	
+    std::cout<<"Enter FPGA::Counting()"<<std::endl;   
 #endif
     int err_code;
     //M0=1; M1=1; Enable_IN=1; Shutter=0; Reset=1; TODO: why ModL=23 mentioned here?? //ModL= 23 = 0x17
@@ -551,15 +551,15 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     // check if the timeout integer was set to 0 (meaning no timeout or not)
     // set the timeout to timeout. If no answer was given until then, either chip defect 
     // or (more likely) no chip is connected
-    if (timeout == 0){
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = 0;
+    // done by calling set timeout function
+    bool timeout_flag;
+    timeout_flag = SetTimeout(timeout);
+    if (timeout_flag == true){
+	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
     }
     else{
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = timeout;
+	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
     }
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
 
 #ifdef __WIN32__
     // check latest reported error status for last Windows Sockets operation that failed
@@ -689,15 +689,15 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     // check if the timeout integer was set to 0 (meaning no timeout or not)
     // set the timeout to timeout. If no answer was given until then, either chip defect 
     // or (more likely) no chip is connected
-    if (timeout == 0){
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = 0;
+    // done by calling set timeout function
+    bool timeout_flag;
+    timeout_flag = SetTimeout(timeout);
+    if (timeout_flag == true){
+	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
     }
     else{
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = timeout;
+	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
     }
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl;
@@ -736,18 +736,16 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     // check if the timeout integer was set to 0 (meaning no timeout or not)
     // set the timeout to timeout. If no answer was given until then, either chip defect 
     // or (more likely) no chip is connected
-    if (timeout == 0){
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = 0;
-    }
-    else{
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = timeout;
-    }
+    // done by calling set timeout function
     if (HitsMode==2) {
-	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);//&timeout);
+	if (timeout_flag == true){
+	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
+	}
+	else{
+	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
+	}
 #if DEBUG==1
-	std::cout << "Timeout 10 sec used" << std::endl;
+	std::cout << "Timeout " << _timeout.tv_usec << " sec used" << std::endl;
 #endif
 	//++SoftwareCounter;
 	RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
@@ -822,15 +820,15 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     // check if the timeout integer was set to 0 (meaning no timeout or not)
     // set the timeout to timeout. If no answer was given until then, either chip defect 
     // or (more likely) no chip is connected
-    if (timeout == 0){
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = 0;
+    // done by calling set timeout function
+    bool timeout_flag;
+    timeout_flag = SetTimeout(timeout);
+    if (timeout_flag == true){
+	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
     }
     else{
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = timeout;
+	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
     }
-    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl;
@@ -1220,4 +1218,20 @@ int FPGA::SwitchTriggerConnection(int connection){
 void FPGA::UseFastClock(bool use){
 	if (use == true) _usefastclock= true;
 	else _usefastclock = false;
+}
+
+bool FPGA::SetTimeout(int timeout){
+    // this function is used to set the timeout for the communication functions to
+    // something reasonable
+    // the return statement returns whether we have a timeout (true) or not (false)
+    bool timeout_flag;
+    if (timeout == 0){
+	timeout_flag = false;
+    }
+    else{
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = (int) timeout*DEFAULT_TIMEOUT_SCALING_FACTOR;
+	timeout_flag =  true;
+    }
+    return timeout_flag;
 }

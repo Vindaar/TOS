@@ -15,7 +15,7 @@
 
 // some macros for the default chip ID offsets (simply 'what works usually')
 #define DEFAULT_CHIP_ID_OFFSET_1_CHIP               188
-#define DEFAULT_CHIP_ID_OFFSET_3_CHIP               189
+#define DEFAULT_CHIP_ID_OFFSET_3_CHIPS              189
 #define DEFAULT_CHIP_ID_OFFSET_7_CHIPS              192
 #define DEFAULT_CHIP_ID_OFFSET_8_CHIPS              193
 // define some macros for the size of arrays

@@ -20,6 +20,8 @@
 // this number is the maximum allowed size for my kernel (3.13.0-85-generic)
 // given in /proc/sys/net/core/rmem_default
 #define DEFAULT_SOCKET_BUFFER_SIZE             212992
+// scaling factor by which the timeout is scaled (10 % longer than time we have to wait)
+#define DEFAULT_TIMEOUT_SCALING_FACTOR         1.1
 
 class FPGA{
 
@@ -68,6 +70,7 @@ public:
     void MakeARPEntry();
     void UseFastClock(bool use);
 
+    bool SetTimeout(int timeout);
 
 private:
 
