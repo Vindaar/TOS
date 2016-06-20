@@ -338,10 +338,6 @@ int Console::UserInterface(){
 	{
 	    CommandSCurve();
 	}
-	else if( ein.compare("SCurveFast")==0 )
-	{
-	    CommandSCurveFast();
-	}
 	else if( ein.compare("i2creset")==0 )
 	{
 	    Commandi2creset();
@@ -2688,7 +2684,10 @@ int Console::CommandCalibrate(){
 	pc->DoTHSopt(0, 0, chp, ths, ext_coarse, max_thl, min_thl);
 	pc->DoThresholdEqCenter(pix_per_row, chp, ext_coarse, max_thl, min_thl);
     }
-    pc->DoSCurveScan_meanChip(voltage, time, StartTHL, StopTHL, offset);
+    // TODO: this function here still trys to call the OLD DoSCurveScan, which was removed in commit
+    //       2ae042ac7424a72e8f428f875c28d2132e7726d5
+    //       if still needed after all, get back from there...
+    pc->DoSCurveScan(voltage, time, StartTHL, StopTHL, offset);
     if (doTOT == 1) {
 	pc->TOCalibFast(pix_per_rowTO, shuttertype, timeTO, 0, internalPulser);
     }
