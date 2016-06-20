@@ -2269,6 +2269,7 @@ int Console::CommandTestTPulse(){
 	_loop_stop = false;
     }
     loop_thread.join();
+    pc->fpga->EnableTPulse(0);
     
     return 0;
 }
