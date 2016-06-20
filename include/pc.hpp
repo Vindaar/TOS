@@ -56,8 +56,7 @@ public:
     int DoFadcReadout(const char* filename, std::vector< int> basicParams);
     int DoDACScan(int DACstoScan, unsigned short chip);
     int DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh);
-    int DoSCurveScan_meanChip(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
-    int DoSCurveScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh, int time);
+    int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
     int DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl);
     int DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl);
     int TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsigned short time, unsigned short TOT, unsigned short internalPulser);

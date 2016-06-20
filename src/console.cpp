@@ -2125,37 +2125,6 @@ int Console::CommandSCurve(){
     bool allowDefaultOnEmptyInput = false;
     std::string input;
 
-    unsigned short chip = 1;
-    unsigned short coarselow = 7;
-    unsigned short coarsehigh = 7;
-    int time = 255;
-    std::cout << "Which chip do you want to THL scan to write the files for the S-Curve scan? (1-" << pc->fpga->tp->GetNumChips() << ") " << std::flush;
-    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    chip = std::stoi(input);
-    std::cout << "Shutter time in clock cycles (0-255), LONG mode used " << std::flush;
-    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    time = std::stoi(input);
-    std::cout << "Start coarse " << std::flush;
-    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    coarselow = std::stoi(input);
-    std::cout << "End coarse " << std::flush;
-    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    coarsehigh = std::stoi(input);
-    pc->DoSCurveScan(chip,coarselow,coarsehigh,time);
-    return 0;
-}
-
-
-int Console::CommandSCurveFast(){
-    // variables for getUserInput
-    bool numericalInput = true;
-    bool allowDefaultOnEmptyInput = false;
-    std::string input;
-
     unsigned short voltage = 0;
     unsigned short offset = 0;
     int time = 255;
@@ -2195,7 +2164,7 @@ int Console::CommandSCurveFast(){
 	if (input == "quit") return -1;
 	StopTHL[chip]  = std::stoi(input);
     }
-    pc->DoSCurveScan_meanChip(voltage,time,StartTHL,StopTHL,offset);
+    pc->DoSCurveScan(voltage,time,StartTHL,StopTHL,offset);
     return 0;
 }
 

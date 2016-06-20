@@ -366,7 +366,7 @@ int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short c
 }
 
 
-int PC::DoSCurveScan_meanChip(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset){
+int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset){
 	for (unsigned short chip = 1;chip<= fpga->tp->GetNumChips() ;chip++){
 		fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 		unsigned short pix_per_row = 8;
@@ -494,86 +494,6 @@ int PC::DoSCurveScan_meanChip(unsigned short voltage,int time, unsigned short st
 	}
 	return 0;
 }
-
-
-int PC::DoSCurveScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh, int time){
-	fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
-	unsigned short pix_per_row = 8;
-	for(unsigned int coarse=coarselow;coarse<=coarsehigh;coarse++){
-		for (unsigned int step=0; step<(256/pix_per_row);step++){ //must go from 0 to <(256/pix_per_row)
-			fpga->GeneralReset();
-			usleep(1000);
-			for (unsigned short c = 1;c<= fpga->tp->GetNumChips() ;c++){
-				fpga->tp->LoadFSRFromFile(GetFSRFileName(c),c);
-				fpga->tp->UniformMatrix(0,0,0,0,0,c); //0,0: Medipix modus
-				fpga->tp->LoadThresholdFromFile(GetThresholdFileName(c),c);
-				fpga->tp->SetDAC(14,c,0);
-			}
-			fpga->tp->SetDAC(14,chip,4294967295);
-			fpga->tp->Spacing_row(step,pix_per_row,chip);
-			fpga->tp->Spacing_row_TPulse(step,pix_per_row,chip);
-			fpga->SetMatrix();
-			usleep(2000 );
-			int data[9][256][256];
-			fpga->SerialReadOut(data);
-			fpga->EnableTPulse(1);
-			fpga->tp->SetDAC(13,chip,coarse);
-			for(unsigned int thl=0;thl<1024;thl++){
-				fpga->tp->SetDAC(6,chip,thl);
-				fpga->WriteReadFSR();
-				usleep(400 );
-				int ChipID = fpga->tp->GetChipIDsilent(chip);
-				// calling CountingTime with second argument == 1
-				// corresponds to n = 1, power of 256
-				fpga->CountingTime(time, 1);
-				//usleep(20000);
-				int result=0;
-				int hits = 0;
-				std::vector<std::vector<std::vector<int> > > *VecData = new std::vector<std::vector<std::vector<int> > >(9, std::vector < std::vector<int> >(256, std::vector<int>(256,0)));
-				int x,y;
-				result=fpga->SerialReadOut(VecData);
-				if(result==300){
-#ifdef __WIN32__
-				        mkdir(DataPathName.c_str());
-#else
-					mkdir(DataPathName.c_str(),0755);
-#endif
-					std::ostringstream sstream1;
-					sstream1<<ChipID<<"_SCurve_"<<chip<<"_coarse_"<<coarse;
-					PathName=DataPathName+"/"; PathName+=sstream1.str();
-#ifdef __WIN32__
-					mkdir(PathName.c_str());
-#else
-					mkdir(PathName.c_str(),0755);
-#endif
-					std::string filename;
-					std::ostringstream sstream;
-					sstream<<thl<<"_step_"<<step<<".txt";
-					filename=PathName+"/"; filename+=sstream.str();
-					const char* filename_= filename.c_str();
-					std::fstream f;
-					f.open(filename_,std::fstream::out);
-					if(f.is_open()){
-						for(y=0;y<256;y++){
-							for(x=0;x<256;++x){
-								f<<LFSR_LookUpTable[(*VecData)[chip][y][x]]<<" ";
-								if(((*VecData)[chip][y][x]!=16383)&&((*VecData)[chip][y][x]!=0)){++hits;}
-							}
-							f<<std::endl;
-						}
-					}
-
-				}
-				delete VecData;
-				//usleep(20000);
-				std::cout<<"Step "<<step<<" of "<<(256/pix_per_row)<<" Coarse: "<<coarse<<" THL: "<< thl <<" hits: "<<hits<<std::endl;
-			} //end thl loop
-			fpga->EnableTPulse(0);
-		} //end step loop
-	}
-	return 0;
-}
-
 
 void PC::DACScanHistogram(void* PointerToObject, char dac, int bit, int val){
 #if DEBUG==2

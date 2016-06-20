@@ -133,7 +133,6 @@ private:
     int CommandDACScan();
     int CommandTHLScan();
     int CommandSCurve();
-    int CommandSCurveFast();
     int Commandi2creset();
     int Commandi2cDAC();
     int Commandi2cADC();
