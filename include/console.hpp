@@ -22,6 +22,9 @@
 // set and cmath used for CountingTime()
 #include <set>
 #include <cmath>
+#include <thread>
+#include <atomic>
+#include <chrono>
 
 //TOS and FADC
 #include "caseHeader.h"
@@ -137,6 +140,10 @@ private:
     int Commandi2cDAC();
     int Commandi2cADC();
     int CommandTpulse();
+    int CommandTestTPulse();
+    void runTestPulses();
+
+
 
     int CommandDoTHSopt();
     int CommandThresholdEqNoiseCenter();
@@ -170,6 +177,7 @@ private:
 
     // member variable for general command prompt for input methods
     const char *_prompt;
+    std::atomic_bool _loop_stop;
 
     //HighLevelFunction_VME* _fadcFunctions;   //< some additional functions for the use of the fadc
 

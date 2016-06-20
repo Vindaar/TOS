@@ -406,7 +406,7 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
 				fpga->tp->Spacing_row(step,pix_per_row,chip);
 				fpga->tp->Spacing_row_TPulse(step,pix_per_row,chip);
 				fpga->SetMatrix();
-				usleep(2000 );
+				usleep(2000);
 				int data[9][256][256];
 				fpga->SerialReadOut(data);
 				fpga->EnableTPulse(1);

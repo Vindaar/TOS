@@ -354,6 +354,10 @@ int Console::UserInterface(){
 	{
 	    CommandTpulse();
 	}
+	else if( ein.compare("TestTPulse")==0 )
+	{
+	    CommandTestTPulse();
+	}
 	else if( (ein.compare("THSopt")==0) ||
 		 (ein.compare("6" )==0) )
 	{
@@ -2222,6 +2226,52 @@ int Console::CommandTpulse(){
     return 0;
 }
 
+void Console::runTestPulses(){
+    // this function is ran in a second thread (called in CommandTestTPulse) and simply
+    // calls the tpulse function over and over again, as to have a tpulses being send
+    // all the time, until the user types stop on the terminal
+    while(_loop_stop == false){
+	pc->fpga->tpulse(1000, 10);
+	//std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }    
+}
+
+int Console::CommandTestTPulse(){
+    // this function is simply used to test, whether the test pulses properly work
+    // and the i2cDACs are properly set. To some extend similar to a mix of Commandi2cDAC and
+    // CommandTpulse (as far as I understand!!)
+    
+    // first handle user input
+    std::cout << "Please enter an upper (non-offset!) value for the i2cDAC in mV. Choose from x = {350, 2200}"
+	      << std::endl;
+
+    std::set<std::string> allowedValues;
+    for( int l=350; l<2201; l++) allowedValues.insert(std::to_string(l));
+    std::string input;
+    input = getUserInputNumericalNoDefault(_prompt, &allowedValues);
+    if (input == "quit") return -1;
+    std::cout << input << " mV was chosen as upper bound." << std::endl;
+
+    // now handle setting the DAC
+    pc->fpga->i2cDAC(std::stoi(input), 2);
+    pc->fpga->i2cDAC(350, 3);
+    
+    pc->fpga->EnableTPulse(1);
+    // now loop over fpga->tpulse to pulse..
+    // create seperate thread, which loops and will be stopped, if we type stop in terminal
+    std::thread loop_thread(&Console::runTestPulses, this);
+    _loop_stop = true;
+    //loop_thread.start();
+    const char *waitingPrompt = "test pulses running. type 'stop' to quit> ";
+    std::set<std::string> allowedStrings = {"stop"};
+    input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
+    if (input == "stop"){
+	_loop_stop = false;
+    }
+    loop_thread.join();
+    
+    return 0;
+}
 
 int Console::CommandDoTHSopt(){
 
