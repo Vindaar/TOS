@@ -417,6 +417,7 @@ int FPGA::i2cDAC(unsigned short Umv, unsigned short DACchannel)
     OutgoingLength=18; 
     IncomingLength=18+400; 
     PacketQueueSize=1;
+
     err_code=Communication(PacketBuffer,PacketQueue[0]);
     return 20+err_code;
 }
@@ -538,7 +539,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     SendBuffer[16]=tp->GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
-    
+
     RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
 #if DEBUG==1 
     std::cout << "Paket gesendet "<<RecvBytes<< std::endl;

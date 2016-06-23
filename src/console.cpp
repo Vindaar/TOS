@@ -2189,6 +2189,7 @@ int Console::Commandi2cDAC(){
     input = getUserInput(promptDACvoltage, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     Umv   = std::stoi(input);
+    
     pc->fpga->i2cDAC(Umv, DACchannel);
     return 0;
 }
