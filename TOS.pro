@@ -23,7 +23,7 @@ HEADERS += include/caseHeader.h \
            include/waitconditions.hpp \
            include/V1729a_VME.h \
            include/V1729a.h \
-           include/HV_FADC_Obj.h \
+#           include/HV_FADC_Obj.h \
            include/vmemodule.h \
            include/vmecontroller.h \
            include/vmusb.h \ 
@@ -32,7 +32,15 @@ HEADERS += include/caseHeader.h \
            include/FADCConstants_V1729a.h \
            include/const.h \
            include/tosCommandCompletion.hpp \
-           include/networkWrapper.hpp
+           include/networkWrapper.hpp \ 
+           include/hvFadcManager.hpp \
+           include/hvInterface/hvModule.hpp \
+           include/hvInterface/hvChannel.hpp \
+           include/hvInterface/hvFlexGroup.hpp \
+           include/hvInterface/hvSetGroup.hpp \
+           include/hvInterface/hvMonitorGroup.hpp \
+           include/hvInterface/hvStatusGroup.hpp
+
 
            
 SOURCES += src/caseFunctions.cc \
@@ -43,7 +51,7 @@ SOURCES += src/caseFunctions.cc \
            src/timepix.cpp \
            src/tos.cpp \
            src/waitconditions.cpp \
-           src/HV_FADC_Obj.cc \
+#           src/HV_FADC_Obj.cc \
            src/DeviceVME.cc \
            src/V1729a_VME.cc \
            src/vmecontroller.cpp \
@@ -51,7 +59,15 @@ SOURCES += src/caseFunctions.cc \
            src/vmemodule.cpp \
            src/High-Level-functions_VME.cc \
            src/tosCommandCompletion.cpp \
-           src/networkWrapper.cpp
+           src/networkWrapper.cpp \
+           src/hvFadcManager.cpp \
+           src/hvInterface/hvModule.cpp \
+           src/hvInterface/hvChannel.cpp \
+           src/hvInterface/hvFlexGroup.cpp \
+           src/hvInterface/hvSetGroup.cpp \
+           src/hvInterface/hvMonitorGroup.cpp \
+           src/hvInterface/hvStatusGroup.cpp
+
 
 LIBS += -Wl,--no-as-needed \
         -Wl,--rpath=/usr/local/lib \

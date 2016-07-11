@@ -163,6 +163,9 @@ public:
 	void   ProgramModuleBaseAddress(uint16_t address);
 	uint16_t VerifyModuleBaseAddress(void);
 
+protected:
+	CVmeController *VmeController;
+
 private:
 	uint16_t readShort(int address);
 	void   writeShort(int address, uint16_t data);
@@ -189,8 +192,6 @@ private:
 	uint16_t FlexGroupOFFSET[MAX_GROUPS];
 
 	int    ChannelNumber;
-
-	CVmeController *VmeController;
 
 	enum { vf_volt, vf_kilovolt } vfUnit;
 	int  vfPrecision;

@@ -74,10 +74,10 @@ const char *tosCommands[] = {"GeneralReset",
                              "EnableFastClock", 
                              "DisableFastClock",
 // HV_FADC commands
-			     "InitHFO",
+			     "InitHFM",
 			     "InitHV_FADC",
-			     "ShutdownHFO",
-			     "ActivateHFO",
+			     "ShutdownHFM",
+			     "ActivateHFM",
 			     "CheckHVModuleIsGood",
 			     "ConnectModule",
 // FADC commands
