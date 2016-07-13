@@ -24,7 +24,7 @@ void Producer::run()
     /* Since the FPGA::SerialReadOutReadSend function moves one event from the chip to the
      * fpga and the event from fpga to the pc, one has to wait on event if there was a 
      * signal at the fadc to assign the right chip event to the right fadc event. This
-     * var is uesd as flag to ensure this.
+     * var is used as flag to ensure this.
      */
     //up to now: it doesen't - see the "To FIX.." comments
     bool fadcReadoutNextEvent = false;

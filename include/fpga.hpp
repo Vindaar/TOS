@@ -14,8 +14,6 @@
 #include "header.hpp"
 #include "timepix.hpp"
 
-#define DEBUG 1
-
 // set a default socket buffer size, which is 'big enough'
 // this number is the maximum allowed size for my kernel (3.13.0-85-generic)
 // given in /proc/sys/net/core/rmem_default
