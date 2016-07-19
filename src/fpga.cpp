@@ -272,6 +272,26 @@ int FPGA::CountingTrigger(int time){
     return 20+err_code;
 }
 
+int FPGA::CountingTime(std::string shutter_time, std::string shutter_range){ 
+    // this function is a wrapper around the actual CountingTime function 
+    // used to hand the CountingTime function a string containing the
+    // shutter range as a string:
+    // "standard" : mode = 0
+    // "long"     : mode = 1
+    // "verylong" : mode = 2
+
+    // call the FPGA ShutterRangeToMode function to convert shutter_range
+    // to mode, and then call actual CountingTime function
+    int mode;
+    mode = ShutterRangeToMode(shutter_range);
+    int time;
+    time = std::stoi(shutter_time);
+
+    int result;
+    result = CountingTime(time, mode);
+    return result;
+}
+
 int FPGA::CountingTime(int time, int modeSelector){
     // int time:         integer in range {1, 255} 
     // int modeSelector: integer corresponding to power to which 256 is raised
@@ -1036,6 +1056,62 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
     return 0;
 }
 
+int FPGA::SaveData(FrameArray<int> *pixel_data, int NumHits){
+    // this function receives a pointer to a FrameArray and saves the data, which
+    // was send from the chip to this array
+
+    // TODO: NOTE: for some reason, in these functions (all which also get a hits value)
+    // the array is NOT initialized to zero, before the data is written. This is confusing:
+    // if I do not read back the whole frame from the chip, part of the array
+    // (all that is NOT read from the chip), could be set to anything. Thus, one would
+    // need to make sure that one only reads the pixels from the array, which are written
+    // during this call of the function
+#if DEBUG==2
+    std::cout<<"Enter FPGA::SaveData(array)"<<std::endl;
+#endif
+    int byte;
+    int packet = 0;
+    int Hits;
+    if (NumHits > 4096){
+	Hits = 4096;
+    }
+    else {
+	Hits = NumHits;
+    }
+    int PacketLength = PLen;
+    int Packets = ( ( (Hits * 4) + PLen - 1) / PLen);
+    int	LastPacketLength = 18 + (Hits * 4 % PLen);
+    if ( ( ( Hits * 4) % PLen) == 0) {
+	LastPacketLength = 18 + PLen;
+    }
+    if (Hits * 4 == PLen) {
+	Packets = 1;
+    }
+    if (Hits !=0 ){
+	for (byte=18; byte <= PacketLength + 18; byte = byte + 4){
+	    // get x, y and value from the received package
+	    int x   = (*PackQueueReceive) [packet][byte];
+	    int y   = (*PackQueueReceive) [packet][byte + 1];
+	    int val = ((*PackQueueReceive)[packet][byte + 2] << 8) + (*PackQueueReceive)[packet][byte + 3];
+	    // and set the array to the corresponding value
+	    (*pixel_data)[x][y] = val;
+	    //std::cout << "pixel  " << y <<" "<< x << " has "<< val<<" hits"<< std::endl;
+	    if (packet == Packets - 1){
+		PacketLength = LastPacketLength - 18 - 4;
+	    }
+	    if (byte + 4 == PLen + 18 or byte + 5 == PLen + 18 or byte + 6 == PLen + 18 or byte + 7 == PLen + 18 ) {
+		if (packet < Packets-1){
+		    packet++;
+		    byte=14;
+		}
+	    }
+	}
+    }
+    //std::cout << "pixel 102 43   has "<< pix[102][43]<<" hits"<< std::endl;
+    return 0;
+}
+
+
 int FPGA::SaveData(int pix[256][256], int NumHits){
 #if DEBUG==2
     std::cout<<"Enter FPGA::SaveData(array)"<<std::endl;
@@ -1180,6 +1256,43 @@ int FPGA::SaveData(int hit_x_y_val[12288] ,int NumHits){
     return 0;
 }
 
+int FPGA::SaveData(FrameArray<int> *pixel_data){
+    // this function receives a pixel_data data array of type FrameArray (defined in
+    // frame.hpp), initializes it to 0 and reads the data from the PackQueueReceive
+    // array. The result is saved in the pixel_data array
+
+    // NOTE: maybe x and y need to be exchanged!!!
+#if DEBUG==2
+    std::cout<<"Enter FPGA::SaveData(array)"<<std::endl;
+#endif
+    //
+    int b;
+    int aktBit;
+
+
+    // initialize the whole array to zero to be sure
+    for(std::size_t x = 0; x < pixel_data->size(); ++x){
+	for(std::size_t y = 0; y < (*pixel_data)[x].size(); ++y){
+	    (*pixel_data)[x][y] = 0;
+	}
+    }
+
+    for(std::size_t y = 0; y < pixel_data->size(); ++y){
+	for(b = 0; b < 14; ++b){
+	    for(std::size_t x = 0; x < (*pixel_data)[y].size(); ++x){
+		// some calculation... regarding data that is read from chip and
+		// converted to values... :/ 
+		aktBit = y*256*14 + b*256 + (255 - x) + 8;
+		if( ( (*PackQueueReceive)[(aktBit / 8) / PLen][18 + ((aktBit / 8) % PLen)] & 1 << (7 - (aktBit % 8) ) ) > 0){
+		    (*pixel_data)[x][y] += 1 << (13 - b);
+		}
+	    }
+	}
+    }
+
+    return 0;
+}
+
 int FPGA::SaveData(int **pix){
 #if DEBUG==2
     std::cout<<"Enter FPGA::SaveData(array)"<<std::endl;
@@ -1235,4 +1348,23 @@ bool FPGA::SetTimeout(int timeout){
 	timeout_flag =  true;
     }
     return timeout_flag;
+}
+
+
+int FPGA::ShutterRangeToMode(std::string shutter_range){
+    // this function converts the shutter range (string of type) to 
+    // the mode n
+    int n;
+    
+    if( shutter_range == "standard" ){
+	n = 0;
+    }
+    else if( shutter_range == "long" ){
+	n = 1;
+    }
+    else if( shutter_range == "verylong" ){
+	n = 2;
+    }
+
+    return n;
 }

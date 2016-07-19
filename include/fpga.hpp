@@ -13,8 +13,8 @@
 
 #include "header.hpp"
 #include "timepix.hpp"
-
-#define DEBUG 1
+// include frame.hpp, so that we know about FrameArray
+#include "frame.hpp"
 
 // set a default socket buffer size, which is 'big enough'
 // this number is the maximum allowed size for my kernel (3.13.0-85-generic)
@@ -40,7 +40,9 @@ public:
     int Counting();		//err_code=2x
     int CountingStop();
     int CountingTrigger(int time);
+    int CountingTime(std::string shutter_time, std::string shutter_range);
     int CountingTime(int time, int modeSelector);
+
     // ReadoutFadcBit: Reads out the 16th(?) fpga bit - 1 if a trigger arrived as the shutter was open, 0 otherwise
     int ReadoutFadcBit();
     // ReadoutFadcFlag: Reads out the FADC flag. 1 if the flag is set, zero otherwise
@@ -71,6 +73,8 @@ public:
     void UseFastClock(bool use);
 
     bool SetTimeout(int timeout);
+
+    int ShutterRangeToMode(std::string shutter_range);
 
 private:
 
@@ -110,8 +114,10 @@ private:
     int SaveData(const char* filename);						//err_code=x
     int SaveData(int pix[9][256][256]);
     int SaveData(std::vector<std::vector<std::vector<int> > > *VecData);
+    int SaveData(FrameArray<int> *pixel_data, int NumHits);
     int SaveData(int pix[256][256], int NumHits);
     int SaveData(std::vector<int> *pHitArray ,int NumHits);
+    int SaveData(FrameArray<int> *pixel_data);
     int SaveData(int **pix);
     int SaveData(int hit_x_y_val[12288], int NumHits );
     bool _usefastclock;		
@@ -124,7 +130,7 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
 #if DEBUG==2
     std::cout<<"Enter FPGA::SerialReadOut()"<<std::endl;	
 #endif
- 
+
     int p;
     int err_code;
 	
@@ -139,7 +145,7 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
     if(err_code>0)return 300+err_code;
   
     // Forward Serial Readout 0x05
-    Mode = 5;
+    Mode = 0x05;
     for(p=1; p<PacketQueueSize; ++p)
     {
 	if(p==PacketQueueSize-1)
@@ -295,7 +301,8 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 	if(err_code>0)return 300+err_code;
     }
     if(aus!=NULL){
-	err_code=SaveData(aus, NumHits);}
+	err_code=SaveData(aus, NumHits);
+    }
     //std::cout << "Pointer aus " << aus<<std::endl;
     return Hits;
 }

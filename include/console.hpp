@@ -74,11 +74,19 @@ private:
   
     //The main userinterface  
     int UserInterface();                         //< classical version
+    // user input interface to select chips
+    std::set<int> ChipSelection();
     // user input interface function for fastclock, shutter range and time selection
     std::string FastClockSelection();
     std::string ShutterRangeSelection();
     std::string ShutterTimeSelection(int n);
+    std::string ShutterTimeSelection(std::string shutter_range);
+    int         ShutterRangeToMode(std::string shutter_range);
     std::string TriggerSelection();
+    std::string CalibrationSelection();
+    std::string PulserSelection();
+    std::list<int> PulseListCreator(std::string pulser);
+    int PixPerColumnSelection();
 
     // Some function one can use to print error messages according to the error parameter given
     void ErrorMessages(int err);
@@ -147,7 +155,7 @@ private:
 
     int CommandDoTHSopt();
     int CommandThresholdEqNoiseCenter();
-    int CommandTOCalib();
+    void CommandTOCalib();
     int CommandTOCalibFast();
     int CommandCheckOffset();
     int CommandCalibrate();				

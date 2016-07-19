@@ -45,6 +45,20 @@ std::string getUserInputNonNumericalDefault(  const char *prompt,
 std::string getUserInputNonNumericalNoDefault(const char *prompt,
 					      std::set<std::string> *allowedStrings = NULL);
 
+std::string getUserInputNumericalDefault(     const char *prompt, 
+					      std::set<std::string> allowedStrings);
+
+std::string getUserInputNumericalNoDefault(   const char *prompt, 
+					      std::set<std::string> allowedStrings); 
+
+std::string getUserInputNonNumericalDefault(  const char *prompt, 
+					      std::set<std::string> allowedStrings);
+
+std::string getUserInputNonNumericalNoDefault(const char *prompt, 
+					      std::set<std::string> allowedStrings);
+
+
+
 
 
 

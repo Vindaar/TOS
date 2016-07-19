@@ -10,7 +10,7 @@
 /**********************************************************************/
 
 #include "header.hpp"
-
+#include <string>
 
 
 // some macros for the default chip ID offsets (simply 'what works usually')
@@ -24,6 +24,7 @@
 #define DEFAULT_NUM_DACS                            18
 #define DEFAULT_NUM_DAC_CODES                       13
 #define DEFAULT_MAX_NUM_CHIPS                       9
+
 
 class Timepix{
 public:
@@ -78,6 +79,13 @@ public:
     void SetFADCtriggered(unsigned short FADCtriggered);
     unsigned short SetFADCtriggered();
 
+    // helper functions
+    std::string GetChipName(unsigned short chip);
+    int GetPixelsPerDimension();
+    int GetTotalNumPixels();
+
+
+
 
     // function corresponding to _chipIDOffset to set array ChipIDBitPos
     // with a new offset
@@ -128,5 +136,8 @@ private:
     unsigned short FADCtriggered_global;
     unsigned short ExtraByte_global;
 
+    // helpful member variables
+    int _pix_per_dimension;
+    int _pix_total_num;
     
 };

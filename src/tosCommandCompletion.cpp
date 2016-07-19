@@ -5,6 +5,7 @@
 // https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
 
 #include "tosCommandCompletion.hpp"
+#include <algorithm>
 
 const char *tosCommands[] = {"GeneralReset", 
                              "1", 
@@ -284,3 +285,26 @@ std::string getUserInputNonNumericalDefault(const char *prompt, std::set<std::st
 std::string getUserInputNonNumericalNoDefault(const char *prompt, std::set<std::string> *allowedStrings){ 
     return getUserInput(prompt, false, false, allowedStrings);
 }
+
+// the following convenience functions allow to hand a set of strings (not a pointer), 
+// and have this wrapper function hand the correct pointer to the main function
+// these functions are mainly used if one wants to avoid initializing a set 
+// of strings in the code manually and hand the pointer. Using these functions, 
+// something like the following is possible:
+// input = getUserInputNonNumericalNoDefault("> ", {"allowed1", "allowed2", "and so on"});
+std::string getUserInputNumericalDefault(const char *prompt, std::set<std::string> allowedStrings){
+    return getUserInputNumericalDefault(prompt, &allowedStrings);
+}
+
+std::string getUserInputNumericalNoDefault(const char *prompt, std::set<std::string> allowedStrings){    
+    return getUserInputNumericalNoDefault(prompt, &allowedStrings);
+}
+
+std::string getUserInputNonNumericalDefault(const char *prompt, std::set<std::string> allowedStrings){   
+    return getUserInputNonNumericalDefault(prompt, &allowedStrings);
+}
+
+std::string getUserInputNonNumericalNoDefault(const char *prompt, std::set<std::string> allowedStrings){ 
+    return getUserInputNonNumericalNoDefault(prompt, &allowedStrings);
+}
+

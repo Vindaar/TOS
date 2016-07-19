@@ -1,4 +1,3 @@
-
 /**********************************************************************/
 /*                                                             pc.hpp */
 /*  TOS - Timepix Operating Software                                  */
@@ -17,6 +16,7 @@
 #include "header.hpp"
 #include "fpga.hpp"
 #include "waitconditions.hpp"
+#include "frame.hpp"
 
 //c++
 #include <time.h>
@@ -59,8 +59,30 @@ public:
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
     int DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl);
     int DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl);
+    // NOTE: TOCalibFast is deprecated! not to be used anymore. Use TOCalib instead. Will be removed, once made sure that TOCalib()
+    // works as expected
     int TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsigned short time, unsigned short TOT, unsigned short internalPulser);
-    int TOCalib();
+    void TOCalibAllChipsSetUniformMatrix(std::set<int> chip_set,
+					 std::map<std::string, boost::any> parameter_map,
+					 const int nChips,
+					 const int npix_per_dim);
+    void TOCalibSingleChipReadoutCalc(int chip,
+				      std::map<std::string, boost::any> parameter_map,
+				      std::map<int, Frame> *frame_map);
+    void TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
+				       std::map<std::string, boost::any> parameter_map,
+				       std::map<int, Frame> *frame_map,
+				       int nChips);
+    void TOCalibSingleIteration(std::set<int> chip_set,
+				std::map<std::string, boost::any> parameter_map,
+				std::map<int, std::pair<int, double>> *chip_mean_std_map);
+    void TOCalib(std::set<int> chip_set, 
+		 std::string TOmode, 
+		 std::string pulser, 
+		 std::list<int> pulseList,
+		 int pixels_per_column, 
+		 std::string shutter_range,
+		 std::string shutter_time);
     unsigned short CheckOffset();
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a);
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup);

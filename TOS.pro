@@ -7,7 +7,7 @@ TEMPLATE = app
 TARGET = TOS
 DEPENDPATH += . src
 INCLUDEPATH += . include
-QMAKE_CXXFLAGS += -std=c++0x -o0 -g -Wall -W -pedantic -Wl,--no-as-needed 
+QMAKE_CXXFLAGS += -std=c++0x -o0 -g -Wall -W -pedantic -Wl,--no-as-needed
 OBJECTS_DIR = tmp
 MOC_DIR = tmp
 DESTDIR = bin
@@ -32,9 +32,9 @@ HEADERS += include/caseHeader.h \
            include/FADCConstants_V1729a.h \
            include/const.h \
            include/tosCommandCompletion.hpp \
-           include/networkWrapper.hpp
+           include/networkWrapper.hpp \
+           include/frame.hpp
 
-           
 SOURCES += src/caseFunctions.cc \
            src/console.cpp \
            src/fpga.cpp \ 
@@ -51,7 +51,8 @@ SOURCES += src/caseFunctions.cc \
            src/vmemodule.cpp \
            src/High-Level-functions_VME.cc \
            src/tosCommandCompletion.cpp \
-           src/networkWrapper.cpp
+           src/networkWrapper.cpp \
+           src/frame.cpp
 
 LIBS += -Wl,--no-as-needed \
         -Wl,--rpath=/usr/local/lib \

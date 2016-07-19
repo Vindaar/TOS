@@ -1155,14 +1155,10 @@ int Console::CommandRun(bool useHvFadc){
 	// the different shutter modes
 	inputShutterMode = ShutterRangeSelection();
 	if (inputShutterMode == "quit") return -1;
-	else if (inputShutterMode == "standard"){
-	    shutter_mode = 0;
-	}
-	else if (inputShutterMode == "long"){
-	    shutter_mode = 1;
-	}
-	else if (inputShutterMode == "verylong"){
-	    shutter_mode = 2;
+	else{
+	    // call the conversion function from shutter range to 
+	    // the mode integer
+	    shutter_mode = ShutterRangeToMode(inputShutterMode);
 	}
     }
     else{
@@ -1298,8 +1294,77 @@ int Console::CommandCounting(int c){
     return result;
 }
 
+std::set<int> Console::ChipSelection(){
+    // this function provides the user input interface to select a 
+    // set of chips based on all current active chips
+    std::set<int> chip_set;
+    std::string input;
+    std::set<std::string> allowedStrings;
+
+    std::cout << "Select which chips to use.\n"
+	      << "the following chips are currently connected:" << std::endl;
+    for(int i = 0; i < pc->fpga->tp->GetNumChips(); i++){
+	std::cout << "#" 
+		  << i+1 
+		  << " : " 
+		  << pc->fpga->tp->GetChipName(i+1) 
+		  << std::endl;
+    }
+    std::cout << "type # of chip from above to select.\n"
+	      << "select one after another\n"
+	      << "type : { 0, all } to select all chips" << std::endl;
+    
+    // now create the allowed strings for the input based on the number of chips
+    // the loop goes from 0 to <= num chips, because we also allow 0 as an input value 
+    // to select all chips
+    for(int i = 0; i <= pc->fpga->tp->GetNumChips(); i++) allowedStrings.insert(std::to_string(i));
+    // and also add the string 'all' as well
+    allowedStrings.insert("all");
+    // and the string 'done' to indicate that the selection is complete
+    allowedStrings.insert("done");
+    
+    do{
+	// now print the currently active chips for the user
+	std::cout << "currently selected chips: " << std::flush;
+	if( chip_set.begin() == chip_set.end() ){
+	    std::cout << "none" << std::endl;
+	}
+	else{
+	    std::cout << std::endl;
+	    // print current set
+	    std::for_each( chip_set.begin(), chip_set.end(), [this](int chip){
+		    std::cout << "#" 
+			      << chip 
+			      << " : " 
+			      << this->pc->fpga->tp->GetChipName(chip)
+			      << std::endl;
+		} );
+	    std::cout << "to finish selecting chips, type { done }" << std::endl;
+	}
+
+	input = getUserInputNonNumericalNoDefault(_prompt, &allowedStrings);
+	if(input == "quit") return {-1};
+	else if( (input == "0") ||
+		 (input == "all") ){
+	    // in case the user wants to use all chips, we create a temporary
+	    // set, fill that with all chip ints, set input to "done" and 
+	    // set chip_set to the temp set (temp set used to prevent problems, if 
+	    // user first selects some chips individually and then all)
+	    std::set<int> tempSet;
+	    for(int i = 0; i < pc->fpga->tp->GetNumChips(); i++) tempSet.insert(i+1);
+	    input = "done";
+	    chip_set = tempSet;
+	}
+	else if (input != "done"){
+	    chip_set.insert(std::stoi(input));
+	}
+    } while (input != "done");
+
+    return chip_set;
+}
+
 std::string Console::TriggerSelection(){
-    // this function is called to rpovide the user input interface
+    // this function is called to provide the user input interface
     // to select, whether to use an external trigger or not
     // function returns:
     //     "noexternal" no external trigger
@@ -1460,6 +1525,195 @@ std::string Console::ShutterTimeSelection(int n){
     }
     
     return inputTime;
+}
+
+int Console::ShutterRangeToMode(std::string shutter_range){
+    // this function converts the shutter range (string of type) to 
+    // the mode n
+    // done by calling the corresponding function, which is part of
+    // the FPGA class
+    int n;
+    n = pc->fpga->ShutterRangeToMode(shutter_range);
+    
+    return n;
+}
+
+std::string Console::ShutterTimeSelection(std::string shutter_range){
+    // this is an overload for the ShutterTimeSelection, so that one can also
+    // hand the shutter range as a string instead of the mode n. we simply convert 
+    // the string here and call the correct function
+    int n;
+    n = ShutterRangeToMode(shutter_range);
+
+    return ShutterTimeSelection(n);
+}
+
+std::string Console::CalibrationSelection(){
+    // this function handles user input in regards to selecting TOT or TOA 
+    // calibration
+    // function returns:
+    //     "TOT" for TOT calibration
+    //     "TOA" for TOA calibration
+    std::string input;
+    std::string output;
+    
+    std::cout << "Perform TOT or TOA calibration?" << std::endl;
+    std::cout << "TOT : type { 0, TOT }\n" 
+	      << "TOA : type { 1, TOA }" << std::endl;
+    
+    input = getUserInputNonNumericalNoDefault(_prompt, {"0", "TOT", "1", "TOA"});
+    if(input == "quit"){ return input; }
+    else if( (input == "0") ||
+	     (input == "TOT")){ 
+	output = "TOT";
+    }
+    else if( (input == "1") ||
+	     (input == "TOA")){ 
+	output = "TOA";
+    }
+
+    return output;
+}
+
+std::string Console::PulserSelection(){
+    // this function handles user input in regards to pulser selection
+    // i.e. internal or external pulser
+    // function returns:
+    //     "internal" internal pulser
+    //     "external" external pulser
+    std::string input;
+    std::string output;
+
+    std::cout << "Choose between internal and external pulser:" << std::endl;
+    std::cout << "Internal : type { 0, internal, int }\n"
+	      << "External : type { 1, external, ext }" << std::endl;
+    input = getUserInputNonNumericalNoDefault(_prompt, 
+					      {"0", "internal", "int", "1", "external", "ext"});
+    if(input == "quit"){ return input; }
+    else if( (input == "0") ||
+	     (input == "internal") ||
+	     (input == "int") ){
+	output = "internal";
+    }
+    else if( (input == "1") ||
+	     (input == "external") ||
+	     (input == "ext") ){
+	output = "external";
+    }
+
+    return output;
+}
+
+std::list<int> Console::PulseListCreator(std::string pulser){
+    // this function provides the user input interface to create a list of 
+    // pulses, which are to be used for TO calibration
+    std::list<int> pulseList;
+    std::string input;
+    std::set<std::string> allowedStrings;
+
+    // first we need to check, whether we're using an external pulser
+    // or the internal one
+    if( pulser == "external" ){
+	std::cout << "Enter the value of the external pulser in mV: "
+		  << std::endl;
+	input = getUserInputNumericalNoDefault(_prompt);
+	if( input == "quit" ) return { -1 };
+	else{
+	    pulseList.push_back(std::stoi(input));
+	}
+    }
+    else{
+	// in this case we use the internal pulser
+
+	std::cout << "create a list of pulses in mV to be used.\n"
+		  << "add one element at a time.\n"
+		  << "once you're done, type { done }\n"
+		  << "at any time type { default } to use the following pulses: "
+		  << std::endl;
+	// create list of default values:
+	std::list<int> defaultList;
+	defaultList.push_back(20);
+	defaultList.push_back(30);
+	defaultList.push_back(40);
+	defaultList.push_back(50);
+	defaultList.push_back(60);
+	defaultList.push_back(70);
+	defaultList.push_back(80);
+	defaultList.push_back(90);
+	defaultList.push_back(100);
+	defaultList.push_back(150);
+	defaultList.push_back(200);
+	defaultList.push_back(250);
+	defaultList.push_back(350);
+	defaultList.push_back(450);
+	std::for_each( defaultList.begin(), defaultList.end(), [](int pulse){
+		std::cout << pulse << ", " << std::flush;
+	    } );
+	std::cout << std::endl;
+
+	// first we will fill the allowed strings set
+	// we allow all pulse heights from 0 to 1000mV
+	// this is the value which is added to the 350mV baseline
+	for(int i = 0; i < 1000; i++) allowedStrings.insert(std::to_string(i));
+	// aside from this, we can also input "default", which will then load the
+	// default list
+	allowedStrings.insert("default");
+	// and add "done" to finish adding
+	allowedStrings.insert("done");
+    
+    
+	do{
+	    // print current list content
+	    std::cout << "list contains: " << std::flush;
+	    if( pulseList.begin() == pulseList.end() ){
+		std::cout << "empty" << std::endl;
+	    }
+	    else{
+		std::cout << std::endl;
+		// print current list
+		std::for_each( pulseList.begin(), pulseList.end(), [](int pulse){
+			std::cout << pulse << ", " << std::flush;
+		    } );
+		std::cout << std::endl;
+		std::cout << "to finish adding voltages, type { done }" << std::endl;
+	    }
+
+	    input = getUserInputNonNumericalNoDefault(_prompt, &allowedStrings);
+	    if( input == "quit" ) return { -1 };
+	    else if( input == "default" ){
+		// in this case overwrite pulseList with defaultList
+		input = "done";
+		pulseList = defaultList;
+	    }
+	    else if( input != "done" ){
+		pulseList.push_back(std::stoi(input));
+	    }
+	} while (input != "done");
+    }
+    
+    return pulseList;
+}
+
+int Console::PixPerColumnSelection(){
+    // this function handles user input in regards to the pixels per columns
+    // to use, i.e. the spacing that is used during TO calibration
+    // function returns:
+    //     <int> corresponding to active rows for one frame
+    std::string input;
+    int output;
+
+    std::cout << "Choose the number of active pixels per column,\n:" 
+	      << "i.e. the number of active rows per event" << std::endl;
+    std::cout << "allowed values = { 1, 2, 4, 8, 16 }"
+	      << std::endl;
+    input = getUserInputNumericalNoDefault(_prompt, 
+					   {"1", "2", "4", "8", "16"});
+    if(input == "quit"){ return -1; }
+    else{
+	output = std::stoi(input);
+    }
+
+    return output;
 }
 
 
@@ -2446,9 +2700,102 @@ int Console::CommandThresholdEqNoiseCenter(){
 }
 
 
-int Console::CommandTOCalib(){
-    pc->TOCalib();
-    return 0;
+void Console::CommandTOCalib(){
+    // This function does the TO calibration. It is based on the previous TOCalibFast, 
+    // rewritten in a cleaner way
+    // TODO: describe what the function does exactly
+    // - choose which chips to calibrate
+    // - choose TOT or TOA
+    // - choose internal or external pulser
+    // - choose pixels per column (i.e. at the same time this many rows will be
+    //   pulsed at the same time
+    // - choose shutter type and length
+    // - 
+    
+    // variable which stores, whether we're doing TOT or TOA calibration
+    std::string TOmode;
+    // variable which stores pulser (internal or external)
+    std::string pulser;
+    int pixels_per_column;
+    // shutter range
+    std::string shutter_range;
+    // shutter time
+    std::string shutter_time;
+    std::string input;
+
+    // first we're going to let the user decide which chips to calibrate
+    // define a set of ints, which will contain the number of the chips we're
+    // going to use
+    std::set<int> chip_set;
+    chip_set = ChipSelection();
+
+    // second we're going to determine whether the user wants to do a TOT or a 
+    // TOA calibration
+    TOmode = CalibrationSelection();
+    if (TOmode == "quit") return;
+    std::cout << "using " << TOmode << std::endl;
+
+    // now we're asking if the user wants to use an internal or external pulser
+    pulser = PulserSelection();
+    if (pulser == "quit") return;
+    std::cout << "using " << pulser << std::endl;
+
+    // TODO: IN case of internal pulser, use default values for shutter range and time
+    //       standard and 100
+
+    // now we need to create a list of pulses, which is going to 
+    // be used
+    // if we use an external pulser, this list will only contain a single value
+    // for the internal pulser, we create a list
+    std::list<int> pulseList;
+    pulseList = PulseListCreator(pulser);
+    
+    // now determine the pixels per columns to use
+    pixels_per_column = PixPerColumnSelection();
+    if (pixels_per_column == -1) return;
+
+    // shutter type selection
+    shutter_range = ShutterRangeSelection();
+    
+    // shutter time selection
+    shutter_time  = ShutterTimeSelection(shutter_range);
+
+    
+    // in case of an external pulser, we will allow the user to add another voltages
+    // to the list after the first voltage has finished
+
+    // now I guess call the actual TO calib function?
+    if (pulser == "internal"){
+	// in case we use the internal pulser, we only allow to use the pulse list 
+	// created before
+	pc->TOCalib(chip_set, TOmode, pulser, pulseList, pixels_per_column, shutter_range, shutter_time);
+    }
+    else if (pulser == "external"){
+	// in case of an external trigger, we ask whether the user wants to add 
+	// another voltage after the first one has finished
+	do{
+	    pc->TOCalib(chip_set, TOmode, pulser, pulseList, pixels_per_column, shutter_range, shutter_time);
+	    
+	    // ask for more input
+	    std::cout << "Do you wish to use another external pulse voltage? (y / n)" 
+		      << std::endl;
+	    input = getUserInputNonNumericalNoDefault(_prompt, {"y", "n", "Y", "N"});
+	    if (input == "quit") return;
+	    else if( (input == "y") ||
+		     (input == "Y") ){
+		// in this case ask for another value
+		pulseList = PulseListCreator(pulser);
+	    }
+	    else{
+		// in this case we just finish
+		std::cout << TOmode << " calibration finished." << std::endl;
+		
+	    }
+	} while ( (input != "n") || (input != "N") );
+    }
+
+    // :)
+
 }
 
 
