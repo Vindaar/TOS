@@ -46,11 +46,13 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
     FD_ZERO(&readfd);
     FD_SET(sock,&readfd);
 
-#ifdef __WIN32__
-    //FD_SET(0,&readfd); //0=stdin -> Lesen von der Konsole Geht unter WIN nicht mit select() muss trotzdem rein
-#else
-    FD_SET(0,&readfd); //0=stdin -> Lesen von der Konsole
-#endif
+    // TODO:: UNDERSTAND why we should want to set FD_SET to stdin?! Causes super weird
+    // behaviour in case one presses ENTER :/
+// #ifdef __WIN32__
+//     //FD_SET(0,&readfd); //0=stdin -> Lesen von der Konsole Geht unter WIN nicht mit select() muss trotzdem rein
+// #else
+//     FD_SET(0,&readfd); //0=stdin -> Lesen von der Konsole
+// #endif
 
     _timeout.tv_sec =5; 
     _timeout.tv_usec =10000;
@@ -1094,7 +1096,7 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, int NumHits){
 	    int y   = (*PackQueueReceive) [packet][byte + 1];
 	    int val = ((*PackQueueReceive)[packet][byte + 2] << 8) + (*PackQueueReceive)[packet][byte + 3];
 	    // and set the array to the corresponding value
-	    (*pixel_data)[x][y] = val;
+	    (*pixel_data)[y][x] = val;
 	    //std::cout << "pixel  " << y <<" "<< x << " has "<< val<<" hits"<< std::endl;
 	    if (packet == Packets - 1){
 		PacketLength = LastPacketLength - 18 - 4;
@@ -1114,7 +1116,7 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, int NumHits){
 
 int FPGA::SaveData(int pix[256][256], int NumHits){
 #if DEBUG==2
-    std::cout<<"Enter FPGA::SaveData(array)"<<std::endl;
+    std::cout<<"Enter FPGA::SaveData(int pix[256][256], int NumHits)"<<std::endl;
 #endif
     int byte;
     int packet = 0;
@@ -1123,7 +1125,7 @@ int FPGA::SaveData(int pix[256][256], int NumHits){
 	Hits = 4096;
     }
     else {
-	Hits =NumHits;
+	Hits = NumHits;
     }
     int PacketLenght = PLen;
     int Packets = (((Hits*4)+PLen-1)/PLen);
@@ -1271,9 +1273,11 @@ int FPGA::SaveData(FrameArray<int> *pixel_data){
 
 
     // initialize the whole array to zero to be sure
-    for(std::size_t x = 0; x < pixel_data->size(); ++x){
-	for(std::size_t y = 0; y < (*pixel_data)[x].size(); ++y){
-	    (*pixel_data)[x][y] = 0;
+    //for(std::size_t x = 0; x < pixel_data->size(); ++x){
+    //    for(std::size_t y = 0; y < (*pixel_data)[x].size(); ++y){
+    for(std::size_t y = 0; y < pixel_data->size(); ++y){
+	for(std::size_t x = 0; x < (*pixel_data)[x].size(); ++x){
+	    (*pixel_data)[y][x] = 0;
 	}
     }
 
@@ -1284,7 +1288,7 @@ int FPGA::SaveData(FrameArray<int> *pixel_data){
 		// converted to values... :/ 
 		aktBit = y*256*14 + b*256 + (255 - x) + 8;
 		if( ( (*PackQueueReceive)[(aktBit / 8) / PLen][18 + ((aktBit / 8) % PLen)] & 1 << (7 - (aktBit % 8) ) ) > 0){
-		    (*pixel_data)[x][y] += 1 << (13 - b);
+		    (*pixel_data)[y][x] += 1 << (13 - b);
 		}
 	    }
 	}

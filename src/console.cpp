@@ -391,6 +391,11 @@ int Console::UserInterface(){
 	{
 	    CommandLoadFSR();
 	}
+	else if( (ein.compare("LoadFSRAll")==0) ||
+		 (ein.compare("lfa")==0)) 
+	{
+	    CommandLoadFSRAll();
+	}
 	else if( ein.compare("SetDAC")==0 )
 	{
 	    CommandSetDAC();
@@ -2028,6 +2033,51 @@ int Console::CommandLoadFSR(){
 	}
 	pc->fpga->tp->SaveFSRToFile(pc->GetFSRFileName(chip),chip);
 	std::cout << "FSR saved to program folder as " << pc->GetFSRFileName(chip) << "\n" << std::flush;
+    }
+    return err;
+}
+
+int Console::CommandLoadFSRAll(){
+    // this function simply loads a fsr file for all chips
+    // on the default file names
+    int err = 0;
+    bool numericalInput = false;
+    bool allowDefaultOnEmptyInput = true;
+
+    std::string input;
+    const char* f=pc->GetFSRFileName(1);
+    std::cout << "Enter a FSR filename to be loaded for all chips.\n"
+	      << "(press ENTER to load default " << f  
+	      << std::endl;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    if (input == "quit") return -1;
+    if(input==""){
+	// per default we wish to load the fsr.txt file
+	f = pc->GetFSRFileName(1);
+    }
+    else{
+	f = input.c_str();
+    }
+    std::cout << "Trying to load file: " << f << std::endl;
+    FILE* f1 = fopen(f, "r"); 
+    if (f1 == NULL) {
+	std::cout << "File not found"
+		  << std::endl; 
+	return -1;
+    }
+    else{
+	for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	    err=pc->fpga->tp->LoadFSRFromFile(f,chip);
+	    if(err==1){
+		std::cout << "FSR loaded from " << f << "\n" << std::flush;
+	    }
+	    else{
+		std::cout << "Error in " << f << " in row " << -err << "\n" 
+			  << std::flush;
+	    }
+	pc->fpga->tp->SaveFSRToFile(pc->GetFSRFileName(chip),chip);
+	std::cout << "FSR saved to program folder as " << pc->GetFSRFileName(chip) << "\n" << std::flush;
+	}
     }
     return err;
 }

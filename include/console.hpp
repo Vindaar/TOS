@@ -135,6 +135,8 @@ private:
     void ClearFpgaExtTriggerFlag();
   
     int CommandLoadFSR();	
+    // function to simply load a single fsr file for all chips
+    int CommandLoadFSRAll();
     int CommandLoadThreshold();
     int CommandSetDAC();
     int CommandShowFSR();

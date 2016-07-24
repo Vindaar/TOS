@@ -111,21 +111,27 @@ void Frame::SetPartialFrame(FrameArray<int> pixel_data,
 	    if(lfsr_flag == true){
 		// if we check for lfsr values (in case data is given in 
 		// lfsr values
-		if( (pixel_data[x][y] != 0) &&
-		    (pixel_data[x][y] != lfsr_ignore_value ) ){
-		    _pixel_data[x][y] = pixel_data[x][y];
+		if( (pixel_data[y][x] != 0) &&
+		    (pixel_data[y][x] != lfsr_ignore_value ) ){
+		    //_pixel_data[x][y] = pixel_data[x][y];
+		    //std::cout << "val " << pixel_data[y][x] << std::endl;
+		    _pixel_data[x][y] = pixel_data[y][x];
 		    
+		    //_lastPFrameSum += pixel_data[x][y];
+		    _lastPFrameSum += pixel_data[y][x];
+		    _lastPFrameHits++;
+
+		}
+	    }
+	    else{
+		// even without lfsr flag, only add if value not zero...
+		if (pixel_data[x][y] != 0){
+		    _pixel_data[x][y] = pixel_data[x][y];
+
 		    _lastPFrameSum += pixel_data[x][y];
 		    _lastPFrameHits++;
 		}
 	    }
-	    else{
-		    _pixel_data[x][y] = pixel_data[x][y];
-
-		    _lastPFrameSum += pixel_data[x][y];
-		    _lastPFrameHits++;
-	    }
-
 	}
     }
 
@@ -135,6 +141,11 @@ void Frame::SetPartialFrame(FrameArray<int> pixel_data,
     else{
 	_lastPFrameMean = 0;
     }
+
+    std::cout << "lastPFrameMean "  << _lastPFrameMean 
+	      << " lastPFrameSum "  << _lastPFrameSum 
+	      << " lastPFrameHits " << _lastPFrameHits
+	      << std::endl;
 }
 
 void Frame::CalcSumHitsMean(bool lastPFrameFlag,
@@ -152,13 +163,19 @@ void Frame::CalcSumHitsMean(bool lastPFrameFlag,
 
     int lfsr_ignore_value = 11810;
 
+    _fullFrameSum = 0;
+    _fullFrameMean = 0;
+    _fullFrameHits = 0;
+
     for(int x = x_start; x < (_pix_per_dimension / x_step_size); x++){
 	for(int y = y_start; y < (_pix_per_dimension / y_step_size); y++){
 	    // NOTE: see note from StackFrame
 	    if(lfsr_flag == true){
 		// if we check for lfsr values (in case data is given in 
 		// lfsr values
-		if( _pixel_data[x][y] != lfsr_ignore_value ){
+		if( (_pixel_data[x][y] != 0) && 
+		    (_pixel_data[x][y] != lfsr_ignore_value) ){
+		    //std::cout << "x " << x << " y " << y << std::endl; 
 		    _fullFrameSum += _pixel_data[x][y];
 		    _fullFrameHits++;
 		}
@@ -173,7 +190,10 @@ void Frame::CalcSumHitsMean(bool lastPFrameFlag,
     }
     
     // and now calculate mean
-    _fullFrameMean = _fullFrameSum / _fullFrameHits;
+    if (_fullFrameHits > 0){
+	_fullFrameMean = _fullFrameSum / _fullFrameHits;
+    }
+    //std::cout << "fullframeMean " << _fullFrameMean << std::endl;
 }
 
 double Frame::CalcVariance(bool lastPFrameFlag,
@@ -211,12 +231,16 @@ double Frame::CalcVariance(bool lastPFrameFlag,
 	    // NOTE: see note from StackFrame
 	    // TODO: check if we need to check for pixel values != 0!
 	    if (lastPFrameFlag == true){
-		double pix_minus_mean   = _pixel_data[x][y] - _lastPFrameMean;
-		_lastPFrameVariance += (pix_minus_mean * pix_minus_mean) / (_lastPFrameHits - 1);
+		if (_lastPFrameHits > 1){
+		    double pix_minus_mean   = _pixel_data[x][y] - _lastPFrameMean;
+		    _lastPFrameVariance += (pix_minus_mean * pix_minus_mean) / (_lastPFrameHits - 1);
+		}
 	    }
 	    else{
-		double pix_minus_mean   = _pixel_data[x][y] - _fullFrameMean;
-		_fullFrameVariance  += (pix_minus_mean * pix_minus_mean) / (_fullFrameHits - 1);
+		if (_fullFrameHits > 1){
+		    double pix_minus_mean   = _pixel_data[x][y] - _fullFrameMean;
+		    _fullFrameVariance  += (pix_minus_mean * pix_minus_mean) / (_fullFrameHits - 1);
+		}
 	    }
 	}
     }

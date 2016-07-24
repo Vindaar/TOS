@@ -88,7 +88,7 @@ private:
     /* Filedeskriptoren fuer select() - readfd merkt sich von wo gelesen werden soll, 
      * testfd testet ob dort ein Paket angekommen ist
      */
-    fd_set readfd,testfd; 	 
+    fd_set readfd, testfd; 	 
     struct timeval _timeout; 	//< Zeitvariable fuer Timeout bei Kommunikation mit FPGA
     struct sockaddr_in sckadd;	//< in netinet/in.h definierte Struktur fuer IP-Adressen
 		

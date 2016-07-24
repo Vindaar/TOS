@@ -53,66 +53,66 @@ PC::PC(Timepix *tp):
   
     TOSPathName=puffer;
   
-    DataPathName="data";
-    DataFileName="data.txt";
-    Data2FileName="data2.txt";
-    Data3FileName="data3.txt";
-    Data4FileName="data4.txt";
-    Data5FileName="data5.txt";
-    Data6FileName="data6.txt";
-    Data7FileName="data7.txt";
-    Data8FileName="data8.txt";
+    DataPathName  = "data";
+    DataFileName  = "data1.txt";
+    Data2FileName = "data2.txt";
+    Data3FileName = "data3.txt";
+    Data4FileName = "data4.txt";
+    Data5FileName = "data5.txt";
+    Data6FileName = "data6.txt";
+    Data7FileName = "data7.txt";
+    Data8FileName = "data8.txt";
   
-    RunFileName="run.txt";
+    RunFileName  = "run.txt";
   
-    FSRFileName="fsr.txt";
-    FSR2FileName="fsr2.txt";
-    FSR3FileName="fsr3.txt";
-    FSR4FileName="fsr4.txt";
-    FSR5FileName="fsr5.txt";
-    FSR6FileName="fsr6.txt";
-    FSR7FileName="fsr7.txt";
-    FSR8FileName="fsr8.txt";
+    FSRFileName  = "fsr1.txt";
+    FSR2FileName = "fsr2.txt";
+    FSR3FileName = "fsr3.txt";
+    FSR4FileName = "fsr4.txt";
+    FSR5FileName = "fsr5.txt";
+    FSR6FileName = "fsr6.txt";
+    FSR7FileName = "fsr7.txt";
+    FSR8FileName = "fsr8.txt";
   
-    MatrixFileName="matrix.txt";
-    Matrix2FileName="matrix2.txt";
-    Matrix3FileName="matrix3.txt";
-    Matrix4FileName="matrix4.txt";
-    Matrix5FileName="matrix5.txt";
-    Matrix6FileName="matrix6.txt";
-    Matrix7FileName="matrix7.txt";
-    Matrix8FileName="matrix8.txt";
+    MatrixFileName  = "matrix1.txt";
+    Matrix2FileName = "matrix2.txt";
+    Matrix3FileName = "matrix3.txt";
+    Matrix4FileName = "matrix4.txt";
+    Matrix5FileName = "matrix5.txt";
+    Matrix6FileName = "matrix6.txt";
+    Matrix7FileName = "matrix7.txt";
+    Matrix8FileName = "matrix8.txt";
         
-    ThresholdFileName="threshold.txt";
-    Threshold2FileName="threshold2.txt";
-    Threshold3FileName="threshold3.txt";
-    Threshold4FileName="threshold4.txt";
-    Threshold5FileName="threshold5.txt";
-    Threshold6FileName="threshold6.txt";
-    Threshold7FileName="threshold7.txt";
-    Threshold8FileName="threshold8.txt";
+    ThresholdFileName  = "threshold1.txt";
+    Threshold2FileName = "threshold2.txt";
+    Threshold3FileName = "threshold3.txt";
+    Threshold4FileName = "threshold4.txt";
+    Threshold5FileName = "threshold5.txt";
+    Threshold6FileName = "threshold6.txt";
+    Threshold7FileName = "threshold7.txt";
+    Threshold8FileName = "threshold8.txt";
 
-    ThresholdMeansFileName="thresholdMeans.txt";
-    ThresholdMeans2FileName="thresholdMeans2.txt";
-    ThresholdMeans3FileName="thresholdMeans3.txt";
-    ThresholdMeans4FileName="thresholdMeans4.txt";
-    ThresholdMeans5FileName="thresholdMeans5.txt";
-    ThresholdMeans6FileName="thresholdMeans6.txt";
-    ThresholdMeans7FileName="thresholdMeans7.txt";
-    ThresholdMeans8FileName="thresholdMeans8.txt";
+    ThresholdMeansFileName  = "thresholdMeans1.txt";
+    ThresholdMeans2FileName = "thresholdMeans2.txt";
+    ThresholdMeans3FileName = "thresholdMeans3.txt";
+    ThresholdMeans4FileName = "thresholdMeans4.txt";
+    ThresholdMeans5FileName = "thresholdMeans5.txt";
+    ThresholdMeans6FileName = "thresholdMeans6.txt";
+    ThresholdMeans7FileName = "thresholdMeans7.txt";
+    ThresholdMeans8FileName = "thresholdMeans8.txt";
   
-    MaskFileName="mask.txt";
-    Mask2FileName="mask2.txt";
-    Mask3FileName="mask3.txt";
-    Mask4FileName="mask4.txt";
-    Mask5FileName="mask5.txt";
-    Mask6FileName="mask6.txt";
-    Mask7FileName="mask7.txt";
-    Mask8FileName="mask8.txt";
+    MaskFileName  = "mask1.txt";
+    Mask2FileName = "mask2.txt";
+    Mask3FileName = "mask3.txt";
+    Mask4FileName = "mask4.txt";
+    Mask5FileName = "mask5.txt";
+    Mask6FileName = "mask6.txt";
+    Mask7FileName = "mask7.txt";
+    Mask8FileName = "mask8.txt";
   
-    DACScanFileName="DACScan.txt";
+    DACScanFileName   = "DACScan.txt";
   
-    TOTCalibFileName = "TOTCalib.txt"; 
+    TOTCalibFileName  = "TOTCalib1.txt"; 
     TOTCalib2FileName = "TOTCalib2.txt"; 
     TOTCalib3FileName = "TOTCalib3.txt"; 
     TOTCalib3FileName = "TOTCalib3.txt"; 
@@ -122,7 +122,7 @@ PC::PC(Timepix *tp):
     TOTCalib7FileName = "TOTCalib7.txt"; 
     TOTCalib8FileName = "TOTCalib8.txt";
   
-    TOACalibFileName = "TOACalib.txt"; 
+    TOACalibFileName  = "TOACalib1.txt"; 
     TOACalib2FileName = "TOACalib2.txt"; 
     TOACalib3FileName = "TOTAalib3.txt"; 
     TOACalib3FileName = "TOACalib3.txt";
@@ -1342,10 +1342,10 @@ void PC::TOCalibAllChipsSetUniformMatrix(std::set<int> chip_set,
     for (unsigned short chip = 0; chip < nChips; chip++){
         // first create a uniform matrix for either TOT or TOA
         if (TOmode == "TOT"){
-            fpga->tp->UniformMatrix(1,0,0,0,0,chip);
+            fpga->tp->UniformMatrix(1,0,0,0,0,chip + 1);
         }
         else if (TOmode == "TOA"){
-            fpga->tp->UniformMatrix(1,1,0,0,0,chip);
+            fpga->tp->UniformMatrix(1,1,0,0,0,chip + 1);
         }
 
         // on top of this now also set the masking and test pulses for all
@@ -1353,16 +1353,16 @@ void PC::TOCalibAllChipsSetUniformMatrix(std::set<int> chip_set,
         // only done for chips we actually want to calibrate (!), i.e. part of chip_set
         std::set<int>::iterator it_chip_in_set;
         // try to find chip in the chip_set, if found we set the mask and test pulse
-        it_chip_in_set = chip_set.find(chip+1);
+        it_chip_in_set = chip_set.find(chip + 1);
         if (it_chip_in_set != chip_set.end()){
             // set mask and test pulse
-            fpga->tp->Spacing_row(       step, pixels_per_column, chip);
-            fpga->tp->Spacing_row_TPulse(step, pixels_per_column, chip);
+            fpga->tp->Spacing_row(       step, pixels_per_column, chip + 1);
+            fpga->tp->Spacing_row_TPulse(step, pixels_per_column, chip + 1);
         }
         // now load the correct threshold.txt for each chip
-        fpga->tp->LoadThresholdFromFile(GetThresholdFileName(chip),chip);
+        fpga->tp->LoadThresholdFromFile(GetThresholdFileName(chip + 1), chip + 1);
         // and save the current matrix to the correct files
-        fpga->tp->SaveMatrixToFile(GetMatrixFileName(chip),chip);
+        fpga->tp->SaveMatrixToFile(GetMatrixFileName(chip + 1), chip + 1);
     }
 
     // now we have set the matrices, but we still have not written them to the
@@ -1422,18 +1422,30 @@ void PC::TOCalibSingleChipReadoutCalc(int chip,
     int pixels_per_column = boost::any_cast<int>(parameter_map["pixels_per_column"]);
 
     // frame to save the data into
-    FrameArray<int> pixel_data;
+    FrameArray<int> pixel_data = {};
     // read the pixel_data for the current chip
     // need to hand address to pixel_data
-    fpga->DataFPGAPC(&pixel_data, chip);
+    //int pix[256][256] = {};
+    //fpga->DataFPGAPC(pix, chip);
+    
+    int numhits = fpga->DataFPGAPC(&pixel_data, chip);
+    std::cout << "numhits is " << numhits << std::endl;
 
+    //abort();
     // now set the pixel data of the correct frame in the frame_map
     // to eventually create the full frame
     (*frame_map)[chip].SetPartialFrame(pixel_data, CTPR, 32, step, pixels_per_column, true);
+
+    //(*frame_map)[chip].CalcSumHitsMean(false);
+    
+
     // and get the sum, mean and hits values form this partial frame
     sum  = (*frame_map)[chip].GetLastPFrameSum();
     hits = (*frame_map)[chip].GetLastPFrameHits();
     mean = (*frame_map)[chip].GetLastPFrameMean();
+    // sum  = (*frame_map)[chip].GetFullFrameSum();
+    // hits = (*frame_map)[chip].GetFullFrameHits();
+    // mean = (*frame_map)[chip].GetFullFrameMean();
     
     // now calculate the variance and standard deviation of the last partial frame
     double variance;
@@ -1447,15 +1459,16 @@ void PC::TOCalibSingleChipReadoutCalc(int chip,
 
     // and give some output to see what's going on :)
     std::cout << "iter " << iter << "\t"
-	      << "pulse " << pulse << "\t"
-	      << "chip " << chip << "\t"
-	      << "step " << step << "\t"
-	      << "CTPR " << CTPR << "\t"
-	      << "mean " << mean << "\t"
-	      << "hits " << hits << "\t"
-	      << "sum "  << sum  << "\t"
-	      << "std "  << std
-	      << std::endl;
+    	      << "pulse " << pulse << "\t"
+    	      << "chip " << chip << "\t"
+    	      << "step " << step << "\t"
+    	      << "CTPR " << CTPR << "\t"
+    	      << "mean " << mean << "\t"
+    	      << "hits " << hits << "\t"
+    	      << "sum "  << sum  << "\t"
+    	      << "variance" << variance << "\t"
+    	      << "std "  << std
+    	      << std::endl;
 }
 
 void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
@@ -1589,7 +1602,7 @@ void PC::TOCalibSingleIteration(std::set<int> chip_set,
 
     // now we basically have to calculate the important variables for the whole frame, which was 
     // created in the iteration
-    std::for_each( frame_map.begin(), frame_map.end(), [&chip_mean_std_map](std::pair<int, Frame> chip_pair){
+    std::for_each( frame_map.begin(), frame_map.end(), [&chip_mean_std_map, &parameter_map](std::pair<int, Frame> chip_pair){
 	    // get the chip and frame from the frame map
 	    int chip = chip_pair.first;
 	    Frame chip_frame = chip_pair.second;
@@ -1614,6 +1627,19 @@ void PC::TOCalibSingleIteration(std::set<int> chip_set,
 	    current_pair.second += std;
 	    // and set this pair again as the chips value
 	    (*chip_mean_std_map)[chip] = current_pair;
+
+	    // and print the values for this iteration and this chip
+	    int iter  = boost::any_cast<int>(parameter_map["iteration"]);
+	    int pulse = boost::any_cast<int>(parameter_map["pulse"]);
+	    
+	    std::cout << "\n \n"
+		      << "iteration "  << iter
+		      << " for pulse " << pulse << " done.\n"
+		      << " chip " << chip 
+		      << " mean " << mean 
+		      << " std "  << std
+		      << std::endl;
+	       
 	} );
 
 }
@@ -1749,260 +1775,261 @@ void PC::TOCalib(std::set<int> chip_set,
 
 int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsigned short time, unsigned short TOT, unsigned short internalPulser){
     // THIS FUNCTION IS DEPRECATED AND ONLY STILL INCLUDED HERE UNTIL TOCalib() IS MADE SURE TO WORK CORRECTLY
-	std::fstream f;
-	bool next_voltage = true;
-	std::vector<int> voltage;
-	std::vector<int> meanTOT1; std::vector<double> stddevTOT1;
-	std::vector<int> meanTOT2; std::vector<double> stddevTOT2;
-	std::vector<int> meanTOT3; std::vector<double> stddevTOT3;
-	std::vector<int> meanTOT4; std::vector<double> stddevTOT4;
-	std::vector<int> meanTOT5; std::vector<double> stddevTOT5;
-	std::vector<int> meanTOT6; std::vector<double> stddevTOT6;
-	std::vector<int> meanTOT7; std::vector<double> stddevTOT7;
-	std::vector<int> meanTOT8; std::vector<double> stddevTOT8;
+    std::cout << "starting PC::tocalibfast" << std::endl;
+    std::fstream f;
+    bool next_voltage = true;
+    std::vector<int> voltage;
+    std::vector<int> meanTOT1; std::vector<double> stddevTOT1;
+    std::vector<int> meanTOT2; std::vector<double> stddevTOT2;
+    std::vector<int> meanTOT3; std::vector<double> stddevTOT3;
+    std::vector<int> meanTOT4; std::vector<double> stddevTOT4;
+    std::vector<int> meanTOT5; std::vector<double> stddevTOT5;
+    std::vector<int> meanTOT6; std::vector<double> stddevTOT6;
+    std::vector<int> meanTOT7; std::vector<double> stddevTOT7;
+    std::vector<int> meanTOT8; std::vector<double> stddevTOT8;
 	
-	int i = 0;
+    int i = 0;
 
-	while(next_voltage)
-	{
-		int myint = 0;
-		if (internalPulser == 0) {
-		    std::string ein5 = "";
-		    ein5 = getUserInput("What is the voltage you set at the external pulser in mV? ");
-		    if (ein5 == "quit") return -1;
-		    else if(ein5==""){myint=0;}
-		    else{
-			myint=(int) atoi(ein5.data());
+    while(next_voltage)
+    {
+	int myint = 0;
+	if (internalPulser == 0) {
+	    std::string ein5 = "";
+	    ein5 = getUserInput("What is the voltage you set at the external pulser in mV? ");
+	    if (ein5 == "quit") return -1;
+	    else if(ein5==""){myint=0;}
+	    else{
+		myint=(int) atoi(ein5.data());
+	    }
+	}
+	if (internalPulser == 1) {
+	    if (i == 0) { myint = 370;}
+	    else if (i == 1) { myint = 380;}
+	    else if (i == 2) { myint = 390;}
+	    else if (i == 3) { myint = 400;}
+	    else if (i == 4) { myint = 410;}
+	    else if (i == 5) { myint = 420;}
+	    else if (i == 6) { myint = 430;}
+	    else if (i == 7) { myint = 440;}
+	    else if (i == 8) { myint = 450;}
+	    else if (i == 9) { myint = 500;}
+	    else if (i == 10) { myint = 550;}
+	    else if (i == 11) { myint = 650;}
+	    else if (i == 12) { myint = 750;}
+	    else if (i == 13) { myint = 850;}
+	    else {myint = 350;}
+	    fpga->i2cDAC(myint,3);
+	    fpga->i2cDAC(350,2);
+	    fpga->tpulse(1,50);
+	}
+	voltage.push_back(myint);
+	int meanTOT_[9] = {0};
+	double stddevTOT_[9] = {0};
+	double sumstddev_iteration[9][4]={0};
+	for (unsigned int iteration=0; iteration<4; iteration++){
+	    if (internalPulser == 1) {
+		if (TALKATIVNESS == 0 ){
+		    std::cout << "Voltage "<<i<<" of 13; iteration "<<iteration<<" of "<< 3<<std::endl;
+		}
+	    }
+	    if (internalPulser == 0) {
+		if (TALKATIVNESS == 0 ) {
+		    std::cout << "Iteration "<<iteration<<" of "<< 3<<std::endl;
+		}
+	    }
+	    int meanTOT_ctpr[9] = {0};
+	    double sumstddev_iteration_ctpr[9][256]={0};
+	    double sumctpr[9][4]={0};
+	    for (unsigned int step=0; step<(256/pix_per_row);step++){
+		double stddevTOT_iteration_spacing[9][32] = {0};
+		int meanTOT_iteration[9] = {0};
+		//fpga->GeneralReset();
+		for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		    if (TOT == 3) { fpga->tp->UniformMatrix(1,0,0,0,0,chip);} //1,0: TOT modus, Mask and test pulse are set later
+		    else if (TOT == 4) { fpga->tp->UniformMatrix(1,1,0,0,0,chip);} //1,1: TIME modus
+		    else {fpga->tp->UniformMatrix(1,TOT,0,0,0,chip);} //1,0: TOT modus
+		    fpga->tp->Spacing_row(step,pix_per_row,chip);
+		    fpga->tp->Spacing_row_TPulse(step,pix_per_row,chip);
+		    //fpga->tp->SpacingCalib(CTPR,step,pix_per_row,chip);
+		    fpga->tp->LoadThresholdFromFile(GetThresholdFileName(chip),chip);
+		    fpga->tp->SaveMatrixToFile(GetMatrixFileName(chip),chip);
+		}
+		fpga->WriteReadFSR();
+		int pix_tempdata2[9][256][256]= {0};
+		fpga->SetMatrix();
+		usleep(2000 );
+		fpga->SerialReadOut(pix_tempdata2);
+		fpga->EnableTPulse(1);
+		for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		    fpga->tp->SetDAC(14,chip,0);
+		}
+		for (unsigned int CTPR=0;CTPR<32;CTPR++){ //must go from 0 to <(256/pix_per_row)
+		    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+			fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
+			unsigned int CTPRval = 1<<CTPR;
+			fpga->tp->SetDAC(14,chip,CTPRval);
 		    }
-		}
-		if (internalPulser == 1) {
-			if (i == 0) { myint = 370;}
-			else if (i == 1) { myint = 380;}
-			else if (i == 2) { myint = 390;}
-			else if (i == 3) { myint = 400;}
-			else if (i == 4) { myint = 410;}
-			else if (i == 5) { myint = 420;}
-			else if (i == 6) { myint = 430;}
-			else if (i == 7) { myint = 440;}
-			else if (i == 8) { myint = 450;}
-			else if (i == 9) { myint = 500;}
-			else if (i == 10) { myint = 550;}
-			else if (i == 11) { myint = 650;}
-			else if (i == 12) { myint = 750;}
-			else if (i == 13) { myint = 850;}
-			else {myint = 350;}
-			fpga->i2cDAC(myint,3);
-			fpga->i2cDAC(350,2);
-			fpga->tpulse(1,50);
-		}
-		voltage.push_back(myint);
-		int meanTOT_[9] = {0};
-		double stddevTOT_[9] = {0};
-		double sumstddev_iteration[9][4]={0};
-		for (unsigned int iteration=0; iteration<4; iteration++){
-			if (internalPulser == 1) {
-				if (TALKATIVNESS == 0 ){
-					std::cout << "Voltage "<<i<<" of 13; iteration "<<iteration<<" of "<< 3<<std::endl;
-				}
+		    fpga->WriteReadFSR();
+		    fpga->WriteReadFSR();
+		    usleep(400 );
+		    int result = 0;
+		    if (shuttertype==1){
+			fpga->CountingTime(time, 0);
+		    }
+		    else{
+			// calling CountingTime with second argument == 1
+			// corresponds to n = 1, power of 256
+			fpga->CountingTime(time, 1);
+		    }
+		    int meanTOT_iteration_spacing[9] = {0};
+		    if (TOT == 3 or TOT == 4) {
+			for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+			    std::string filename_; //if want to write to file
+			    std::ostringstream sstream;
+			    sstream<<"TOTCalib1"<<"_iteration"<<iteration<<"_step"<<step<<"_chip"<<chip<<".txt";
+			    filename_=DataPathName+"/"+"TOT"+"/"; filename_+=sstream.str();
+			    fpga->DataChipFPGA(result);
+			    DoReadOut2(filename_.c_str(),chip);
 			}
-			if (internalPulser == 0) {
-				if (TALKATIVNESS == 0 ) {
-					std::cout << "Iteration "<<iteration<<" of "<< 3<<std::endl;
-				}
-			}
-			int meanTOT_ctpr[9] = {0};
-			double sumstddev_iteration_ctpr[9][256]={0};
-			double sumctpr[9][4]={0};
-			for (unsigned int step=0; step<(256/pix_per_row);step++){
-				double stddevTOT_iteration_spacing[9][32] = {0};
-				int meanTOT_iteration[9] = {0};
-				//fpga->GeneralReset();
-				for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-					if (TOT == 3) { fpga->tp->UniformMatrix(1,0,0,0,0,chip);} //1,0: TOT modus, Mask and test pulse are set later
-					else if (TOT == 4) { fpga->tp->UniformMatrix(1,1,0,0,0,chip);} //1,1: TIME modus
-					else {fpga->tp->UniformMatrix(1,TOT,0,0,0,chip);} //1,0: TOT modus
-					fpga->tp->Spacing_row(step,pix_per_row,chip);
-					fpga->tp->Spacing_row_TPulse(step,pix_per_row,chip);
-					//fpga->tp->SpacingCalib(CTPR,step,pix_per_row,chip);
-					fpga->tp->LoadThresholdFromFile(GetThresholdFileName(chip),chip);
-					fpga->tp->SaveMatrixToFile(GetMatrixFileName(chip),chip);
-				}
-				fpga->WriteReadFSR();
-				int pix_tempdata2[9][256][256]= {0};
-				fpga->SetMatrix();
-				usleep(2000 );
-				fpga->SerialReadOut(pix_tempdata2);
-				fpga->EnableTPulse(1);
-				for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-					fpga->tp->SetDAC(14,chip,0);
-				}
-				for (unsigned int CTPR=0;CTPR<32;CTPR++){ //must go from 0 to <(256/pix_per_row)
-					for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-						fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
-						unsigned int CTPRval = 1<<CTPR;
-						fpga->tp->SetDAC(14,chip,CTPRval);
-					}
-					fpga->WriteReadFSR();
-					fpga->WriteReadFSR();
-					usleep(400 );
-					int result = 0;
-					if (shuttertype==1){
-					    fpga->CountingTime(time, 0);
-					}
-					else{
-					    // calling CountingTime with second argument == 1
-					    // corresponds to n = 1, power of 256
-					    fpga->CountingTime(time, 1);
-					}
-					int meanTOT_iteration_spacing[9] = {0};
-					if (TOT == 3 or TOT == 4) {
-						for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-							std::string filename_; //if want to write to file
-							std::ostringstream sstream;
-							sstream<<"TOTCalib1"<<"_iteration"<<iteration<<"_step"<<step<<"_chip"<<chip<<".txt";
-							filename_=DataPathName+"/"+"TOT"+"/"; filename_+=sstream.str();
-							fpga->DataChipFPGA(result);
-							DoReadOut2(filename_.c_str(),chip);
-						}
-					}
-					else {
-						fpga->DataChipFPGA(result);
+		    }
+		    else {
+			fpga->DataChipFPGA(result);
 
 // MAIN PART HERE
-						for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-							int sumTOT = 0;
-							int pix_tempdata[256][256]= {0};
-							int hitcounter = 0;
-							int hitcounter_real = 0;
-							fpga->DataFPGAPC(pix_tempdata,chip);
-							for(short y=step;y<256;y+=(256/pix_per_row)){
-                                                                for(short x=CTPR;x<256;x+=32){//short x=CTPR;x<256;x+=32
-									if((pix_tempdata[y][x])!=0 && (pix_tempdata[y][x])!=11810 && fpga->tp->GetMask(y,x,chip)==1){
-										sumTOT+=pix_tempdata[y][x];
-										hitcounter_real++;
-                                                                                //if (CTPR ==0)std::cout << "y "<<y<<" x "<<x<<" hits "<<pix_tempdata[y][x]<<std::endl;
-									}
-									else{
-										sumTOT+=0;
-										hitcounter_real = hitcounter_real;
-									}
-								}
-							}
-							//std::cout << "Hits "<<hitcounter<<std::endl;
-							if (hitcounter_real == 0 or hitcounter_real == 1 ) {
-								hitcounter = 2;
-								meanTOT_iteration_spacing[chip] = sumTOT/hitcounter;
-							}
-							else {
-								hitcounter = hitcounter_real;
-								meanTOT_iteration_spacing[chip] = sumTOT/hitcounter;
-							}
-							double sumstddev = 0;
-							for(short y=step;y<256;y+=(256/pix_per_row)){
-								for(short x=CTPR;x<256;x+=32){
-									if (pix_tempdata[y][x] != 0) {
-										sumstddev+=(((pix_tempdata[y][x]-meanTOT_iteration_spacing[chip])*(pix_tempdata[y][x]-meanTOT_iteration_spacing[chip]))/(hitcounter-1));
-									}
-								}
-							}
-                                                        stddevTOT_iteration_spacing[chip][CTPR]=sqrt(sumstddev);
-                                                        if (internalPulser == 1) {
-                                                        	if (TALKATIVNESS == 1){
-                                                            	std::cout << "Voltage "<<i<<" of 13; step "<<step<<" of "<< (256/pix_per_row)-1<<"; CTPR iteration "<<CTPR<<" of 31;"<<"; frame "<<iteration<<" of 3"<<"; Chip "<<chip<<"; meanTOT: "<<meanTOT_iteration_spacing[chip]<<" stddevTOT: "<<stddevTOT_iteration_spacing[chip][step]<<" with "<<hitcounter_real<<" hits"<<std::endl;
-                                                        	}
-                                                        }
-                                                        if (internalPulser == 0) {
-                                                        	if (TALKATIVNESS == 1){
-                                                        		std::cout << "Step "<<step<<" of "<< (256/pix_per_row)-1<<"; CTPR iteration "<<CTPR<<" of 31;"<<"; frame "<<iteration<<" of 3"<<"; Chip "<<chip<<"; meanTOT: "<<meanTOT_iteration_spacing[chip]<<" stddevTOT: "<<stddevTOT_iteration_spacing[chip][step]<<" with "<<hitcounter_real<<" hits"<<std::endl;
-                                                        	}
-                                                        }
+			for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+			    int sumTOT = 0;
+			    int pix_tempdata[256][256]= {0};
+			    int hitcounter = 0;
+			    int hitcounter_real = 0;
+			    fpga->DataFPGAPC(pix_tempdata,chip);
+			    for(short y=step;y<256;y+=(256/pix_per_row)){
+				for(short x=CTPR;x<256;x+=32){//short x=CTPR;x<256;x+=32
+				    if((pix_tempdata[y][x])!=0 && (pix_tempdata[y][x])!=11810 && fpga->tp->GetMask(y,x,chip)==1){
+					sumTOT+=pix_tempdata[y][x];
+					hitcounter_real++;
+					//if (CTPR ==0)std::cout << "y "<<y<<" x "<<x<<" hits "<<pix_tempdata[y][x]<<std::endl;
+				    }
+				    else{
+					sumTOT+=0;
+					hitcounter_real = hitcounter_real;
+				    }
+				}
+			    }
+			    //std::cout << "Hits "<<hitcounter<<std::endl;
+			    if (hitcounter_real == 0 or hitcounter_real == 1 ) {
+				hitcounter = 2;
+				meanTOT_iteration_spacing[chip] = sumTOT/hitcounter;
+			    }
+			    else {
+				hitcounter = hitcounter_real;
+				meanTOT_iteration_spacing[chip] = sumTOT/hitcounter;
+			    }
+			    double sumstddev = 0;
+			    for(short y=step;y<256;y+=(256/pix_per_row)){
+				for(short x=CTPR;x<256;x+=32){
+				    if (pix_tempdata[y][x] != 0) {
+					sumstddev+=(((pix_tempdata[y][x]-meanTOT_iteration_spacing[chip])*(pix_tempdata[y][x]-meanTOT_iteration_spacing[chip]))/(hitcounter-1));
+				    }
+				}
+			    }
+			    stddevTOT_iteration_spacing[chip][CTPR]=sqrt(sumstddev);
+			    if (internalPulser == 1) {
+				if (TALKATIVNESS == 1){
+				    std::cout << "Voltage "<<i<<" of 13; step "<<step<<" of "<< (256/pix_per_row)-1<<"; CTPR iteration "<<CTPR<<" of 31;"<<"; frame "<<iteration<<" of 3"<<"; Chip "<<chip<<"; meanTOT: "<<meanTOT_iteration_spacing[chip]<<" stddevTOT: "<<stddevTOT_iteration_spacing[chip][step]<<" with "<<hitcounter_real<<" hits"<<std::endl;
+				}
+			    }
+			    if (internalPulser == 0) {
+				if (TALKATIVNESS == 1){
+				    std::cout << "Step "<<step<<" of "<< (256/pix_per_row)-1<<"; CTPR iteration "<<CTPR<<" of 31;"<<"; frame "<<iteration<<" of 3"<<"; Chip "<<chip<<"; meanTOT: "<<meanTOT_iteration_spacing[chip]<<" stddevTOT: "<<stddevTOT_iteration_spacing[chip][step]<<" with "<<hitcounter_real<<" hits"<<std::endl;
+				}
+			    }
 
-						} //chip
+			} //chip
 // UNTIL HERE
 
-					} //TOT
-					for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-						meanTOT_iteration[chip] += meanTOT_iteration_spacing[chip];
-					}
-				} // spacingCTPR
-				double sumstd_iteration[9][4] = {0};				
-				for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-					for (unsigned int ctpr=0; ctpr<32;ctpr++){
-                                                sumstd_iteration[chip][iteration]+=(stddevTOT_iteration_spacing[chip][ctpr]*stddevTOT_iteration_spacing[chip][ctpr])/(32-1);
-					}
-					meanTOT_ctpr[chip] += meanTOT_iteration[chip]/32;
-					sumstddev_iteration_ctpr[chip][step] = sqrt(sumstd_iteration[chip][iteration]);
-				}
-				fpga->EnableTPulse(0);
-			}//spacing row
-			for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-				meanTOT_[chip] += meanTOT_ctpr[chip]/(256/pix_per_row);
-				for (unsigned int step=0; step<(256/pix_per_row);step++){
-					sumctpr[chip][iteration]+=(sumstddev_iteration_ctpr[chip][step]*sumstddev_iteration_ctpr[chip][step])/((256/pix_per_row)-1);
-				}
-				sumstddev_iteration[chip][iteration] =sqrt(sumctpr[chip][iteration]);
-			}
-			//sumstddev_iteration[chip][iteration] hier erzeugen aus sumstddev_iteration_ctpr[chip][iteration] der einzelnen ctprs
-		} // iterations
-		//if (TOT == 0){
-			for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-				double sumstd[9]={0};
-				for (unsigned int iteration=0; iteration<4; iteration++){
-					sumstd[chip]+=(sumstddev_iteration[chip][iteration]*sumstddev_iteration[chip][iteration])/3;
-				}
-				stddevTOT_[chip] = sqrt(sumstd[chip]);
-			}
-			meanTOT1.push_back(meanTOT_[1]/4);
-			stddevTOT1.push_back(stddevTOT_[1]);
-			if (fpga->tp->GetNumChips() > 1) {meanTOT2.push_back(meanTOT_[2]/4);stddevTOT2.push_back(stddevTOT_[2]);}
-			if (fpga->tp->GetNumChips() > 2) {meanTOT3.push_back(meanTOT_[3]/4);stddevTOT3.push_back(stddevTOT_[3]);}
-			if (fpga->tp->GetNumChips() > 3) {meanTOT4.push_back(meanTOT_[4]/4);stddevTOT4.push_back(stddevTOT_[4]);}
-			if (fpga->tp->GetNumChips() > 4) {meanTOT5.push_back(meanTOT_[5]/4);stddevTOT5.push_back(stddevTOT_[5]);}
-			if (fpga->tp->GetNumChips() > 5) {meanTOT6.push_back(meanTOT_[6]/4);stddevTOT6.push_back(stddevTOT_[6]);}
-			if (fpga->tp->GetNumChips() > 6) {meanTOT7.push_back(meanTOT_[7]/4);stddevTOT7.push_back(stddevTOT_[7]);}
-			if (fpga->tp->GetNumChips() > 7) {meanTOT8.push_back(meanTOT_[8]/4);stddevTOT8.push_back(stddevTOT_[8]);}
-		//}
-			if (internalPulser == 0) {
-			    std::string ein4="";
-			    ein4 = getUserInput("Do you want to record data for another voltage? (0 = no, 1 = yes)");
-			    if (ein4 == "quit") return -1;
-			    else if(ein4==""){next_voltage=false;}
-			    else{
-				next_voltage=(bool) atoi(ein4.data());
-			    }
-			}
-			if (internalPulser == 1) {
-				next_voltage=true;
-				if (i == 13 ) next_voltage=false;
-			}
-			i++;
-	}
-	//if (TOT == 0){
-		std::cout << "Vector Voltages size: "<<voltage.size()<<std::endl;
-		for (unsigned int j = 0; j < voltage.size(); j++){
-			std::cout << "Voltage "<<j<<": "<<voltage[j]<<" with mean TOT (chip 1)"<<meanTOT1[j]<<std::endl;
-		}
+		    } //TOT
+		    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+			meanTOT_iteration[chip] += meanTOT_iteration_spacing[chip];
+		    }
+		} // spacingCTPR
+		double sumstd_iteration[9][4] = {0};				
 		for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-			if (TOT == 0) {f.open(GetTOTCalibFileName(chip),std::fstream::out);}
-			else f.open(GetTOACalibFileName(chip),std::fstream::out);
-			if(f.is_open()){
-				for(unsigned int j = 0; j < voltage.size(); j++){
-					if (chip == 1){f<<voltage[j]-350<<"\t"<<meanTOT1[j]<<"\t"<<stddevTOT1[j]<<std::endl;}
-					else if (chip == 2){f<<voltage[j]-350<<"\t"<<meanTOT2[j]<<"\t"<<stddevTOT2[j]<<std::endl;}
-					else if (chip == 3){f<<voltage[j]-350<<"\t"<<meanTOT3[j]<<"\t"<<stddevTOT3[j]<<std::endl;}
-					else if (chip == 4){f<<voltage[j]-350<<"\t"<<meanTOT4[j]<<"\t"<<stddevTOT4[j]<<std::endl;}
-					else if (chip == 5){f<<voltage[j]-350<<"\t"<<meanTOT5[j]<<"\t"<<stddevTOT5[j]<<std::endl;}
-					else if (chip == 6){f<<voltage[j]-350<<"\t"<<meanTOT6[j]<<"\t"<<stddevTOT6[j]<<std::endl;}
-					else if (chip == 7){f<<voltage[j]-350<<"\t"<<meanTOT7[j]<<"\t"<<stddevTOT7[j]<<std::endl;}
-					else if (chip == 8){f<<voltage[j]-350<<"\t"<<meanTOT8[j]<<"\t"<<stddevTOT8[j]<<std::endl;}
-				}
-				f.close();
-			}
+		    for (unsigned int ctpr=0; ctpr<32;ctpr++){
+			sumstd_iteration[chip][iteration]+=(stddevTOT_iteration_spacing[chip][ctpr]*stddevTOT_iteration_spacing[chip][ctpr])/(32-1);
+		    }
+		    meanTOT_ctpr[chip] += meanTOT_iteration[chip]/32;
+		    sumstddev_iteration_ctpr[chip][step] = sqrt(sumstd_iteration[chip][iteration]);
 		}
+		fpga->EnableTPulse(0);
+	    }//spacing row
+	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		meanTOT_[chip] += meanTOT_ctpr[chip]/(256/pix_per_row);
+		for (unsigned int step=0; step<(256/pix_per_row);step++){
+		    sumctpr[chip][iteration]+=(sumstddev_iteration_ctpr[chip][step]*sumstddev_iteration_ctpr[chip][step])/((256/pix_per_row)-1);
+		}
+		sumstddev_iteration[chip][iteration] =sqrt(sumctpr[chip][iteration]);
+	    }
+	    //sumstddev_iteration[chip][iteration] hier erzeugen aus sumstddev_iteration_ctpr[chip][iteration] der einzelnen ctprs
+	} // iterations
+	//if (TOT == 0){
+	for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	    double sumstd[9]={0};
+	    for (unsigned int iteration=0; iteration<4; iteration++){
+		sumstd[chip]+=(sumstddev_iteration[chip][iteration]*sumstddev_iteration[chip][iteration])/3;
+	    }
+	    stddevTOT_[chip] = sqrt(sumstd[chip]);
+	}
+	meanTOT1.push_back(meanTOT_[1]/4);
+	stddevTOT1.push_back(stddevTOT_[1]);
+	if (fpga->tp->GetNumChips() > 1) {meanTOT2.push_back(meanTOT_[2]/4);stddevTOT2.push_back(stddevTOT_[2]);}
+	if (fpga->tp->GetNumChips() > 2) {meanTOT3.push_back(meanTOT_[3]/4);stddevTOT3.push_back(stddevTOT_[3]);}
+	if (fpga->tp->GetNumChips() > 3) {meanTOT4.push_back(meanTOT_[4]/4);stddevTOT4.push_back(stddevTOT_[4]);}
+	if (fpga->tp->GetNumChips() > 4) {meanTOT5.push_back(meanTOT_[5]/4);stddevTOT5.push_back(stddevTOT_[5]);}
+	if (fpga->tp->GetNumChips() > 5) {meanTOT6.push_back(meanTOT_[6]/4);stddevTOT6.push_back(stddevTOT_[6]);}
+	if (fpga->tp->GetNumChips() > 6) {meanTOT7.push_back(meanTOT_[7]/4);stddevTOT7.push_back(stddevTOT_[7]);}
+	if (fpga->tp->GetNumChips() > 7) {meanTOT8.push_back(meanTOT_[8]/4);stddevTOT8.push_back(stddevTOT_[8]);}
 	//}
+	if (internalPulser == 0) {
+	    std::string ein4="";
+	    ein4 = getUserInput("Do you want to record data for another voltage? (0 = no, 1 = yes)");
+	    if (ein4 == "quit") return -1;
+	    else if(ein4==""){next_voltage=false;}
+	    else{
+		next_voltage=(bool) atoi(ein4.data());
+	    }
+	}
+	if (internalPulser == 1) {
+	    next_voltage=true;
+	    if (i == 13 ) next_voltage=false;
+	}
+	i++;
+    }
+    //if (TOT == 0){
+    std::cout << "Vector Voltages size: "<<voltage.size()<<std::endl;
+    for (unsigned int j = 0; j < voltage.size(); j++){
+	std::cout << "Voltage "<<j<<": "<<voltage[j]<<" with mean TOT (chip 1)"<<meanTOT1[j]<<std::endl;
+    }
+    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	if (TOT == 0) {f.open(GetTOTCalibFileName(chip),std::fstream::out);}
+	else f.open(GetTOACalibFileName(chip),std::fstream::out);
+	if(f.is_open()){
+	    for(unsigned int j = 0; j < voltage.size(); j++){
+		if (chip == 1){f<<voltage[j]-350<<"\t"<<meanTOT1[j]<<"\t"<<stddevTOT1[j]<<std::endl;}
+		else if (chip == 2){f<<voltage[j]-350<<"\t"<<meanTOT2[j]<<"\t"<<stddevTOT2[j]<<std::endl;}
+		else if (chip == 3){f<<voltage[j]-350<<"\t"<<meanTOT3[j]<<"\t"<<stddevTOT3[j]<<std::endl;}
+		else if (chip == 4){f<<voltage[j]-350<<"\t"<<meanTOT4[j]<<"\t"<<stddevTOT4[j]<<std::endl;}
+		else if (chip == 5){f<<voltage[j]-350<<"\t"<<meanTOT5[j]<<"\t"<<stddevTOT5[j]<<std::endl;}
+		else if (chip == 6){f<<voltage[j]-350<<"\t"<<meanTOT6[j]<<"\t"<<stddevTOT6[j]<<std::endl;}
+		else if (chip == 7){f<<voltage[j]-350<<"\t"<<meanTOT7[j]<<"\t"<<stddevTOT7[j]<<std::endl;}
+		else if (chip == 8){f<<voltage[j]-350<<"\t"<<meanTOT8[j]<<"\t"<<stddevTOT8[j]<<std::endl;}
+	    }
+	    f.close();
+	}
+    }
+    //}
 
 
-	return 0;
+    return 0;
 }
 
 
