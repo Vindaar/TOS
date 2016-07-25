@@ -207,86 +207,36 @@ private:
     std::string PathName;
     std::string FileName;
     std::string TOSPathName;
+
     std::string DataPathName;
- 
     std::string DataFileName;
-    std::string Data2FileName;
-    std::string Data3FileName;
-    std::string Data4FileName;
-    std::string Data5FileName;
-    std::string Data6FileName;
-    std::string Data7FileName;
-    std::string Data8FileName;
+    std::string DataFileName;
   
     std::string DataCompleteName;
     std::string RunFileName;
 
     std::string FSRPathName;
     std::string FSRFileName;
-    std::string FSR2FileName;
-    std::string FSR3FileName;
-    std::string FSR4FileName;
-    std::string FSR5FileName;
-    std::string FSR6FileName;
-    std::string FSR7FileName;
-    std::string FSR8FileName;
 
-    std::string matrixPathName;
+    std::string MatrixPathName;
     std::string MatrixFileName;
-    std::string Matrix2FileName;
-    std::string Matrix3FileName;
-    std::string Matrix4FileName;
-    std::string Matrix5FileName;
-    std::string Matrix6FileName;
-    std::string Matrix7FileName;
-    std::string Matrix8FileName;
 
     std::string DACScanFileName;
 
+    std::string ThresholdPathName;
     std::string ThresholdFileName;
-    std::string Threshold2FileName;
-    std::string Threshold3FileName;
-    std::string Threshold4FileName;
-    std::string Threshold5FileName;
-    std::string Threshold6FileName;
-    std::string Threshold7FileName;
-    std::string Threshold8FileName;
 
+    std::string ThresholdMeansPathName;
     std::string ThresholdMeansFileName;
-    std::string ThresholdMeans2FileName;
-    std::string ThresholdMeans3FileName;
-    std::string ThresholdMeans4FileName;
-    std::string ThresholdMeans5FileName;
-    std::string ThresholdMeans6FileName;
-    std::string ThresholdMeans7FileName;
-    std::string ThresholdMeans8FileName;
-  
+
+    std::string MaskFileNamePrototype;
     std::string MaskFileName;
-    std::string Mask2FileName;
-    std::string Mask3FileName;
-    std::string Mask4FileName;
-    std::string Mask5FileName;
-    std::string Mask6FileName;
-    std::string Mask7FileName;
-    std::string Mask8FileName;
-  
+
+    std::string TOTCalibPathName; 
     std::string TOTCalibFileName; 
-    std::string TOTCalib2FileName; 
-    std::string TOTCalib3FileName; 
-    std::string TOTCalib4FileName; 
-    std::string TOTCalib5FileName; 
-    std::string TOTCalib6FileName; 
-    std::string TOTCalib7FileName; 
-    std::string TOTCalib8FileName;
- 
+
+    std::string TOACalibPathName; 
     std::string TOACalibFileName; 
-    std::string TOACalib2FileName; 
-    std::string TOACalib3FileName; 
-    std::string TOACalib4FileName; 
-    std::string TOACalib5FileName; 
-    std::string TOACalib6FileName; 
-    std::string TOACalib7FileName; 
-    std::string TOACalib8FileName;
 };
 
 #ifndef _CONSOLE_HPP

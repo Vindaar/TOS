@@ -53,84 +53,33 @@ PC::PC(Timepix *tp):
   
     TOSPathName=puffer;
   
-    DataPathName  = "data";
-    DataFileName  = "data1.txt";
-    Data2FileName = "data2.txt";
-    Data3FileName = "data3.txt";
-    Data4FileName = "data4.txt";
-    Data5FileName = "data5.txt";
-    Data6FileName = "data6.txt";
-    Data7FileName = "data7.txt";
-    Data8FileName = "data8.txt";
-  
-    RunFileName  = "run.txt";
-  
-    FSRFileName  = "fsr1.txt";
-    FSR2FileName = "fsr2.txt";
-    FSR3FileName = "fsr3.txt";
-    FSR4FileName = "fsr4.txt";
-    FSR5FileName = "fsr5.txt";
-    FSR6FileName = "fsr6.txt";
-    FSR7FileName = "fsr7.txt";
-    FSR8FileName = "fsr8.txt";
-  
-    MatrixFileName  = "matrix1.txt";
-    Matrix2FileName = "matrix2.txt";
-    Matrix3FileName = "matrix3.txt";
-    Matrix4FileName = "matrix4.txt";
-    Matrix5FileName = "matrix5.txt";
-    Matrix6FileName = "matrix6.txt";
-    Matrix7FileName = "matrix7.txt";
-    Matrix8FileName = "matrix8.txt";
-        
-    ThresholdFileName  = "threshold1.txt";
-    Threshold2FileName = "threshold2.txt";
-    Threshold3FileName = "threshold3.txt";
-    Threshold4FileName = "threshold4.txt";
-    Threshold5FileName = "threshold5.txt";
-    Threshold6FileName = "threshold6.txt";
-    Threshold7FileName = "threshold7.txt";
-    Threshold8FileName = "threshold8.txt";
+    DataPathName = "data/singleFrames/";
+    DataFileName = "data";
 
-    ThresholdMeansFileName  = "thresholdMeans1.txt";
-    ThresholdMeans2FileName = "thresholdMeans2.txt";
-    ThresholdMeans3FileName = "thresholdMeans3.txt";
-    ThresholdMeans4FileName = "thresholdMeans4.txt";
-    ThresholdMeans5FileName = "thresholdMeans5.txt";
-    ThresholdMeans6FileName = "thresholdMeans6.txt";
-    ThresholdMeans7FileName = "thresholdMeans7.txt";
-    ThresholdMeans8FileName = "thresholdMeans8.txt";
-  
-    MaskFileName  = "mask1.txt";
-    Mask2FileName = "mask2.txt";
-    Mask3FileName = "mask3.txt";
-    Mask4FileName = "mask4.txt";
-    Mask5FileName = "mask5.txt";
-    Mask6FileName = "mask6.txt";
-    Mask7FileName = "mask7.txt";
-    Mask8FileName = "mask8.txt";
+    RunFileName  = "run.txt";
+
+    FSRFilePath = "data/fsr/";
+    FSRFileName = "fsr";
+
+    MatrixFilePath = "data/matrix/";
+    MatrixFileName = "matrix";
+
+    ThresholdFilePath = "data/threshold/";
+    ThresholdFileName = "threshold";
+
+    ThresholdMeansFilePath  = "data/thresholdMeans/";
+    ThresholdMeansFileName = "thresholdMeans";
+
+    MaskFilePath = "data/mask/";
+    MaskFileName = "mask";
   
     DACScanFileName   = "DACScan.txt";
-  
-    TOTCalibFileName  = "TOTCalib1.txt"; 
-    TOTCalib2FileName = "TOTCalib2.txt"; 
-    TOTCalib3FileName = "TOTCalib3.txt"; 
-    TOTCalib3FileName = "TOTCalib3.txt"; 
-    TOTCalib4FileName = "TOTCalib4.txt"; 
-    TOTCalib5FileName = "TOTCalib5.txt"; 
-    TOTCalib6FileName = "TOTCalib6.txt"; 
-    TOTCalib7FileName = "TOTCalib7.txt"; 
-    TOTCalib8FileName = "TOTCalib8.txt";
-  
-    TOACalibFileName  = "TOACalib1.txt"; 
-    TOACalib2FileName = "TOACalib2.txt"; 
-    TOACalib3FileName = "TOTAalib3.txt"; 
-    TOACalib3FileName = "TOACalib3.txt";
-    TOACalib4FileName = "TOACalib4.txt";
-    TOACalib5FileName = "TOACalib5.txt";
-    TOACalib6FileName = "TOACalib6.txt"; 
-    TOACalib7FileName = "TOACalib7.txt"; 
-    TOACalib8FileName = "TOACalib8.txt";
+
+    TOTCalibFilePath  = "data/TOTCalib/";
+    TOTCalibFileName = "TOTCalib";
+
+    TOACalibFilePath  = "data/TOACalib/"; 
+    TOACalibFileName = "TOACalib";
 
     MeasuringCounter=0;
 
@@ -1684,9 +1633,9 @@ void PC::TOCalib(std::set<int> chip_set,
             threshold_voltage = 350;
             voltage = *it_pulseList + threshold_voltage;
             // the upper bound for the DAC
-            fpga->i2cDAC(voltage,3);
+            fpga->i2cDAC(voltage, 3);
             // the lower bound 
-            fpga->i2cDAC(threshold_voltage,2);
+            fpga->i2cDAC(threshold_voltage, 2);
             // and activate the test pulses (I assume?!)
             fpga->tpulse(1,50);
         }
@@ -2224,7 +2173,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
     struct tm * TimeStruct;
 
     time(&Time_SecondsPassed); TimeStruct=localtime(&Time_SecondsPassed);
-    strftime(TimeName,19,"Run%y%m%d_%H-%M-%S",TimeStruct);
+    strftime(TimeName,19,"runs/Run%y%m%d_%H-%M-%S",TimeStruct);
 #ifdef __WIN32__
     mkdir(DataPathName.c_str());
 #else
@@ -2689,103 +2638,69 @@ const char* PC::GetDataPathName(){
         return DataPathName.c_str();
 }
 const char* PC::GetDataFileName(unsigned short chip){
-        if (chip == 1){return DataFileName.c_str();}
-        else if (chip == 2){return Data2FileName.c_str();}
-        else if (chip == 3){return Data3FileName.c_str();}
-        else if (chip == 4){return Data4FileName.c_str();}
-        else if (chip == 5){return Data5FileName.c_str();}
-        else if (chip == 6){return Data6FileName.c_str();}
-        else if (chip == 7){return Data7FileName.c_str();}
-        else if (chip == 8){return Data8FileName.c_str();}
-        else return "";
-
+    // this function builds the data file name from the 
+    // DataFileNamePrototype and the chip
+    std::string filename;
+    filename = DataFilePath + DataFileName + std::to_string(chip) + ".txt";
+    return filename.c_str();
 }
 const char* PC::GetRunFileName(){
         return RunFileName.c_str();
 }
 const char* PC::GetFSRFileName(unsigned short chip){
-        if (chip == 1){return FSRFileName.c_str();}
-        else if (chip == 2){return FSR2FileName.c_str();}
-        else if (chip == 3){return FSR3FileName.c_str();}
-        else if (chip == 4){return FSR4FileName.c_str();}
-        else if (chip == 5){return FSR5FileName.c_str();}
-        else if (chip == 6){return FSR6FileName.c_str();}
-        else if (chip == 7){return FSR7FileName.c_str();}
-        else if (chip == 8){return FSR8FileName.c_str();}
-        else return "";
+    // this function builds the FSR file name from the 
+    // FSRFileNamePrototype and the chip
+    std::string filename;
+    filename = FSRFilePath + FSRFileName + std::to_string(chip) + ".txt";
+    return filename.c_str();
 }
 const char* PC::GetMatrixFileName(unsigned short chip){
-        if (chip == 1){return MatrixFileName.c_str();}
-        else if (chip == 2){return Matrix2FileName.c_str();}
-        else if (chip == 3){return Matrix3FileName.c_str();}
-        else if (chip == 4){return Matrix4FileName.c_str();}
-        else if (chip == 5){return Matrix5FileName.c_str();}
-        else if (chip == 6){return Matrix6FileName.c_str();}
-        else if (chip == 7){return Matrix7FileName.c_str();}
-        else if (chip == 8){return Matrix8FileName.c_str();}
-        else return "";
+    // this function builds the matrix file name from the 
+    // MatrixFileNamePrototype and the chip
+    std::string filename;
+    filename = MatrixFilePath + MatrixFileName + std::to_string(chip) + ".txt";
+    return filename.c_str();
 }
 const char* PC::GetDACScanFileName(){
         return DACScanFileName.c_str();
 }
 const char* PC::GetThresholdFileName(unsigned short chip){
-        if (chip == 1){return ThresholdFileName.c_str();}
-        else if (chip == 2){return Threshold2FileName.c_str();}
-        else if (chip == 3){return Threshold3FileName.c_str();}
-        else if (chip == 4){return Threshold4FileName.c_str();}
-        else if (chip == 5){return Threshold5FileName.c_str();}
-        else if (chip == 6){return Threshold6FileName.c_str();}
-        else if (chip == 7){return Threshold7FileName.c_str();}
-        else if (chip == 8){return Threshold8FileName.c_str();}
-        else return "";
+    // this function builds the treshold file name from the 
+    // ThresholdFileNamePrototype and the chip
+    std::string filename;
+    filename = ThresholdFilePath + ThresholdFileName + std::to_string(chip) + ".txt";
+    return filename.c_str();
 }
 const char* PC::GetThresholdMeansFileName(unsigned short chip){
-        if (chip == 1){return ThresholdMeansFileName.c_str();}
-        else if (chip == 2){return ThresholdMeans2FileName.c_str();}
-        else if (chip == 3){return ThresholdMeans3FileName.c_str();}
-        else if (chip == 4){return ThresholdMeans4FileName.c_str();}
-        else if (chip == 5){return ThresholdMeans5FileName.c_str();}
-        else if (chip == 6){return ThresholdMeans6FileName.c_str();}
-        else if (chip == 7){return ThresholdMeans7FileName.c_str();}
-        else if (chip == 8){return ThresholdMeans8FileName.c_str();}
-        else return "";
+    // this function builds the thresholdMeans file name from the 
+    // ThresholdMeansFileNamePrototype and the chip
+    std::string filename;
+    filename = ThresholdMeansFilePath + ThresholdMeansFileName + std::to_string(chip) + ".txt";
+    return filename.c_str();
 }
 const char* PC::GetTOTCalibFileName(unsigned short chip){
-        if (chip == 1){return TOTCalibFileName.c_str();}
-        else if (chip == 2){return TOTCalib2FileName.c_str();}
-        else if (chip == 3){return TOTCalib3FileName.c_str();}
-        else if (chip == 4){return TOTCalib4FileName.c_str();}
-        else if (chip == 5){return TOTCalib5FileName.c_str();}
-        else if (chip == 6){return TOTCalib6FileName.c_str();}
-        else if (chip == 7){return TOTCalib7FileName.c_str();}
-        else if (chip == 8){return TOTCalib8FileName.c_str();}
-        else return "";
+    // this function builds the TOTcalib file name from the 
+    // TOTCalibFileNamePrototype and the chip
+    std::string filename;
+    filename = TOTCalibFilePath + TOTCalibFileName + std::to_string(chip) + ".txt";
+    return filename.c_str();
 }
 
 const char* PC::GetTOACalibFileName(unsigned short chip){
-        if (chip == 1){return TOACalibFileName.c_str();}
-        else if (chip == 2){return TOACalib2FileName.c_str();}
-        else if (chip == 3){return TOACalib3FileName.c_str();}
-        else if (chip == 4){return TOACalib4FileName.c_str();}
-        else if (chip == 5){return TOACalib5FileName.c_str();}
-        else if (chip == 6){return TOACalib6FileName.c_str();}
-        else if (chip == 7){return TOACalib7FileName.c_str();}
-        else if (chip == 8){return TOACalib8FileName.c_str();}
-        else return "";
+    // this function builds the TOAcalib file name from the 
+    // TOACalibFileNamePrototype and the chip
+    std::string filename;
+    filename = TOACalibFilePath + TOACalibFileName + std::to_string(chip) + ".txt";
+    return filename.c_str();
 }
 
 const char* PC::GetMaskFileName(unsigned short chip){
-        if (chip == 1){return MaskFileName.c_str();}
-        else if (chip == 2){return Mask2FileName.c_str();}
-        else if (chip == 3){return Mask3FileName.c_str();}
-        else if (chip == 4){return Mask4FileName.c_str();}
-        else if (chip == 5){return Mask5FileName.c_str();}
-        else if (chip == 6){return Mask6FileName.c_str();}
-        else if (chip == 7){return Mask7FileName.c_str();}
-        else if (chip == 8){return Mask8FileName.c_str();}
-        else return "";
+    // this function builds the mask file name from the 
+    // MaskFileNamePrototype and the chip
+    std::string filename;
+    filename = MaskFilePath + MaskFileName + std::to_string(chip) + ".txt";
+    return filename.c_str();
 }
-
 
 void PC::MakeBMP(int arr[256][256]){
 
