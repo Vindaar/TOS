@@ -111,14 +111,14 @@ void Frame::SetPartialFrame(FrameArray<int> pixel_data,
 	    if(lfsr_flag == true){
 		// if we check for lfsr values (in case data is given in 
 		// lfsr values
-		if( (pixel_data[y][x] != 0) &&
-		    (pixel_data[y][x] != lfsr_ignore_value ) ){
-		    //_pixel_data[x][y] = pixel_data[x][y];
+		if( (pixel_data[x][y] != 0) &&
+		    (pixel_data[x][y] != lfsr_ignore_value ) ){
+		    _pixel_data[x][y] = pixel_data[x][y];
 		    //std::cout << "val " << pixel_data[y][x] << std::endl;
-		    _pixel_data[x][y] = pixel_data[y][x];
+		    //_pixel_data[x][y] = pixel_data[y][x];
 		    
-		    //_lastPFrameSum += pixel_data[x][y];
-		    _lastPFrameSum += pixel_data[y][x];
+		    _lastPFrameSum += pixel_data[x][y];
+		    //_lastPFrameSum += pixel_data[y][x];
 		    _lastPFrameHits++;
 
 		}

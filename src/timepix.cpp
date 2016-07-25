@@ -593,19 +593,42 @@ int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){
     }
 
     for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
-        for(y=0;y<256;++y)for(x=0;x<256;++x){
+        for(y=0;y<256;++y) {
+	    for(x=0;x<256;++x){
 		if(Test[chip][y][x])	{
 		    aktBit=y*256*14+8+(255-x)+(917760*(chip-1)); 	     // yZeilen * 256Pixel/Zeile * 14Bit/Pixel + 8Bit Preload + aktuelles Bit in Zeile
 		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]+=1<<(7-(aktBit%8)); // [aktBit/(8*PLen)]=Paket des aktuellen Bits, [18+PacketBit/8]=PaketHeader+BytePosition im Paket, (1<<(7-PacketBit%8))=Wertigkeit des aktuellen Bits in seinem Byte (1<<x = 2^x)
 		}
-		if(2&ThrH[chip][y][x]) {aktBit=256+y*256*14+8+(255-x)+(917760*(chip-1));   (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));}
-		if(8&ThrH[chip][y][x]) {aktBit=2*256+y*256*14+8+(255-x)+(917760*(chip-1)); (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));}
-		if(4&ThrH[chip][y][x]) {aktBit=3*256+y*256*14+8+(255-x)+(917760*(chip-1)); (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));}
-		if(P0[chip][y][x])     {aktBit=4*256+y*256*14+8+(255-x)+(917760*(chip-1)); (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));}
-		if(1&ThrH[chip][y][x]) {aktBit=5*256+y*256*14+8+(255-x)+(917760*(chip-1)); (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));}
-		if(Mask[chip][y][x])   {aktBit=6*256+y*256*14+8+(255-x)+(917760*(chip-1)); (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));}
-		if(P1[chip][y][x])     {aktBit=7*256+y*256*14+8+(255-x)+(917760*(chip-1)); (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));}
+		if(2&ThrH[chip][y][x]) {
+		    aktBit=256+y*256*14+8+(255-x)+(917760*(chip-1));
+		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		}
+		if(8&ThrH[chip][y][x]) {
+		    aktBit=2*256+y*256*14+8+(255-x)+(917760*(chip-1));
+		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		}
+		if(4&ThrH[chip][y][x]) {
+		    aktBit=3*256+y*256*14+8+(255-x)+(917760*(chip-1));
+		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		}
+		if(P0[chip][y][x])     {
+		    aktBit=4*256+y*256*14+8+(255-x)+(917760*(chip-1));
+		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		}
+		if(1&ThrH[chip][y][x]) {
+		    aktBit=5*256+y*256*14+8+(255-x)+(917760*(chip-1));
+		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		}
+		if(Mask[chip][y][x])   {
+		    aktBit=6*256+y*256*14+8+(255-x)+(917760*(chip-1));
+		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		}
+		if(P1[chip][y][x])     {
+		    aktBit=7*256+y*256*14+8+(255-x)+(917760*(chip-1));
+		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		}
 	    }
+	}
     }
     for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
 	for(x=0;x<32;x++){(*PackQueue)[PQueue*chip-1][18+1+(32*(chip-1))+((((256*256*14)*(chip))/8)%PLen)+x] = 0xff;}//postload

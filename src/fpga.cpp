@@ -302,6 +302,7 @@ int FPGA::CountingTime(int time, int modeSelector){
 #if DEBUG==2
     std::cout<<"Enter FPGA::CountingTrigger()"<<std::endl;	
 #endif
+
     int err_code;
     // choose the correct mode depening on input given in 
     // Console::CommandCountingTime()
@@ -1096,7 +1097,7 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, int NumHits){
 	    int y   = (*PackQueueReceive) [packet][byte + 1];
 	    int val = ((*PackQueueReceive)[packet][byte + 2] << 8) + (*PackQueueReceive)[packet][byte + 3];
 	    // and set the array to the corresponding value
-	    (*pixel_data)[y][x] = val;
+	    (*pixel_data)[x][y] = val;
 	    //std::cout << "pixel  " << y <<" "<< x << " has "<< val<<" hits"<< std::endl;
 	    if (packet == Packets - 1){
 		PacketLength = LastPacketLength - 18 - 4;

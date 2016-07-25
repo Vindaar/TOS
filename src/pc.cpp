@@ -1429,14 +1429,14 @@ void PC::TOCalibSingleChipReadoutCalc(int chip,
     //fpga->DataFPGAPC(pix, chip);
     
     int numhits = fpga->DataFPGAPC(&pixel_data, chip);
-    std::cout << "numhits is " << numhits << std::endl;
+    std::cout << "numhits for chip " << chip << " is " << numhits << std::endl;
 
     //abort();
     // now set the pixel data of the correct frame in the frame_map
     // to eventually create the full frame
     (*frame_map)[chip].SetPartialFrame(pixel_data, CTPR, 32, step, pixels_per_column, true);
 
-    //(*frame_map)[chip].CalcSumHitsMean(false);
+    // (*frame_map)[chip].CalcSumHitsMean(false);
     
 
     // and get the sum, mean and hits values form this partial frame
@@ -1487,9 +1487,9 @@ void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
 
 
     // get the needed parameters from the map using boost::any_cast
-    int step		  = boost::any_cast<int>(parameter_map["step"]);
-    int CTPR		  = boost::any_cast<int>(parameter_map["CTPR"]);
-    int pixels_per_column = boost::any_cast<int>(parameter_map["pixels_per_column"]);
+    int step		      = boost::any_cast<int>(parameter_map["step"]);
+    int CTPR		      = boost::any_cast<int>(parameter_map["CTPR"]);
+    int pixels_per_column     = boost::any_cast<int>(parameter_map["pixels_per_column"]);
     std::string shutter_range = boost::any_cast<std::string>(parameter_map["shutter_range"]);
     std::string shutter_time  = boost::any_cast<std::string>(parameter_map["shutter_time"]);
     
@@ -1746,10 +1746,10 @@ void PC::TOCalib(std::set<int> chip_set,
 	    std::fstream f;
 	    const char* filename;
 	    if (TOmode == "TOT"){
-		filename = GetTOTCalibFileName(chip + 1);
+		filename = GetTOTCalibFileName(chip);
 	    }
 	    else{
-		filename = GetTOACalibFileName(chip + 1);
+		filename = GetTOACalibFileName(chip);
 	    }
 	    
 	    f.open(filename, std::fstream::out | std::fstream::app);
@@ -1901,7 +1901,8 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 			    int pix_tempdata[256][256]= {0};
 			    int hitcounter = 0;
 			    int hitcounter_real = 0;
-			    fpga->DataFPGAPC(pix_tempdata,chip);
+			    int test = fpga->DataFPGAPC(pix_tempdata,chip);
+			    std::cout << "numhits for chip " << chip << " is " << test << std::endl;
 			    for(short y=step;y<256;y+=(256/pix_per_row)){
 				for(short x=CTPR;x<256;x+=32){//short x=CTPR;x<256;x+=32
 				    if((pix_tempdata[y][x])!=0 && (pix_tempdata[y][x])!=11810 && fpga->tp->GetMask(y,x,chip)==1){
