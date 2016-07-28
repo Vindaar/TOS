@@ -58,27 +58,27 @@ PC::PC(Timepix *tp):
 
     RunFileName  = "run.txt";
 
-    FSRFilePath = "data/fsr/";
+    FSRPathName = "data/fsr/";
     FSRFileName = "fsr";
 
-    MatrixFilePath = "data/matrix/";
+    MatrixPathName = "data/matrix/";
     MatrixFileName = "matrix";
 
-    ThresholdFilePath = "data/threshold/";
+    ThresholdPathName = "data/threshold/";
     ThresholdFileName = "threshold";
 
-    ThresholdMeansFilePath  = "data/thresholdMeans/";
+    ThresholdMeansPathName  = "data/thresholdMeans/";
     ThresholdMeansFileName = "thresholdMeans";
 
-    MaskFilePath = "data/mask/";
+    MaskPathName = "data/mask/";
     MaskFileName = "mask";
   
     DACScanFileName   = "DACScan.txt";
 
-    TOTCalibFilePath  = "data/TOTCalib/";
+    TOTCalibPathName  = "data/TOTCalib/";
     TOTCalibFileName = "TOTCalib";
 
-    TOACalibFilePath  = "data/TOACalib/"; 
+    TOACalibPathName  = "data/TOACalib/"; 
     TOACalibFileName = "TOACalib";
 
     MeasuringCounter=0;
@@ -185,27 +185,32 @@ int PC::DoReadOut(const char* filename[9]){
 
 int PC::DoReadOut2(const char* filename, unsigned short chip){
 #if DEBUG==2
-        std::cout<<"Enter PC::DoReadOut()"<<std::endl;
+    std::cout<<"Enter PC::DoReadOut()"<<std::endl;
 #endif
-        int hits;
-        std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
-        hits=fpga->DataFPGAPC(data,chip);
-        //if(hits>1){//need more than 2 hits (specified for Christophs setup with 1 noise pixel)
-                FILE* f=fopen(filename,"w"); if(f==NULL) {std::cout<<"(PC::DoReadOut2) Dateifehler"<<std::endl; return -1;}
+    int hits;
+    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
+    hits=fpga->DataFPGAPC(data,chip);
+    if(hits>1){//need more than 2 hits (specified for Christophs setup with 1 noise pixel)
+	FILE* f=fopen(filename,"w"); 
+	if(f==NULL) {
+	    std::cout << "(PC::DoReadOut2) Dateifehler" << std::endl; 
+	    return -1;
+	}
 #if PERFORMANCE==1
-                fwrite(pix,sizeof(int),256*256,f);
+	fwrite(pix,sizeof(int),256*256,f);
 #else
-                 std::cout << "single readout"<<std::endl;
+	std::cout << "single readout" << std::endl;
 
-                for(int i=0; i<hits*3; i=i+3){
-                        //std::cout << "hit " << i/3<<": x:"<<data[i]<<" , y:"<<data[i+1]<<" , value: "<<data[i+2]<<std::endl;
-                        fprintf(f, "%d %d %d \n",(*data)[i+1],(*data)[i+1+1],(*data)[i+2+1]);
-                }
+	for(int i=0; i<hits*3; i=i+3){
+	    //std::cout << "hit " << i/3<<": x:"<<data[i]<<" , y:"<<data[i+1]<<" , value: "<<data[i+2]<<std::endl;
+	    fprintf(f, "%d %d %d \n",(*data)[i+1],(*data)[i+1+1],(*data)[i+2+1]);
+	}
 #endif
-                fclose(f);
+	fclose(f);
 
         delete data;
         return hits;
+    }
 }
 
 
@@ -457,376 +462,376 @@ void PC::DACScanHistogram(void* PointerToObject, char dac, int bit, int val){
 
 
 int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned int step, unsigned short pix_per_row, short ***p3DArray, int sum[256][256], int hit_counter[256][256], short thp, unsigned short chp){
-        if(thl%100 == 0) std::cout<<"Thp="<<thp<<" (16=Eq); coarse:"<<coarse<<" , thl:"<<thl<<std::endl; //commented in
-        fpga->GeneralReset();
-        //for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-        fpga->tp->LoadFSRFromFile(GetFSRFileName(chp),chp);
-        fpga->tp->SetDAC(6,chp,thl);
-        if (ths!=0) {fpga->tp->SetDAC(10,chp,ths);}
-        fpga->tp->SetDAC(13,chp,coarse);
-        //}
-        fpga->WriteReadFSR();
-        usleep(400);
-        // calling CountingTime with second argument == 1
-        // corresponds to n = 1, power of 256
-        fpga->CountingTime(10, 1);
-        int result = 0;
+    if(thl%100 == 0) std::cout<<"Thp="<<thp<<" (16=Eq); coarse:"<<coarse<<" , thl:"<<thl<<std::endl; //commented in
+    fpga->GeneralReset();
+    //for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+    fpga->tp->LoadFSRFromFile(GetFSRFileName(chp),chp);
+    fpga->tp->SetDAC(6,chp,thl);
+    if (ths!=0) {fpga->tp->SetDAC(10,chp,ths);}
+    fpga->tp->SetDAC(13,chp,coarse);
+    //}
+    fpga->WriteReadFSR();
+    usleep(400);
+    // calling CountingTime with second argument == 1
+    // corresponds to n = 1, power of 256
+    fpga->CountingTime(10, 1);
+    int result = 0;
 
-        /*std::string filename[9]= {""};
-        const char* f[8];
-        for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                filename[chip]=GetDataPathName();
-                filename[chip]+="/";
-                filename[chip]+=GetDataFileName(chip);
-                f[chip] = filename[chip].c_str();
-        }
-        DoReadOut(f);*/ //for writing to file
+    /*std::string filename[9]= {""};
+      const char* f[8];
+      for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+      filename[chip]=GetDataPathName();
+      filename[chip]+="/";
+      filename[chip]+=GetDataFileName(chip);
+      f[chip] = filename[chip].c_str();
+      }
+      DoReadOut(f);*/ //for writing to file
 
-        //std::vector<std::vector<std::vector<int> > > *VecData = new std::vector<std::vector<std::vector<int> > >(9, std::vector < std::vector<int> >(256, std::vector<int>(256,0)));
-        //fpga->SerialReadOut(VecData);
+    //std::vector<std::vector<std::vector<int> > > *VecData = new std::vector<std::vector<std::vector<int> > >(9, std::vector < std::vector<int> >(256, std::vector<int>(256,0)));
+    //fpga->SerialReadOut(VecData);
 
-        int pix_tempdata2[256][256] = {0};
-        fpga->DataChipFPGA(result);
-        fpga->DataFPGAPC(pix_tempdata2,chp); //!!!only one chip!!!
-        for(short y=step;y<256;y+=(256/pix_per_row)){
-                for(short x=0;x<256;x++){
-                        if(pix_tempdata2[y][x]>=20 and pix_tempdata2[y][x]!=11810){
-                                //if (pix_tempdata2[y][x]>=200) {std::cout << "hits for thl " << thl <<" :" << pix_tempdata2[y][x] << std::endl;}
-                                p3DArray[y][x][array_pos] = pix_tempdata2[y][x];
-                        //if(LFSR_LookUpTable[(*VecData)[chp][y][x]]>=20 and LFSR_LookUpTable[(*VecData)[chp][y][x]]!=11810){
-                                //p3DArray[y][x][array_pos] = LFSR_LookUpTable[(*VecData)[chp][y][x]];
-                                sum[y][x]+=p3DArray[y][x][array_pos]*(array_pos);
-                                hit_counter[y][x]+=p3DArray[y][x][array_pos];
-                        }
-                        else{
-                                p3DArray[y][x][array_pos] = 0;
-                                sum[y][x]+=0;
-                                hit_counter[y][x]+=0;
-                        }
-                }
-        }
-        //delete VecData;
-        return 0;
+    int pix_tempdata2[256][256] = {0};
+    fpga->DataChipFPGA(result);
+    fpga->DataFPGAPC(pix_tempdata2,chp); //!!!only one chip!!!
+    for(short y=step;y<256;y+=(256/pix_per_row)){
+	for(short x=0;x<256;x++){
+	    if(pix_tempdata2[y][x]>=20 and pix_tempdata2[y][x]!=11810){
+		//if (pix_tempdata2[y][x]>=200) {std::cout << "hits for thl " << thl <<" :" << pix_tempdata2[y][x] << std::endl;}
+		p3DArray[y][x][array_pos] = pix_tempdata2[y][x];
+		//if(LFSR_LookUpTable[(*VecData)[chp][y][x]]>=20 and LFSR_LookUpTable[(*VecData)[chp][y][x]]!=11810){
+		//p3DArray[y][x][array_pos] = LFSR_LookUpTable[(*VecData)[chp][y][x]];
+		sum[y][x]+=p3DArray[y][x][array_pos]*(array_pos);
+		hit_counter[y][x]+=p3DArray[y][x][array_pos];
+	    }
+	    else{
+		p3DArray[y][x][array_pos] = 0;
+		sum[y][x]+=0;
+		hit_counter[y][x]+=0;
+	    }
+	}
+    }
+    //delete VecData;
+    return 0;
 }
 
 
 int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl){ //untill now only one chip at same time
-        //#if DEBUG==2
-                std::cout<<"Enter PC::THSopt()"<<std::endl;
-        //#endif
-        {
-                int x,y,thl;
-                unsigned int coarse;
-                #define x_length 256
-                #define y_length 256
-                #define thl_length 1024+2*372 // thl shift of ~372 for one coarse
+    //#if DEBUG==2
+    std::cout<<"Enter PC::THSopt()"<<std::endl;
+    //#endif
+//    {
+    int x,y,thl;
+    unsigned int coarse;
+#define x_length 256
+#define y_length 256
+#define thl_length 1024+2*372 // thl shift of ~372 for one coarse
 
 
-                short ***p3DArray0;
-                // Allocate memory
-                p3DArray0 = new short**[x_length];
-                for (int i = 0; i < x_length; ++i) {
-                        p3DArray0[i] = new short*[y_length];
-                        for (int j = 0; j < y_length; ++j)
-                          p3DArray0[i][j] = new short[thl_length];
-                }
-                short ***p3DArray15;
-                // Allocate memory
-                p3DArray15 = new short**[x_length];
-                for (int i = 0; i < x_length; ++i) {
-                        p3DArray15[i] = new short*[y_length];
-                        for (int j = 0; j < y_length; ++j)
-                          p3DArray15[i][j] = new short[thl_length];
-                }
-                std::vector<std::vector<std::vector<int> > > *pix_tempdata = new std::vector<std::vector<std::vector<int> > >(9, std::vector < std::vector<int> >(256, std::vector<int>(256,0)));
-                // Assign values
-                for(coarse=8;coarse>5;coarse--){
-                        for(y=0;y<256;++y){
-                                for(x=0;x<256;++x){
-                                        if (coarse == 6){
-                                                for(thl=0;thl<1024;thl++){
-                                                        p3DArray0[y][x][thl] = 0;
-                                                        p3DArray15[y][x][thl] = 0;
-                                                }
-                                        }
-                                        else {
-                                                for(thl=1023;thl>=652;thl-=1){
-                                                        p3DArray0[y][x][thl+(coarse-6)*372] = 0;
-                                                        p3DArray15[y][x][thl+(coarse-6)*372] = 0;
-                                                }
-                                        }
+    short ***p3DArray0;
+    // Allocate memory
+    p3DArray0 = new short**[x_length];
+    for (int i = 0; i < x_length; ++i) {
+	p3DArray0[i] = new short*[y_length];
+	for (int j = 0; j < y_length; ++j)
+	    p3DArray0[i][j] = new short[thl_length];
+    }
+    short ***p3DArray15;
+    // Allocate memory
+    p3DArray15 = new short**[x_length];
+    for (int i = 0; i < x_length; ++i) {
+	p3DArray15[i] = new short*[y_length];
+	for (int j = 0; j < y_length; ++j)
+	    p3DArray15[i][j] = new short[thl_length];
+    }
+    std::vector<std::vector<std::vector<int> > > *pix_tempdata = new std::vector<std::vector<std::vector<int> > >(9, std::vector < std::vector<int> >(256, std::vector<int>(256,0)));
+    // Assign values
+    for(coarse=8;coarse>5;coarse--){
+	for(y=0;y<256;++y){
+	    for(x=0;x<256;++x){
+		if (coarse == 6){
+		    for(thl=0;thl<1024;thl++){
+			p3DArray0[y][x][thl] = 0;
+			p3DArray15[y][x][thl] = 0;
+		    }
+		}
+		else {
+		    for(thl=1023;thl>=652;thl-=1){
+			p3DArray0[y][x][thl+(coarse-6)*372] = 0;
+			p3DArray15[y][x][thl+(coarse-6)*372] = 0;
+		    }
+		}
 
-                                }
-                        }
-                }
-                float mean0[256][256] = {0};
-                float mean15[256][256] = {0};
-                int sum0[256][256] = {0};
-                int sum15[256][256] = {0};
-                int hit_counter0[256][256] = {0};
-                int hit_counter15[256][256] = {0};
-                int mean0entries = 0;
-                int mean15entries = 0;
-                int summean0 = 0;
-                int summean15 = 0;
-                int mean0counter = 0;
-                int mean15counter = 0;
-                float mean0mean = 0;
-                float mean15mean = 0;
-                float mean0rms = 0;
-                float mean15rms = 0;
-                float mean0rms_pix = 0;
-                float mean15rms_pix = 0;
-                float mean0sum = 0;
-                float mean15sum = 0;
-                float mean0sum_pix = 0;
-                float mean15sum_pix = 0;
-                float delta0_15 = 0;
-                float last_delta0_15 = 0;
-                unsigned short last_ths = 0;
-                float optdelta = 20; // not initialised as 0 because while loop would not work in this case
-                std::fstream f;
-                unsigned short pix_per_row = 16;
+	    }
+	}
+    }
+    float mean0[256][256] = {0};
+    float mean15[256][256] = {0};
+    int sum0[256][256] = {0};
+    int sum15[256][256] = {0};
+    int hit_counter0[256][256] = {0};
+    int hit_counter15[256][256] = {0};
+    int mean0entries = 0;
+    int mean15entries = 0;
+    int summean0 = 0;
+    int summean15 = 0;
+    int mean0counter = 0;
+    int mean15counter = 0;
+    float mean0mean = 0;
+    float mean15mean = 0;
+    float mean0rms = 0;
+    float mean15rms = 0;
+    float mean0rms_pix = 0;
+    float mean15rms_pix = 0;
+    float mean0sum = 0;
+    float mean15sum = 0;
+    float mean0sum_pix = 0;
+    float mean15sum_pix = 0;
+    float delta0_15 = 0;
+    float last_delta0_15 = 0;
+    unsigned short last_ths = 0;
+    float optdelta = 20; // not initialised as 0 because while loop would not work in this case
+    std::fstream f;
+    unsigned short pix_per_row = 16;
 
-                while ((delta0_15 < optdelta-2 || delta0_15 > optdelta+2)) {
-                        for(y=0;y<256;++y){
-                                for(x=0;x<256;++x){
-                                        hit_counter0[y][x] =0;
-                                        sum0[y][x] = 0;
-                                        hit_counter15[y][x] =0;
-                                        sum15[y][x] = 0;
-                                }
-                        }
-                        mean0entries = 0;
-                        mean0counter = 0;
-                        mean0sum = 0;
-                        summean0 = 0;
-                        mean0sum_pix = 0;
-                        mean15entries = 0;
-                        mean15counter = 0;
-                        mean15sum = 0;
-                        summean15 = 0;
-                        mean15sum_pix = 0;
-                        for (unsigned int step=0; step<1;step++){ //must go from 0 to <(256/pix_per_row)
-                                for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                                        fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
-                                }
-                                fpga->tp->UniformMatrix(0,0,1,1,0,chp); //0,0: Medipix modus
-                                fpga->tp->Spacing_row(step,pix_per_row,chp);
-                                fpga->tp->SaveMatrixToFile(GetMatrixFileName(chp),chp);
-                                fpga->SetMatrix();
-                                usleep(2000);
-                                fpga->SerialReadOut(pix_tempdata);
-                                //usleep(60000 );
-                                fpga->GeneralReset();
-                                for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                                        fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
-                                }
-                                fpga->WriteReadFSR();
-                                fpga->GeneralReset();
-                                for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                                        fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
-                                }
-                                fpga->tp->UniformMatrix(0,0,1,1,0,chp); //0,0: Medipix modus
-                                fpga->tp->Spacing_row(step,pix_per_row,chp);
-                                fpga->tp->SaveMatrixToFile(GetMatrixFileName(chp),chp);
-                                fpga->SetMatrix();
-                                usleep(2000);
-                                fpga->SerialReadOut(pix_tempdata);
-                                //usleep(60000 );
-                                std::cout<<"Beginne RauschScan thp=0"<<std::endl;//" step "<<step<<" of "<<(256/pix_per_row)-1<<" from spacing"<<std::endl;
-                                if (ext_coarse == 1) {
-                                        for(coarse=8;coarse>=6;coarse--){
-                                                if (coarse == 6){
-                                                        for(thl=1023;thl>=0;thl-=1){
-                                                                THscan(coarse,thl,thl,ths,step,pix_per_row,p3DArray0,sum0,hit_counter0,0,chp);//!!!only one chip!!!
-                                                        }
-                                                }
-                                                else {
-                                                        for(thl=1023;thl>=652;thl-=1){
-                                                                THscan(coarse,thl,thl+(coarse-6)*372,ths,step,pix_per_row,p3DArray0,sum0,hit_counter0,0,chp);
-                                                        }
-                                                }
-                                        }
-                                }
-                                else {
-                                        coarse = 7;
-                                        for(thl=max_thl;thl>=min_thl;thl-=1){
-                                                THscan(coarse,thl,thl,ths,step,pix_per_row,p3DArray0,sum0,hit_counter0,0,chp);
-                                        }
-                                }
+    while ((delta0_15 < optdelta-2 || delta0_15 > optdelta+2)) {
+	for(y=0;y<256;++y){
+	    for(x=0;x<256;++x){
+		hit_counter0[y][x] =0;
+		sum0[y][x] = 0;
+		hit_counter15[y][x] =0;
+		sum15[y][x] = 0;
+	    }
+	}
+	mean0entries = 0;
+	mean0counter = 0;
+	mean0sum = 0;
+	summean0 = 0;
+	mean0sum_pix = 0;
+	mean15entries = 0;
+	mean15counter = 0;
+	mean15sum = 0;
+	summean15 = 0;
+	mean15sum_pix = 0;
+	for (unsigned int step=0; step<1;step++){ //must go from 0 to <(256/pix_per_row)
+	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
+	    }
+	    fpga->tp->UniformMatrix(0,0,1,1,0,chp); //0,0: Medipix modus
+	    fpga->tp->Spacing_row(step,pix_per_row,chp);
+	    fpga->tp->SaveMatrixToFile(GetMatrixFileName(chp),chp);
+	    fpga->SetMatrix();
+	    usleep(2000);
+	    fpga->SerialReadOut(pix_tempdata);
+	    //usleep(60000 );
+	    fpga->GeneralReset();
+	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
+	    }
+	    fpga->WriteReadFSR();
+	    fpga->GeneralReset();
+	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
+	    }
+	    fpga->tp->UniformMatrix(0,0,1,1,0,chp); //0,0: Medipix modus
+	    fpga->tp->Spacing_row(step,pix_per_row,chp);
+	    fpga->tp->SaveMatrixToFile(GetMatrixFileName(chp),chp);
+	    fpga->SetMatrix();
+	    usleep(2000);
+	    fpga->SerialReadOut(pix_tempdata);
+	    //usleep(60000 );
+	    std::cout<<"Beginne RauschScan thp=0"<<std::endl;//" step "<<step<<" of "<<(256/pix_per_row)-1<<" from spacing"<<std::endl;
+	    if (ext_coarse == 1) {
+		for(coarse=8;coarse>=6;coarse--){
+		    if (coarse == 6){
+			for(thl=1023;thl>=0;thl-=1){
+			    THscan(coarse,thl,thl,ths,step,pix_per_row,p3DArray0,sum0,hit_counter0,0,chp);//!!!only one chip!!!
+			}
+		    }
+		    else {
+			for(thl=1023;thl>=652;thl-=1){
+			    THscan(coarse,thl,thl+(coarse-6)*372,ths,step,pix_per_row,p3DArray0,sum0,hit_counter0,0,chp);
+			}
+		    }
+		}
+	    }
+	    else {
+		coarse = 7;
+		for(thl=max_thl;thl>=min_thl;thl-=1){
+		    THscan(coarse,thl,thl,ths,step,pix_per_row,p3DArray0,sum0,hit_counter0,0,chp);
+		}
+	    }
 
-                                fpga->GeneralReset();
-                                //usleep(8000);
-                                for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                                        fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
-                                }
-                                fpga->tp->UniformMatrix(0,0,1,1,15,chp); //0,0: Medipix modus
-                                fpga->tp->Spacing_row(step,pix_per_row,chp);
-                                fpga->tp->SaveMatrixToFile(GetMatrixFileName(chp),chp);
-                                fpga->SetMatrix();
-                                usleep(2000);
-                                fpga->SerialReadOut(pix_tempdata);
-                                //usleep(60000 );
-                                std::cout<<"Beginne RauschScan thp=15"<<std::endl;//" step "<<step<<" of "<<(256/pix_per_row)-1<<" from spacing"<<std::endl;
-                                if (ext_coarse == 1) {
-                                        for(coarse=8;coarse>=6;coarse--){
-                                                if (coarse == 6){
-                                                        for(thl=1023;thl>=0;thl-=1){
-                                                                THscan(coarse,thl,thl,ths,step,pix_per_row,p3DArray15,sum15,hit_counter15,15,chp);
-                                                        }
-                                                }
-                                                else {
-                                                        for(thl=1023;thl>=652;thl-=1){
-                                                                THscan(coarse,thl,thl+(coarse-6)*372,ths,step,pix_per_row,p3DArray15,sum15,hit_counter15,15,chp);
-                                                        }
-                                                }
-                                        }
-                                }
-                                else {
-                                        coarse = 7;
-                                        for(thl=max_thl;thl>=min_thl;thl-=1){
-                                                THscan(coarse,thl,thl,ths,step,pix_per_row,p3DArray15,sum15,hit_counter15,15,chp);
-                                        }
-                                }
-                        }
-                                for(y=0;y<256;y++){
-                                        for(x=0;x<256;x++){
-                                                if (hit_counter0[y][x]!=0){
-                                                        mean0[y][x] = sum0[y][x]/hit_counter0[y][x];
-                                                        mean0entries += 1;
-                                                        summean0 += mean0[y][x];
-                                                }
-                                                if (hit_counter15[y][x]!=0){
-                                                        mean15[y][x] = sum15[y][x]/hit_counter15[y][x];
-                                                        mean15entries += 1;
-                                                        summean15 += mean15[y][x];
-                                                }
-                                        }
-                                }
-                                //for pixel 43,102 only to test
-                                if (ext_coarse == 1) {
-                                        for(coarse=8;coarse>=6;coarse--){
-                                                if (coarse == 6){
-                                                        for(thl=1023;thl>=0;thl-=1){
-                                                                mean0sum_pix+=((thl-mean0[102][43])*(thl-mean0[102][43])*p3DArray0[102][43][thl]);
-                                                                mean15sum_pix+=((thl-mean15[102][43])*(thl-mean15[102][43])*p3DArray15[102][43][thl]);
-                                                        }
-                                                }
-                                                else {
-                                                        for(thl=1023;thl>=652;thl-=1){
-                                                                mean0sum_pix+=(((thl+(coarse-6)*372)-mean0[102][43])*((thl+(coarse-6)*372)-mean0[102][43])*p3DArray0[102][43][thl+(coarse-6)*372]);
-                                                                mean15sum_pix+=(((thl+(coarse-6)*372)-mean15[102][43])*((thl+(coarse-6)*372)-mean15[102][43])*p3DArray15[102][43][thl+(coarse-6)*372]);
-                                                        }
-                                                }
-                                        }
-                                }
-                                else {
-                                        coarse = 7;
-                                        for(thl=max_thl;thl>=min_thl;thl-=1){
-                                                mean0sum_pix+=((thl-mean0[102][43])*(thl-mean0[102][43])*p3DArray0[102][43][thl]);
-                                                mean15sum_pix+=((thl-mean15[102][43])*(thl-mean15[102][43])*p3DArray15[102][43][thl]);
-                                        }
-                                }
+	    fpga->GeneralReset();
+	    //usleep(8000);
+	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
+	    }
+	    fpga->tp->UniformMatrix(0,0,1,1,15,chp); //0,0: Medipix modus
+	    fpga->tp->Spacing_row(step,pix_per_row,chp);
+	    fpga->tp->SaveMatrixToFile(GetMatrixFileName(chp),chp);
+	    fpga->SetMatrix();
+	    usleep(2000);
+	    fpga->SerialReadOut(pix_tempdata);
+	    //usleep(60000 );
+	    std::cout<<"Beginne RauschScan thp=15"<<std::endl;//" step "<<step<<" of "<<(256/pix_per_row)-1<<" from spacing"<<std::endl;
+	    if (ext_coarse == 1) {
+		for(coarse=8;coarse>=6;coarse--){
+		    if (coarse == 6){
+			for(thl=1023;thl>=0;thl-=1){
+			    THscan(coarse,thl,thl,ths,step,pix_per_row,p3DArray15,sum15,hit_counter15,15,chp);
+			}
+		    }
+		    else {
+			for(thl=1023;thl>=652;thl-=1){
+			    THscan(coarse,thl,thl+(coarse-6)*372,ths,step,pix_per_row,p3DArray15,sum15,hit_counter15,15,chp);
+			}
+		    }
+		}
+	    }
+	    else {
+		coarse = 7;
+		for(thl=max_thl;thl>=min_thl;thl-=1){
+		    THscan(coarse,thl,thl,ths,step,pix_per_row,p3DArray15,sum15,hit_counter15,15,chp);
+		}
+	    }
+	}
+	for(y=0;y<256;y++){
+	    for(x=0;x<256;x++){
+		if (hit_counter0[y][x]!=0){
+		    mean0[y][x] = sum0[y][x]/hit_counter0[y][x];
+		    mean0entries += 1;
+		    summean0 += mean0[y][x];
+		}
+		if (hit_counter15[y][x]!=0){
+		    mean15[y][x] = sum15[y][x]/hit_counter15[y][x];
+		    mean15entries += 1;
+		    summean15 += mean15[y][x];
+		}
+	    }
+	}
+	//for pixel 43,102 only to test
+	if (ext_coarse == 1) {
+	    for(coarse=8;coarse>=6;coarse--){
+		if (coarse == 6){
+		    for(thl=1023;thl>=0;thl-=1){
+			mean0sum_pix+=((thl-mean0[102][43])*(thl-mean0[102][43])*p3DArray0[102][43][thl]);
+			mean15sum_pix+=((thl-mean15[102][43])*(thl-mean15[102][43])*p3DArray15[102][43][thl]);
+		    }
+		}
+		else {
+		    for(thl=1023;thl>=652;thl-=1){
+			mean0sum_pix+=(((thl+(coarse-6)*372)-mean0[102][43])*((thl+(coarse-6)*372)-mean0[102][43])*p3DArray0[102][43][thl+(coarse-6)*372]);
+			mean15sum_pix+=(((thl+(coarse-6)*372)-mean15[102][43])*((thl+(coarse-6)*372)-mean15[102][43])*p3DArray15[102][43][thl+(coarse-6)*372]);
+		    }
+		}
+	    }
+	}
+	else {
+	    coarse = 7;
+	    for(thl=max_thl;thl>=min_thl;thl-=1){
+		mean0sum_pix+=((thl-mean0[102][43])*(thl-mean0[102][43])*p3DArray0[102][43][thl]);
+		mean15sum_pix+=((thl-mean15[102][43])*(thl-mean15[102][43])*p3DArray15[102][43][thl]);
+	    }
+	}
 
-                        f.open("THSoptdist.txt",std::fstream::out);
-                        if(f.is_open()){
-                                for(y=0;y<256;y++){
-                                        for(x=0;x<256;x++){
-                                                //if ((fpga->tp->GetMask(y,x))==1){
-                                                        f<<y<<"\t"<<x<<"\t"<<mean0[y][x]<<"\t"<<mean15[y][x]<<std::endl;
-                                                //}
-                                        }
-                                }
-                                f.close();
-                        }
+	f.open("THSoptdist.txt",std::fstream::out);
+	if(f.is_open()){
+	    for(y=0;y<256;y++){
+		for(x=0;x<256;x++){
+		    //if ((fpga->tp->GetMask(y,x))==1){
+		    f<<y<<"\t"<<x<<"\t"<<mean0[y][x]<<"\t"<<mean15[y][x]<<std::endl;
+		    //}
+		}
+	    }
+	    f.close();
+	}
 
-                        mean0rms_pix=sqrt(mean0sum_pix/(hit_counter0[102][43]-1));
-                        mean15rms_pix=sqrt(mean15sum_pix/(hit_counter15[102][43]-1));
-                        std::cout<<"sum0 pixel 43,102:: "<<sum0[102][43]<<std::endl;
-                        std::cout<<"Total hits pixel 43,102:: "<<hit_counter0[102][43]<<std::endl;
-                        std::cout<<"mean0 value pixel 43,102: "<<mean0[102][43]<<" rms="<<mean0rms_pix<<std::endl;
-                        std::cout<<"mean15 value pixel 43,102: "<<mean15[102][43]<<" rms="<<mean15rms_pix<<std::endl;
-                        if (mean0rms_pix>=75){
-                                std::cout<<"WARNING: RMS OF MEAN0 FOR TESTPIXEL IS BIGGER THAN 75, SOMETHING MUST BE WRONG, CHECK CHIP POWER SUPPLY. RMS VALUE IS "<<mean0rms_pix<<std::endl;
-                        }
-                        if (mean15rms_pix>=75){
-                                std::cout<<"WARNING: RMS OF MEAN15 FOR TESTPIXEL IS BIGGER THAN 75, SOMETHING MUST BE WRONG, CHECK CHIP POWER SUPPLY. RMS VALUE IS "<<mean15rms_pix<<std::endl;
-                        }
-                        //calculate mean of mean0 and mean15 distribution
-                        if (mean0entries != 0) mean0mean = summean0/mean0entries;
-                        if (mean15entries != 0) mean15mean = summean15/mean15entries;
-                        for(y=0;y<256;y++){
-                                for(x=0;x<256;x++){
-                                        if (mean0[y][x]!=0){
-                                                mean0sum+=(mean0[y][x]-mean0mean)*(mean0[y][x]-mean0mean);
-                                                mean0counter++;
-                                        }
-                                        if (mean15[y][x]!=0){
-                                                mean15sum+=(mean15[y][x]-mean15mean)*(mean15[y][x]-mean15mean);
-                                                mean15counter++;
-                                        }
-                                }
-                        }
-                        mean0rms=sqrt(mean0sum/(mean0counter-1));
-                        mean15rms=sqrt(mean15sum/(mean15counter-1));
-                        std::cout<<"for th_eq bit = 0; mean="<<mean0mean<<" rms= "<<mean0rms<<" counter: "<<mean0counter<<std::endl;
-                        std::cout<<"for th_eq bit = 15; mean="<<mean15mean<<" rms= "<<mean15rms<<" counter: "<<mean15counter<<std::endl;
-                        delta0_15 = mean15mean - mean0mean;
-                        optdelta = 3*mean0rms+3*mean15rms;
-                        std::cout<<"delta between th eq_0 mean and th_15 mean = "<<delta0_15<<" for ths = "<<ths<<std::endl;
-                        std::cout<<"optimum delta is 3*rms0 + 3*rms15, such that overlap of both curves is in 4th rms. Optimum delta from this run would be: "<<optdelta<<std::endl;
-                        // calculate ths for next iteration of while loop
-                        float newths = 0;
-                        //last_delta0_15 = 67;
-                        //last_ths = 100;
-                        if (last_delta0_15 != 0){ // linear regression. ths - delta is linear. y=a*x+b using (x1,y1) current values, (x2,y2) last values => y3= (D(y)/D(x)*x3+y1-(D(y)/D(x)*x1
-                                newths = ((last_ths - ths)/(last_delta0_15 - delta0_15))*optdelta+ths-(((last_ths - ths)/(last_delta0_15 - delta0_15))*delta0_15);
-                        }
-                        else {
-                                newths = ths/2; // after first iteration of loop, ths is 127 for first iteration or was set by user
-                        }
-                        //store ths value and delta0_15 for next iteration of while loop
-                        last_ths = ths;
-                        last_delta0_15 = delta0_15;
-                        if (newths < 0){
-                                ths = 127;
-                        }
-                        else {
-                                ths = (short)newths;
-                        }
-                        std::cout<<"ths for this iteration was "<<last_ths<<" with delta of "<<last_delta0_15<<std::endl;
-                        std::cout<<"ths for next iteration will be "<<ths<<std::endl;
-                        std::cout<<"doTHeq= "<<doTHeq<<std::endl;
-                } //while loop end ends when delta0_15 = optdelta +-2
+	mean0rms_pix=sqrt(mean0sum_pix/(hit_counter0[102][43]-1));
+	mean15rms_pix=sqrt(mean15sum_pix/(hit_counter15[102][43]-1));
+	std::cout<<"sum0 pixel 43,102:: "<<sum0[102][43]<<std::endl;
+	std::cout<<"Total hits pixel 43,102:: "<<hit_counter0[102][43]<<std::endl;
+	std::cout<<"mean0 value pixel 43,102: "<<mean0[102][43]<<" rms="<<mean0rms_pix<<std::endl;
+	std::cout<<"mean15 value pixel 43,102: "<<mean15[102][43]<<" rms="<<mean15rms_pix<<std::endl;
+	if (mean0rms_pix>=75){
+	    std::cout<<"WARNING: RMS OF MEAN0 FOR TESTPIXEL IS BIGGER THAN 75, SOMETHING MUST BE WRONG, CHECK CHIP POWER SUPPLY. RMS VALUE IS "<<mean0rms_pix<<std::endl;
+	}
+	if (mean15rms_pix>=75){
+	    std::cout<<"WARNING: RMS OF MEAN15 FOR TESTPIXEL IS BIGGER THAN 75, SOMETHING MUST BE WRONG, CHECK CHIP POWER SUPPLY. RMS VALUE IS "<<mean15rms_pix<<std::endl;
+	}
+	//calculate mean of mean0 and mean15 distribution
+	if (mean0entries != 0) mean0mean = summean0/mean0entries;
+	if (mean15entries != 0) mean15mean = summean15/mean15entries;
+	for(y=0;y<256;y++){
+	    for(x=0;x<256;x++){
+		if (mean0[y][x]!=0){
+		    mean0sum+=(mean0[y][x]-mean0mean)*(mean0[y][x]-mean0mean);
+		    mean0counter++;
+		}
+		if (mean15[y][x]!=0){
+		    mean15sum+=(mean15[y][x]-mean15mean)*(mean15[y][x]-mean15mean);
+		    mean15counter++;
+		}
+	    }
+	}
+	mean0rms=sqrt(mean0sum/(mean0counter-1));
+	mean15rms=sqrt(mean15sum/(mean15counter-1));
+	std::cout<<"for th_eq bit = 0; mean="<<mean0mean<<" rms= "<<mean0rms<<" counter: "<<mean0counter<<std::endl;
+	std::cout<<"for th_eq bit = 15; mean="<<mean15mean<<" rms= "<<mean15rms<<" counter: "<<mean15counter<<std::endl;
+	delta0_15 = mean15mean - mean0mean;
+	optdelta = 3*mean0rms+3*mean15rms;
+	std::cout<<"delta between th eq_0 mean and th_15 mean = "<<delta0_15<<" for ths = "<<ths<<std::endl;
+	std::cout<<"optimum delta is 3*rms0 + 3*rms15, such that overlap of both curves is in 4th rms. Optimum delta from this run would be: "<<optdelta<<std::endl;
+	// calculate ths for next iteration of while loop
+	float newths = 0;
+	//last_delta0_15 = 67;
+	//last_ths = 100;
+	if (last_delta0_15 != 0){ // linear regression. ths - delta is linear. y=a*x+b using (x1,y1) current values, (x2,y2) last values => y3= (D(y)/D(x)*x3+y1-(D(y)/D(x)*x1
+	    newths = ((last_ths - ths)/(last_delta0_15 - delta0_15))*optdelta+ths-(((last_ths - ths)/(last_delta0_15 - delta0_15))*delta0_15);
+	}
+	else {
+	    newths = ths/2; // after first iteration of loop, ths is 127 for first iteration or was set by user
+	}
+	//store ths value and delta0_15 for next iteration of while loop
+	last_ths = ths;
+	last_delta0_15 = delta0_15;
+	if (newths < 0){
+	    ths = 127;
+	}
+	else {
+	    ths = (short)newths;
+	}
+	std::cout<<"ths for this iteration was "<<last_ths<<" with delta of "<<last_delta0_15<<std::endl;
+	std::cout<<"ths for next iteration will be "<<ths<<std::endl;
+	std::cout<<"doTHeq= "<<doTHeq<<std::endl;
+    } //while loop end ends when delta0_15 = optdelta +-2
 
-                //store optimised ths in fsr.txt
-                std::cout<<"\tSaving optimised ths value in "<<GetFSRFileName(chp)<<"\n> "<<std::flush;
-                //for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                        fpga->tp->LoadFSRFromFile(GetFSRFileName(chp),chp);
-                        fpga->tp->SetDAC(10,chp,ths);
-                        fpga->tp->SaveFSRToFile(GetFSRFileName(chp),chp);
-                //}
+    //store optimised ths in fsr.txt
+    std::cout<<"\tSaving optimised ths value in "<<GetFSRFileName(chp)<<"\n> "<<std::flush;
+    //for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+    fpga->tp->LoadFSRFromFile(GetFSRFileName(chp),chp);
+    fpga->tp->SetDAC(10,chp,ths);
+    fpga->tp->SaveFSRToFile(GetFSRFileName(chp),chp);
+    //}
 
-                std::cout<<"\tTHS optimisation finished\n> "<<std::flush;
-                // De-Allocate memory to prevent memory leak
-                for (int i = 0; i < x_length; ++i) {
-                        for (int j = 0; j < y_length; ++j){
-                                delete [] p3DArray0[i][j];
-                                delete [] p3DArray15[i][j];
-                        }
-                        delete [] p3DArray0[i];
-                        delete [] p3DArray15[i];
-                }
-                delete [] p3DArray0;
-                delete [] p3DArray15;
-                delete pix_tempdata;
+    std::cout<<"\tTHS optimisation finished\n> "<<std::flush;
+    // De-Allocate memory to prevent memory leak
+    for (int i = 0; i < x_length; ++i) {
+	for (int j = 0; j < y_length; ++j){
+	    delete [] p3DArray0[i][j];
+	    delete [] p3DArray15[i][j];
+	}
+	delete [] p3DArray0[i];
+	delete [] p3DArray15[i];
+    }
+    delete [] p3DArray0;
+    delete [] p3DArray15;
+    delete pix_tempdata;
 
-        }
-        if (doTHeq==1){
-                DoThresholdEqCenter(pix_per_row_THeq,chp,ext_coarse,max_thl,min_thl);
-        }
-        return 0;
+//}
+    if (doTHeq==1){
+	DoThresholdEqCenter(pix_per_row_THeq,chp,ext_coarse,max_thl,min_thl);
+    }
+    return 0;
 }
 
 
@@ -1363,7 +1368,8 @@ void PC::TOCalibSingleChipReadoutCalc(int chip,
     // zero suppressed readout of a single chip with spacing in x and y direction 
     int sum  = 0;
     int hits = 0;
-    int mean = 0;
+    double mean = 0.0;
+    double var = 0.0;
 
     // get the needed variables from the parameter map by using boost::any_cast
     int step              = boost::any_cast<int>(parameter_map["step"]);
@@ -1374,49 +1380,38 @@ void PC::TOCalibSingleChipReadoutCalc(int chip,
     FrameArray<int> pixel_data = {};
     // read the pixel_data for the current chip
     // need to hand address to pixel_data
-    //int pix[256][256] = {};
-    //fpga->DataFPGAPC(pix, chip);
-    
+    // TODO: check numhits for error, timeout etc?
     int numhits = fpga->DataFPGAPC(&pixel_data, chip);
-    std::cout << "numhits for chip " << chip << " is " << numhits << std::endl;
-
-    //abort();
+    // define the variable for step size in y direction
+    int npix_per_dim = fpga->tp->GetPixelsPerDimension();
+    int y_step_size  = npix_per_dim / pixels_per_column;
     // now set the pixel data of the correct frame in the frame_map
     // to eventually create the full frame
-    (*frame_map)[chip].SetPartialFrame(pixel_data, CTPR, 32, step, pixels_per_column, true);
-
-    // (*frame_map)[chip].CalcSumHitsMean(false);
-    
-
+    (*frame_map)[chip].SetPartialFrame(pixel_data, CTPR, 32, step, y_step_size, true);
     // and get the sum, mean and hits values form this partial frame
     sum  = (*frame_map)[chip].GetLastPFrameSum();
     hits = (*frame_map)[chip].GetLastPFrameHits();
     mean = (*frame_map)[chip].GetLastPFrameMean();
-    // sum  = (*frame_map)[chip].GetFullFrameSum();
-    // hits = (*frame_map)[chip].GetFullFrameHits();
-    // mean = (*frame_map)[chip].GetFullFrameMean();
-    
-    // now calculate the variance and standard deviation of the last partial frame
-    double variance;
+    var  = (*frame_map)[chip].GetLastPFrameVariance();
+    // now calculate the standard deviation of the last partial frame
     double std;
-    variance = (*frame_map)[chip].CalcLastPFrameVariance();
-    std = sqrt(variance);
+    std = sqrt(var);
 
     // get variables needed for printing current status
     int iter  = boost::any_cast<int>(parameter_map["iteration"]);
     int pulse = boost::any_cast<int>(parameter_map["pulse"]);
 
     // and give some output to see what's going on :)
-    std::cout << "iter " << iter << "\t"
-    	      << "pulse " << pulse << "\t"
-    	      << "chip " << chip << "\t"
-    	      << "step " << step << "\t"
-    	      << "CTPR " << CTPR << "\t"
-    	      << "mean " << mean << "\t"
-    	      << "hits " << hits << "\t"
-    	      << "sum "  << sum  << "\t"
-    	      << "variance" << variance << "\t"
-    	      << "std "  << std
+    std::cout << "iter "     << iter 	<< "\t"
+    	      << "pulse "    << pulse    << "\t"
+    	      << "chip "     << chip 	<< "\t"
+    	      << "step "     << step 	<< "\t"
+    	      << "CTPR "     << CTPR 	<< "\t"
+    	      << "mean "     << mean 	<< "\t"
+    	      << "hits "     << hits 	<< "\t"
+    	      << "sum "      << sum  	<< "\t"
+    	      << "variance " << var      << "\t"
+    	      << "std "      << std
     	      << std::endl;
 }
 
@@ -1433,7 +1428,6 @@ void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
     // this function performs a single step and single CTPR value for all chips
     // note: function does not return anything, since frame_map stores the partial
     //       frames, which are read
-
 
     // get the needed parameters from the map using boost::any_cast
     int step		      = boost::any_cast<int>(parameter_map["step"]);
@@ -1484,7 +1478,7 @@ void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
 
 void PC::TOCalibSingleIteration(std::set<int> chip_set,
 				std::map<std::string, boost::any> parameter_map,
-				std::map<int, std::pair<int, double>> *chip_mean_std_map){
+				std::map<int, std::pair<double, double>> *chip_mean_std_map){
     // inputs:
     //   std::set<int> chip_set: set storing all chips we work on
     //   std::map<std::string, boost::any> parameter_map: heterogeneous map storing
@@ -1556,21 +1550,20 @@ void PC::TOCalibSingleIteration(std::set<int> chip_set,
 	    int chip = chip_pair.first;
 	    Frame chip_frame = chip_pair.second;
 	    
-	    int mean;
+	    double mean;
 	    double variance;
 	    double std;
 	    // calculate the sum, hits and mean values of the full frame
 	    // argument means we want to run over whole frame
-	    chip_frame.CalcSumHitsMean(false);
-	    mean = chip_frame.GetFullFrameMean();
-	    mean = chip_frame.GetFullFrameMean();
+	    chip_frame.CalcFullFrameVars();
+	    mean     = chip_frame.GetFullFrameMean();
 	    // now calculate variance and std
-	    variance = chip_frame.CalcVariance(false);
+	    variance = chip_frame.GetFullFrameVariance();
 	    std      = sqrt(variance);
 
 	    // now get the current value of the chip_mean_std_map to add the
 	    // values of this iteration
-	    std::pair<int, double> current_pair;
+	    std::pair<double, double> current_pair;
 	    current_pair = (*chip_mean_std_map)[chip];
 	    current_pair.first  += mean;
 	    current_pair.second += std;
@@ -1584,9 +1577,10 @@ void PC::TOCalibSingleIteration(std::set<int> chip_set,
 	    std::cout << "\n \n"
 		      << "iteration "  << iter
 		      << " for pulse " << pulse << " done.\n"
-		      << " chip " << chip 
-		      << " mean " << mean 
-		      << " std "  << std
+		      << " chip "      << chip 
+		      << " mean "      << mean 
+		      << " variance "  << variance
+		      << " std "       << std
 		      << std::endl;
 	       
 	} );
@@ -1642,15 +1636,15 @@ void PC::TOCalib(std::set<int> chip_set,
 
 	// create a map of chip numbers and a pair of (mean, std) values, which will be 
 	// handed to the function performing a single iteration
-	std::map<int, std::pair<int, double>> chip_mean_std_map;
+	std::map<int, std::pair<double, double>> chip_mean_std_map;
 	// we will zero initialize the map, since we want to add mean and std
 	// values after every iteration on the current value and calculate the mean
 	// of this after all iterations are done
 	std::for_each( chip_set.begin(), chip_set.end(), [&chip_mean_std_map](int chip){
 		// create a zero initialized pair for current chip
-		int mean = 0;
+		double mean = 0;
 		double std = 0;
-		std::pair<int, double> pair;
+		std::pair<double, double> pair;
 		pair = std::make_pair(mean, std);
 
 		// and insert element into map
@@ -1681,13 +1675,13 @@ void PC::TOCalib(std::set<int> chip_set,
 	for( it_chip_set = chip_set.begin(); it_chip_set != chip_set.end(); it_chip_set++){
 	    int chip = *it_chip_set;
 	    // get pair of current chip
-	    std::pair<int, double> pair;
+	    std::pair<double, double> pair;
 	    pair = chip_mean_std_map[chip];
 
 	    // and calculate the mean value of the sum of means, which is stored
 	    // in the chip_mean_std_map
-	    int mean;
-	    int std;
+	    double mean;
+	    double std;
 	    mean = pair.first  / nIterations;
 	    std  = pair.second / nIterations;
 	    
@@ -1823,12 +1817,12 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 		    usleep(400 );
 		    int result = 0;
 		    if (shuttertype==1){
-			fpga->CountingTime(time, 0);
+		    	fpga->CountingTime(time, 0);
 		    }
 		    else{
-			// calling CountingTime with second argument == 1
-			// corresponds to n = 1, power of 256
-			fpga->CountingTime(time, 1);
+		    	// calling CountingTime with second argument == 1
+		    	// corresponds to n = 1, power of 256
+		    	fpga->CountingTime(time, 1);
 		    }
 		    int meanTOT_iteration_spacing[9] = {0};
 		    if (TOT == 3 or TOT == 4) {
@@ -1850,14 +1844,14 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 			    int pix_tempdata[256][256]= {0};
 			    int hitcounter = 0;
 			    int hitcounter_real = 0;
-			    int test = fpga->DataFPGAPC(pix_tempdata,chip);
-			    std::cout << "numhits for chip " << chip << " is " << test << std::endl;
+			    fpga->DataFPGAPC(pix_tempdata, chip);
 			    for(short y=step;y<256;y+=(256/pix_per_row)){
 				for(short x=CTPR;x<256;x+=32){//short x=CTPR;x<256;x+=32
 				    if((pix_tempdata[y][x])!=0 && (pix_tempdata[y][x])!=11810 && fpga->tp->GetMask(y,x,chip)==1){
 					sumTOT+=pix_tempdata[y][x];
 					hitcounter_real++;
-					//if (CTPR ==0)std::cout << "y "<<y<<" x "<<x<<" hits "<<pix_tempdata[y][x]<<std::endl;
+					//if (CTPR ==0)
+					std::cout << "y "<<y<<" x "<<x<<" hits "<<pix_tempdata[y][x]<<std::endl;
 				    }
 				    else{
 					sumTOT+=0;
@@ -2641,7 +2635,7 @@ const char* PC::GetDataFileName(unsigned short chip){
     // this function builds the data file name from the 
     // DataFileNamePrototype and the chip
     std::string filename;
-    filename = DataFilePath + DataFileName + std::to_string(chip) + ".txt";
+    filename = DataPathName + DataFileName + std::to_string(chip) + ".txt";
     return filename.c_str();
 }
 const char* PC::GetRunFileName(){
@@ -2651,14 +2645,14 @@ const char* PC::GetFSRFileName(unsigned short chip){
     // this function builds the FSR file name from the 
     // FSRFileNamePrototype and the chip
     std::string filename;
-    filename = FSRFilePath + FSRFileName + std::to_string(chip) + ".txt";
+    filename = FSRPathName + FSRFileName + std::to_string(chip) + ".txt";
     return filename.c_str();
 }
 const char* PC::GetMatrixFileName(unsigned short chip){
     // this function builds the matrix file name from the 
     // MatrixFileNamePrototype and the chip
     std::string filename;
-    filename = MatrixFilePath + MatrixFileName + std::to_string(chip) + ".txt";
+    filename = MatrixPathName + MatrixFileName + std::to_string(chip) + ".txt";
     return filename.c_str();
 }
 const char* PC::GetDACScanFileName(){
@@ -2668,21 +2662,21 @@ const char* PC::GetThresholdFileName(unsigned short chip){
     // this function builds the treshold file name from the 
     // ThresholdFileNamePrototype and the chip
     std::string filename;
-    filename = ThresholdFilePath + ThresholdFileName + std::to_string(chip) + ".txt";
+    filename = ThresholdPathName + ThresholdFileName + std::to_string(chip) + ".txt";
     return filename.c_str();
 }
 const char* PC::GetThresholdMeansFileName(unsigned short chip){
     // this function builds the thresholdMeans file name from the 
     // ThresholdMeansFileNamePrototype and the chip
     std::string filename;
-    filename = ThresholdMeansFilePath + ThresholdMeansFileName + std::to_string(chip) + ".txt";
+    filename = ThresholdMeansPathName + ThresholdMeansFileName + std::to_string(chip) + ".txt";
     return filename.c_str();
 }
 const char* PC::GetTOTCalibFileName(unsigned short chip){
     // this function builds the TOTcalib file name from the 
     // TOTCalibFileNamePrototype and the chip
     std::string filename;
-    filename = TOTCalibFilePath + TOTCalibFileName + std::to_string(chip) + ".txt";
+    filename = TOTCalibPathName + TOTCalibFileName + std::to_string(chip) + ".txt";
     return filename.c_str();
 }
 
@@ -2690,7 +2684,7 @@ const char* PC::GetTOACalibFileName(unsigned short chip){
     // this function builds the TOAcalib file name from the 
     // TOACalibFileNamePrototype and the chip
     std::string filename;
-    filename = TOACalibFilePath + TOACalibFileName + std::to_string(chip) + ".txt";
+    filename = TOACalibPathName + TOACalibFileName + std::to_string(chip) + ".txt";
     return filename.c_str();
 }
 
@@ -2698,7 +2692,7 @@ const char* PC::GetMaskFileName(unsigned short chip){
     // this function builds the mask file name from the 
     // MaskFileNamePrototype and the chip
     std::string filename;
-    filename = MaskFilePath + MaskFileName + std::to_string(chip) + ".txt";
+    filename = MaskPathName + MaskFileName + std::to_string(chip) + ".txt";
     return filename.c_str();
 }
 

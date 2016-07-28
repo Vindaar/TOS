@@ -21,7 +21,7 @@
 // given in /proc/sys/net/core/rmem_default
 #define DEFAULT_SOCKET_BUFFER_SIZE             212992
 // scaling factor by which the timeout is scaled (10 % longer than time we have to wait)
-#define DEFAULT_TIMEOUT_SCALING_FACTOR         1.1
+#define DEFAULT_TIMEOUT_SCALING_FACTOR         10//1.1
 
 class FPGA{
 
@@ -298,7 +298,7 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 	    }
 	}
 	err_code=Communication2(PacketBuffer,&((*PackQueueReceive)[p+1][0]),0,chip);
-	if(err_code>0)return 300+err_code;
+	if(err_code>0) return 300+err_code;
     }
     if(aus!=NULL){
 	err_code=SaveData(aus, NumHits);

@@ -1847,9 +1847,9 @@ int Console::CommandReadOut(){
     const char* f[9];
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-	filename[chip]=pc->GetDataPathName();
-	filename[chip]+="/";
-	filename[chip]+=pc->GetDataFileName(chip);
+	// filename[chip]=pc->GetDataPathName();
+	// filename[chip]+="/";
+	filename[chip] = pc->GetDataFileName(chip);
 	f[chip] = filename[chip].c_str();
     }
     result = pc->DoReadOut(f);
@@ -1868,10 +1868,10 @@ int Console::CommandReadOut2(){
     pc->fpga->DataChipFPGA(result);
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-	std::string filename=pc->GetDataPathName();
-	filename+="/";
-	filename+=pc->GetDataFileName(chip);
-	result = pc->DoReadOut2(filename.c_str(),chip);
+	std::string filename;//=pc->GetDataPathName();
+//	filename+="/";
+	filename = pc->GetDataFileName(chip);
+	result   = pc->DoReadOut2(filename.c_str(),chip);
 #if DEBUG==2
 	std::cout << "DEBUG: Filename: " << filename << std::endl;
 #endif    
@@ -2167,7 +2167,12 @@ int Console::CommandSetDAC(){
 
 
 int Console::CommandShowFSR(){
-    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+    for (unsigned short chip = 1; chip <= pc->fpga->tp->GetNumChips(); chip++){
+	std::string chip_name;
+	chip_name = pc->fpga->tp->GetChipName(chip);
+	std::cout << "current FSR for chip #" << chip 
+		  << " with name " << chip_name
+		  << std::endl;
 	for(unsigned int i=0;i<18;i++){
 	    std::cout << "\t" << pc->fpga->tp->GetDACName(i) << " \t " << pc->fpga->tp->GetDAC(i,chip) << std::endl;
 	}
@@ -2189,7 +2194,6 @@ int Console::CommandVarChessMatrix(){
     bool numericalInput = true;
     bool allowDefaultOnEmptyInput = false;
     std::string input;
-
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::cout<<"Chip Number "<<chip<<std::endl;
 	std::cout<<"\t Number cols per field="<<std::flush;
@@ -2240,7 +2244,6 @@ int Console::CommandVarChessMatrix(){
 	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (input == "quit") return -1;
 	wth = std::stoi(input);
-	std::cin.ignore(1);
 	err=pc->fpga->tp->VarChessMatrix(sl,wl,sp0,sp1,smask,stest,sth,wp0,wp1,wmask,wtest,wth,chip);
 	if(err==0){std::cout<<"Matrix created\n"<<std::flush;}
 	else{ErrorMessages(80);}

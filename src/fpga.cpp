@@ -569,7 +569,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
 #endif
 
     //quitusleep(3000);
-    testfd=readfd;
+    testfd = readfd;
     
 
     // check if the timeout integer was set to 0 (meaning no timeout or not)
@@ -579,6 +579,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     bool timeout_flag;
     timeout_flag = SetTimeout(timeout);
     if (timeout_flag == true){
+	//std::cout << "using timeout! " << std::endl;
 	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);
     }
     else{
@@ -591,10 +592,10 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     error=WSAGetLastError();
 #endif
 
-#if DEBUG==1
+//#if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "Timeout in select" << std::endl; 
-#endif
+//#endif
     // check if _timeout expired, before chip answered. in that case,
     // select returns 0 and we return 2
     if(err_code<0){
@@ -607,7 +608,8 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
 	err_code=0;
     }
 
-    RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
+    RecvBytes=recvWrapper(sock, RecvBuffer, PLen + 18, 0);
+    //std::cout << "recv() returned errno: " << errno << std::endl;
     //usleep(3000);
 #if DEBUG==1
     std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
@@ -1213,7 +1215,7 @@ int FPGA::SaveData(std::vector<int> *pHitArray, int NumHits ){
 }
 
 
-int FPGA::SaveData(int hit_x_y_val[12288] ,int NumHits){
+int FPGA::SaveData(int hit_x_y_val[12288], int NumHits){
 #if DEBUG==2
     std::cout<<"Enter FPGA::SaveData(array)"<<std::endl;
 #endif

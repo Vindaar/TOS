@@ -521,11 +521,16 @@ int Timepix::LoadMatrixFromFile(const char* filename, unsigned short chip){
     int in;
     int x,y;
     FILE* f=fopen(filename, "r"); if(f==NULL) return -1;
-    for(y=0;y<256;++y)for(x=0;x<256;++x){
-	    if(fscanf(f,"%i",&in)!=1) return (y*255+x);
-	    ThrH[chip][y][x]=in&15;
-	    P0[chip][y][x]=((in&16)>0); P1[chip][y][x]=((in&32)>0); Mask[chip][y][x]=((in&64)>0); Test[chip][y][x]=((in&128)>0);
+    for(y=0;y<256;++y){
+	for(x=0;x<256;++x){
+	    if( fscanf(f, "%i", &in) != 1) return (y*255+x);
+	    ThrH[chip][y][x] =    in & 15;
+	    P0[chip][y][x]   = ( (in & 16)  > 0); 
+	    P1[chip][y][x]   = ( (in & 32)  > 0); 
+	    Mask[chip][y][x] = ( (in & 64)  > 0); 
+	    Test[chip][y][x] = ( (in & 128) > 0);
 	}
+    }
     fclose(f);
     return 0;
 }

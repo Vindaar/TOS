@@ -75,7 +75,7 @@ public:
 				       int nChips);
     void TOCalibSingleIteration(std::set<int> chip_set,
 				std::map<std::string, boost::any> parameter_map,
-				std::map<int, std::pair<int, double>> *chip_mean_std_map);
+				std::map<int, std::pair<double, double>> *chip_mean_std_map);
     void TOCalib(std::set<int> chip_set, 
 		 std::string TOmode, 
 		 std::string pulser, 
@@ -210,7 +210,6 @@ private:
 
     std::string DataPathName;
     std::string DataFileName;
-    std::string DataFileName;
   
     std::string DataCompleteName;
     std::string RunFileName;
@@ -229,7 +228,7 @@ private:
     std::string ThresholdMeansPathName;
     std::string ThresholdMeansFileName;
 
-    std::string MaskFileNamePrototype;
+    std::string MaskPathName;
     std::string MaskFileName;
 
     std::string TOTCalibPathName; 

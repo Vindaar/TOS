@@ -1,0 +1,4 @@
+pulse 350	chip 1	mean 166	std 42598
+pulse 20	chip 1	mean 0	std 0
+pulse 30	chip 1	mean 0	std 0
+pulse 40	chip 1	mean 2949	std 285348
