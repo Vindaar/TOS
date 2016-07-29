@@ -1403,7 +1403,7 @@ void PC::TOCalibSingleChipReadoutCalc(int chip,
 
     // and give some output to see what's going on :)
     std::cout << "iter "     << iter 	<< "\t"
-    	      << "pulse "    << pulse    << "\t"
+    	      << "pulse "    << pulse   << "\t"
     	      << "chip "     << chip 	<< "\t"
     	      << "step "     << step 	<< "\t"
     	      << "CTPR "     << CTPR 	<< "\t"
