@@ -1844,7 +1844,7 @@ int Console::CommandReadOut(){
 #endif
     int result;
     std::string filename[9]= {""};
-    const char* f[9];
+    std::string f[9];
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	// filename[chip]=pc->GetDataPathName();
@@ -1901,7 +1901,7 @@ int Console::CommandSaveMatrix(){
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc->GetMatrixFileName(chip);
+	std::string f=pc->GetMatrixFileName(chip);
 	std::cout << "Matrix filename for chip "
 		  << chip 
 		  << ": (press ENTER to save in "
@@ -1924,7 +1924,7 @@ int Console::CommandLoadMatrix(){
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc->GetMatrixFileName(chip);
+	std::string f=pc->GetMatrixFileName(chip);
 	std::cout << "Matrix filename for chip "
 		  << chip
 		  << " (press ENTER to load from "
@@ -1933,8 +1933,8 @@ int Console::CommandLoadMatrix(){
 		  << std::endl;
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (ein == "quit") return -1;
-	f=ein.c_str();
-	FILE* f1=fopen(f,"r"); 
+	f=ein;
+	FILE* f1=fopen(f.c_str(),"r"); 
 	if(f1==NULL) {
 	    std::cout<<"File not found"<<std::endl; 
 	    return -1;
@@ -1970,7 +1970,7 @@ int Console::CommandSaveFSR(){
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc->GetFSRFileName(chip);
+	std::string f=pc->GetFSRFileName(chip);
 	std::cout << "FSR filename for chip "
 		  << chip
 		  << ": (press ENTER to save in " 
@@ -1997,7 +1997,7 @@ int Console::CommandLoadFSR(){
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc->GetFSRFileName(chip);
+	std::string f=pc->GetFSRFileName(chip);
 	std::cout << "FSR filename for chip "
 		  << chip
 		  << " (press ENTER to load from "
@@ -2015,7 +2015,7 @@ int Console::CommandLoadFSR(){
 	}
 
 	std::cout << "Trying to load file: " << f << std::endl;
-	FILE* f1=fopen(f,"r"); 
+	FILE* f1=fopen(f.c_str(),"r"); 
 	if (f1 == NULL) {
 	    std::cout << "File not found"
 		      << std::endl; 
@@ -2045,7 +2045,7 @@ int Console::CommandLoadFSRAll(){
     bool allowDefaultOnEmptyInput = true;
 
     std::string input;
-    const char* f=pc->GetFSRFileName(1);
+    std::string f=pc->GetFSRFileName(1);
     std::cout << "Enter a FSR filename to be loaded for all chips.\n"
 	      << "(press ENTER to load default " << f  
 	      << std::endl;
@@ -2059,7 +2059,7 @@ int Console::CommandLoadFSRAll(){
 	f = input.c_str();
     }
     std::cout << "Trying to load file: " << f << std::endl;
-    FILE* f1 = fopen(f, "r"); 
+    FILE* f1 = fopen(f.c_str(), "r"); 
     if (f1 == NULL) {
 	std::cout << "File not found"
 		  << std::endl; 
@@ -2093,7 +2093,7 @@ int Console::CommandLoadThreshold(){
 
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
 	std::string ein;
-	const char* f=pc->GetThresholdFileName(chip);
+	std::string f=pc->GetThresholdFileName(chip);
 	std::cout << "Threshold filename for chip "
 		  << chip
 		  << " (press ENTER to load from "
@@ -2109,7 +2109,7 @@ int Console::CommandLoadThreshold(){
 	else{
 	    f=ein.c_str();
 	}
-	FILE* f1=fopen(f,"r");
+	FILE* f1=fopen(f.c_str(),"r");
 	if(f1==NULL) {
 	    std::cout << "File not found" << std::endl;
 	    return -1;

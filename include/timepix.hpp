@@ -32,12 +32,12 @@ public:
     int GetFSR(unsigned char* FSR_);
     int ChipID(unsigned char* ReplyPacket,unsigned short chip);
     int PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue);
-    int SaveFSRToFile(const char* filename, unsigned short chip);
-    int LoadFSRFromFile(const char* filename, unsigned short chip);
-    int SaveThresholdToFile(const char* filename, unsigned short chip);
-    int LoadThresholdFromFile(const char* filename, unsigned short chip);
-    int SaveMatrixToFile(const char* filename, unsigned short Chip);
-    int LoadMatrixFromFile(const char* filename, unsigned short Chip);
+    int SaveFSRToFile(std::string filename, unsigned short chip);
+    int LoadFSRFromFile(std::string filename, unsigned short chip);
+    int SaveThresholdToFile(std::string filename, unsigned short chip);
+    int LoadThresholdFromFile(std::string filename, unsigned short chip);
+    int SaveMatrixToFile(std::string filename, unsigned short Chip);
+    int LoadMatrixFromFile(std::string filename, unsigned short Chip);
     int UniformMatrix(unsigned char P0, unsigned char P1, unsigned char Mask, unsigned char Test, unsigned char ThrH, unsigned short Chip);
     int VarChessMatrix(int sl,int wl,int sp0,int sp1,int smask,int stest,int sth,int wp0,int wp1,int wmask,int wtest,int wth, unsigned short Chip);
 		

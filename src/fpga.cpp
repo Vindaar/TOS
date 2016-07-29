@@ -945,7 +945,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 	
 
 
-int FPGA::SaveData(const char* filename){
+int FPGA::SaveData(std::string filename){
 #if DEBUG==2
     std::cout<<"Enter FPGA::SaveData(file)"<<std::endl;	
 #endif
@@ -969,7 +969,7 @@ int FPGA::SaveData(const char* filename){
 	}
     }
 
-    FILE* f=fopen(filename,"w"); if(f==NULL) return 1;
+    FILE* f=fopen(filename.c_str(),"w"); if(f==NULL) return 1;
 	
 #if PERFORMANCE==1
     fwrite(pix,sizeof(int),256*256,f);

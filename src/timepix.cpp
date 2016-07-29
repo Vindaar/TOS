@@ -155,7 +155,7 @@ int Timepix::GetFSR(unsigned char* FSR_){
     }
     return 0;
 }
-int Timepix::LoadFSRFromFile(const char* filename, unsigned short chip){
+int Timepix::LoadFSRFromFile(std::string filename, unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::LoadFSRFromFile()"<<std::endl;	
 #endif	
@@ -172,7 +172,7 @@ int Timepix::LoadFSRFromFile(const char* filename, unsigned short chip){
     return 1;
 }
 
-int Timepix::SaveFSRToFile(const char* filename, unsigned short chip){
+int Timepix::SaveFSRToFile(std::string filename, unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::SaveFSRToFile()"<<std::endl;	
 #endif
@@ -464,12 +464,12 @@ int Timepix::GetTotalNumPixels(){
     return _pix_total_num;
 }
 
-int Timepix::SaveThresholdToFile(const char* filename, unsigned short chip){
+int Timepix::SaveThresholdToFile(std::string filename, unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::SaveThresholdToFile()"<<std::endl;	
 #endif	
     int x,y;
-    FILE* f=fopen(filename, "w"); if(f==NULL) return -1;
+    FILE* f=fopen(filename.c_str(), "w"); if(f==NULL) return -1;
     for(y=0;y<256;++y){
 	for(x=0;x<255;++x){
 	    fprintf(f,"%i ",ThrH[chip][y][x]);
@@ -480,13 +480,13 @@ int Timepix::SaveThresholdToFile(const char* filename, unsigned short chip){
     return 1;
 }
 
-int Timepix::LoadThresholdFromFile(const char* filename, unsigned short chip){
+int Timepix::LoadThresholdFromFile(std::string filename, unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::LoadMatrixFromFile()"<<std::endl;	
 #endif
     int x,y;
     int in;
-    FILE* f=fopen(filename, "r"); if(f==NULL) return -1;
+    FILE* f=fopen(filename.c_str(), "r"); if(f==NULL) return -1;
     for(y=0;y<256;++y)for(x=0;x<256;++x){
 	    if(fscanf(f,"%i",&in)!=1) return (y*255+x);
 	    ThrH[chip][y][x]=in;
@@ -495,13 +495,13 @@ int Timepix::LoadThresholdFromFile(const char* filename, unsigned short chip){
     return -2;
 }
 
-int Timepix::SaveMatrixToFile(const char* filename,unsigned short Chip){
+int Timepix::SaveMatrixToFile(std::string filename,unsigned short Chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::SaveMatrixToFile()"<<std::endl;	
 #endif
     int out;
     int x,y;
-    FILE* f=fopen(filename, "w"); if(f==NULL) return -1;
+    FILE* f=fopen(filename.c_str(), "w"); if(f==NULL) return -1;
     for(y=0;y<256;++y){
 	for(x=0;x<255;++x){
 	    out=ThrH[Chip][y][x] + 16*P0[Chip][y][x] + 32*P1[Chip][y][x] + 64*Mask[Chip][y][x] + 128*Test[Chip][y][x];
@@ -514,13 +514,13 @@ int Timepix::SaveMatrixToFile(const char* filename,unsigned short Chip){
     return 1;
 }
 
-int Timepix::LoadMatrixFromFile(const char* filename, unsigned short chip){
+int Timepix::LoadMatrixFromFile(std::string filename, unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::LoadMatrixFromFile()"<<std::endl;	
 #endif
     int in;
     int x,y;
-    FILE* f=fopen(filename, "r"); if(f==NULL) return -1;
+    FILE* f=fopen(filename.c_str(), "r"); if(f==NULL) return -1;
     for(y=0;y<256;++y){
 	for(x=0;x<256;++x){
 	    if( fscanf(f, "%i", &in) != 1) return (y*255+x);

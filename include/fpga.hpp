@@ -111,7 +111,7 @@ private:
     int Communication( unsigned char* Bsend, unsigned char* Brecv, int timeout = 2e5); 	                                 //err_code=x
     int Communication2(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip, int timeout = 2e5);        //err_code=x
     int CommunicationReadSend(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip, int timeout = 2e5); //err_code=x
-    int SaveData(const char* filename);						//err_code=x
+    int SaveData(std::string filename);						//err_code=x
     int SaveData(int pix[9][256][256]);
     int SaveData(std::vector<std::vector<std::vector<int> > > *VecData);
     int SaveData(FrameArray<int> *pixel_data, int NumHits);

@@ -50,10 +50,10 @@ public:
     void initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc = true);
   
     FPGA *fpga;
-    int DoReadOut(const char* filename[9]);
-    int DoReadOut2(const char* filename, unsigned short chip);
+    int DoReadOut(std::string filename[9]);
+    int DoReadOut2(std::string filename, unsigned short chip);
     // TODO: HV_FADC_Obj
-    int DoFadcReadout(const char* filename, std::vector< int> basicParams);
+    int DoFadcReadout(std::string filename, std::vector< int> basicParams);
     int DoDACScan(int DACstoScan, unsigned short chip);
     int DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh);
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
@@ -114,18 +114,18 @@ public:
     bool SetDACScanFileName(std::string DACScanFile);
     bool SetThresholdFileName(std::string ThresholdFile);
     bool SetMaskFileName(std::string MaskFile);
-    const char* GetTOSPathName();
-    const char* GetDataPathName();
-    const char* GetDataFileName(unsigned short chip);
-    const char* GetRunFileName();
-    const char* GetFSRFileName(unsigned short chip);
-    const char* GetMatrixFileName(unsigned short chip);
-    const char* GetDACScanFileName();
-    const char* GetThresholdFileName(unsigned short chip);
-    const char* GetThresholdMeansFileName(unsigned short chip);
-    const char* GetTOTCalibFileName(unsigned short chip);
-    const char* GetTOACalibFileName(unsigned short chip);
-    const char* GetMaskFileName(unsigned short chip);
+    std::string GetTOSPathName();
+    std::string GetDataPathName();
+    std::string GetDataFileName(unsigned short chip);
+    std::string GetRunFileName();
+    std::string GetFSRFileName(unsigned short chip);
+    std::string GetMatrixFileName(unsigned short chip);
+    std::string GetDACScanFileName();
+    std::string GetThresholdFileName(unsigned short chip);
+    std::string GetThresholdMeansFileName(unsigned short chip);
+    std::string GetTOTCalibFileName(unsigned short chip);
+    std::string GetTOACalibFileName(unsigned short chip);
+    std::string GetMaskFileName(unsigned short chip);
 		
 		
     void MakeBMP(int arr[256][256]);

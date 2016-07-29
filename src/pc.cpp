@@ -147,7 +147,7 @@ int PC::okay(){
         return ok;
 }
 
-int PC::DoReadOut(const char* filename[9]){
+int PC::DoReadOut(std::string filename[9]){
 #if DEBUG==2
         std::cout<<"Enter PC::DoReadOut()"<<std::endl;  
 #endif
@@ -161,7 +161,7 @@ int PC::DoReadOut(const char* filename[9]){
         if(result==300){
                 FILE* f[8];
                 for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                        f[chip]=fopen(filename[chip],"w"); if(f[chip]==NULL) {std::cout<<"(PC::DoReadOut) Dateifehler"<<std::endl; return -1;}
+		    f[chip]=fopen(filename[chip].c_str(),"w"); if(f[chip]==NULL) {std::cout<<"(PC::DoReadOut) Dateifehler"<<std::endl; return -1;}
 #if PERFORMANCE==1
                 fwrite(pix,sizeof(int),256*256,f);
 #else
@@ -183,7 +183,7 @@ int PC::DoReadOut(const char* filename[9]){
         return result;
 }
 
-int PC::DoReadOut2(const char* filename, unsigned short chip){
+int PC::DoReadOut2(std::string filename, unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter PC::DoReadOut()"<<std::endl;
 #endif
@@ -191,7 +191,7 @@ int PC::DoReadOut2(const char* filename, unsigned short chip){
     std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
     hits=fpga->DataFPGAPC(data,chip);
     if(hits>1){//need more than 2 hits (specified for Christophs setup with 1 noise pixel)
-	FILE* f=fopen(filename,"w"); 
+	FILE* f=fopen(filename.c_str(),"w"); 
 	if(f==NULL) {
 	    std::cout << "(PC::DoReadOut2) Dateifehler" << std::endl; 
 	    return -1;
@@ -231,7 +231,7 @@ int PC::DoDACScan(int DACstoScan,unsigned short chip) {
         if (chip == 8) {channel=2;}
         std::cout<<"DACstoScan "<<DACstoScan<<std::endl;
         std::fstream f;
-        f.open(DACScanFileName.c_str(),std::fstream::out);
+        f.open(DACScanFileName,std::fstream::out);
         for(unsigned int dac=0;dac<14;dac++){
                 fpga->GeneralReset();
                 usleep(8000);
@@ -434,7 +434,7 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
                         }
                         else sstream<<"voltage_"<<voltage<<".txt";
                         filename=PathName+"/"; filename+=sstream.str();
-                        const char* filename_= filename.c_str();
+			std::string filename_= filename;
                         std::fstream f;
 
                         f.open(filename_,std::fstream::out);
@@ -1687,7 +1687,7 @@ void PC::TOCalib(std::set<int> chip_set,
 	    
 	    // and write to file
 	    std::fstream f;
-	    const char* filename;
+	    std::string filename;
 	    if (TOmode == "TOT"){
 		filename = GetTOTCalibFileName(chip);
 	    }
@@ -1832,7 +1832,7 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 			    sstream<<"TOTCalib1"<<"_iteration"<<iteration<<"_step"<<step<<"_chip"<<chip<<".txt";
 			    filename_=DataPathName+"/"+"TOT"+"/"; filename_+=sstream.str();
 			    fpga->DataChipFPGA(result);
-			    DoReadOut2(filename_.c_str(),chip);
+			    DoReadOut2(filename_,chip);
 			}
 		    }
 		    else {
@@ -2185,9 +2185,9 @@ int PC::DoRun(unsigned short runtimeFrames_,
     {
         sstream<<"_"<<chip;
         FileName=PathName+"/"; FileName+=FSRFileName; FileName+=sstream.str();
-        fpga->tp->SaveFSRToFile(FileName.c_str(),chip);
+        fpga->tp->SaveFSRToFile(FileName,chip);
         FileName=PathName+"/"; FileName+=MatrixFileName; FileName+=sstream.str();
-        fpga->tp->SaveMatrixToFile(FileName.c_str(),chip);
+        fpga->tp->SaveMatrixToFile(FileName,chip);
         sstream.str("");
     }
           
@@ -2405,7 +2405,7 @@ void PC::runOTPX()
             ms = tv.tv_usec/1000;    // mili seconds
 
             std::string filename[9]= {""};
-            const char* f[9];
+            std::string f[9];
             std::ostringstream sstream;
 
             //build filename(s)
@@ -2419,7 +2419,7 @@ void PC::runOTPX()
                 filename[chip]+="/";
                 filename[chip]+=sstream.str();
                 std::cout << filename[chip] << std::endl;
-                f[chip] = filename[chip].c_str();
+                f[chip] = filename[chip];
                 sstream.str("");
                 // TODO: next line does not exist in Tobys code.
                 sstream.clear();
@@ -2553,7 +2553,7 @@ void PC::readoutFadc(std::string filePath, std::vector<int> fadcParams, std::vec
   buildFileName << FileName << "-fadc";
   std::cout << "outfile " << buildFileName.str() << std::endl;
 
-  std::ofstream outFile( buildFileName.str().c_str() );
+  std::ofstream outFile( buildFileName.str() );
 
   //write data to output file
   if( outFile.is_open() )
@@ -2625,75 +2625,75 @@ bool PC::SetMaskFileName(std::string MaskFile){
         MaskFileName=MaskFile;
         return true;
 }
-const char* PC::GetTOSPathName(){
-        return TOSPathName.c_str();
+std::string PC::GetTOSPathName(){
+        return TOSPathName;
 }
-const char* PC::GetDataPathName(){
-        return DataPathName.c_str();
+std::string PC::GetDataPathName(){
+        return DataPathName;
 }
-const char* PC::GetDataFileName(unsigned short chip){
+std::string PC::GetDataFileName(unsigned short chip){
     // this function builds the data file name from the 
     // DataFileNamePrototype and the chip
     std::string filename;
     filename = DataPathName + DataFileName + std::to_string(chip) + ".txt";
-    return filename.c_str();
+    return filename;
 }
-const char* PC::GetRunFileName(){
-        return RunFileName.c_str();
+std::string PC::GetRunFileName(){
+        return RunFileName;
 }
-const char* PC::GetFSRFileName(unsigned short chip){
+std::string PC::GetFSRFileName(unsigned short chip){
     // this function builds the FSR file name from the 
     // FSRFileNamePrototype and the chip
     std::string filename;
     filename = FSRPathName + FSRFileName + std::to_string(chip) + ".txt";
-    return filename.c_str();
+    return filename;
 }
-const char* PC::GetMatrixFileName(unsigned short chip){
+std::string PC::GetMatrixFileName(unsigned short chip){
     // this function builds the matrix file name from the 
     // MatrixFileNamePrototype and the chip
     std::string filename;
     filename = MatrixPathName + MatrixFileName + std::to_string(chip) + ".txt";
-    return filename.c_str();
+    return filename;
 }
-const char* PC::GetDACScanFileName(){
-        return DACScanFileName.c_str();
+std::string PC::GetDACScanFileName(){
+        return DACScanFileName;
 }
-const char* PC::GetThresholdFileName(unsigned short chip){
+std::string PC::GetThresholdFileName(unsigned short chip){
     // this function builds the treshold file name from the 
     // ThresholdFileNamePrototype and the chip
     std::string filename;
     filename = ThresholdPathName + ThresholdFileName + std::to_string(chip) + ".txt";
-    return filename.c_str();
+    return filename;
 }
-const char* PC::GetThresholdMeansFileName(unsigned short chip){
+std::string PC::GetThresholdMeansFileName(unsigned short chip){
     // this function builds the thresholdMeans file name from the 
     // ThresholdMeansFileNamePrototype and the chip
     std::string filename;
     filename = ThresholdMeansPathName + ThresholdMeansFileName + std::to_string(chip) + ".txt";
-    return filename.c_str();
+    return filename;
 }
-const char* PC::GetTOTCalibFileName(unsigned short chip){
+std::string PC::GetTOTCalibFileName(unsigned short chip){
     // this function builds the TOTcalib file name from the 
     // TOTCalibFileNamePrototype and the chip
     std::string filename;
     filename = TOTCalibPathName + TOTCalibFileName + std::to_string(chip) + ".txt";
-    return filename.c_str();
+    return filename;
 }
 
-const char* PC::GetTOACalibFileName(unsigned short chip){
+std::string PC::GetTOACalibFileName(unsigned short chip){
     // this function builds the TOAcalib file name from the 
     // TOACalibFileNamePrototype and the chip
     std::string filename;
     filename = TOACalibPathName + TOACalibFileName + std::to_string(chip) + ".txt";
-    return filename.c_str();
+    return filename;
 }
 
-const char* PC::GetMaskFileName(unsigned short chip){
+std::string PC::GetMaskFileName(unsigned short chip){
     // this function builds the mask file name from the 
     // MaskFileNamePrototype and the chip
     std::string filename;
     filename = MaskPathName + MaskFileName + std::to_string(chip) + ".txt";
-    return filename.c_str();
+    return filename;
 }
 
 void PC::MakeBMP(int arr[256][256]){
@@ -2829,7 +2829,7 @@ void PC::SpeedTest(int wdh, int freq){ //outdated, not used any more
     std::cout<<hertz<<" Hz"<<std::endl;
   
     sstr.str(""); sstr.clear(); sstr<<"results/"<<freq<<"MHz.txt";
-    f.open(sstr.str().c_str(),std::fstream::out); 
+    f.open(sstr.str(),std::fstream::out); 
     if(!f.is_open()){std::cout<<"Dateifehler"<<std::endl;}
     else{
 	f<<"Wiederholungen:\t"<<wdh<<"\nZeit:\t"<<sec<<"."<<msec<<"."<<usec<<"\nFrequenz:\t"<<hertz<<"\nChipID=\t"<<ChipID<<std::endl;
