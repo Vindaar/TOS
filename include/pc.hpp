@@ -212,6 +212,8 @@ private:
     std::string DataFileName;
   
     std::string DataCompleteName;
+    
+    std::string RunPathName;
     std::string RunFileName;
 
     std::string FSRPathName;

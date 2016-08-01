@@ -56,6 +56,7 @@ PC::PC(Timepix *tp):
     DataPathName = "data/singleFrames/";
     DataFileName = "data";
 
+    RunPathName  = "data/runs/";
     RunFileName  = "run.txt";
 
     FSRPathName = "data/fsr/";
@@ -2167,13 +2168,13 @@ int PC::DoRun(unsigned short runtimeFrames_,
     struct tm * TimeStruct;
 
     time(&Time_SecondsPassed); TimeStruct=localtime(&Time_SecondsPassed);
-    strftime(TimeName,19,"runs/Run%y%m%d_%H-%M-%S",TimeStruct);
+    strftime(TimeName,19,"Run%y%m%d_%H-%M-%S",TimeStruct);
 #ifdef __WIN32__
-    mkdir(DataPathName.c_str());
+    mkdir(RunPathName.c_str());
 #else
-    mkdir(DataPathName.c_str(),0755);
+    mkdir(RunPathName.c_str(),0755);
 #endif
-    PathName = DataPathName+"/"; PathName+=TimeName;
+    PathName = RunPathName; PathName+=TimeName;
 #ifdef __WIN32__
     mkdir(PathName.c_str());
 #else

@@ -282,7 +282,8 @@ void Consumer::run()
 		<< std::setw(2) << std::setfill('0') << mm
 		<< std::setw(2) << std::setfill('0') << ss
 		<< std::setw(3) << std::setfill('0') << ms <<".txt";
-    
+
+	std::cout << "Path Name " << parent->PathName << std::endl;
 	FileName2 = parent->PathName + "/" + sstream.str(); 
 
 	sstream.str("");
