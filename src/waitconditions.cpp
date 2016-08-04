@@ -24,7 +24,7 @@ void Producer::run()
     /* Since the FPGA::SerialReadOutReadSend function moves one event from the chip to the
      * fpga and the event from fpga to the pc, one has to wait on event if there was a 
      * signal at the fadc to assign the right chip event to the right fadc event. This
-     * var is uesd as flag to ensure this.
+     * var is used as flag to ensure this.
      */
     //up to now: it doesen't - see the "To FIX.." comments
     bool fadcReadoutNextEvent = false;
@@ -36,10 +36,10 @@ void Producer::run()
 
 	// TODO: change for usage with HV_FADC_Obj
 	//start measurement at the fadc
-	if((parent->_useHvFadc) && !(parent->_hvFadcObj == NULL))
+	if((parent->_useHvFadc) && !(parent->_hvFadcManager == NULL))
 	{
 	    parent->mutexVBuffer.lock();               
-	    (parent->_hvFadcObj)->F_StartAcquisition();       //< start acq
+	    (parent->_hvFadcManager)->F_StartAcquisition();       //< start acq
 	    parent->mutexVBuffer.unlock();             
 
 	    std::cout << "fadc active" << std::endl;
@@ -134,13 +134,13 @@ void Producer::run()
 		parent->mutexVBuffer.lock();
 
 		//fill params vector
-		fadcParams.push_back((parent->_hvFadcObj)->F_GetNbOfChannels());
-		fadcParams.push_back((parent->_hvFadcObj)->F_GetChannelMask());
-		fadcParams.push_back((parent->_hvFadcObj)->F_GetPosttrig());
-		fadcParams.push_back((parent->_hvFadcObj)->F_GetPretrig());
-		fadcParams.push_back((parent->_hvFadcObj)->F_GetTriggerRecord());
-		fadcParams.push_back((parent->_hvFadcObj)->F_GetFrequency());
-		fadcParams.push_back((parent->_hvFadcObj)->F_GetModeRegister());
+		fadcParams.push_back((parent->_hvFadcManager)->F_GetNbOfChannels());
+		fadcParams.push_back((parent->_hvFadcManager)->F_GetChannelMask());
+		fadcParams.push_back((parent->_hvFadcManager)->F_GetPosttrig());
+		fadcParams.push_back((parent->_hvFadcManager)->F_GetPretrig());
+		fadcParams.push_back((parent->_hvFadcManager)->F_GetTriggerRecord());
+		fadcParams.push_back((parent->_hvFadcManager)->F_GetFrequency());
+		fadcParams.push_back((parent->_hvFadcManager)->F_GetModeRegister());
 
 		//get nb of channels
 		int channels = 4;
@@ -156,7 +156,7 @@ void Producer::run()
 		//get fadc data
 		//TODO/FIXME one wants to use channels instead of 4 as parameter of the next function?
 		// TODO: fix this!!!
-		std::vector<int> fadcData = (parent->_hvFadcObj)->F_GetAllData(4);
+		std::vector<int> fadcData = (parent->_hvFadcManager)->F_GetAllData(4);
                    
 		parent->readoutFadc(parent->PathName, fadcParams, dataVec, fadcData); 
 		parent->mutexVBuffer.unlock();
@@ -180,10 +180,10 @@ void Producer::run()
 	parent->bufferNotEmpty.wakeAll();
 
 	//send software trigger (to stop the measurement if there wasn't an event at the fadc)
-	if((parent->_useHvFadc) && !(parent->_hvFadcObj == NULL))
+	if((parent->_useHvFadc) && !(parent->_hvFadcManager == NULL))
 	{
 	    parent->mutexVBuffer.lock();
-	    (parent->_hvFadcObj)->F_SendSoftwareTrigger();
+	    (parent->_hvFadcManager)->F_SendSoftwareTrigger();
 	    parent->mutexVBuffer.unlock();
 	}
 
@@ -192,21 +192,21 @@ void Producer::run()
     
 	//check if enough frames are recorded or if reason to stop run early
 	if ((parent->_useHvFadc) && 
-	    !(parent->_hvFadcObj == NULL) &&
+	    !(parent->_hvFadcManager == NULL) &&
 	    (i % 10 == 0))
 	{
 	    // TODO: change the frequency of this. do not want hardcoded, but rather
 	    //       based on time (input given in HFO_settings.ini)
 	    int isGood = 0;
 	    parent->mutexVBuffer.lock();
-	    isGood = (parent->_hvFadcObj)->H_CheckHVModuleIsGood();
+	    isGood = (parent->_hvFadcManager)->H_CheckHVModuleIsGood();
 	    parent->mutexVBuffer.unlock();             
 	    if (isGood == -1){
 		// this means something is wrong with HV
 		// - call a function to report about problem (dump to file)
 		// - stop the run with error message
 		parent->mutexVBuffer.lock();
-		(parent->_hvFadcObj)->H_DumpErrorLogToFile(i);
+		(parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
 		parent->mutexVBuffer.unlock();
 		parent->StopRun();
 	    }

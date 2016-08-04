@@ -28,7 +28,7 @@
 #include <qmutex.h>
 
 // HV_FADC_Obj and related header files
-#include "HV_FADC_Obj.h"
+#include "hvFadcManager.hpp"
 
 
 class PC:public QThread{
@@ -47,7 +47,7 @@ public:
     // TODO: change to use HV_FADC_Obj instead
     //void initFADC(V1729a* fadc, HighLevelFunction_VME* fadcFunctions, bool useFadc = true);
 
-    void initHV_FADC(HV_FADC_Obj* hvFadcObj, bool useHvFadc = true);
+    void initHV_FADC(hvFadcManager* hvFadcManager, bool useHvFadc = true);
   
     FPGA *fpga;
     int DoReadOut(std::string filename[9]);
@@ -141,7 +141,7 @@ private:
 
     // TODO: change to use HV_FADC_Obj instead
     bool _useHvFadc;                           //< true if a FADC is used, false otherwise
-    HV_FADC_Obj* _hvFadcObj;                           //< The HV_FADC-Pointer. If no HV_FADC_Obj is used, it will be set to 0
+    hvFadcManager* _hvFadcManager;                           //< The HV_FADC-Pointer. If no HV_FADC_Obj is used, it will be set to 0
     //HighLevelFunction_VME* _fadcFunctions;   //< some additional fadc functions
 
     /* run: Depending on _useFADC the measurement function for a measuremnt with the chip only

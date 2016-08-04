@@ -1,40 +1,40 @@
-#ifndef HV_FADC_Obj_H
-#define HV_FADC_Obj_H 1
+#ifndef HV_FADC_MANAGER_HPP
+#define HV_FADC_MANAGER_HPP 1
 
-// This header file describes the HV_FADC object, which
-// combines the V1729a_VME and vmemodule modules into
-// a single module.
-// This may be called in a program to access both 
-// devices sitting in one VME crate over a single
-// USB controller
-// To be used in TOS
+// This header file describes the HV FADC manager, which
+// is a convenience object for the combined communication with
+// the ISEG HV module and the CAEN FADC
+// (vmemodule controls the ISEG HV)
+// This may be called in a program to access 
+// the HV and control it by simple functions without having
+// to worry about sending commands and not knowing whether
+// they were actually done
 
 // written by Sebastian Schmidt
 
-
-// include both modules which are to be combined in a single class
+// headers related to CAEN FADC
 #include "V1729a_VME.h"
-// CVmeModule class contained in
-#include "vmemodule.h"
-/* need to include the hardware controller for the CVmeModule */
-#include "vmecontroller.h"
-// and the usb controller (includes CVmUsb)
-#include "vmusb.h"
-
-// include High Level Functions
 #include "High-Level-functions_VME.h"
+
+// custom headers related to iseg module
+#include "hvInterface/hvModule.hpp"
+#include "hvInterface/hvChannel.hpp"
+#include "hvInterface/hvFlexGroup.hpp"
+#include "hvInterface/hvSetGroup.hpp"
+#include "hvInterface/hvStatusGroup.hpp"
+#include "hvInterface/hvMonitorGroup.hpp"
+#include "const.h"
 
 // C++
 #include <vector>
 #include <string>
+#include <map>
+#include <algorithm>
+#include <list>
+#include <set>
 
-// for windows we need to include windows.h, to get GetCurrentDirectory()
-#ifdef __WIN32__
-#include <windows.h>
-#else
-// for linux we need to include unistd.h, to get get_current_dir_name()
+// we need to include unistd.h, to get get_current_dir_name()
 #include <unistd.h>
-#endif
 
 // QT
 #include <QString>
@@ -97,27 +97,29 @@
 #define MAX_INI_PATH_LENGTH                                       300
 
 
+// forward declare some 
+// class hvChannel;
+// class hvFlexGroup;
+// class hvSetGroup;
+// class hvStatusGroup;
+// class hvMonitorGroup;
 
-class HV_FADC_Obj
+
+// note: abbreveations used:
+//       HFM -- hvFadcManager
+class hvFadcManager
 {
-  public:
+public:
     // Creator
-    // either create by using addresses
-    HV_FADC_Obj(int sAddress_fadc, int baseAddress_hv, std::string iniFilePath);
-    // or reading everything from .ini file (and calling InitHFOForTOS)
-    HV_FADC_Obj(std::string iniFilePath);
-    // sAddress_fadc is a multiplicative number for the FADC
-    // Address (which on default is set to 0x10000)
+    // create by reading from ini file
+    hvFadcManager(std::string iniFilePath);
     // baseAddress_hv is the Address of the HV
-    // default: 0x4400
+    // default: 0x4000
 
     // Destructor
-    virtual ~HV_FADC_Obj();
+    virtual ~hvFadcManager();
 
     /*************** Functions      ***************/
-
-
-
 
     // what does this need to be able to do?
     //**************************************************
@@ -125,23 +127,49 @@ class HV_FADC_Obj
     //************ and convenience functions ***********
     //************ based on module functions ***********
     //**************************************************
-
-    void ReadHFOSettings();
-    void InitHFOForTOS();
-    void ShutDownHFOForTOS();
-    void H_CheckModuleIsRamping(bool rampUpFlag);
     
+    // this function returns the pointer of the created hvModule
+    // useful if one wants to add channels externally
+    hvModule* getHVModulePtr();
+
+    void ReadHVSettings();
+    void InitHFMForTOS(); 
+    void ShutDownHFMForTOS();
+
+    // adds channel to _channelMap
+    void AddChannel(hvChannel *ptrChannel);
+    // adds flex group
+    void AddFlexGroup(hvFlexGroup *ptrGroup);
+
+    // function to create the binary representation of a set of numbers (channels, groups...) needed for module
+    uint16_t GetBinaryRepFromNumberSet(std::set<int> numberSet);
+
+    // inverse function to get binary rep from channels set
+    // TODO: think unnecessary
+    std::set<int> GetChannelSetFromBinaryRep(uint32_t binaryRep);
+
+    // get a group struct from string identifier of a group
+    // TODO: think unecessary
+    GroupSTRUCT *GetFlexGroupStructFromString(std::string stringIdentifier);
+
+    void CheckModuleIsRamping(bool rampUpFlag);
+    bool CheckAllChannelsInVoltageBound();
+    bool CheckToShutdown();
+    bool SetAllChannelsOn();
+    bool ClearAllChannelEventStatus();
+    bool SetModuleEventGroupMask();
+    void H_SetNominalValues();
+
+    bool H_ConnectModule();
+    bool H_CheckIsConnectionGood();
     // this function is used during a Run in order to check
     // whether the HV module is good
     // this is done every checkModuleTimeInterval (from 
     // HFOSettings.ini) seconds
+    // TODO: change!
     int H_CheckHVModuleIsGood(bool verbose = true);
     void H_DumpErrorLogToFile(int event);
 
-    void H_SetNominalValues();
-    int H_ClearAllChannelEventStatus();
-    int H_ConnectModule();
-    
     // These two functions are convenience functions, which 
     // write a group (from a GroupSTRUCT struct to the 
     // HV module. Internally it simply calls both the
@@ -150,80 +178,33 @@ class HV_FADC_Obj
     void H_SetFlexGroup(int group, GroupSTRUCT groupObject);
     GroupSTRUCT H_GetFlexGroup(int group);
 
+    // printing functions
+    void printAllChannelStatus();
+    void printAllChannelEventStatus();
+    void printModuleStatus();
+    void printModuleEventStatus();
+
+    // function to turn single channel on or off
+    void TurnChannelOnOff();
+    // clear channel event status of single channel
+    bool ClearChannelEventStatus();
 
 
+    // functions related to voltage scheduler:
+    void AddElementToVoltageScheduler(float voltage, int time);
+    void AddElementToVoltageScheduler(std::pair<int, int> voltageTimePair);
+    void RemoveLastElementFromVoltageScheduler();
+    void RemoveFirstElementFromVoltageScheduler();
+    void RunVoltageScheduler(std::string channelIdentifier, std::string groupIdentifier);
 
-
-
-    //**************************************************
-    /*************** FADC functions *******************/
-    //**************************************************
-    // These functions just redefine FADC_module functions
-    // as functions of the HV_FADC_Obj 
-    // ALL of these functions start with F_ for FADC 
-    // For descriptions of these functions take a look at
-    // "V1729a_VME.h"
-    // CAREFUL: Some functions still do not work correctly,
-    //          judging by the comments in the "V1729a_VME.h"
-    
-    void         F_Reset() throw();
-    void         F_StartAcquisition() throw();
-    void         F_SetFrequency( const unsigned short& frequency ) throw();
-    unsigned int F_GetFrequency() throw();
-    virtual void F_SetReadMode( const unsigned short& mode ) throw();
-    virtual unsigned int F_GetReadMode() throw();
-    unsigned int F_GetFPGAVersion() throw();
-     /***********  F_Trigger settings  ***********/
-    void         F_SetTriggerThresholdDACAll(const unsigned int threshold) throw();
-    unsigned int F_GetTriggerThresholdDACAll() throw();
-    void         F_SetTriggerThresholdDACPerChannel(const unsigned short chNb, const unsigned int threshold) throw();
-    unsigned int F_GetTriggerThresholdDACPerChannel(const unsigned short chNb) throw();
-    void         F_LoadTriggerThresholdDAC() throw();
-    unsigned int F_GetTriggerRecord() throw();
-    void         F_SendSoftwareTrigger() throw();
-    void         F_SetPretrig( const unsigned short& bits ) throw();
-    unsigned short F_GetPretrig() throw();
-    void         F_SetPosttrig( const unsigned short& bits ) throw();
-    unsigned int F_GetPosttrig() throw();
-    void         F_SetTriggerType( const unsigned short& type ) throw();
-    unsigned short F_GetTriggerType() throw();
-    void         F_SetTriggerChannelSource( const unsigned short& mask ) throw();
-    unsigned short F_GetTriggerChannelSource() throw();
-    /***********  Readout settings  ***********/
-    unsigned short F_GetModeRegister() throw();
-    void           F_SetModeRegister(const unsigned short& mode) throw();
-    void           F_SetColToRead( const unsigned short& col ) throw();
-    unsigned short F_GetColToRead() throw();
-    void           F_SetChannelMask( const unsigned short& mask ) throw();
-    unsigned short F_GetChannelMask() throw();
-    void           F_SetNbOfChannels(const unsigned short& nbOfChannels) throw();
-    unsigned short F_GetNbOfChannels() throw();
-    void           F_SetPostStopLatency( const unsigned short& latency ) throw();
-    unsigned short F_GetPostStopLatency() throw();
-    void           F_SetPostLatencyPretrig( const unsigned short& latency ) throw();
-    unsigned short F_GetPostLatencyPretrig() throw();
-    void           F_SetRAMAddress( const unsigned short& add ) throw();
-    unsigned short F_GetRAMAddress() throw();
-    std::vector< int > F_GetAllData( const unsigned short& nbChannels) throw();
-    std::vector< int > F_GetAllDataBlockMode() throw();
-    int            F_GetDataAt( const unsigned short& address = 0 ) throw();
-    /***********  Interrupt settings  ***********/
-    void           F_ReleaseInterrupt() throw();
-    bool           F_ReadDeviceInterrupt() throw();
-    bool           F_ReadInterrupt() throw();
-
-
-
-
-
-
+    void sleepModule(int sleepTime = 0, std::string unit = "milliseconds");
 
     //**************************************************
     /*************** HV functions   *******************/
     //**************************************************
     /* These functions just redefine HV_module functions
-       as functions of the HV_FADC_Obj 
-       ALL of these functions start with H_ for FADC */
+       as functions of the hvFadcManager 
+       ALL of these functions start with H_  */
 
     bool   H_IsConnected(void) { return HV_module->IsConnected(); }
 
@@ -289,7 +270,8 @@ class HV_FADC_Obj
     void   H_SetAllChannelsCurrentSet(float iset);
 
     // --- HV Channel commands ---------------------------------------------------
-    uint32_t H_GetChannelStatus(int channel);
+    uint32_t       H_GetChannelStatus(int channel);
+    ChStatusSTRUCT H_GetChannelStatusStruct(int channel);
     uint32_t H_GetChannelEventStatus(int channel);
     void   H_SetChannelEventStatus(int channel, uint32_t status);
     void   H_ClearChannelEventStatus(int channel) { HV_module->SetChannelEventStatus(channel, 0xFFFFFFFF); }
@@ -354,57 +336,135 @@ class HV_FADC_Obj
     float  H_GetChannelCurrentHardwareNominal(int channel);
     void   H_SetChannelCurrentNominal(int channel, float maxset);
 
-    // --- HV Special Control ----------------------------------------------------
-    void   H_SetModuleSpecialControlCommand(uint32_t command);
-    uint32_t H_GetModuleSpecialControlCommand(void);
-    uint32_t H_GetModuleSpecialControlStatus(void);
-    void   H_SendHexLine(QByteArray record);
-
-    void   H_ProgramModuleBaseAddress(uint16_t address);
-    uint16_t H_VerifyModuleBaseAddress(void);
-
-
-
-
-
-
-
-
+    //**************************************************
+    /*************** FADC functions *******************/
+    //**************************************************
+    // These functions just redefine FADC_module functions
+    // as functions of the HV_FADC_Obj 
+    // ALL of these functions start with F_ for FADC 
+    // For descriptions of these functions take a look at
+    // "V1729a_VME.h"
+    // CAREFUL: Some functions still do not work correctly,
+    //          judging by the comments in the "V1729a_VME.h"
+    
+    void         F_Reset() throw();
+    void         F_StartAcquisition() throw();
+    void         F_SetFrequency( const unsigned short& frequency ) throw();
+    unsigned int F_GetFrequency() throw();
+    virtual void F_SetReadMode( const unsigned short& mode ) throw();
+    virtual unsigned int F_GetReadMode() throw();
+    unsigned int F_GetFPGAVersion() throw();
+     /***********  F_Trigger settings  ***********/
+    void         F_SetTriggerThresholdDACAll(const unsigned int threshold) throw();
+    unsigned int F_GetTriggerThresholdDACAll() throw();
+    void         F_SetTriggerThresholdDACPerChannel(const unsigned short chNb, const unsigned int threshold) throw();
+    unsigned int F_GetTriggerThresholdDACPerChannel(const unsigned short chNb) throw();
+    void         F_LoadTriggerThresholdDAC() throw();
+    unsigned int F_GetTriggerRecord() throw();
+    void         F_SendSoftwareTrigger() throw();
+    void         F_SetPretrig( const unsigned short& bits ) throw();
+    unsigned short F_GetPretrig() throw();
+    void         F_SetPosttrig( const unsigned short& bits ) throw();
+    unsigned int F_GetPosttrig() throw();
+    void         F_SetTriggerType( const unsigned short& type ) throw();
+    unsigned short F_GetTriggerType() throw();
+    void         F_SetTriggerChannelSource( const unsigned short& mask ) throw();
+    unsigned short F_GetTriggerChannelSource() throw();
+    /***********  Readout settings  ***********/
+    unsigned short F_GetModeRegister() throw();
+    void           F_SetModeRegister(const unsigned short& mode) throw();
+    void           F_SetColToRead( const unsigned short& col ) throw();
+    unsigned short F_GetColToRead() throw();
+    void           F_SetChannelMask( const unsigned short& mask ) throw();
+    unsigned short F_GetChannelMask() throw();
+    void           F_SetNbOfChannels(const unsigned short& nbOfChannels) throw();
+    unsigned short F_GetNbOfChannels() throw();
+    void           F_SetPostStopLatency( const unsigned short& latency ) throw();
+    unsigned short F_GetPostStopLatency() throw();
+    void           F_SetPostLatencyPretrig( const unsigned short& latency ) throw();
+    unsigned short F_GetPostLatencyPretrig() throw();
+    void           F_SetRAMAddress( const unsigned short& add ) throw();
+    unsigned short F_GetRAMAddress() throw();
+    std::vector< int > F_GetAllData( const unsigned short& nbChannels) throw();
+    std::vector< int > F_GetAllDataBlockMode() throw();
+    int            F_GetDataAt( const unsigned short& address = 0 ) throw();
+    /***********  Interrupt settings  ***********/
+    void           F_ReleaseInterrupt() throw();
+    bool           F_ReadDeviceInterrupt() throw();
+    bool           F_ReadInterrupt() throw();
 
     // need a HighLevelFunction_VME object to use high level functions
     // of FADC. In Public, because...
     HighLevelFunction_VME* FADC_Functions;
 
 
-
-
-
-
-
-  private:
+private:
     /*************** Member modules ***************/
     /* TODO: implement all functions of interest to us 
-       as functions of HV_FADC_Obj and declare modules as
+       as functions of hvFadcManager and declare modules as
        private objects */
     
+    // HV member, based on hvModule based on VMEmodule (by ISEG)
+    hvModule *HV_module;
     // FADC member, based on V1729a_VME class (by Alexander Deisting)
     V1729a_VME *FADC_module;
-    // HV member, based on VMEmodule (by ISEG)
-    CVmeModule *HV_module;
-
+    // and a USB controller for communication
     CVmUsb Controller;
 
-    // variables for addresses of each device
+    // list which contains all set flex groups
+    std::list<hvFlexGroup *> _flexGroupList;
+
+    // list of channels in use (added by AddChannel)
+    std::list<hvChannel *> _channelList;
+
+    // voltageScheduler is a list of pairs containing voltages
+    // and times (in minutes). the list is worked through from beginning
+    // to end, ramping to first of pair and wait second of pair minutes
+    // then, next element is taken 
+    std::list<std::pair<float, int>> _voltageScheduler;
+
+    // base addresses for devices
     int baseAddress_hv;
     int sAddress_fadc;
 
+    // flags
+    bool _createdFlag;
+    bool _settingsReadFlag;
+    bool _hvModInitFlag;
+    bool anodeGridGroupFlag;
+    bool setKillEnable;
+    bool monitorTripGroupFlag;
+    bool rampingGroupFlag;
+
+
+    uint32_t _moduleEventGroupMask;
+
+    // monitor variables
+    int checkModuleTimeInterval;
+    // the event status variables which were current in the 
+    // last call of H_CheckHVModuleIsGood()
+    ChEventStatusSTRUCT gridEventStatusLastIter;
+    ChEventStatusSTRUCT anodeEventStatusLastIter;
+    ChEventStatusSTRUCT cathodeEventStatusLastIter;
+
+    int _sleepTime;
+
+    // module settings
+    float moduleVoltageRampSpeed;
+    float moduleCurrentRampSpeed;
+
+    // ##################################################
+    // TOS related variables
+    // ##################################################
+    
     QString iniFile;
+
     // group related
-    GroupSTRUCT anodeGridSetOnGroup;
-    GroupSTRUCT monitorTripGroup;
+    GroupSTRUCT* anodeGridSetOnGroup;
+    GroupSTRUCT* monitorTripGroup;
     // ramping group is a Status Group, which checks
     // whether the channels are still ramping
-    GroupSTRUCT rampingGroup;
+    GroupSTRUCT* rampingGroup;
     //int anodeGridGroup;
     int anodeGridGroupMasterChannel;
     int anodeGridGroupNumber;
@@ -415,28 +475,6 @@ class HV_FADC_Obj
     uint16_t gridChannelNumber;
     uint16_t cathodeChannelNumber;
 
-    // flags
-    bool hvFadcObjCreatedFlag;
-    bool hvFadcObjSettingsReadFlag;
-    bool hvFadcObjInitFlag;
-    bool setKillEnable;
-    bool anodeGridGroupFlag;
-    bool monitorTripGroupFlag;
-    bool rampingGroupFlag;
-
-    // module settings
-    float moduleVoltageRampSpeed;
-    float moduleCurrentRampSpeed;
-
-    // monitor variables
-    int checkModuleTimeInterval;
-    // the event status variables which were current in the 
-    // last call of H_CheckHVModuleIsGood()
-    ChEventStatusSTRUCT gridEventStatusLastIter;
-    ChEventStatusSTRUCT anodeEventStatusLastIter;
-    ChEventStatusSTRUCT cathodeEventStatusLastIter;
-
-    
 
     // voltages and currents for grid, anode and cathode
     float gridVoltageSet;
@@ -466,7 +504,20 @@ class HV_FADC_Obj
     int fadcPosttrig;
     int fadcPretrig;
     int fadcTriggerThresholdRegisterAll;
-    
+
+
+    // special functions have no need to be public
+    // --- HV Special Control ----------------------------------------------------
+    void   H_SetModuleSpecialControlCommand(uint32_t command);
+    uint32_t H_GetModuleSpecialControlCommand(void);
+    uint32_t H_GetModuleSpecialControlStatus(void);
+    void   H_SendHexLine(QByteArray record);
+
+    void   H_ProgramModuleBaseAddress(uint16_t address);
+    uint16_t H_VerifyModuleBaseAddress(void);
+
+
+
   
 };
 

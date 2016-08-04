@@ -20,6 +20,11 @@
 #define TIMER_INTERVAL_SPECIAL							10
 #define MODULE_CONNECT_TIMEOUT							2
 
+// useful macros put here by Sebastian Schmidt, used in hv extension
+// this macro is used to initialize variables for groups, which also allow values of 0
+// to have definite reference, if still unitialized
+#define DEFAULT_NOT_INITIALIZED                                                 999
+
 // ----------------------------------------------------------------------------
 // Channel bit definitions
 // ----------------------------------------------------------------------------
