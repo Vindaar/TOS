@@ -52,8 +52,8 @@ public:
     FPGA *fpga;
     int DoReadOut(std::string filename[9]);
     int DoReadOut2(std::string filename, unsigned short chip);
+    int DoReadOutFadc(std::string filename, unsigned short chip);
     // TODO: HV_FADC_Obj
-    int DoFadcReadout(std::string filename, std::vector< int> basicParams);
     int DoDACScan(int DACstoScan, unsigned short chip);
     int DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh);
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
@@ -162,7 +162,7 @@ private:
     void runFADC();
 
     //readoutFadc: The fadc and the chip are read out
-    void readoutFadc(std::string filePath, std::vector<int> fadcParams, std::vector<int> *chipData, std::vector<int>fadcData);
+    void readoutFadc(std::string filePath, std::map<std::string, int> fadcParams, std::vector<int> *chipData, std::vector<int>fadcData);
 
     int scan(int **pix, int start);
     int scan(int **pix, int start, int ths, int thk, int wdh);

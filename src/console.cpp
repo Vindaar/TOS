@@ -1880,6 +1880,17 @@ int Console::CommandCountingTime(){
     // inputTime should now be a valid string for an integer between 1 and 255
     // instead of calling different fpga->CountingTime functions, we
     // will now hand a flag and a time to the normal CountingTime function
+
+    // before we open the shutter, we check if the FADC object is used.
+    if (_hvFadcManagerActive == true){
+	// if this is the case start FADC acquisition
+	std::cout << "HFM active, starting FADC data acquisition." << std::endl;
+	_hvFadcManager->F_StartAcquisition();
+	
+	// also enable FADC shutter (not yet implemented)
+	// currently using software trigger after shutter is closed
+    }
+
     int result;
     result = pc->fpga->CountingTime(std::stoi(inputTime), n);
     if (result>20){ 
@@ -1887,6 +1898,11 @@ int Console::CommandCountingTime(){
     }
     else{
 	std::cout << "\tCountingTime accomplished\n" << std::flush;
+    }
+    
+    // now send software trigger to FADC to close frame
+    if (_hvFadcManagerActive == true){
+	_hvFadcManager->F_SendSoftwareTrigger();
     }
 
     // deactivate fastclock again
@@ -1927,7 +1943,15 @@ int Console::CommandReadOut2(){
 	std::string filename;//=pc->GetDataPathName();
 //	filename+="/";
 	filename = pc->GetDataFileName(chip);
-	result   = pc->DoReadOut2(filename.c_str(),chip);
+
+	// now check whether we're using the FADC
+	if (_hvFadcManagerActive == true){
+	    // in this case use 
+	    result   = pc->DoReadOutFadc(filename, chip);
+	}
+	else{
+	    result   = pc->DoReadOut2(filename, chip);
+	}
 #if DEBUG==2
 	std::cout << "DEBUG: Filename: " << filename << std::endl;
 #endif    

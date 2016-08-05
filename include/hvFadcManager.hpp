@@ -199,6 +199,14 @@ public:
 
     void sleepModule(int sleepTime = 0, std::string unit = "milliseconds");
 
+
+
+    // ##################################################
+    // FADC custom functions
+    std::map<std::string, int> GetFadcParameterMap();
+
+
+
     //**************************************************
     /*************** HV functions   *******************/
     //**************************************************

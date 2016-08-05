@@ -1703,6 +1703,31 @@ void hvFadcManager::ReadHVSettings(){
 }
 
 
+// #############################################################################
+// ########################### FADC functions ##################################
+// #############################################################################
+// these are custom functions related to the FADC
+
+std::map<std::string, int> hvFadcManager::GetFadcParameterMap(){
+    // this function creates the current FADC parameter map
+    // simply done by calling several FADC functions
+
+    std::map<std::string, int> fadcParams;
+    
+    fadcParams["NumChannels"]  = F_GetNbOfChannels();
+    fadcParams["ChannelMask"]  = F_GetChannelMask();
+    fadcParams["PostTrig"]     = F_GetPosttrig(); 
+    fadcParams["PreTrig"]      = F_GetPretrig(); 
+    fadcParams["TriggerRec"]   = F_GetTriggerRecord(); 
+    fadcParams["Frequency"]    = F_GetFrequency(); 
+    fadcParams["ModeRegister"] = F_GetModeRegister(); 
+
+    return fadcParams;
+}
+
+
+
+
 
 // **************************************************
 // *********** HV COMMANDS **************************

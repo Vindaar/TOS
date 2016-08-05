@@ -329,7 +329,7 @@ int FPGA::CountingTime(int time, int modeSelector){
     PacketBuffer[6]=time;
     // using time and modeSelector we can calculate a good timeout value
     int timeout = std::pow(256, modeSelector)*46*time / 40;
-    err_code=Communication(PacketBuffer,PacketQueue[0], timeout);
+    err_code = Communication(PacketBuffer, PacketQueue[0], timeout);
 
     if (tp->GetFADCshutter()==1)
     {

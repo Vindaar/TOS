@@ -21,7 +21,7 @@ PC::PC(Timepix *tp):
     Vbuffer( BufferSize, std::vector<std::vector<int>* >( 8))
 {
 #if DEBUG == 2
-    std::cout<<"Enter PC::PC()"<<std::endl;     
+    std::cout << "Enter PC::PC()" << std::endl;     
 #endif
     
     // the PC constructor will now create an fpga object, and will hand the 
@@ -212,6 +212,44 @@ int PC::DoReadOut2(std::string filename, unsigned short chip){
         delete data;
         return hits;
     }
+}
+
+int PC::DoReadOutFadc(std::string filename, unsigned short chip){
+#if DEBUG==2
+    std::cout<<"Enter PC::DoReadOutFadc()"<<std::endl;
+#endif
+    // define variables for data and hits
+    int hits;
+    std::vector<int> *dataVec = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
+    // and use zero suppressed readout to get chip data
+    hits=fpga->DataFPGAPC(dataVec, chip);
+    
+    // before we can call the readoutFadc function to write the data to file, 
+    // we need to create the FADC parameter vector 
+    std::map<std::string, int> fadcParams;
+    fadcParams = _hvFadcManager->GetFadcParameterMap();
+    
+    // determine number of channels of FADC (in use ?)
+    // get nb of channels
+    int channels = 4;
+    
+    if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2) ){
+	if( !(fadcParams["ChannelMask"] & 8) ) channels--;
+	if( !(fadcParams["ChannelMask"] & 4) ) channels--;
+	if( !(fadcParams["ChannelMask"] & 2) ) channels--;
+	if( !(fadcParams["ChannelMask"] & 1) ) channels--;
+    }
+
+    // now readout data from FADC
+    //get fadc data
+    //TODO/FIXME one wants to use channels instead of 4 as parameter of the next function?
+    // TODO: fix this!!!
+    std::vector<int> fadcData = _hvFadcManager->F_GetAllData(4);
+    
+    // now call readoutFadc to write the data to file (to the singleFrames folder)
+    readoutFadc(DataPathName, fadcParams, dataVec, fadcData); 
+
+    return hits;
 }
 
 
@@ -2464,132 +2502,132 @@ void PC::runOTPX()
 
 
 
-void PC::readoutFadc(std::string filePath, std::vector<int> fadcParams, std::vector<int> *chipData, std::vector<int>fadcData)
+void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams, std::vector<int> *chipData, std::vector<int>fadcData)
 {
- #if DEBUG == 2
- std::cout << "Enter: PC::readoutFADC()" << std::endl;
- #endif 
+#if DEBUG == 2
+    std::cout << "Enter: PC::readoutFADC()" << std::endl;
+#endif 
 
-  //build filename
-  std::string fileName;
-  std::stringstream buildFileName;
+    //build filename
+    std::string fileName;
+    std::stringstream buildFileName;
 
-  struct   timeval  tv;
-  struct   timezone tz;
-  struct   tm      *tm;
-  int hh, mm, ss;
-  int   ms;
+    struct   timeval  tv;
+    struct   timezone tz;
+    struct   tm      *tm;
+    int hh, mm, ss;
+    int   ms;
 
-  gettimeofday(&tv, &tz);
-  tm = localtime(&tv.tv_sec);
-  hh = tm->tm_hour;        // hours
-  mm = tm->tm_min;         // minutes
-  ss = tm->tm_sec;         // seconds
-  ms = tv.tv_usec/1000;    // mili seconds
+    gettimeofday(&tv, &tz);
+    tm = localtime(&tv.tv_sec);
+    hh = tm->tm_hour;        // hours
+    mm = tm->tm_min;         // minutes
+    ss = tm->tm_sec;         // seconds
+    ms = tv.tv_usec/1000;    // mili seconds
 
-  //FIXME!!
-  buildFileName << "data" << std::setw(6) << std::setfill('0') << "42" <<"_1_"
-           << std::setw(2) << std::setfill('0') << hh
-           << std::setw(2) << std::setfill('0') << mm
-           << std::setw(2) << std::setfill('0') << ss
-           << std::setw(3) << std::setfill('0') << ms <<".txt";
+    //FIXME!!
+    buildFileName << "data" << std::setw(6) << std::setfill('0') << "42" <<"_1_"
+		  << std::setw(2) << std::setfill('0') << hh
+		  << std::setw(2) << std::setfill('0') << mm
+		  << std::setw(2) << std::setfill('0') << ss
+		  << std::setw(3) << std::setfill('0') << ms <<".txt";
   
-  FileName = filePath + "/" + buildFileName.str(); 
-  buildFileName.str("");
-  buildFileName.clear();
+    FileName = filePath + "/" + buildFileName.str(); 
+    buildFileName.str("");
+    buildFileName.clear();
 
-  //readout chip
-  if (run_mode == 0)
-  {
-    int hits [9] = {0};
-    //create output file
-    FILE* f2 = fopen(FileName.c_str(),"w");
-
-    for (unsigned short chip = 0;chip < fpga->tp->GetNumChips() ;chip++)
+    //readout chip
+    if (run_mode == 0)
     {
-      int NumHits = chipData->at(0);
-      std::cout << "FADC and Chip Readout Numhits: " << NumHits << " on chip " << chip+1 << std::endl; 
-      hits[chip+1] = (((chipData)->size()) - 1)/3;
+	int hits [9] = {0};
+	//create output file
+	FILE* f2 = fopen(FileName.c_str(),"w");
 
-      //if there is a problem with the output file: ...
-      if(f2 == NULL) 
-      {
-        //... stop Run
-        std::cout << "Readout: File error" << std::endl; 
-        RunIsRunning = false;
-      }
+	for (unsigned short chip = 0;chip < fpga->tp->GetNumChips() ;chip++)
+	{
+	    int NumHits = chipData->at(0);
+	    std::cout << "FADC and Chip Readout Numhits: " << NumHits << " on chip " << chip+1 << std::endl; 
+	    hits[chip+1] = (((chipData)->size()) - 1)/3;
+
+	    //if there is a problem with the output file: ...
+	    if(f2 == NULL) 
+	    {
+		//... stop Run
+		std::cout << "Readout: File error" << std::endl; 
+		RunIsRunning = false;
+	    }
       
-      //print data to file(s)
-      for (std::vector<int>::iterator it = chipData->begin()+1; it != (chipData->end()); it= it + 3) 
-      {
-        if (*(it+2) !=0) fprintf(f2, "%d %d %d \n", *it, *(it+1), *(it+2));
-      }      
-    }//close for (unsigned short chip = 0;chip < p...
+	    //print data to file(s)
+	    for (std::vector<int>::iterator it = chipData->begin()+1; it != (chipData->end()); it= it + 3) 
+	    {
+		if (*(it+2) !=0) fprintf(f2, "%d %d %d \n", *it, *(it+1), *(it+2));
+	    }      
+	}//close for (unsigned short chip = 0;chip < p...
 
-    fclose(f2);
+	fclose(f2);
 
-    std::cout << "created " << FileName << std::endl;
+	std::cout << "created " << FileName << std::endl;
   
-  }
-  //TODO:: This should not be possible!!
-  else
-  { 
-    std::cout << "full matrix readout not implemented" << std::endl;
-    std::cout << "if this error message appears on your screen, something went really wrong!!" << std::endl;
-  }
+    }
+    //TODO:: This should not be possible!!
+    else
+    { 
+	std::cout << "full matrix readout not implemented" << std::endl;
+	std::cout << "if this error message appears on your screen, something went really wrong!!" << std::endl;
+    }
 
-  //readout FADC 
-  //get nb of channels
-  int channels = 4;
+    //readout FADC 
+    //get nb of channels
+    int channels = 4;
 
-  if( (fadcParams.at(0) !=1 ) && (fadcParams.at(0) !=2))
-  {
-    if( !(fadcParams.at(1) & 8) ) channels--;
-    if( !(fadcParams.at(1) & 4) ) channels--;
-    if( !(fadcParams.at(1) & 2) ) channels--;
-    if( !(fadcParams.at(1) & 1) ) channels--;
-  }
+    if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2))
+    {
+	if( !(fadcParams["ChannelMask"] & 8) ) channels--;
+	if( !(fadcParams["ChannelMask"] & 4) ) channels--;
+	if( !(fadcParams["ChannelMask"] & 2) ) channels--;
+	if( !(fadcParams["ChannelMask"] & 1) ) channels--;
+    }
 
-  //set filenmane and open file 
-  buildFileName << FileName << "-fadc";
-  std::cout << "outfile " << buildFileName.str() << std::endl;
+    //set filenmane and open file 
+    buildFileName << FileName << "-fadc";
+    std::cout << "outfile " << buildFileName.str() << std::endl;
 
-  std::ofstream outFile( buildFileName.str() );
+    std::ofstream outFile( buildFileName.str() );
 
-  //write data to output file
-  if( outFile.is_open() )
-  {
-    //write petrig/postrig/etc to file
-    outFile << "# nb of channels: " << std::endl << fadcParams.at(0) << std::endl;
-    outFile << "# channel mask: " << std::endl << fadcParams.at(1) << std::endl;
-    outFile << "# postrig: " << std::endl << fadcParams.at(2) << std::endl;
-    outFile << "# pretrig: " << std::endl << fadcParams.at(3) << std::endl;
-    outFile << "# triggerrecord: " << std::endl << fadcParams.at(4) << std::endl;
-    outFile << "# frequency: " << std::endl << fadcParams.at(5) << std::endl;
-    outFile << "# sampling mode: " << std::endl << fadcParams.at(6) << std::endl;
-    outFile << "#Data:" << std::endl;
+    //write data to output file
+    if( outFile.is_open() )
+    {
+	//write petrig/postrig/etc to file
+	outFile << "# nb of channels: " << std::endl << fadcParams["NumChannels"]  << std::endl;
+	outFile << "# channel mask: " << std::endl   << fadcParams["ChannelMask"]  << std::endl;
+	outFile << "# postrig: " << std::endl        << fadcParams["PostTrig"]     << std::endl;
+	outFile << "# pretrig: " << std::endl        << fadcParams["PreTrig"]      << std::endl;
+	outFile << "# triggerrecord: " << std::endl  << fadcParams["TriggerRec"]   << std::endl;
+	outFile << "# frequency: " << std::endl      << fadcParams["Frequency"]    << std::endl;
+	outFile << "# sampling mode: " << std::endl  << fadcParams["ModeRegister"] << std::endl;
+	outFile << "#Data:" << std::endl;
 
 
-    // TODO: why unsigned int used? problematic, since channels is int.
-    // -> changed iData and iVector to int
-    //"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
-    for(int iData = 0; iData < 3*channels; iData++)
-      outFile << "#" << fadcData[iData] << std::endl;
+	// TODO: why unsigned int used? problematic, since channels is int.
+	// -> changed iData and iVector to int
+	//"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
+	for(int iData = 0; iData < 3*channels; iData++)
+	    outFile << "#" << fadcData[iData] << std::endl;
     
-    //print the actual data to file
-    for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
-      outFile << fadcData[iVector] << std::endl;
+	//print the actual data to file
+	for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
+	    outFile << fadcData[iVector] << std::endl;
           
-    //"skip the remaining data points
-    for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
-      outFile << "# " << fadcData.at(iRest) << std::endl; 
-  }//end of if( outFile.is_open() )
+	//"skip the remaining data points
+	for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
+	    outFile << "# " << fadcData.at(iRest) << std::endl; 
+    }//end of if( outFile.is_open() )
   
-  //close output file
-  outFile.close();
+    //close output file
+    outFile.close();
   
 
-  return;
+    return;
 }
 
 

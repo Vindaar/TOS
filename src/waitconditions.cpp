@@ -98,7 +98,7 @@ void Producer::run()
 	    #if DEBUG==2
 	    std::cout << "Producer run " 
 		      << i 
-		      <<" adding bufferentry: " 
+		      << " adding bufferentry: " 
 		      << (i % parent->BufferSize) 
 		      << " chip: " 
 		      << chip+1 
@@ -109,10 +109,10 @@ void Producer::run()
 	    //To FIX the readout problem
 	    // TODO: understand this
 	    if(parent->_useHvFadc){
-		parent->fpga->DataFPGAPC(dataVec,chip+1);
+		parent->fpga->DataFPGAPC(dataVec, chip + 1);
 	    }
 	    else{
-		parent->fpga->SerialReadOutReadSend(dataVec,chip+1);
+		parent->fpga->SerialReadOutReadSend(dataVec, chip + 1);
 	    }
 	    #if DEBUG==2
 	    std::cout << "Producer NumHits chip: " << chip+1 
@@ -129,29 +129,22 @@ void Producer::run()
 	    //... readout events with fadc count
 	    else                                     
 	    {
-		std::vector<int> fadcParams;           //< vector containing fadc params
+		std::map<std::string, int> fadcParams;           //< vector containing fadc params
         
 		parent->mutexVBuffer.lock();
 
 		//fill params vector
-		fadcParams.push_back((parent->_hvFadcManager)->F_GetNbOfChannels());
-		fadcParams.push_back((parent->_hvFadcManager)->F_GetChannelMask());
-		fadcParams.push_back((parent->_hvFadcManager)->F_GetPosttrig());
-		fadcParams.push_back((parent->_hvFadcManager)->F_GetPretrig());
-		fadcParams.push_back((parent->_hvFadcManager)->F_GetTriggerRecord());
-		fadcParams.push_back((parent->_hvFadcManager)->F_GetFrequency());
-		fadcParams.push_back((parent->_hvFadcManager)->F_GetModeRegister());
+		fadcParams = parent->_hvFadcManager->GetFadcParameterMap();
 
 		//get nb of channels
 		int channels = 4;
 
-		if( (fadcParams.at(0) !=1 ) && (fadcParams.at(0) !=2))
-		{
-		    if( !(fadcParams.at(1) & 8) ) channels--;
-		    if( !(fadcParams.at(1) & 4) ) channels--;
-		    if( !(fadcParams.at(1) & 2) ) channels--;
-		    if( !(fadcParams.at(1) & 1) ) channels--;
-		}	
+		if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2) ){
+		    if( !(fadcParams["ChannelMask"] & 8) ) channels--;
+		    if( !(fadcParams["ChannelMask"] & 4) ) channels--;
+		    if( !(fadcParams["ChannelMask"] & 2) ) channels--;
+		    if( !(fadcParams["ChannelMask"] & 1) ) channels--;
+		}
 
 		//get fadc data
 		//TODO/FIXME one wants to use channels instead of 4 as parameter of the next function?
@@ -199,6 +192,7 @@ void Producer::run()
 	    //       based on time (input given in HFO_settings.ini)
 	    int isGood = 0;
 	    parent->mutexVBuffer.lock();
+	    // TODO: deprecated. Call different function!
 	    isGood = (parent->_hvFadcManager)->H_CheckHVModuleIsGood();
 	    parent->mutexVBuffer.unlock();             
 	    if (isGood == -1){
