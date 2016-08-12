@@ -11,7 +11,10 @@
 
 #include "timepix.hpp"
 
-Timepix::Timepix(int nbOfChips){
+Timepix::Timepix(int nbOfChips):
+    _scint1_counter(0),
+    _scint2_counter(0)
+{
 #if DEBUG == 2
     std::cout<<"Enter Timepix::Timepix()"<<std::endl;	
 #endif
@@ -22,8 +25,6 @@ Timepix::Timepix(int nbOfChips){
     // set the variables for pixel properties
     _pix_per_dimension = PIXPD;
     _pix_total_num = PIXPD * PIXPD;
-
-
 
     // temporary integer variable for number of chips to set chip ID to a
     // sensible value, if the current number is 'standard'
@@ -708,8 +709,30 @@ unsigned short Timepix::GetExtraByte(){
 void Timepix::SetFADCtriggered(unsigned short FADCtriggered){
     FADCtriggered_global = FADCtriggered;
 }
-unsigned short Timepix::SetFADCtriggered(){
+unsigned short Timepix::GetFADCtriggered(){
     return FADCtriggered_global;
+}
+
+void Timepix::SetScintillatorCounters(unsigned short scint1_counter,
+				      unsigned short scint2_counter){
+    // this function sets the global timepix variables for the scintillor counters,
+    // which count the number of clock cycles between the last scintillator signals
+    // and the FADC trigger, which ended the shutter
+    _scint1_counter = scint1_counter;
+    _scint2_counter = scint2_counter;
+    std::cout << "setting scinti values " << _scint1_counter << "\t" << _scint2_counter << std::endl;
+}
+
+std::pair<unsigned short, unsigned short> Timepix::GetScintillatorCounters(){
+    // this function retuns a pair of unsigned shorts, i.e. the scintillator counter
+    // variables, set in SetScintillatorCounters (called from Communication, if FADC
+    // triggered in a frame)
+    std::pair<unsigned short, unsigned short> scint_counter_pair;
+    // create the pair
+    scint_counter_pair = std::make_pair(_scint1_counter, _scint2_counter);
+    std::cout << "getting scint pair " << std::endl;
+    // and return
+    return scint_counter_pair;
 }
 
 void Timepix::SetChipIDOffset(int ChipIdOffset){

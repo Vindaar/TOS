@@ -336,6 +336,19 @@ int FPGA::CountingTime(int time, int modeSelector){
     {
 	int i2cresult = (tp->GetI2cResult() << 8) + tp->GetExtraByte();
 	std::cout << "FADC trigger at " << i2cresult << " clock cycles."<< std::endl;
+	// now also read out scintillator counters
+	std::pair<unsigned short, unsigned short> scint_counter_pair;
+	unsigned short scint1_counter = 0;
+	unsigned short scint2_counter = 0;
+	scint_counter_pair = tp->GetScintillatorCounters();
+	scint1_counter = scint_counter_pair.first;
+	scint2_counter = scint_counter_pair.second;
+	
+	std::cout << "Scintillator triggered "
+		  << scint1_counter
+		  << "\t" << scint2_counter
+		  << " clock cycles before FADC triggered."
+		  << std::endl;
     }
 
     return 20+err_code;
@@ -535,6 +548,8 @@ int FPGA::EnableFADCshutter(unsigned short FADCshutter)
 	// in case we're enabling the FADC to close the shutter
 	// set i2c back to 0
 	tp->SetI2C(0);
+	// also set scintillator counters back to zero
+	tp->SetScintillatorCounters(0, 0);
     }
     return 20+err_code;
 }
@@ -642,11 +657,40 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     // TODO: see if we need to change something for HV_FADC_Obj
     //readout of the FADC bit - set the flag if it equals 1
     FADCtriggered = RecvBuffer[10];
-    _fadcBit = RecvBuffer[10];
-    if((_fadcBit == 1) && !_fadcFlag){
-	_fadcFlag = true;
-    }
+    _fadcBit      = RecvBuffer[10];
 
+    std::cout << "receive buffer bytes " << static_cast<unsigned>(RecvBuffer[11]) << "\t" << static_cast<unsigned>(RecvBuffer[12]) << "\t" << static_cast<unsigned>(RecvBuffer[13]) << std::endl;
+
+    // get number of clock cycles between last scintillator signal and FADC
+    // trigger
+    // two unsigned shorts (at least 16 bit) for the counters for scintillator
+    // 1 and 2. 
+    unsigned short scint1_counter = 0;
+    unsigned short scint2_counter = 0;
+
+    // get bytes 11 to 13, which contain both counters, each as 12-bit word
+    // shift MSBs for scintillator 1 counter 4 bit to the left (since we get the 4 LSBs
+    // from byte 12)
+    scint1_counter  = RecvBuffer[11] << 4;
+    // now add the result of the bitwise & operation with 240 / F0 / 11110000
+    // then shift the result 4 bits to the right, to get the 4 MSBs from RecvBuffer[12]
+    // as the LSBs for the scintillator counter
+    scint1_counter += (RecvBuffer[12] & 0xF0) >> 4;
+    // scintillator counter 2 same in revers
+    // take bitwise & of RecvBuffer[12] with 0xF to get 4 LSBs from byte 12
+    // and shift 8 bits to the left, to make the the 8 MSBs of the 12-bit word
+    scint2_counter  = (RecvBuffer[12] & 0xF) << 8;
+    // now add byte 13, to get the 8 LSBs of the 12-bit word. Put & 0xFF there to
+    // show intention
+    scint2_counter += RecvBuffer[13] & 0xFF;
+    
+    // now use both counters to set timepix variables. First set FADC bit, if triggered
+    // and if that is the case also write scintillator counts
+    if(_fadcBit == 1){
+	_fadcFlag = true;
+	std::cout << "entering if and setting scinti values " << std::endl;
+	tp->SetScintillatorCounters(scint1_counter, scint2_counter);
+    }
     
     ADC_ChAlert=RecvBuffer[14];
     ADC_result+=RecvBuffer[15] << 8;

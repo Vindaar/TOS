@@ -141,7 +141,7 @@ void Producer::run()
 
 		//fill params vector
 		fadcParams = parent->_hvFadcManager->GetFadcParameterMap();
-
+		fadcParams["eventNumber"] = i;
 		//get nb of channels
 		int channels = 4;
 
@@ -213,8 +213,6 @@ void Producer::run()
 	    }
 	    
 	}
-
-
 
 	if (parent->runtimeFrames == 1)
 	{
@@ -347,7 +345,7 @@ void Consumer::run()
 	    //print data to file(s)
 	    for (std::vector<int>::iterator it = ((parent->Vbuffer[i % parent->BufferSize][chip])->begin())+1; 
 		 it != ((parent->Vbuffer[i % parent->BufferSize][chip])->end()); 
-		 it= it + 3) 
+		 it  = it + 3) 
 	    {
 		if (*(it+2) !=0) fprintf(f2, "%d %d %d \n", *it, *(it+1), *(it+2));
 	    }

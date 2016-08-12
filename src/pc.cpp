@@ -2514,7 +2514,10 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
     //build filename
     std::string fileName;
 
-    FileName = _hvFadcManager->buildFileName(filePath, false);
+    int eventNumber = 0;
+    eventNumber = fadcParams["eventNumber"];
+    
+    FileName = _hvFadcManager->buildFileName(filePath, false, eventNumber);
 
     //readout chip
     if (run_mode == 0)

@@ -109,6 +109,7 @@ private:
     int FPGACounter; 
     int HitsMode;
 
+
     unsigned char PacketBuffer[PLen+18]; //Buffer fuer send, bzw bei SetMatrix fuer receive
     unsigned char PacketQueue[PQueue][PLen+18]; //Buffer fuer receive (alle Pakete bei ReadOut), bzw fuer send (alle Pakete) bei SetMatrix
     std::vector<std::vector<unsigned char> > *PackQueueReceive;// = new std::vector<std::vector<unsigned char> >(PQueue, std::vector<unsigned char>(PLen+18));
@@ -125,7 +126,6 @@ private:
     int SaveData(int **pix);
     int SaveData(int hit_x_y_val[12288], int NumHits );
     bool _usefastclock;		
-
 
 };
 

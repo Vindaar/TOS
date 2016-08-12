@@ -149,9 +149,6 @@ void Console::CommandActivateHvFadcManager(){
     // after TOS was called without command line arguments 
     // e.g. not with ./TOS -v
     // This function does
-    //       - warn user only 1 chip currently supported
-    //           - check if only 1 chip in use, if so, continue
-    //           - else ask if to change number of chips --> call SetNumChips
     //       - ask for config file to use to initialize HV_FADC object
     //       - set _hvFadcManagerActive flag to true
     //       - initialize _hvFadcManager
@@ -161,30 +158,7 @@ void Console::CommandActivateHvFadcManager(){
     bool allowDefaultOnEmptyInput = true;
     std::string input;
     bool activateHFM = true;
-
     
-    if (_nbOfChips != 1){
-	std::cout << "Usage of HFM (HV_FADC Manager) currently limited to use of 1 chip" 
-		  << std::endl;
-	const char *promptNumChips = "Do you wish to set the number of Chips to 1? (y / N)";
-	std::string input;
-	input = getUserInput(promptNumChips, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return;
-	else if ((input == "y") ||
-	    (input == "Y")){
-	    // in this case, calls SetNumChips to set number of chips to 1
-	    SetNumChips(1);
-	}
-	// if input empty, n or N do nothing
-	else if ((input == "")  ||
-		 (input == "n") ||
-		 (input == "N")){
-	    std::cout << "Number of chips will not be changed.\n"
-		      << "Will not activate HFM" << std::endl;
-	    activateHFM = false;
-	}
-    }
-    // number of chips is either 1 or we will not activate HFM
     if (activateHFM == true){
 	// will activate HFM
 	std::string iniFilePath;
@@ -199,7 +173,6 @@ void Console::CommandActivateHvFadcManager(){
 
 	// set HFM flag to active (only after last user input call!)
 	_hvFadcManagerActive = true;
-	
 	
 	_hvFadcManager = new hvFadcManager(iniFilePath);
 	
@@ -617,7 +590,6 @@ int Console::UserInterface(){
 	    input = getUserInputNumericalNoDefault(_prompt);
 	    _hvFadcManager->setSleepTriggerTime(std::stoi(input));
 	}
-	
 
 	// ##################################################
 	// ################## HV_FADC related commands ######
@@ -1345,7 +1317,6 @@ int Console::CommandRun(bool useHvFadc){
 	// temporary int variable, used as flag for yes / no inputs
 	int temp;
 	std::cout << "Detected FADC - do you want to start a measurement with simultaneous Chip and Fadc readout? 1 = yes, 0 = no \n" 
-		  << "WARNING: If Fadc is used, only one Chip is supported!"
 		  << std::endl;
 	
 	//check if the user wants to use the fadc
@@ -1356,12 +1327,7 @@ int Console::CommandRun(bool useHvFadc){
 	    useHvFadc = false;
 	    std::cout << "Don't use the Fadc" << std::endl; 
 	}
-	//set nb of chips to 1, if the user wants to use the fadc
 	else{
-	    if(_nbOfChips != 1) std::cout << "WARNING: Nb of chips set to one - preload-value is kept as " << _preload << std::endl;
-	    _nbOfChips = 1;
-	    pc->fpga->tp->SetNumChips(_nbOfChips,_preload);
-
 	    //print fadc settings
 	    _hvFadcManager->FADC_Functions->printSettings();
 

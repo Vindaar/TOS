@@ -231,7 +231,7 @@ public:
     // general helper functions
     // ##################################################
     // function to build a filename for pedestal run, normal data run or single frame
-    std::string buildFileName(std::string filePath, bool pedestalRunFlag);
+    std::string buildFileName(std::string filePath, bool pedestalRunFlag, int eventNumber);
 
     // ##################################################
     // FADC custom functions

@@ -45,7 +45,8 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
 					  "CurrentLimit",
 					  "Emergency"};
 
-    _sleepAcqTime = 100;
+    _sleepAcqTime     = 0;
+    _sleepTriggerTime = 0;
 
     // set gridEventStatusLastIter, anodeEventStatusLastIter, cathodeEventStatusLastIter
     // TODO: check if this is still doing what we want :)
@@ -1502,13 +1503,13 @@ void hvFadcManager::StartFadcPedestalRun(){
 
     // create the filename to which we write the data (with pedestalRun flag equal true)
     std::string filename;
-    filename = buildFileName("", true);
+    filename = buildFileName("", true, 0);
     
     // now we can write this vector to some file
     writeFadcData(filename, fadcParams, meanFadcData);
 }
 
-std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunFlag){
+std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunFlag, int eventNumber){
     // this function builds the filename for the output of the FADC data
     // inputs:
     //     std::string filePath: if this is non zero, filename is appended to filePath
@@ -1550,7 +1551,7 @@ std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunF
 	// ... or ... 
 	buildFileName << "/data";	
     }
-    buildFileName << std::setw(6) << std::setfill('0') << "42" << "_1_"
+    buildFileName << std::setw(6) << std::setfill('0') << eventNumber << "_1_"
 		  << std::setw(2) << std::setfill('0') << hh
 		  << std::setw(2) << std::setfill('0') << mm
 		  << std::setw(2) << std::setfill('0') << ss
