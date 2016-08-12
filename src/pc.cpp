@@ -18,7 +18,8 @@ PC::PC(Timepix *tp):
     _useHvFadc(false),
     _hvFadcManager(NULL),
     BufferSize(80),
-    Vbuffer( BufferSize, std::vector<std::vector<int>* >( 8))
+    Vbuffer( BufferSize, std::vector<std::vector<int>* >( 8)),
+    _center_chip(DEFAULT_CENTER_CHIP)
 {
 #if DEBUG == 2
     std::cout << "Enter PC::PC()" << std::endl;     
@@ -2504,8 +2505,43 @@ void PC::runOTPX()
 }
 
 
+void PC::writeChipData(std::string filePathName, std::vector<int> *chipData, int chip){
+    // this function writes the data in a pointer on an int vector to file filePathName
+    // used during a run
+    //int hits [9] = {0};
+    //create output file
+    std::cout << "writing to " << filePathName << std::endl;
+    std::fstream f;
+    f.open(filePathName, std::fstream::app);
 
-void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams, std::vector<int> *chipData, std::vector<int>fadcData)
+    //int NumHits = chipData->at(0);
+    //std::cout << "Chip Readout Numhits: " << NumHits << " on chip " << chip+1 << std::endl; 
+    //hits[chip+1] = (((chipData)->size()) - 1)/3;
+
+    //if there is a problem with the output file: ...
+    if( !f.is_open() )
+    {
+	//... stop Run
+	std::cout << "Readout: File error" << std::endl; 
+	RunIsRunning = false;
+    }
+    else{
+	// first write a chip header
+	f << "# chip:\t" << chip << "\n";
+        //print data to file(s)
+        for( std::vector<int>::iterator it = chipData->begin() + 1;
+	     it != ( chipData->end() );
+	     it = it + 3 ){
+	    // now print the content of the vector, if the value is not 0
+	    if (*(it+2) !=0){
+		f << *it << "\t" << *(it+1) << "\t" << *(it+2) << "\n";
+	    }
+        }  
+	f.close();
+    }
+}
+
+void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams, std::vector<int> *chipData, std::vector<int> fadcData)
 {
 #if DEBUG == 2
     std::cout << "Enter: PC::readoutFADC()" << std::endl;
@@ -2522,35 +2558,7 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
     //readout chip
     if (run_mode == 0)
     {
-	int hits [9] = {0};
-	//create output file
-	FILE* f2 = fopen(FileName.c_str(),"w");
-
-	for (unsigned short chip = 0;chip < fpga->tp->GetNumChips() ;chip++)
-	{
-	    int NumHits = chipData->at(0);
-	    std::cout << "FADC and Chip Readout Numhits: " << NumHits << " on chip " << chip+1 << std::endl; 
-	    hits[chip+1] = (((chipData)->size()) - 1)/3;
-
-	    //if there is a problem with the output file: ...
-	    if(f2 == NULL) 
-	    {
-		//... stop Run
-		std::cout << "Readout: File error" << std::endl; 
-		RunIsRunning = false;
-	    }
-      
-	    //print data to file(s)
-	    for (std::vector<int>::iterator it = chipData->begin()+1; it != (chipData->end()); it= it + 3) 
-	    {
-		if (*(it+2) !=0) fprintf(f2, "%d %d %d \n", *it, *(it+1), *(it+2));
-	    }      
-	}//close for (unsigned short chip = 0;chip < p...
-
-	fclose(f2);
-
-	std::cout << "created " << FileName << std::endl;
-  
+	writeChipData(FileName, chipData, eventNumber);
     }
     //TODO:: This should not be possible!!
     else

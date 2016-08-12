@@ -29,6 +29,9 @@
 // HV_FADC_Obj and related header files
 #include "hvFadcManager.hpp"
 
+// center chip on a septem board
+#define DEFAULT_CENTER_CHIP                       4
+
 
 class PC:public QThread{
     friend class Producer;
@@ -99,6 +102,10 @@ public:
 	      bool useFastClock,
 	      bool useExternalTrigger,
 	      bool useFadc = false);
+
+
+    // function to write the data from a single chip to a specific file used during a run
+    void writeChipData(std::string filePathName, std::vector<int> *chipData, int chip);
   
     void StopRun();
 		
@@ -190,11 +197,16 @@ private:
     // and the fast clock
     bool _useExternalTrigger;
     bool _useFastClock;
+
+    // variable, which stores the center chip for a septem board
+    int _center_chip;
 		 
     // for buffer to receive and write data QThread
 
     int BufferSize;
     std::vector<std::vector< std::vector<int>* > > Vbuffer;
+    std::vector<int> _fadcData;
+    std::map<std::string, int> _fadcParams;
 
     QWaitCondition bufferNotEmpty;
     QWaitCondition bufferNotFull;

@@ -29,6 +29,8 @@ void Producer::run()
     //up to now: it doesen't - see the "To FIX.." comments
     bool fadcReadoutNextEvent = false;
 
+    //parent->_fadcParams = 
+
     // check whether we're running with the FADC, if so, enable the closing of
     // the shutter based on a trigger by the FADC
     if(parent->_useHvFadc == true){
@@ -129,18 +131,20 @@ void Producer::run()
 	    //send events without fadc signal to the consumer or ...
 	    //To FIX the readout problem
 	    //if(!fadcReadoutNextEvent) (parent->Vbuffer)[(i % parent->BufferSize)][chip] = dataVec;
-	    if(!fadcReadout){
-		(parent->Vbuffer)[(i % parent->BufferSize)][chip] = dataVec;
-	    }
-	    //... readout events with fadc count
-	    else                                     
-	    {
-		std::map<std::string, int> fadcParams;           //< vector containing fadc params
+	    // start by writing the data we read from the chip to the VBuffer
+	    (parent->Vbuffer)[(i % parent->BufferSize)][chip] = dataVec;
+
+	    if ( (fadcReadout == true) &&
+		 (chip == parent->_center_chip) ){
+		// in case we're using the FADC and we're currently on the center chip,
+		// we're going to read out the FADC
         
 		parent->mutexVBuffer.lock();
 
-		//fill params vector
+		//fill params map
+		std::map<std::string, int> fadcParams;
 		fadcParams = parent->_hvFadcManager->GetFadcParameterMap();
+		// add current event number to params map
 		fadcParams["eventNumber"] = i;
 		//get nb of channels
 		int channels = 4;
@@ -156,13 +160,19 @@ void Producer::run()
 		//TODO/FIXME one wants to use channels instead of 4 as parameter of the next function?
 		// TODO: fix this!!!
 		std::vector<int> fadcData = (parent->_hvFadcManager)->F_GetAllData(4);
+		std::cout << "saving data to parent pointer. will probably fail " << std::endl;
+		// set the data we read from the FADC as the values for our fadc pointer
+		parent->_fadcData   = fadcData;
+		// and set the parameter map to the parameter map pointer
+		parent->_fadcParams = fadcParams;
                    
-		parent->readoutFadc(parent->PathName, fadcParams, dataVec, fadcData); 
+		//parent->readoutFadc(parent->PathName, fadcParams, dataVec, fadcData);
+		// set the VBuffer for this chip to the data vector
 		parent->mutexVBuffer.unlock();
 
 		//bugfix
-		std::vector<int> *tmpVec  = new std::vector<int>(12288+1,0);
-		(parent->Vbuffer)[(i % parent->BufferSize)][chip] = tmpVec;                 
+		// std::vector<int> *tmpVec  = new std::vector<int>(12288+1,0);
+		// (parent->Vbuffer)[(i % parent->BufferSize)][chip] = tmpVec;                 
 	    }
 
 	    //if there was an fadc event: remeber to read out chip and fadc at the next event: 
@@ -260,43 +270,48 @@ void Consumer::run()
   
     while(parent->DataAcqRunning || (parent->DataInBuffer) != 0)
     {
-	std::string FileName[9] = {""};
-	for (unsigned short chip = 1;chip <= parent->fpga->tp->GetNumChips() ;chip++){
-	    sstream << "data" << i << "_" << chip << ".txt";
-	    FileName[chip]=parent->PathName+"/"; 
-	    FileName[chip]+=sstream.str();
-	    sstream.str("");
-	}
-	//build filename(s)
-	struct   timeval  tv;
-	struct   timezone tz;
-	struct   tm      *tm;
-	int hh, mm, ss, us;
-	int   ms;
+	// std::string FileName[9] = {""};
+	// for (unsigned short chip = 1;chip <= parent->fpga->tp->GetNumChips() ;chip++){
+	//     sstream << "data" << i << "_" << chip << ".txt";
+	//     FileName[chip]=parent->PathName+"/"; 
+	//     FileName[chip]+=sstream.str();
+	//     sstream.str("");
+	// }
+	// //build filename(s)
+	// struct   timeval  tv;
+	// struct   timezone tz;
+	// struct   tm      *tm;
+	// int hh, mm, ss, us;
+	// int   ms;
 
-	gettimeofday(&tv, &tz);
-	tm = localtime(&tv.tv_sec);
-	hh = tm->tm_hour;                          // hours
-	mm = tm->tm_min;                           // minutes
-	ss = tm->tm_sec;                           // seconds
-	us = tv.tv_usec;                           // micro seconds
-	ms = tv.tv_usec/1000;                      // mili seconds
+	// gettimeofday(&tv, &tz);
+	// tm = localtime(&tv.tv_sec);
+	// hh = tm->tm_hour;                          // hours
+	// mm = tm->tm_min;                           // minutes
+	// ss = tm->tm_sec;                           // seconds
+	// us = tv.tv_usec;                           // micro seconds
+	// ms = tv.tv_usec/1000;                      // mili seconds
 
-	std::string FileName2 = "";
-	sstream << "data" << std::setw(6) << std::setfill('0') << i <<"_1_"
-		<< std::setw(2) << std::setfill('0') << hh
-		<< std::setw(2) << std::setfill('0') << mm
-		<< std::setw(2) << std::setfill('0') << ss
-		<< std::setw(3) << std::setfill('0') << ms <<".txt";
+	// std::string FileName2 = "";
+	// sstream << "data" << std::setw(6) << std::setfill('0') << i <<"_1_"
+	// 	<< std::setw(2) << std::setfill('0') << hh
+	// 	<< std::setw(2) << std::setfill('0') << mm
+	// 	<< std::setw(2) << std::setfill('0') << ss
+	// 	<< std::setw(3) << std::setfill('0') << ms <<".txt";
 
-	std::cout << "Path Name " << parent->PathName << std::endl;
-	FileName2 = parent->PathName + "/" + sstream.str(); 
+	// std::cout << "Path Name " << parent->PathName << std::endl;
+	// FileName2 = parent->PathName + "/" + sstream.str(); 
 
-	sstream.str("");
-	// next line does not exist in Tobys code anymore
-	//sstream.clear();
-    
+	// sstream.str("");
 
+	std::string filePathName;
+	// first we build the filename for the output file based on the PathName defined in the
+	// PC constructor, false ( no pedestal run ) and i as the event number
+
+
+	std::cout << "creating filename..." << std::endl;
+	filePathName = parent->_hvFadcManager->buildFileName(parent->PathName, false, i);
+	
 	parent->mutexVBuffer.lock();
 	//check if the data buffer isn't empty
 	if (parent->DataInBuffer == 0){
@@ -304,10 +319,19 @@ void Consumer::run()
 	}
 	parent->mutexVBuffer.unlock();
 
-	int hits [9] = {0};
-	//create output file
-	FILE* f2 = fopen(FileName2.c_str(),"w");
 
+	// before we write actual data to the file, we write a header for the file
+	std::fstream outfile;
+	outfile.open(filePathName, std::fstream::out);
+	outfile << "## RunName:     " << 0     << "\n"
+		<< "## EventNumber: " << i     << "\n"
+		<< "## FadcFlag:    " << false << "\n"
+		<< "## SzintCount:  " << 0     << "\n"
+		<< "## Date:        " << 0     << "\n"
+		<< std::endl;
+	
+	int hits [9] = {0};
+	// we now run over all chips, call the writeChipData function 
 	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
 	{
 	    int NumHits = ((parent->Vbuffer)[(i % parent->BufferSize)][chip])->at(0);
@@ -323,40 +347,54 @@ void Consumer::run()
 
 	    #if DEBUG==1
 	    if (parent->IsRunning()){
-		std::cout << "IsRunning is true, Consumer run " 
-			  << i << " hits: " 
-			  << hits[chip+1] << std::endl;
+	    	std::cout << "IsRunning is true, Consumer run " 
+	    		  << i << " hits: " 
+	    		  << hits[chip+1] << std::endl;
 	    }
 	    else{
-		std::cout << "IsRunning is false, Consumer run " 
-			  << i << " hits: " 
-			  << hits[chip+1] << std::endl;
+	    	std::cout << "IsRunning is false, Consumer run " 
+	    		  << i << " hits: " 
+	    		  << hits[chip+1] << std::endl;
 	    }
 	    #endif
 
+	    std::cout << "currently somewhere " << i << std::endl;
+	    // now call the writeChipData function to write the vector of this chip
+	    // to file
+	    // call function with filename, the vector of this chip and the chip number
+	    if (chip != parent->_center_chip){
+		// in case we're currently not at the center chip, just call writeChipData
+		parent->writeChipData(filePathName, parent->Vbuffer[i % parent->BufferSize][chip], chip);
+	    }
+	    else{
+		// if we're at the center chip, call the readoutFadc function, which internally
+		// calls writeChipData and also writes the FADC data to file
+		parent->readoutFadc(parent->PathName, parent->_fadcParams, parent->Vbuffer[i % parent->BufferSize][chip], parent->_fadcData);
+	    }
+
+	    // now call readoutFADC to print the FADC 
+
 	    //if there is a problem with the output file: ...
-	    if(f2 == NULL) 
-	    {
-		//... stop Run
-		std::cout << "(Consumer) Dateifehler" << std::endl; 
-		(parent->RunIsRunning) = false;
-	    }
+	    // if(f2 == NULL) 
+	    // {
+	    // 	//... stop Run
+	    // 	std::cout << "(Consumer) Dateifehler" << std::endl; 
+	    // 	(parent->RunIsRunning) = false;
+	    // }
       
-	    //print data to file(s)
-	    for (std::vector<int>::iterator it = ((parent->Vbuffer[i % parent->BufferSize][chip])->begin())+1; 
-		 it != ((parent->Vbuffer[i % parent->BufferSize][chip])->end()); 
-		 it  = it + 3) 
-	    {
-		if (*(it+2) !=0) fprintf(f2, "%d %d %d \n", *it, *(it+1), *(it+2));
-	    }
+	    // //print data to file(s)
+	    // for( std::vector<int>::iterator it = ((parent->Vbuffer[i % parent->BufferSize][chip])->begin())+1; 
+	    // 	 it != ((parent->Vbuffer[i % parent->BufferSize][chip])->end()); 
+	    // 	 it  = it + 3 ) {
+	    // 	if (*(it+2) !=0) fprintf(f2, "%d %d %d \n", *it, *(it+1), *(it+2));
+	    // }
+
+	    // if we're currently at the center chip, also readout the FADC
       
 	    //delete recorded data after printing it
 	    delete (parent->Vbuffer)[(i % parent->BufferSize)][chip];
 	}//close for (unsigned short chip = 0;chip < p...
 
-	fclose(f2);
-
-    
 	parent->mutexVBuffer.lock();
 	--(parent->DataInBuffer);
 	//... wake up all the other threads (in case of pure chip readout) and ..
