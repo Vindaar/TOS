@@ -340,11 +340,14 @@ int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short c
                 int data[9][256][256];
                 fpga->SerialReadOut(data);
                 fpga->tp->SetDAC(13,chip,coarse);
-                for(unsigned int thl=0;thl<1024;thl++){
+		// TODO: - add custom threshold values
+		//       - custom shutter length
+                for(unsigned int thl=300;thl<501;thl++){
                         fpga->tp->SetDAC(6,chip,thl);
                         fpga->WriteReadFSR();
                         usleep(10000 );
-                        fpga->CountingTime(255, 0);
+			// was 255, 0 before
+                        fpga->CountingTime(4, 1);
                         std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
                         int hits = 0;
                         int result=0;
@@ -2510,31 +2513,8 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
 
     //build filename
     std::string fileName;
-    std::stringstream buildFileName;
 
-    struct   timeval  tv;
-    struct   timezone tz;
-    struct   tm      *tm;
-    int hh, mm, ss;
-    int   ms;
-
-    gettimeofday(&tv, &tz);
-    tm = localtime(&tv.tv_sec);
-    hh = tm->tm_hour;        // hours
-    mm = tm->tm_min;         // minutes
-    ss = tm->tm_sec;         // seconds
-    ms = tv.tv_usec/1000;    // mili seconds
-
-    //FIXME!!
-    buildFileName << "data" << std::setw(6) << std::setfill('0') << "42" <<"_1_"
-		  << std::setw(2) << std::setfill('0') << hh
-		  << std::setw(2) << std::setfill('0') << mm
-		  << std::setw(2) << std::setfill('0') << ss
-		  << std::setw(3) << std::setfill('0') << ms <<".txt";
-  
-    FileName = filePath + "/" + buildFileName.str(); 
-    buildFileName.str("");
-    buildFileName.clear();
+    FileName = _hvFadcManager->buildFileName(filePath, false);
 
     //readout chip
     if (run_mode == 0)
@@ -2588,44 +2568,12 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
 	if( !(fadcParams["ChannelMask"] & 1) ) channels--;
     }
 
-    //set filenmane and open file 
-    buildFileName << FileName << "-fadc";
-    std::cout << "outfile " << buildFileName.str() << std::endl;
+    //set filename and open file for FADC data
+    FileName = FileName + "-fadc";
+    std::cout << "outfile " << FileName << std::endl;
 
-    std::ofstream outFile( buildFileName.str() );
-
-    //write data to output file
-    if( outFile.is_open() )
-    {
-	//write petrig/postrig/etc to file
-	outFile << "# nb of channels: " << std::endl << fadcParams["NumChannels"]  << std::endl;
-	outFile << "# channel mask: " << std::endl   << fadcParams["ChannelMask"]  << std::endl;
-	outFile << "# postrig: " << std::endl        << fadcParams["PostTrig"]     << std::endl;
-	outFile << "# pretrig: " << std::endl        << fadcParams["PreTrig"]      << std::endl;
-	outFile << "# triggerrecord: " << std::endl  << fadcParams["TriggerRec"]   << std::endl;
-	outFile << "# frequency: " << std::endl      << fadcParams["Frequency"]    << std::endl;
-	outFile << "# sampling mode: " << std::endl  << fadcParams["ModeRegister"] << std::endl;
-	outFile << "#Data:" << std::endl;
-
-
-	// TODO: why unsigned int used? problematic, since channels is int.
-	// -> changed iData and iVector to int
-	//"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
-	for(int iData = 0; iData < 3*channels; iData++)
-	    outFile << "#" << fadcData[iData] << std::endl;
-    
-	//print the actual data to file
-	for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
-	    outFile << fadcData[iVector] << std::endl;
-          
-	//"skip the remaining data points
-	for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
-	    outFile << "# " << fadcData.at(iRest) << std::endl; 
-    }//end of if( outFile.is_open() )
-  
-    //close output file
-    outFile.close();
-  
+    // write data to file
+    _hvFadcManager->writeFadcData(FileName, fadcParams, fadcData);
 
     return;
 }

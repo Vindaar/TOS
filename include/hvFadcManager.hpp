@@ -26,6 +26,7 @@
 #include "const.h"
 
 // C++
+#include <sys/time.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -67,14 +68,14 @@
 
 #define DEFAULT_ANODE_VOLTAGE_SET                                 345
 #define DEFAULT_ANODE_VOLTAGE_NOMINAL                             345
-#define DEFAULT_ANODE_VOLTAGE_BOUND                               0
+#define DEFAULT_ANODE_VOLTAGE_BOUND                               2.5
 #define DEFAULT_ANODE_CURRENT_SET                                 0.005 // in mA
 #define DEFAULT_ANODE_CURRENT_NOMINAL                             0.005 // in mA
-#define DEFAULT_ANODE_CURRENT_BOUND                               0
+#define DEFAULT_ANODE_CURRENT_BOUND                               2.5
 
 #define DEFAULT_CATHODE_VOLTAGE_SET                               1845
 #define DEFAULT_CATHODE_VOLTAGE_NOMINAL                           1845
-#define DEFAULT_CATHODE_VOLTAGE_BOUND                             0
+#define DEFAULT_CATHODE_VOLTAGE_BOUND                             2.5
 #define DEFAULT_CATHODE_CURRENT_SET                               0.010 // in mA
 #define DEFAULT_CATHODE_CURRENT_NOMINAL                           0.010 // in mA
 #define DEFAULT_CATHODE_CURRENT_BOUND                             0
@@ -83,12 +84,21 @@
 #define DEFAULT_MODULE_CURRENT_RAMP_SPEED                         50
 #define DEFAULT_CHECK_MODULE_TIME_INTERVAL                        60
 
+#define DEFAULT_VOLTAGE_BOUND                                     2.5
+#define DEFAULT_VOLTAGE_NOMINAL         	                  4000
+#define DEFAULT_CURRENT_SET                                       0.000050
+#define DEFAULT_CURRENT_NOMINAL         	                  0.000500
+
+
 // FADC macros
 #define DEFAULT_FADC_TRIGGER_TYPE                                 7
 #define DEFAULT_FADC_FREQUENCY                                    2
 #define DEFAULT_FADC_POSTTRIG                                     80
 #define DEFAULT_FADC_PRETRIG                                      15000
 #define DEFAULT_FADC_TRIGGER_THRESHOLD_REGISTER_ALL               2033
+#define DEFAULT_FADC_PEDESTAL_RUN_TIME                            100 // in milli seconds
+#define DEFAULT_FADC_PEDESTAL_NUM_RUNS                            10 // number of pedestal runs for one calibration
+#define DEFAULT_FADC_CHANNEL_SOURCE                               1 // channel 0 is trigger source, bit 0 = 1
 
 // HV macros
 #define DEFAULT_HV_SLEEP_TIME                                     10 // in milli seconds
@@ -135,11 +145,21 @@ public:
     void ReadHVSettings();
     void InitHFMForTOS(); 
     void ShutDownHFMForTOS();
+    void SetFadcSettings();
 
     // adds channel to _channelMap
     void AddChannel(hvChannel *ptrChannel);
     // adds flex group
     void AddFlexGroup(hvFlexGroup *ptrGroup);
+
+    // function to remove a channel from the _channelList and shut that channel down
+    void RemoveChannelByName(std::string channelName);
+    void RemoveChannelByNumber(int channelNumber);
+    // create a simple channel from a channel name and a target voltage
+    bool CreateChannel(std::string channelName, int voltage);
+
+
+
 
     // function to create the binary representation of a set of numbers (channels, groups...) needed for module
     uint16_t GetBinaryRepFromNumberSet(std::set<int> numberSet);
@@ -183,12 +203,17 @@ public:
     void printAllChannelEventStatus();
     void printModuleStatus();
     void printModuleEventStatus();
+    // prints all active channels (and also returns set of string numbers)
+    std::set<std::string> PrintActiveChannels();
+    // function to call printing function of specific channel
+    void PrintChannel(int channelNumber);
 
     // function to turn single channel on or off
     void TurnChannelOnOff();
+    // function to set a specific value of a specific channel (voltage, current ...)
+    void SetChannelValue(std::string key, int channelNumber, std::string value);
     // clear channel event status of single channel
     bool ClearChannelEventStatus();
-
 
     // functions related to voltage scheduler:
     void AddElementToVoltageScheduler(float voltage, int time);
@@ -198,12 +223,23 @@ public:
     void RunVoltageScheduler(std::string channelIdentifier, std::string groupIdentifier);
 
     void sleepModule(int sleepTime = 0, std::string unit = "milliseconds");
+    void setSleepAcqTime(int time);
+    void setSleepTriggerTime(int time);
 
 
+    // ##################################################
+    // general helper functions
+    // ##################################################
+    // function to build a filename for pedestal run, normal data run or single frame
+    std::string buildFileName(std::string filePath, bool pedestalRunFlag);
 
     // ##################################################
     // FADC custom functions
     std::map<std::string, int> GetFadcParameterMap();
+    // function to do a pedestal calibration run of the FADC
+    void StartFadcPedestalRun();
+    // function to write FADC data to 'filename'
+    bool writeFadcData(std::string filename, std::map<std::string, int> fadcParams, std::vector<int> fadcData);
 
 
 
@@ -483,6 +519,9 @@ private:
     uint16_t gridChannelNumber;
     uint16_t cathodeChannelNumber;
 
+    // the basic event mask we usually set for all channels
+    std::set<std::string> _eventMaskSet;
+
 
     // voltages and currents for grid, anode and cathode
     float gridVoltageSet;
@@ -512,8 +551,14 @@ private:
     int fadcPosttrig;
     int fadcPretrig;
     int fadcTriggerThresholdRegisterAll;
+    int fadcPedestalRunTime;
+    int fadcPedestalNumRuns;
+    int fadcChannelSource;
 
 
+    int _sleepAcqTime;
+    int _sleepTriggerTime;
+    
     // special functions have no need to be public
     // --- HV Special Control ----------------------------------------------------
     void   H_SetModuleSpecialControlCommand(uint32_t command);

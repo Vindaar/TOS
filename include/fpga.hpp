@@ -22,6 +22,9 @@
 #define DEFAULT_SOCKET_BUFFER_SIZE             212992
 // scaling factor by which the timeout is scaled (10 % longer than time we have to wait)
 #define DEFAULT_TIMEOUT_SCALING_FACTOR         10//1.1
+// default number of clock cycles the shutter remains open, after the FADC triggers
+// (200 clock cycles at 40 MHz == 5 mu s)
+#define DEFAULT_FADC_SHUTTER_COUNT_ON          200
 
 class FPGA{
 
@@ -79,7 +82,8 @@ public:
 private:
 
     int _fadcBit;                 //< set to 1 if a signal was detected on the trigger in input/ 0 otherwise
-    bool _fadcFlag;               //< true if _fadcBit was set to 1 since the flag was cleared the last time 
+    bool _fadcFlag;               //< true if _fadcBit was set to 1 since the flag was cleared the last time
+    unsigned int _fadcShutterCountOn;
     int ok;
     int TriggerConnectionIsTLU;
     int sock, Port; 

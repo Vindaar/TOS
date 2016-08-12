@@ -184,10 +184,11 @@ bool hvChannel::setVoltageNominal(float voltage){
 	timeout--;
     }
     if(timeout < 1){
-	std::cout << "TIMEOUT: could not set voltage to " << voltage << " V" << std::endl;
+	std::cout << "TIMEOUT: could not set voltage nominal to " << voltage << " V" << std::endl;
 	good = false;
     }
     else{
+	std::cout << "timeout in setVoltageNominal " << timeout << std::endl;
 	good = true;
     }
 
@@ -211,10 +212,11 @@ bool hvChannel::setCurrentNominal(float current){
 	timeout--;
     }
     if(timeout < 1){
-	std::cout << "TIMEOUT: could not set current to " << current << " mA" << std::endl;
+	std::cout << "TIMEOUT: could not set current nominal to " << current << " muA" << std::endl;
 	good = false;
     }
     else{
+	std::cout << "timeout in setCurrentNominal " << timeout << std::endl;
 	good = true;
     }
 
@@ -309,6 +311,16 @@ void hvChannel::printCurrentMeasured(){
 	      << std::endl;
 }
 
+void hvChannel::printVoltageCurrentNominal(){
+    // this function updates the channel and then prints the
+    // currently set nominal voltage and current
+    updateChannel();
+
+    std::cout << "voltage nominal: " << _voltageNominal << " V\n"
+	      << "current nominal: " << _currentNominal << " mA\n"
+	      << std::endl;
+}
+
 void hvChannel::printChannelName(){
     // this function prints the channel name and number
     std::cout << "#" << _channelNumber
@@ -332,18 +344,18 @@ void hvChannel::printChannelEventStatus(){
     
     std::cout << "Channel " << _channelName << " # " << _channelNumber << std::endl;;
     std::cout << "Current status of Channel Event Status bits:\n"
-	      << "input error:         	\t" << _channelEventStatus.Bit.EventInputError << "\n"
-	      << "on to off:           	\t" << _channelEventStatus.Bit.EventOnToOff << "\n"
-	      << "end of ramping:      	\t" << _channelEventStatus.Bit.EventEndOfRamping << "\n"
-	      << "controlled by voltage:\t" << _channelEventStatus.Bit.EventControlledByVoltage << "\n"
-	      << "controlled by current:\t" << _channelEventStatus.Bit.EventControlledByCurrent << "\n"
-	      << "current bounds:       \t" << _channelEventStatus.Bit.EventCurrentBounds << "\n"
-	      << "voltage bounds:       \t" << _channelEventStatus.Bit.EventVoltageBounds << "\n"
-	      << "external inhibit:     \t" << _channelEventStatus.Bit.EventExternalInhibit << "\n"
-	      << "current tripped:      \t" << _channelEventStatus.Bit.EventCurrentTrip << "\n"
-	      << "current limit:        \t" << _channelEventStatus.Bit.EventCurrentLimit << "\n"
-	      << "voltage limit:        \t" << _channelEventStatus.Bit.EventVoltageLimit << "\n"
-	      << "emergency:            \t" << _channelEventStatus.Bit.EventEmergency
+	      << "     input error:         	\t" << _channelEventStatus.Bit.EventInputError << "\n"
+	      << "     on to off:           	\t" << _channelEventStatus.Bit.EventOnToOff << "\n"
+	      << "     end of ramping:      	\t" << _channelEventStatus.Bit.EventEndOfRamping << "\n"
+	      << "     controlled by voltage:\t" << _channelEventStatus.Bit.EventControlledByVoltage << "\n"
+	      << "     controlled by current:\t" << _channelEventStatus.Bit.EventControlledByCurrent << "\n"
+	      << "     current bounds:       \t" << _channelEventStatus.Bit.EventCurrentBounds << "\n"
+	      << "     voltage bounds:       \t" << _channelEventStatus.Bit.EventVoltageBounds << "\n"
+	      << "     external inhibit:     \t" << _channelEventStatus.Bit.EventExternalInhibit << "\n"
+	      << "     current tripped:      \t" << _channelEventStatus.Bit.EventCurrentTrip << "\n"
+	      << "     current limit:        \t" << _channelEventStatus.Bit.EventCurrentLimit << "\n"
+	      << "     voltage limit:        \t" << _channelEventStatus.Bit.EventVoltageLimit << "\n"
+	      << "     emergency:            \t" << _channelEventStatus.Bit.EventEmergency
 	      << std::endl;
 }
 
@@ -353,18 +365,18 @@ void hvChannel::printChannelStatus(){
 
     std::cout << "Channel " << _channelName << " # " << _channelNumber << std::endl;;
     std::cout << "Current status of Channel Status bits:\n"
-	      << "input error:         	\t" << _channelStatus.Bit.InputError << "\n"
-	      << "is on:           	\t" << _channelStatus.Bit.isOn << "\n"
-	      << "is ramping:      	\t" << _channelStatus.Bit.isRamping << "\n"
-	      << "controlled by voltage:\t" << _channelStatus.Bit.ControlledByVoltage << "\n"
-	      << "controlled by current:\t" << _channelStatus.Bit.ControlledByCurrent << "\n"
-	      << "current bounds:       \t" << _channelStatus.Bit.CurrentBounds << "\n"
-	      << "voltage bounds:       \t" << _channelStatus.Bit.VoltageBounds << "\n"
-	      << "external inhibit:     \t" << _channelStatus.Bit.ExternalInhibit << "\n"
-	      << "current tripped:      \t" << _channelStatus.Bit.CurrentTrip << "\n"
-	      << "current limit:        \t" << _channelStatus.Bit.CurrentLimit << "\n"
-	      << "voltage limit:        \t" << _channelStatus.Bit.VoltageLimit << "\n"
-	      << "is in emergency:      \t" << _channelStatus.Bit.isEmergency
+	      << "    input error:         	\t" << _channelStatus.Bit.InputError << "\n"
+	      << "    is on:           	\t" << _channelStatus.Bit.isOn << "\n"
+	      << "    is ramping:      	\t" << _channelStatus.Bit.isRamping << "\n"
+	      << "    controlled by voltage:\t" << _channelStatus.Bit.ControlledByVoltage << "\n"
+	      << "    controlled by current:\t" << _channelStatus.Bit.ControlledByCurrent << "\n"
+	      << "    current bounds:       \t" << _channelStatus.Bit.CurrentBounds << "\n"
+	      << "    voltage bounds:       \t" << _channelStatus.Bit.VoltageBounds << "\n"
+	      << "    external inhibit:     \t" << _channelStatus.Bit.ExternalInhibit << "\n"
+	      << "    current tripped:      \t" << _channelStatus.Bit.CurrentTrip << "\n"
+	      << "    current limit:        \t" << _channelStatus.Bit.CurrentLimit << "\n"
+	      << "    voltage limit:        \t" << _channelStatus.Bit.VoltageLimit << "\n"
+	      << "    is in emergency:      \t" << _channelStatus.Bit.isEmergency
 	      << std::endl;
 }
 
@@ -374,6 +386,7 @@ void hvChannel::printChannel(){
 
     printVoltageMeasured();
     printCurrentMeasured();
+    printVoltageCurrentNominal();
     printChannelStatus();
     printChannelEventStatus();
 }

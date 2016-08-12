@@ -143,6 +143,8 @@ private:
     int CommandShowFSR();
     int CommandVarChessMatrix();
     int CommandUniformMatrix();
+    // quick implementation to set same uniform matrix for all chips
+    int CommandUniformMatrixAllChips();
     int CommandFADCshutter();
     int CommandDACScan();
     int CommandTHLScan();
@@ -173,6 +175,15 @@ private:
 
     // functions related to HV_FADC object
     void CommandActivateHvFadcManager();
+    void CommandAddChannel();
+    void CommandRemoveChannel();
+    void CommandAddFlexGroup();
+    void CommandRemoveFlexGroup();
+    void CommandSetChannelValue();
+
+    // function which makes sure user disconnects devices from FADC before starting
+    // pedestal calibration run
+    void CommandFadcPedestalRun();
 
 
     //

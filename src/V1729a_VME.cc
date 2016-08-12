@@ -74,6 +74,7 @@ inline void V1729a_VME::setTriggerThresholdDACAll(const unsigned int threshold) 
   std::cout << "[DEBUG] -- setTriggerThresholdDACAll -- adress: " << std::hex 
     << TRIGGER_THRESH_DAC_ALL << std::dec << std::endl;
   std::cout << "[DEBUG] -- setTriggerThresholdDACAll -- value: " << threshold << std::endl;
+  std::cout << "writing to ALL " << threshold << std::endl;
   write32(threshold, TRIGGER_THRESH_DAC_ALL, 0x0D );
 }
 
@@ -83,7 +84,10 @@ inline unsigned int V1729a_VME::getTriggerThresholdDACAll() throw()
   //TODO: 4095 correct? (would refer to FFF)
   std::cout << "[DEBUG] -- getTriggerThresholdAll -- adress: " << std::hex 
     << TRIGGER_THRESH_DAC_ALL << std::dec << std::endl;
-  return read32(TRIGGER_THRESH_DAC_ALL , 0x0D ) & 4095;
+  int temp;
+  temp = read32(TRIGGER_THRESH_DAC_ALL, 0x0D);
+  std::cout << "read32 for ALL returns " << temp << std::endl;
+  return temp & 4095;
 }
 
 
@@ -94,6 +98,7 @@ inline void V1729a_VME::setTriggerThresholdDACPerChannel(const unsigned short ch
   std::cout << "[DEBUG] -- setTriggerThresholdDAC -- adress: " << std::hex 
     << TRIGGER_THRESH_DAC_CH1 + 0x100*chNb << std::dec << std::endl;
   std::cout << "[DEBUG] -- setTriggerThresholdDAC -- value: " << threshold << std::endl;
+  std::cout << "writing " << threshold << std::endl;
   write32(threshold, TRIGGER_THRESH_DAC_CH1 + 0x100*chNb, 0x0D );
 }
 
@@ -104,7 +109,10 @@ inline unsigned int V1729a_VME::getTriggerThresholdDACPerChannel(const unsigned 
   //TODO: 4095 correct? (would refer to FFF)
   std::cout << "[DEBUG] -- getTriggerThreshold -- adress: " << std::hex 
     << TRIGGER_THRESH_DAC_CH1 + 0x100*chNb << std::dec << std::endl;
-  return read32( TRIGGER_THRESH_DAC_CH1 + 0x100*chNb, 0x0D ) & 4095; //& 65535;
+  int temp;
+  temp = read32( TRIGGER_THRESH_DAC_CH1 + 0x100*chNb, 0x0D);
+  std::cout << "read32 returns " << temp << std::endl;
+  return temp & 4095; //& 65535;
 }
 
 

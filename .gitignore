@@ -1,5 +1,7 @@
 # gitignore file
 tmp/*
+bin/data/runs/*
+bin/data/singleFrames/*
 Makefile
 HV_FADC_Object.pro
 HV_FADC_Object.pro.user

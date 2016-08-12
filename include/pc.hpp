@@ -19,7 +19,6 @@
 #include "frame.hpp"
 
 //c++
-#include <time.h>
 #include <string>
 #include <sstream>
 

@@ -50,7 +50,7 @@
 	DEBUG=1: Status-Meldungen auf der Konsole
 	DEBUG=2: Messaging Function-Entries
 */
-	#define DEBUG 1
+	#define DEBUG 0
 
 
 //  Performance

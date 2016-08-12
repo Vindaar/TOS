@@ -17,7 +17,7 @@
 
 #include "console.hpp"
 #include <string>
-
+#include <thread>
 
 
 //C~tor
@@ -413,6 +413,11 @@ int Console::UserInterface(){
 	{
 	    CommandUniformMatrix();
 	}
+	else if( (ein.compare("UniformMatrixAllChips")==0) ||
+		 (ein.compare("uma")==0) ) 
+	{
+	    CommandUniformMatrixAllChips();
+	}
 	else if( ein.compare("SaveMatrix")==0 )
 	{
 	    CommandSaveMatrix();
@@ -491,8 +496,15 @@ int Console::UserInterface(){
 	else if (ein.compare("ResetFADC") == 0){
 	    _hvFadcManager->F_Reset();
 	}
+	else if (ein.compare("SetFadcSettings") == 0){
+	    _hvFadcManager->SetFadcSettings();
+	}
+	else if (ein.compare("StartFadcPedestalRun") == 0){
+	    CommandFadcPedestalRun();
+	}
 	else if ((ein.compare("StartFadcAcquisition") == 0) ||
 		 (ein.compare("StartFadcAcq")         == 0)){
+	    
 	    _hvFadcManager->F_StartAcquisition();
 	}
 	else if (ein.compare("SendFadcSoftwareTrigger") == 0){
@@ -516,8 +528,12 @@ int Console::UserInterface(){
 	    std::cout << "getTriggerThreshold All: " << _hvFadcManager->F_GetTriggerThresholdDACAll() << std::endl << std::endl;
 	}
 	else if (ein.compare("SetFadcTriggerThresholdRegisterAll") == 0){
-	    std::cout << "setTriggerThresholdRegisterAll returns: " 
-		      <<  _hvFadcManager->FADC_Functions->setTriggerThresholdRegisterAll( getInputValue() ) << std::endl;
+	    // TODO: PUT INTO FUNCTION
+	    std::string input;
+	    input = getUserInputNonNumericalNoDefault(_prompt);
+	    unsigned int result;
+	    result = _hvFadcManager->FADC_Functions->setTriggerThresholdRegisterAll( std::stoi(input) );
+	    std::cout << "setTriggerThresholdRegisterAll returns " << result << std::endl;
 	}
 	else if (ein.compare("GetFadcTriggerThresholdRegister") == 0){
 	    _hvFadcManager->FADC_Functions->getTriggerThresholdRegister();
@@ -591,6 +607,17 @@ int Console::UserInterface(){
 	else if (ein.compare("GetFadcPostLatencyPretrig()") == 0){
 	    std::cout << "Post latency pretrig: " << _hvFadcManager->F_GetPostLatencyPretrig() << std::endl;
 	}
+	else if (ein.compare("SetFadcSleepAcqTime") == 0){
+	    std::string input;
+	    input = getUserInputNumericalNoDefault(_prompt);
+	    _hvFadcManager->setSleepAcqTime(std::stoi(input));
+	}
+	else if (ein.compare("SetFadcSleepTriggerTime") == 0){
+	    std::string input;
+	    input = getUserInputNumericalNoDefault(_prompt);
+	    _hvFadcManager->setSleepTriggerTime(std::stoi(input));
+	}
+	
 
 	// ##################################################
 	// ################## HV_FADC related commands ######
@@ -628,6 +655,12 @@ int Console::UserInterface(){
 	else if (ein.compare("ShutdownHFM") == 0){
 	    if (_hvFadcManagerActive == true){
 		_hvFadcManager->ShutDownHFMForTOS();
+		// now delete the hvFadcManager
+		if(_hvFadcManagerActive){
+		    delete _hvFadcManager;
+		}
+		// and set the flag to false
+		_hvFadcManagerActive = false;
 	    }
 	    else{
 		std::cout << "HFM not initialized. Nothing to do."
@@ -701,7 +734,62 @@ int Console::UserInterface(){
 			  << std::endl;
 	    }
 	}
-	
+	else if (ein.compare("AddChannel") == 0){
+	    if (_hvFadcManagerActive == true){
+		CommandAddChannel();
+	    }
+	    else{
+		std::cout << "HFM not initialized. Nothing to do."
+			  << std::endl;
+	    }
+	}
+	else if (ein.compare("RemoveChannel") == 0){
+	    if (_hvFadcManagerActive == true){
+		CommandRemoveChannel();
+	    }
+	    else{
+		std::cout << "HFM not initialized. Nothing to do."
+			  << std::endl;
+	    }
+	}
+	else if (ein.compare("AddFlexGroup") == 0){
+	    if (_hvFadcManagerActive == true){
+		CommandAddFlexGroup();
+	    }
+	    else{
+		std::cout << "HFM not initialized. Nothing to do."
+			  << std::endl;
+	    }
+	}
+	else if (ein.compare("RemoveFlexGroup") == 0){
+	    if (_hvFadcManagerActive == true){
+		CommandRemoveFlexGroup();
+	    }
+	    else{
+		std::cout << "HFM not initialized. Nothing to do."
+			  << std::endl;
+	    }
+	}
+	else if (ein.compare("PrintActiveChannels") == 0){
+	    if (_hvFadcManagerActive == true){
+		_hvFadcManager->PrintActiveChannels();
+	    }
+	    else{
+		std::cout << "HFM not initialized. Nothing to do."
+			  << std::endl;
+	    }
+	}
+
+	else if (ein.compare("SetChannelValue") == 0){
+	    if (_hvFadcManagerActive == true){
+		CommandSetChannelValue();
+	    }
+	    else{
+		std::cout << "HFM not initialized. Nothing to do."
+			  << std::endl;
+	    }
+	}
+	    
 	
 	// if no other if was true, command not found
 	else if( ein.compare("")==0 )
@@ -1881,18 +1969,38 @@ int Console::CommandCountingTime(){
     // instead of calling different fpga->CountingTime functions, we
     // will now hand a flag and a time to the normal CountingTime function
 
-    // before we open the shutter, we check if the FADC object is used.
-    if (_hvFadcManagerActive == true){
-	// if this is the case start FADC acquisition
-	std::cout << "HFM active, starting FADC data acquisition." << std::endl;
-	_hvFadcManager->F_StartAcquisition();
-	
-	// also enable FADC shutter (not yet implemented)
-	// currently using software trigger after shutter is closed
-    }
-
     int result;
-    result = pc->fpga->CountingTime(std::stoi(inputTime), n);
+    if (_hvFadcManagerActive == true){
+	// enable fadc shutter
+	pc->fpga->EnableFADCshutter(1);
+	
+        std::vector<std::thread> threads;
+
+        threads.push_back(std::thread(&hvFadcManager::F_StartAcquisition, this->_hvFadcManager));
+
+        int (FPGA::*CountingTime)(int, int) = &FPGA::CountingTime;
+        threads.push_back(std::thread(CountingTime, this->pc->fpga, std::stoi(inputTime), n));
+
+        for(auto& thread : threads){
+            thread.join();
+        }
+        result = 0;
+	pc->fpga->EnableFADCshutter(0);
+    }
+    else{
+	result = pc->fpga->CountingTime(std::stoi(inputTime), n);
+    }
+    // before we open the shutter, we check if the FADC object is used.
+    // if (_hvFadcManagerActive == true){
+    // 	// if this is the case start FADC acquisition
+    // 	std::cout << "HFM active, starting FADC data acquisition." << std::endl;
+    // 	_hvFadcManager->F_StartAcquisition();
+    // 	// also enable FADC shutter (not yet implemented)
+    // 	// currently using software trigger after shutter is closed
+    // }
+
+    // int result;
+    // result = pc->fpga->CountingTime(std::stoi(inputTime), n);
     if (result>20){ 
 	ErrorMessages(result); 
     }
@@ -1902,7 +2010,9 @@ int Console::CommandCountingTime(){
     
     // now send software trigger to FADC to close frame
     if (_hvFadcManagerActive == true){
+	std::cout << "sending software trigger..." << std::endl;
 	_hvFadcManager->F_SendSoftwareTrigger();
+
     }
 
     // deactivate fastclock again
@@ -2370,6 +2480,49 @@ int Console::CommandUniformMatrix(){
     return err;	
 }
 
+int Console::CommandUniformMatrixAllChips(){
+    // quick and dirty implementation to set same uniform matrix
+    // for all chips
+    // TODO: MAKE NEW AND NICE WITH USER INTERFACE FUNCTION FOR BOTH
+    // UNIFORM MATRIX FUNCTIONS
+    int p0,p1,test,mask,th;
+    int err = 0;
+
+    // variables for getUserInput
+    bool numericalInput = true;
+    bool allowDefaultOnEmptyInput = false;
+    std::string input;
+    
+    std::cout << "This matrix will be set for all active chips." << std::endl;
+    std::cout<<"\t P0="<<std::flush;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    if (input == "quit") return -1;
+    p0 = std::stoi(input);
+    std::cout<<"\t P1="<<std::flush;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    if (input == "quit") return -1;
+    p1 = std::stoi(input);
+    std::cout<<"\t Mask="<<std::flush;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    if (input == "quit") return -1;
+    mask = std::stoi(input);
+    std::cout<<"\t Test="<<std::flush;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    if (input == "quit") return -1;
+    test = std::stoi(input);
+    std::cout<<"\t Threshold="<<std::flush;
+    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    if (input == "quit") return -1;
+    th = std::stoi(input);
+    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
+	err += pc->fpga->tp->UniformMatrix(p0,p1,mask,test,th,chip);
+    }
+    if(err==0){std::cout<<"Matrix created\n"<<std::flush;}
+    else{ErrorMessages(80);}
+
+
+    return err;	
+}
 
 int Console::CommandFADCshutter(){
     // variables for getUserInput
@@ -3375,4 +3528,160 @@ void Console::CommandSetChipIdOffset(){
     // to make sure that the new offset is good, read the Chip ID; done by calling CommandWriteReadFSR()
     std::cout << "Checking if new chip ID offset is good... calling WriteReadFSR()..." << std::endl;
     CommandWriteReadFSR();
+}
+
+
+void Console::CommandFadcPedestalRun(){
+    // this function calls the StartFadcPedestalRun() function, which performs
+    // a pedestal calibration of the FADC. For further information see its implementation
+    // console function here makes sure user is aware that he/she should disconnect
+    // all connected devices from the FADC
+
+    std::string input;
+    std::set<std::string> allowedStrings = {"continue"};
+    std::cout << "Before starting the pedestal calibration run, please disconnect all "
+	      << "devices from the FADC! Type { continue } once that is done."
+	      << std::endl;
+    
+    input = getUserInputNonNumericalNoDefault(_prompt, &allowedStrings);
+    if (input == "quit"){
+	return;
+    }
+    else{
+	std::cout << "starting FADC pedestal calibration run." << std::endl;
+	_hvFadcManager->StartFadcPedestalRun();
+    }
+}
+
+
+void Console::CommandAddChannel(){
+    // this function provides a user interface to add a HV channel to
+    // the current group of active channels
+    std::string input;
+
+    std::string channelName;
+    std::cout << "Enter channel name:" << std::endl;
+    input = getUserInputNonNumericalNoDefault(_prompt);
+    if (input == "quit")
+	return;
+    else{
+	channelName = input;
+    }
+
+    int voltage;
+    std::cout << "Enter channel voltage:" << std::endl;
+    std::set<std::string> allowedStrings;
+    for(int i = 0; i <= 4000; i++) allowedStrings.insert(std::to_string(i));
+    input = getUserInputNumericalNoDefault(_prompt, &allowedStrings);
+    if (input == "quit")
+	return;
+    else{
+	voltage = std::stoi(input);
+    }
+
+    bool good;
+    good = _hvFadcManager->CreateChannel(channelName, voltage);
+    if (good == false){
+	std::cout << "Could not add new channel (probably could not set voltage on"
+		  << " module."
+		  << std::endl;
+	return;
+    }
+    
+}
+
+void Console::CommandRemoveChannel(){
+    // this function provides a user interface to remove a specific
+    // channel from the channel list of the hvFadcManager
+    std::string input;
+
+    // first print the active channels
+    std::set<std::string> allowedStrings;
+    allowedStrings = _hvFadcManager->PrintActiveChannels();
+
+    std::cout << "Enter number of channel to remove:" << std::endl;
+    int channelNumber;
+    input = getUserInputNumericalNoDefault(_prompt, &allowedStrings);
+    if (input == "quit")
+	return;
+    else{
+	channelNumber = std::stoi(input);
+    }
+
+    // now call function to remove the channel
+    std::cout << "removing channel and shutting it down..." << std::endl;
+    _hvFadcManager->RemoveChannelByNumber(channelNumber);
+}
+
+void Console::CommandAddFlexGroup(){
+    // not implemented yet
+    std::cout << "not implemented yet." << std::endl;
+}
+
+void Console::CommandRemoveFlexGroup(){
+    // not implemented yet
+    std::cout << "not implemented yet." << std::endl;
+}
+
+
+void Console::CommandSetChannelValue(){
+    // this function allows one to set a value of a specific channel, e.g.
+    // voltage, current, nominal values etc.
+    std::string input;
+
+    // first print the active channels
+    std::set<std::string> allowedStrings;
+    allowedStrings = _hvFadcManager->PrintActiveChannels();
+
+    std::cout << "Choose a channel for which to set a value:" << std::endl;
+    int channelNumber;
+    input = getUserInputNumericalNoDefault(_prompt, &allowedStrings);
+    if (input == "quit")
+	return;
+    else{
+	channelNumber = std::stoi(input);
+    }
+
+    _hvFadcManager->PrintChannel(channelNumber);
+    
+    std::cout << "Choose a value to set:\n"
+	      << "    voltage\n"
+	      << "    current\n"
+	      << "    voltageNominal\n"
+	      << "    currentNominal\n"
+	      << std::endl;
+    std::set<std::string> allowedKeys = {"voltage",
+					 "current",
+					 "voltageNominal",
+					 "currentNominal"};
+    std::string inputKey;
+    inputKey = getUserInputNonNumericalNoDefault(_prompt, &allowedKeys);
+    if(inputKey == "quit") return;
+
+    std::set<std::string> allowedValues;
+    if( (inputKey == "voltage") ||
+	(inputKey == "voltageNominal") ){
+	for(int i = 0; i < 4000; i++) allowedValues.insert(std::to_string(i));
+	std::cout << "enter " << inputKey
+		  << " to set. Enter in V:"
+		  << std::endl;
+    }
+    else if( (inputKey == "current") ||
+	     (inputKey == "currentNominal") ){
+	for(int i = 0; i < 2000; i++){
+	    std::cout << "current selection currently broken" << std::endl;
+	    float current;
+	    current = float(i) / 1000.0;
+	    allowedValues.insert(std::to_string(current));
+	}
+	std::cout << "enter " << inputKey
+		  << " to set. Enter in mA:"
+		  << std::endl;
+    }
+
+    std::string inputValue;
+    inputValue = getUserInputNumericalNoDefault(_prompt, &allowedValues);
+    if (inputValue == "quit") return;
+    
+    _hvFadcManager->SetChannelValue(inputKey, channelNumber, inputValue);
 }

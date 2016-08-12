@@ -28,6 +28,12 @@ void Producer::run()
      */
     //up to now: it doesen't - see the "To FIX.." comments
     bool fadcReadoutNextEvent = false;
+
+    // check whether we're running with the FADC, if so, enable the closing of
+    // the shutter based on a trigger by the FADC
+    if(parent->_useHvFadc == true){
+	parent->fpga->EnableFADCshutter(1);
+    }
   
     //open shutter for a given time
     while(parent->IsRunning())
@@ -77,12 +83,12 @@ void Producer::run()
 	{
 	    parent->mutexVBuffer.lock();             
 	    //if there was a trigger from the fadc: stop data taking and readout the chip and fadc event
-	    if((parent->fpga->ReadoutFadcFlag()) == 1)
-	    {
-		fadcReadout = true;
-		parent->fpga->ClearFadcFlag();
-	    }
-	    parent->mutexVBuffer.unlock();           
+	    // if((parent->fpga->ReadoutFadcFlag()) == 1)
+	    // {
+	    fadcReadout = true;
+	    parent->fpga->ClearFadcFlag();
+	    //}
+	    parent->mutexVBuffer.unlock();
 
 	    // TODO: check what this means?!
 	    //To FIX the readout problem
@@ -175,6 +181,7 @@ void Producer::run()
 	//send software trigger (to stop the measurement if there wasn't an event at the fadc)
 	if((parent->_useHvFadc) && !(parent->_hvFadcManager == NULL))
 	{
+	    std::cout << "sending software trigger to FADC" << std::endl;
 	    parent->mutexVBuffer.lock();
 	    (parent->_hvFadcManager)->F_SendSoftwareTrigger();
 	    parent->mutexVBuffer.unlock();
@@ -193,7 +200,7 @@ void Producer::run()
 	    int isGood = 0;
 	    parent->mutexVBuffer.lock();
 	    // TODO: deprecated. Call different function!
-	    isGood = (parent->_hvFadcManager)->H_CheckHVModuleIsGood();
+	    isGood = (parent->_hvFadcManager)->H_CheckHVModuleIsGood(true);
 	    parent->mutexVBuffer.unlock();             
 	    if (isGood == -1){
 		// this means something is wrong with HV
@@ -226,6 +233,13 @@ void Producer::run()
 	}
 
     }//end of while(parent->IsRunning())
+
+
+    // check whether we're running with the FADC, if so, disable the closing of
+    // the shutter based on a trigger by the FADC
+    if(parent->_useHvFadc == true){
+	parent->fpga->EnableFADCshutter(0);
+    }
 
     parent->DataAcqRunning = false;
     #if DEBUG==2

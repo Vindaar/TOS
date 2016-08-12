@@ -17,9 +17,11 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <chrono>
+#include <thread>
 //#include <unistd.h>
 
-
+#define DEFAULT_FADC_SLEEP_TIME                10 // milliseconds
 
 //class HighLevelFunction_VME : public HighLevelFunction{
 class HighLevelFunction_VME{
@@ -116,6 +118,9 @@ class HighLevelFunction_VME{
 
 
  private:
+
+  // function to wait a short time
+  void sleepModule();
 
   ///Pointer to the device one works with
   V1729a* _currentDevice;

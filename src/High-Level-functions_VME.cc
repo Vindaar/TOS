@@ -4,7 +4,10 @@
 
 
 // C'tor
-HighLevelFunction_VME::HighLevelFunction_VME(V1729a* dev):_currentDevice(dev),_nb(10),_triggerThresholdRegister(5,0)
+HighLevelFunction_VME::HighLevelFunction_VME(V1729a* dev):
+    _currentDevice(dev),
+    _nb(100),
+    _triggerThresholdRegister(5,0)
 //:_currentDevice(dev){}
 {
   //copy device pointer
@@ -69,56 +72,141 @@ void HighLevelFunction_VME::printSettings()
 
 int HighLevelFunction_VME::setFrequencyH(const unsigned short& frequency)
 {
-  for(int iTry = 1; iTry <= _nb; iTry++)
-  {
-    _currentDevice->setFrequency(frequency);
-    if( _currentDevice->getFrequency() == ((unsigned int)frequency) )
-    {
-      return 0;
-    }
-  }
+    int timeout = _nb;
+    unsigned short currentFreq = -1;
 
-  std::cout << "[Error] -- setFrequencyVME: setFrequency failed! " 
-    << _currentDevice->getFrequency() << std::endl;
+    while( (timeout > 0) &&
+	   (currentFreq != frequency) ){
+	// first set currentType to the currently set value on the FADC
+	currentFreq = _currentDevice->getFrequency();
+	// now set the new type on the FADC
+	_currentDevice->setFrequency(frequency);
+
+	// now wait a short while
+	sleepModule();
+	timeout--;
+    }
+    if (timeout < 1){
+	std::cout << "Could not set frequency on the FADC!" << std::endl;
+	std::cout << "wanted to set " << frequency << " is " << currentFreq << std::endl;
+	return -1;
+    }
+    else{
+	std::cout << "timeout value in setFrequencyH " << timeout << std::endl;
+	std::cout << "wanted to set " << frequency << " is " << currentFreq << std::endl;
+	return 0;
+    }
+
+
+
+
+
+  //   for(int iTry = 1; iTry <= _nb; iTry++)
+  // {
+  //   _currentDevice->setFrequency(frequency);
+  //   if( _currentDevice->getFrequency() == ((unsigned int)frequency) )
+  //   {
+  //     return 0;
+  //   }
+  // }
+
+  // std::cout << "[Error] -- setFrequencyVME: setFrequency failed! " 
+  //   << _currentDevice->getFrequency() << std::endl;
   
-  return 1;  
+  // return 1;  
 }
 
 
 
 int HighLevelFunction_VME::setPosttrigH(const unsigned short& bits)
 {
-  for(int iTry = 1; iTry <= _nb; iTry++)
-  {
-    _currentDevice->setPosttrig(bits);
-    if( _currentDevice->getPosttrig() == ((unsigned int)bits) )
-    {
-      return 0;
-    }
-  }
+    int timeout = _nb;
+    unsigned short currentBits = -1;
 
-  std::cout << "[Error] -- setPosttrigVME: setting posttrig failed! " 
-    << _currentDevice->getPosttrig() << std::endl;
+    while( (timeout > 0) &&
+	   (currentBits != bits) ){
+	// first set currentBits to the currently set value on the FADC
+	currentBits = _currentDevice->getPosttrig();
+	// now set the new bits on the FADC
+	_currentDevice->setPosttrig(bits);
+	
+	// now wait a short while
+	sleepModule();
+	timeout--;
+    }
+    if (timeout < 1){
+	std::cout << "Could not set post trigger on the FADC!" << std::endl;
+	std::cout << "wanted to set " << bits << " is " << currentBits << std::endl;
+	return -1;
+    }
+    else{
+	std::cout << "timeout value in setPostTrigH " << timeout << std::endl;
+	std::cout << "wanted to set " << bits << " is " << currentBits << std::endl;
+	return 0;
+    }
+
+
+
+
+  //   for(int iTry = 1; iTry <= _nb; iTry++)
+  // {
+  //   _currentDevice->setPosttrig(bits);
+  //   if( _currentDevice->getPosttrig() == ((unsigned int)bits) )
+  //   {
+  //     return 0;
+  //   }
+  // }
+
+  // std::cout << "[Error] -- setPosttrigVME: setting posttrig failed! " 
+  //   << _currentDevice->getPosttrig() << std::endl;
   
-  return 1;  
+  // return 1;  
 }
 
 
 int HighLevelFunction_VME::setPretrigH(const unsigned short& bits)
 {
-  for(int iTry = 1; iTry <= _nb; iTry++)
-  {
-    _currentDevice->setPretrig(bits);
-    if( _currentDevice->getPretrig() == ((unsigned int)bits) )
-    {
-      return 0;
-    }
-  }
+    int timeout = _nb;
+    unsigned short currentBits = -1;
 
-  std::cout << "[Error] -- setPretrigVME: setting pretrig failed! " 
-    << _currentDevice->getPretrig() << std::endl;
+    while( (timeout > 0) &&
+	   (currentBits != bits) ){
+	// first set currentBits to the currently set value on the FADC
+	currentBits = _currentDevice->getPretrig();
+	// now set the new bits on the FADC
+	_currentDevice->setPretrig(bits);
+	
+	// now wait a short while
+	sleepModule();
+	timeout--;
+    }
+    if (timeout < 1){
+	std::cout << "Could not set pre trigger on the FADC!" << std::endl;
+	std::cout << "wanted to set " << bits << " is " << currentBits << std::endl;
+	return -1;
+    }
+    else{
+	std::cout << "timeout value in setPreTrigH " << timeout << std::endl;
+	std::cout << "wanted to set " << bits << " is " << currentBits << std::endl;
+	return 0;
+    }
+
+
+
+
+  //   for(int iTry = 1; iTry <= _nb; iTry++)
+  // {
+  //   _currentDevice->setPretrig(bits);
+  //   if( _currentDevice->getPretrig() == ((unsigned int)bits) )
+  //   {
+  //     return 0;
+  //   }
+  // }
+
+  // std::cout << "[Error] -- setPretrigVME: setting pretrig failed! " 
+  //   << _currentDevice->getPretrig() << std::endl;
   
-  return 1;  
+  // return 1;  
 }
 
 
@@ -129,71 +217,182 @@ int HighLevelFunction_VME::setPretrigH(const unsigned short& bits)
 
 int HighLevelFunction_VME::setTriggerTypeH( const unsigned short& type )
 {
-  for(int iTry = 1; iTry <= _nb; iTry++)
-  {
-    _currentDevice->setTriggerType(type);
-    if( _currentDevice->getTriggerType() == type )
-    {
-      return 0;
-    }
-  }
 
-  std::cout << "[Error] -- setTriggerTypeH: setting trigger type failed! " 
-    << _currentDevice->getTriggerType() << std::endl;
+    int timeout = _nb;
+    unsigned short currentType = -1;
+
+    while( (timeout > 0) &&
+	   (currentType != type) ){
+	// first set currentType to the currently set value on the FADC
+	currentType = _currentDevice->getTriggerType();
+	// now set the new type on the FADC
+	_currentDevice->setTriggerType(type);
+	
+	// now wait a short while
+	sleepModule();
+	timeout--;
+    }
+    if (timeout < 1){
+	std::cout << "Could not set trigger type on the FADC!" << std::endl;
+	std::cout << "wanted to set " << type << " is " << currentType << std::endl;
+	return -1;
+    }
+    else{
+	std::cout << "timeout value in setTriggerTypeH " << timeout << std::endl;
+	std::cout << "wanted to set " << type << " is " << currentType << std::endl;
+	return 0;
+    }
+    
+    // for(int iTry = 1; iTry <= _nb; iTry++)
+    // {
+    // 	_currentDevice->setTriggerType(type);
+    // 	if( _currentDevice->getTriggerType() == type )
+    // 	{
+    // 	    return 0;
+    // 	}
+    // }
+
+    // std::cout << "[Error] -- setTriggerTypeH: setting trigger type failed! " 
+    // 	      << _currentDevice->getTriggerType() << std::endl;
   
-  return 1;  
+    // return 1;  
 }
 
 
 int HighLevelFunction_VME::setTriggerChannelSourceH(const unsigned short& mask )
 {
-  for(int iTry = 1; iTry <= _nb; iTry++)
-  {
-    _currentDevice->setTriggerChannelSource(mask);
-    if( _currentDevice->getTriggerChannelSource() == ((unsigned short)mask) )
-    {
-      return 0;
-    }
-  }
+    int timeout = _nb;
+    unsigned short currentSource = -1;
 
-  std::cout << "[Error] -- setTriggerChannelSourcesH: setting trigger channel sources failed! " 
-    << _currentDevice->getTriggerChannelSource() << std::endl;
+    while( (timeout > 0) &&
+	   (currentSource != mask) ){
+	// first set currentBits to the currently set value on the FADC
+	currentSource = _currentDevice->getTriggerChannelSource();
+	// now set the new bits on the FADC
+	_currentDevice->setTriggerChannelSource(mask);
+	
+	// now wait a short while
+	sleepModule();
+	timeout--;
+    }
+    if (timeout < 1){
+	std::cout << "Could not set trigger channel source on the FADC!" << std::endl;
+	std::cout << "wanted to set " << mask << " is " << currentSource << std::endl;
+	return -1;
+    }
+    else{
+	std::cout << "timeout value in setTriggerChannelSourceH " << timeout << std::endl;
+	std::cout << "wanted to set " << mask << " is " << currentSource << std::endl;
+	return 0;
+    }
+
+
+
+
+
+  //   for(int iTry = 1; iTry <= _nb; iTry++)
+  // {
+  //   _currentDevice->setTriggerChannelSource(mask);
+  //   if( _currentDevice->getTriggerChannelSource() == ((unsigned short)mask) )
+  //   {
+  //     return 0;
+  //   }
+  // }
+
+  // std::cout << "[Error] -- setTriggerChannelSourcesH: setting trigger channel sources failed! " 
+  //   << _currentDevice->getTriggerChannelSource() << std::endl;
   
-  return 1;  
+  // return 1;  
 }
 
 
 unsigned int HighLevelFunction_VME::setTriggerThresholdRegisterAll(const unsigned int threshold)
 {
-  //store the threshold in the register vec
-  _triggerThresholdRegister[0] = threshold;
-  _triggerThresholdRegister[1] = threshold;
-  _triggerThresholdRegister[2] = threshold;
-  _triggerThresholdRegister[3] = threshold;
-  _triggerThresholdRegister[4] = threshold;
+    //store the threshold in the register vec
+    _triggerThresholdRegister[0] = threshold;
+    _triggerThresholdRegister[1] = threshold;
+    _triggerThresholdRegister[2] = threshold;
+    _triggerThresholdRegister[3] = threshold;
+    _triggerThresholdRegister[4] = threshold;
 
-  //write threshold to the register and...
-  _currentDevice->setTriggerThresholdDACAll(threshold);
-  //...load it to the DACs
-  _currentDevice->loadTriggerThresholdDAC();
+
+    int timeout = _nb;
+    unsigned int thres0 = -1;
+    unsigned int thres1 = -1;
+    unsigned int thres2 = -1;
+    unsigned int thres3 = -1;
+    while( (timeout > 0) &&
+	   ( (thres0 != threshold) ||
+	     (thres1 != threshold) ||
+	     (thres2 != threshold) ||
+	     (thres3 != threshold) ) ){
+	//write threshold to the register and...
+	_currentDevice->setTriggerThresholdDACAll(threshold);
+	// _currentDevice->setTriggerThresholdDACPerChannel(0, threshold);
+	// _currentDevice->setTriggerThresholdDACPerChannel(1, threshold);
+	// _currentDevice->setTriggerThresholdDACPerChannel(2, threshold);
+	// _currentDevice->setTriggerThresholdDACPerChannel(3, threshold);
+
+	// now read the current trigger thresholds
+	// thres0 = _currentDevice->getTriggerThresholdDACPerChannel(0);
+	// thres1 = _currentDevice->getTriggerThresholdDACPerChannel(1);
+	// thres2 = _currentDevice->getTriggerThresholdDACPerChannel(2);
+	// thres3 = _currentDevice->getTriggerThresholdDACPerChannel(3);
+	thres0 = _currentDevice->getTriggerThresholdDACAll();
+	thres1 = thres0;
+	thres2 = thres0;
+	thres3 = thres0;
+		
+	//...load it to the DACs
+	_currentDevice->loadTriggerThresholdDAC();
+	// now wait a short while
+	sleepModule();
+	timeout--;
+    }
+    if (timeout < 1){
+	std::cout << "Could not set trigger threshold DAC for one or more channels." << std::endl;
+	std::cout << "wanted to set "
+		  << threshold
+		  << " is "
+		  << thres0 << "\t"
+		  << thres1 << "\t"
+		  << thres2 << "\t"
+		  << thres3 << "\t"
+		  << std::endl;
+	return -1;
+    }
+    else{
+	// everything worked well
+	std::cout << "timeout value in setTriggerThresholdRegisterAll." << std::endl;
+	std::cout << "wanted to set "
+		  << threshold
+		  << " is "
+		  << thres0 << "\t"
+		  << thres1 << "\t"
+		  << thres2 << "\t"
+		  << thres3 << "\t"
+		  << std::endl;
+	return 0;
+    }
   
-  if(_currentDevice->getTriggerThresholdDACAll() != 0) return 1;
-  else return 0;
+  
+    // if(_currentDevice->getTriggerThresholdDACAll() != 0) return 1;
+    // else return 0;
 }
 
 
 void HighLevelFunction_VME::getTriggerThresholdRegister()
 {
-  std::cout << "[Begin Message] -- getTriggerThresholdRegister:" << std::endl
-    << "getTriggerThreshold perChannel:" << std::endl
-    << "Channel 1: " << _triggerThresholdRegister[1] << std::endl
-    << "Channel 2: " << _triggerThresholdRegister[2] << std::endl
-    << "Channel 3: " << _triggerThresholdRegister[3] << std::endl
-    << "Channel 4: " << _triggerThresholdRegister[4] << std::endl
-    << "getTriggerThreshold All: " << _triggerThresholdRegister[0] << std::endl 
-    << "[End Message] -- getTriggerThresholdRegister" << std::endl << std::endl;
+    std::cout << "[Begin Message] -- getTriggerThresholdRegister:" << std::endl
+	      << "getTriggerThreshold perChannel:" << std::endl
+	      << "Channel 1: " << _triggerThresholdRegister[1] << std::endl
+	      << "Channel 2: " << _triggerThresholdRegister[2] << std::endl
+	      << "Channel 3: " << _triggerThresholdRegister[3] << std::endl
+	      << "Channel 4: " << _triggerThresholdRegister[4] << std::endl
+	      << "getTriggerThreshold All: " << _triggerThresholdRegister[0] << std::endl 
+	      << "[End Message] -- getTriggerThresholdRegister" << std::endl << std::endl;
   
-  return;
+    return;
 }
 
 
@@ -491,3 +690,11 @@ void HighLevelFunction_VME::printDataToFileBlockMode(std::vector<std::vector<int
   return;
 }//end of printDataToFileBlockMode
 
+
+
+void HighLevelFunction_VME::sleepModule(){
+    // function which calls sleep for this thread for time given by 
+    // macro in header
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_FADC_SLEEP_TIME));
+}

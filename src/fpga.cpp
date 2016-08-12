@@ -18,6 +18,7 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
     ErrInfo(0),
     _fadcBit(0),
     _fadcFlag(false),
+    _fadcShutterCountOn(DEFAULT_FADC_SHUTTER_COUNT_ON),
     ok(1),
     TriggerConnectionIsTLU(0),
     Mode(0),
@@ -223,7 +224,7 @@ int FPGA::Counting(){
     PacketQueueSize=1;
     // we set timeout to 0 as to say that we do not want a timeout
     int timeout = 0;
-    err_code=Communication(PacketBuffer,PacketQueue[0], timeout);
+    err_code=Communication(PacketBuffer, PacketQueue[0], timeout);
     if((err_code==0)||(err_code==3)){tp->SetCounting(1);}
     return 20+err_code;
 }
@@ -334,7 +335,7 @@ int FPGA::CountingTime(int time, int modeSelector){
     if (tp->GetFADCshutter()==1)
     {
 	int i2cresult = (tp->GetI2cResult() << 8) + tp->GetExtraByte();
-	std::cout << "FADC trigger at " << i2cresult << " clock cycles."<<std::endl;
+	std::cout << "FADC trigger at " << i2cresult << " clock cycles."<< std::endl;
     }
 
     return 20+err_code;
@@ -519,6 +520,7 @@ int FPGA::EnableFADCshutter(unsigned short FADCshutter)
 	// FADC trigger closes shutter on
 	// Mode = 0x20 == 32
 	Mode = 0x20;
+	tp->SetI2C(_fadcShutterCountOn);
     }
     else{
 	// Mode = 0x21 == 33
@@ -529,6 +531,11 @@ int FPGA::EnableFADCshutter(unsigned short FADCshutter)
     IncomingLength=18; 
     PacketQueueSize=1;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
+    if(FADCshutter){
+	// in case we're enabling the FADC to close the shutter
+	// set i2c back to 0
+	tp->SetI2C(0);
+    }
     return 20+err_code;
 }
 
@@ -636,7 +643,10 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     //readout of the FADC bit - set the flag if it equals 1
     FADCtriggered = RecvBuffer[10];
     _fadcBit = RecvBuffer[10];
-    if((_fadcBit == 1) && !_fadcFlag) _fadcFlag = true;
+    if((_fadcBit == 1) && !_fadcFlag){
+	_fadcFlag = true;
+    }
+
     
     ADC_ChAlert=RecvBuffer[14];
     ADC_result+=RecvBuffer[15] << 8;
@@ -757,7 +767,10 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     // TODO: check if need to change something for HV_FADC_Obj
     //readout of the FADC bit - set the flag if it equals 1
     _fadcBit = RecvBuffer[16];
-    if((_fadcBit == 1) && !_fadcFlag) _fadcFlag = true;
+    if((_fadcBit == 1) && !_fadcFlag){
+	_fadcFlag = true;
+    }
+
   
     // check if the timeout integer was set to 0 (meaning no timeout or not)
     // set the timeout to timeout. If no answer was given until then, either chip defect 

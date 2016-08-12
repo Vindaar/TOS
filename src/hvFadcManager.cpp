@@ -30,6 +30,23 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     // first read HV settings from ini file
     ReadHVSettings();
 
+    // create the basic event mask we use for all our channels
+    // ChannelEventMask: set all three of our channel masks to the following pattern:
+    //                   MaskEventTrip = 1
+    //                   MaskEventEndOfRamp = 1
+    //                   MaskEventVoltageLimit = 1
+    //                   MaskEventCurrentLimit = 1
+    //                   MaskEventEmergency = 1
+    //                   rest to 0.
+    // done by creating set of strings corresponding to options
+    std::set<std::string> _eventMaskSet = {"CurrentTrip", 
+					  "EndOfRamping", 
+					  "VoltageLimit", 
+					  "CurrentLimit",
+					  "Emergency"};
+
+    _sleepAcqTime = 100;
+
     // set gridEventStatusLastIter, anodeEventStatusLastIter, cathodeEventStatusLastIter
     // TODO: check if this is still doing what we want :)
     gridEventStatusLastIter = { };
@@ -429,30 +446,16 @@ void hvFadcManager::InitHFMForTOS(){
 
 
     // ##################################################
-    // Event mask related 
 
-    // ChannelEventMask: set all three of our channel masks to the following pattern:
-    //                   MaskEventTrip = 1
-    //                   MaskEventEndOfRamp = 1
-    //                   MaskEventVoltageLimit = 1
-    //                   MaskEventCurrentLimit = 1
-    //                   MaskEventEmergency = 1
-    //                   rest to 0.
-    // done by creating set of strings corresponding to options
-    std::set<std::string> eventMaskSet = {"CurrentTrip", 
-					  "EndOfRamping", 
-					  "VoltageLimit", 
-					  "CurrentLimit",
-					  "Emergency"};
 
     // after defining the channel event mask, we need to write them
     // to the channels
     bool good;
-    good = gridChannel->setChannelEventMask(eventMaskSet);
+    good = gridChannel->setChannelEventMask(_eventMaskSet);
     if (good == false) return;
-    good = anodeChannel->setChannelEventMask(eventMaskSet);
+    good = anodeChannel->setChannelEventMask(_eventMaskSet);
     if (good == false) return;
-    good = cathodeChannel->setChannelEventMask(eventMaskSet);
+    good = cathodeChannel->setChannelEventMask(_eventMaskSet);
     if (good == false) return;
     
     // call functino to set module event group mask for all active channels we're
@@ -505,14 +508,7 @@ void hvFadcManager::InitHFMForTOS(){
 
     // before we start ramping up the HV modules, first set FADC settings
     std::cout << "Setting FADC settings" << std::endl;
-
-    F_SetTriggerType(fadcTriggerType);
-    F_SetFrequency(fadcFrequency);
-    F_SetPosttrig(fadcPosttrig);
-    F_SetPretrig(fadcPretrig);
-    // TODO: find out what this was supposed to be
-    //F_SetTriggerThresholdRegisterAll(fadcTriggerThresholdRegisterAll);
-    //F_PrintSettings();
+    SetFadcSettings();
 
     // bool variable used to check whether channels already ramped up
     // from a previous usage of TOS
@@ -1134,13 +1130,12 @@ void hvFadcManager::H_SetFlexGroup(int group, GroupSTRUCT groupObject){
 // ################## Functions related to single channels #####################
 // #############################################################################
 
-void hvFadcManager::TurnChannelOnOff(){
-    // this function provides a user interface to turn channels on or off by hand
-
-    // first print the current channels of the channelList (with names and numbers)
-    // and their current isOn state
-    // also create a set of allowed strings for input
+std::set<std::string> hvFadcManager::PrintActiveChannels(){
+    // this function 1. prints all active channels (and if they're on or off)
+    // and also returns a set of strings, which are allowed to be used for
+    // user input
     std::set<std::string> allowedStrings;
+    
     std::cout << "isOn state of currently active channels (0 = off, 1 = on):" << std::endl;
     std::for_each( _channelList.begin(), _channelList.end(), [&allowedStrings](hvChannel *ptrChannel){
 	    // print channel information regarding on / off state
@@ -1151,6 +1146,18 @@ void hvFadcManager::TurnChannelOnOff(){
 	    number = std::to_string(ptrChannel->getChannelNumber());
 	    allowedStrings.insert(number);
 	} );
+
+    return allowedStrings;    
+}
+
+void hvFadcManager::TurnChannelOnOff(){
+    // this function provides a user interface to turn channels on or off by hand
+
+    // first print the current channels of the channelList (with names and numbers)
+    // and their current isOn state
+    // also create a set of allowed strings for input
+    std::set<std::string> allowedStrings;
+    allowedStrings = PrintActiveChannels();
 
     std::cout << "Select channel to switch (on <-> off) / type quit: " << std::endl;
     std::string input;
@@ -1290,8 +1297,332 @@ void hvFadcManager::RunVoltageScheduler(std::string channelIdentifier, std::stri
 	    // and if ramping is done, wait the time we want to wait 
 	    sleepModule(time, "minutes");
 	} );
-
+    
     // well I kind of doubt that this works!
+}
+
+bool hvFadcManager::CreateChannel(std::string channelName, int voltage){
+    // this function creates a basic channel with a channel name and a
+    // voltage target, but a default event mask, current etc.
+    bool good = true;
+
+    hvChannel *newChannel;
+    // the channel number of the new channel will simply be
+    // the size of the channel list (good, since we start counting at 0)
+    int channelNumber;
+    channelNumber = _channelList.size();
+    newChannel = new hvChannel(HV_module, channelName, channelNumber);
+
+    // set channel event mask to our default
+    good = newChannel->setChannelEventMask(_eventMaskSet);
+    // first set nominal values
+    // nominal values can only be set in special mode I believe?
+    //good = newChannel->setVoltageNominal(DEFAULT_VOLTAGE_NOMINAL);
+    //good = newChannel->setCurrentNominal(DEFAULT_CURRENT_NOMINAL);
+    // now set voltage and current
+    good = newChannel->setVoltage(voltage);
+    good = newChannel->setVoltageBound(DEFAULT_VOLTAGE_BOUND);
+    good = newChannel->setCurrent(DEFAULT_CURRENT_SET);
+
+    // and finally add channel to channel list
+    std::cout << "adding channel " << channelName
+	      << " # " << channelNumber
+	      << std::endl;
+    AddChannel(newChannel);
+
+    return good;
+}
+
+void hvFadcManager::RemoveChannelByNumber(int channelNumber){
+    // this function removes a channel by its number 'channelNumber'
+    // from the channel list (and ramps it down)
+
+    // loop over channel list, check if channel with name channelNumber
+    // exists, if so pop it
+    std::for_each( _channelList.begin(), _channelList.end(), [&channelNumber, this](hvChannel *ptrChannel){
+	    int number;
+	    number = ptrChannel->getChannelNumber();
+
+	    if (number == channelNumber){
+		// first remove the element from the list
+		this->_channelList.remove(ptrChannel);
+		// and then delete the channel, thus shutting it down
+		ptrChannel->SetRampDownUponDelete(true);
+		delete(ptrChannel);		
+	    }
+	} );
+
+    // all good
+}
+
+void hvFadcManager::RemoveChannelByName(std::string channelName){
+    // this function removes the channel 'channelName'
+    // from the channel list (and ramps it down)
+
+    // loop over channel list, check if channel with name channelName
+    // exists, if so pop it
+    std::for_each( _channelList.begin(), _channelList.end(), [&channelName, this](hvChannel *ptrChannel){
+	    std::string name;
+	    name = ptrChannel->getChannelName();
+
+	    if (name == channelName){
+		// first remove the element from the list
+		this->_channelList.remove(ptrChannel);
+		// and then delete the channel, thus shutting it down
+		ptrChannel->SetRampDownUponDelete(true);
+		delete(ptrChannel);		
+	    }
+	} );
+
+    // all good
+}
+
+void hvFadcManager::PrintChannel(int channelNumber){
+    // this function calls the basic printing function of the channel
+    // with channel number channelNumber
+    std::for_each( _channelList.begin(), _channelList.end(), [&channelNumber](hvChannel *ptrChannel){
+	    int number;
+	    number = ptrChannel->getChannelNumber();
+	    if (number == channelNumber){
+		// call the printing function
+		ptrChannel->printChannel();
+	    }
+	} );    
+    
+}
+
+void hvFadcManager::SetChannelValue(std::string key, int channelNumber, std::string value){
+    // this function sets voltage, current, or nominal values of a specific channel
+    std::for_each( _channelList.begin(), _channelList.end(), [&channelNumber, &key, &value](hvChannel *ptrChannel){
+	    int number;
+	    number = ptrChannel->getChannelNumber();
+	    if (number == channelNumber){
+		if (key == "voltage"){
+		    ptrChannel->setVoltage(std::stoi(value));
+		}
+		else if (key == "voltageNominal"){
+		    ptrChannel->setVoltageNominal(std::stoi(value));
+		}
+		else if (key == "current"){
+		    ptrChannel->setCurrent(std::stod(value));
+		}
+		else if (key == "currentNominal"){
+		    ptrChannel->setCurrent(std::stod(value));
+		}
+	    }
+	} );        
+
+}
+
+
+// #############################################################################
+// #################### Functions related to FADC ##############################
+// #############################################################################
+
+void hvFadcManager::SetFadcSettings(){
+    // this function applies the fadc settings, which were read from
+    // the HFM_settings.ini
+
+    // before we set any settings, reset FADC
+    F_Reset();
+
+    // set the trigger type. typically == 3, bit register, first two bits == 1
+    //F_SetTriggerType(fadcTriggerType);
+    std::cout << "setting fadc trigger type : " << fadcTriggerType << std::endl;
+    FADC_Functions->setTriggerTypeH( fadcTriggerType );
+    // set FADC frequency, typically 2 GHz
+    //F_SetFrequency(fadcFrequency);
+    FADC_Functions->setFrequencyH( fadcFrequency );
+    // set FADC post trigger. time which FADC takes data after trigger happened
+    //F_SetPosttrig(fadcPosttrig);
+    FADC_Functions->setPosttrigH( fadcPosttrig );
+    // set FADC pre trigger. Time after acquisition started, which has to pass,
+    // before trigger is accepted
+    //F_SetPretrig(fadcPretrig);
+    FADC_Functions->setPretrigH( fadcPretrig );
+    // select the trigger source, i.e. the channel which is allowed to trigger events
+    // typically == 1, since bit 0 == 1 from bit register, for channel 0
+    //F_SetTriggerChannelSource(fadcChannelSource);
+    FADC_Functions->setTriggerChannelSourceH( fadcChannelSource );
+    // set the trigger threshold for all channels
+    FADC_Functions->setTriggerThresholdRegisterAll( fadcTriggerThresholdRegisterAll );
+    //F_PrintSettings();
+    
+}
+
+void hvFadcManager::StartFadcPedestalRun(){
+    // this function performs an FADC pedestal run
+    // that means, it will do several FADC data acquisitions
+    // without any inputs on the channel (number defined in
+    // HFM_settings.ini) with a time also defined in settings
+    // output will be written to pedestalRun folder within data folder
+
+    // define a list in which we store the vectors of each pedestal run
+    std::list< std::vector<int> > pedestalRunList;
+    // fadc has 4 channels. TODO: define globally
+    int nChannels = 4;
+
+    for (int i = 0; i < fadcPedestalNumRuns; i++){
+	// we start by performing general reset of FADC
+	F_Reset();
+	// now set up FADC in the same way we're going to use it for data taking
+	SetFadcSettings();
+	// now start FADC acquisition
+	F_StartAcquisition();
+	// wait for time read from HFM_settings.ini
+        std::this_thread::sleep_for(std::chrono::milliseconds(fadcPedestalRunTime));
+	// send software trigger to stop acquisition
+	F_SendSoftwareTrigger();
+	// and read the data
+	std::vector<int> fadcData = F_GetAllData(nChannels);
+	// and add data to pedestalRunList
+	pedestalRunList.push_front(fadcData);
+    }
+
+    // once we're done with all pedestal runs, we can calculate the mean value of each value
+    // of the fadcData vectors
+    std::vector<int> meanFadcData;
+    // create empty vector of same size of 'any' element of pedestalRunList (note: this assumes
+    // that each fadcData vector has same size! should be a good assumptions, else somethings
+    // very wrong!)
+    meanFadcData.resize( pedestalRunList.front().size(), 0);
+    std::for_each( pedestalRunList.begin(),
+		   pedestalRunList.end(),
+		   [&meanFadcData, this](std::vector<int> fadcData){
+	    for(int i = 0; i < fadcData.size(); i++){
+		meanFadcData[i] += fadcData[i] / this->fadcPedestalNumRuns;
+	    }
+	} );
+
+    // get the fadc parameter map (needed for header of output file)
+    std::map<std::string, int> fadcParams;
+    fadcParams = GetFadcParameterMap();
+    // and set the PedestalRun flag in the map to 1
+    fadcParams["PedestalRun"] = 1;
+
+    // create the filename to which we write the data (with pedestalRun flag equal true)
+    std::string filename;
+    filename = buildFileName("", true);
+    
+    // now we can write this vector to some file
+    writeFadcData(filename, fadcParams, meanFadcData);
+}
+
+std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunFlag){
+    // this function builds the filename for the output of the FADC data
+    // inputs:
+    //     std::string filePath: if this is non zero, filename is appended to filePath
+    //     bool pedestalRunFlag: this flag determines whether it's a pedestal calibration run
+    //                             true: uses /data/pedestalRuns folder
+    // TODO: finish this function as to use it for all cases?
+
+    if( (filePath == "") &&
+	(pedestalRunFlag == true) ){
+	filePath = "data/pedestalRuns/";
+    }
+    else if( (filePath == "") &&
+	     (pedestalRunFlag == false) ){
+	filePath = "data/singleFrames/";
+    }
+
+    std::stringstream buildFileName;
+    std::string fileName = "";
+
+    struct   timeval  tv;
+    struct   timezone tz;
+    struct   tm      *tm;
+    int hh, mm, ss;
+    int ms;
+
+    gettimeofday(&tv, &tz);
+    tm = localtime(&tv.tv_sec);
+    hh = tm->tm_hour;        // hours
+    mm = tm->tm_min;         // minutes
+    ss = tm->tm_sec;         // seconds
+    ms = tv.tv_usec/1000;    // mili seconds
+
+    //FIXME!!
+    if (pedestalRunFlag == true){
+	// depending on whether it is a pedestal run, the filename will start with...
+	buildFileName << "pedestalRun";
+    }
+    else{
+	// ... or ... 
+	buildFileName << "/data";	
+    }
+    buildFileName << std::setw(6) << std::setfill('0') << "42" << "_1_"
+		  << std::setw(2) << std::setfill('0') << hh
+		  << std::setw(2) << std::setfill('0') << mm
+		  << std::setw(2) << std::setfill('0') << ss
+		  << std::setw(3) << std::setfill('0') << ms << ".txt";
+
+    fileName = filePath + buildFileName.str();
+
+    if (pedestalRunFlag == true){
+	// in case this is a pedestal run also append the fadc flag
+	fileName += "-fadc";
+    }
+
+    return fileName;    
+}
+
+
+bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, int> fadcParams, std::vector<int> fadcData){
+    // this function is used to write FADC data to the file 'filename'
+    
+    // create output file stream
+    std::ofstream outFile(filename);
+
+    // define flag which is used to return whether file was written
+    bool good = false;
+
+    std::cout << "writing FADC data to " << filename << std::endl;
+    // TODO: change local variable here!!!!
+    int channels = 4;
+   
+    
+    //write data to output file
+    if( outFile.is_open() )
+    {
+	//write petrig/postrig/etc to file
+	outFile << "# nb of channels: "  << fadcParams["NumChannels"]  << std::endl;
+	outFile << "# channel mask: "    << fadcParams["ChannelMask"]  << std::endl;
+	outFile << "# postrig: "         << fadcParams["PostTrig"]     << std::endl;
+	outFile << "# pretrig: "         << fadcParams["PreTrig"]      << std::endl;
+	outFile << "# triggerrecord: "   << fadcParams["TriggerRec"]   << std::endl;
+	outFile << "# frequency: "       << fadcParams["Frequency"]    << std::endl;
+	outFile << "# sampling mode: "   << fadcParams["ModeRegister"] << std::endl;
+	outFile << "# pedestal run: "    << fadcParams["PedestalRun"]  << std::endl;
+	outFile << "#Data:" << std::endl;
+
+
+	// TODO: why unsigned int used? problematic, since channels is int.
+	// -> changed iData and iVector to int
+	//"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
+	std::cout << "number of channels?! " << channels << std::endl;
+	for(int iData = 0; iData < 3*channels; iData++)
+	    outFile << "#" << fadcData[iData] << std::endl;
+    
+	//print the actual data to file
+	for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
+	    outFile << fadcData[iVector] << std::endl;
+          
+	//"skip the remaining data points
+	for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
+	    outFile << "# " << fadcData.at(iRest) << std::endl;
+
+	good = true;
+
+    }//end of if( outFile.is_open() )
+    else{
+	// could not write to file
+	good = false;
+    }
+
+    //close output file
+    outFile.close();
+
+    return good;
 }
 
 
@@ -1690,7 +2021,30 @@ void hvFadcManager::ReadHVSettings(){
 	containsNotFlag = true;
 	fadcTriggerThresholdRegisterAll = DEFAULT_FADC_TRIGGER_THRESHOLD_REGISTER_ALL;
     }
+    
+    if (settings.contains("fadcPedestalRunTime")){
+	fadcPedestalRunTime = settings.value("fadcPedestalRunTime").toInt();
+    }
+    else{
+	containsNotFlag = true;
+	fadcPedestalRunTime = DEFAULT_FADC_PEDESTAL_RUN_TIME;
+    }
+    
+    if (settings.contains("fadcPedestalNumRuns")){
+	fadcPedestalNumRuns = settings.value("fadcPedestalNumRuns").toInt();
+    }
+    else{
+	containsNotFlag = true;
+	fadcPedestalNumRuns = DEFAULT_FADC_PEDESTAL_NUM_RUNS;
+    }
 
+    if (settings.contains("fadcChannelSource")){
+	fadcChannelSource = settings.value("fadcChannelSource").toInt();
+    }
+    else{
+	containsNotFlag = true;
+	fadcChannelSource = DEFAULT_FADC_CHANNEL_SOURCE;
+    }
 
     // set flag to true, which says whether settings have been read
 
@@ -1720,7 +2074,11 @@ std::map<std::string, int> hvFadcManager::GetFadcParameterMap(){
     fadcParams["PreTrig"]      = F_GetPretrig(); 
     fadcParams["TriggerRec"]   = F_GetTriggerRecord(); 
     fadcParams["Frequency"]    = F_GetFrequency(); 
-    fadcParams["ModeRegister"] = F_GetModeRegister(); 
+    fadcParams["ModeRegister"] = F_GetModeRegister();
+    // pedestal run is a flag, which simply defines, whether a data file
+    // contains a pedestal calibration run or normal data
+    // default is false / 0.
+    fadcParams["PedestalRun"]  = 0;
 
     return fadcParams;
 }
@@ -2185,8 +2543,23 @@ void         hvFadcManager::F_Reset() throw(){
     FADC_module->reset();
 }
 
+void hvFadcManager::setSleepTriggerTime(int time){
+    std::cout << "setting sleep trigger time to " << time << std::endl;
+    _sleepTriggerTime = time;
+}
+
+void hvFadcManager::setSleepAcqTime(int time){
+    std::cout << "setting sleep acq time to " << time << std::endl;
+    _sleepAcqTime = time;
+}
+
 void         hvFadcManager::F_StartAcquisition() throw(){
+    std::this_thread::sleep_for(std::chrono::microseconds(_sleepAcqTime));
     FADC_module->startAcquisition();
+    if (_sleepTriggerTime != 0){
+	std::this_thread::sleep_for(std::chrono::microseconds(_sleepTriggerTime));
+	F_SendSoftwareTrigger();
+    }
 }
 
 void         hvFadcManager::F_SetFrequency( const unsigned short& frequency ) throw(){
