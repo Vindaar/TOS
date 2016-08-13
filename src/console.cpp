@@ -1176,7 +1176,7 @@ int Console::CommandRun(bool useHvFadc){
     unsigned short runtimeFrames = 0;              //< run mode var  
     int shutterTime = 128;
     int runtime = 0;                               //< var to store the runtime or the nb of triggers
-    unsigned short shutter_mode = 0;
+    std::string shutter_mode;
     unsigned short run_mode = 0;
 
     // variables related to UserInput
@@ -1277,13 +1277,11 @@ int Console::CommandRun(bool useHvFadc){
 	inputShutterMode = ShutterRangeSelection();
 	if (inputShutterMode == "quit") return -1;
 	else{
-	    // call the conversion function from shutter range to 
-	    // the mode integer
-	    shutter_mode = ShutterRangeToMode(inputShutterMode);
+	    shutter_mode = inputShutterMode;
 	}
     }
     else{
-	shutter_mode = 0;
+	shutter_mode = "external";
     }
 
     //Shutter time; call ShutterTimeSelection with inputShutterMode (as an int) 

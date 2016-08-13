@@ -11,10 +11,7 @@
 
 #include "timepix.hpp"
 
-Timepix::Timepix(int nbOfChips):
-    _scint1_counter(0),
-    _scint2_counter(0)
-{
+Timepix::Timepix(int nbOfChips){
 #if DEBUG == 2
     std::cout<<"Enter Timepix::Timepix()"<<std::endl;	
 #endif
@@ -430,7 +427,7 @@ bool Timepix::SetChipID(int id, std::string IDLetter,int IDNumber, int IDWaver, 
 }
 
 int Timepix::GetChipID(unsigned short chip){
-    std::cout<<"ChipID of chip "<< chip<<" is "<<ChipID_[chip]<<". This is "<<ChipLetter[chip]<<" "<< ChipNumber[chip]<<" W" <<ChipWaver[chip]<<", Chip tpye (1 = Timepix):"<<ChipType_[chip]<<std::endl;
+    std::cout<<"ChipID of chip "<< chip<<" is "<<ChipID_[chip]<<". This is "<<ChipLetter[chip]<<" "<< ChipNumber[chip]<<" W" <<ChipWaver[chip]<<", Chip type (1 = Timepix):"<<ChipType_[chip]<<std::endl;
     return ChipID_[chip];
 }
 
@@ -711,28 +708,6 @@ void Timepix::SetFADCtriggered(unsigned short FADCtriggered){
 }
 unsigned short Timepix::GetFADCtriggered(){
     return FADCtriggered_global;
-}
-
-void Timepix::SetScintillatorCounters(unsigned short scint1_counter,
-				      unsigned short scint2_counter){
-    // this function sets the global timepix variables for the scintillor counters,
-    // which count the number of clock cycles between the last scintillator signals
-    // and the FADC trigger, which ended the shutter
-    _scint1_counter = scint1_counter;
-    _scint2_counter = scint2_counter;
-    std::cout << "setting scinti values " << _scint1_counter << "\t" << _scint2_counter << std::endl;
-}
-
-std::pair<unsigned short, unsigned short> Timepix::GetScintillatorCounters(){
-    // this function retuns a pair of unsigned shorts, i.e. the scintillator counter
-    // variables, set in SetScintillatorCounters (called from Communication, if FADC
-    // triggered in a frame)
-    std::pair<unsigned short, unsigned short> scint_counter_pair;
-    // create the pair
-    scint_counter_pair = std::make_pair(_scint1_counter, _scint2_counter);
-    std::cout << "getting scint pair " << std::endl;
-    // and return
-    return scint_counter_pair;
 }
 
 void Timepix::SetChipIDOffset(int ChipIdOffset){

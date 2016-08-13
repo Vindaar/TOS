@@ -18,6 +18,7 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
     ErrInfo(0),
     _fadcBit(0),
     _fadcFlag(false),
+    _hvFadcManager(NULL),
     _fadcShutterCountOn(DEFAULT_FADC_SHUTTER_COUNT_ON),
     ok(1),
     TriggerConnectionIsTLU(0),
@@ -161,6 +162,11 @@ FPGA::~FPGA(){
     PackQueueReceive = NULL;
 }
 
+void FPGA::initHV_FADC(hvFadcManager* hvFadcManager){
+    // this function hands the pointer to the hvFadcManager object to the
+    // FPGA object so that it can access its functions
+    _hvFadcManager = hvFadcManager;    
+}
 
 void FPGA::SetIP(std::string ip_){
     ip=ip_;
@@ -295,6 +301,23 @@ int FPGA::CountingTime(std::string shutter_time, std::string shutter_range){
     return result;
 }
 
+int FPGA::CountingTime(int shutter_time, std::string shutter_range){ 
+    // this function is a another wrapper around the actual CountingTime function 
+    // used to hand the CountingTime function a string containing the
+    // shutter range as a string:
+    // "standard" : mode = 0
+    // "long"     : mode = 1
+    // "verylong" : mode = 2
+
+    // call the FPGA ShutterRangeToMode function to convert shutter_range
+    // to mode, and then call actual CountingTime function
+    int mode;
+    mode = ShutterRangeToMode(shutter_range);
+    int result;
+    result = CountingTime(shutter_time, mode);
+    return result;
+}
+
 int FPGA::CountingTime(int time, int modeSelector){
     // int time:         integer in range {1, 255} 
     // int modeSelector: integer corresponding to power to which 256 is raised
@@ -334,13 +357,13 @@ int FPGA::CountingTime(int time, int modeSelector){
 
     if (tp->GetFADCshutter()==1)
     {
-	int i2cresult = (tp->GetI2cResult() << 8) + tp->GetExtraByte();
-	std::cout << "FADC trigger at " << i2cresult << " clock cycles."<< std::endl;
+	int fadcTriggerInLastFrame = _hvFadcManager->GetFadcTriggerInLastFrame();
+	std::cout << "FADC trigger at " << fadcTriggerInLastFrame << " clock cycles."<< std::endl;
 	// now also read out scintillator counters
 	std::pair<unsigned short, unsigned short> scint_counter_pair;
 	unsigned short scint1_counter = 0;
 	unsigned short scint2_counter = 0;
-	scint_counter_pair = tp->GetScintillatorCounters();
+	scint_counter_pair = _hvFadcManager->GetScintillatorCounters();
 	scint1_counter = scint_counter_pair.first;
 	scint2_counter = scint_counter_pair.second;
 	
@@ -352,6 +375,20 @@ int FPGA::CountingTime(int time, int modeSelector){
     }
 
     return 20+err_code;
+}
+
+bool FPGA::checkIfModeIsCounting(int mode){
+    // small helper function which simply checks, if the given mode argument
+    // is part of a set of defined values, which correspond to the CountingTime function
+    // for different shutter lengths
+    // values are also shown in CountingTime function itself
+    std::set<int> countingModes = {0x14, 0x1E, 0x1F, 0x13, 0x15, 0x16};
+    if( countingModes.find(mode) != countingModes.end() ){
+	return true;
+    }
+    else{
+	return false;
+    }
 }
 
 int FPGA::SetMatrix(){
@@ -548,8 +585,10 @@ int FPGA::EnableFADCshutter(unsigned short FADCshutter)
 	// in case we're enabling the FADC to close the shutter
 	// set i2c back to 0
 	tp->SetI2C(0);
+	// set fadc trigger clock cycle back to zero
+	_hvFadcManager->SetFadcTriggerInLastFrame(0);
 	// also set scintillator counters back to zero
-	tp->SetScintillatorCounters(0, 0);
+	_hvFadcManager->SetScintillatorCounters(0, 0);
     }
     return 20+err_code;
 }
@@ -659,8 +698,6 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     FADCtriggered = RecvBuffer[10];
     _fadcBit      = RecvBuffer[10];
 
-    std::cout << "receive buffer bytes " << static_cast<unsigned>(RecvBuffer[11]) << "\t" << static_cast<unsigned>(RecvBuffer[12]) << "\t" << static_cast<unsigned>(RecvBuffer[13]) << std::endl;
-
     // get number of clock cycles between last scintillator signal and FADC
     // trigger
     // two unsigned shorts (at least 16 bit) for the counters for scintillator
@@ -683,15 +720,8 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     // now add byte 13, to get the 8 LSBs of the 12-bit word. Put & 0xFF there to
     // show intention
     scint2_counter += RecvBuffer[13] & 0xFF;
-    
-    // now use both counters to set timepix variables. First set FADC bit, if triggered
-    // and if that is the case also write scintillator counts
-    if(_fadcBit == 1){
-	_fadcFlag = true;
-	std::cout << "entering if and setting scinti values " << std::endl;
-	tp->SetScintillatorCounters(scint1_counter, scint2_counter);
-    }
-    
+
+    // now read the values for (potentially) the clock cycle at which the FADC triggered
     ADC_ChAlert=RecvBuffer[14];
     ADC_result+=RecvBuffer[15] << 8;
     ADC_result+=RecvBuffer[16];
@@ -699,10 +729,28 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     tp->SetFADCtriggered(FADCtriggered);
     tp->SetExtraByte(ExtraByte);
     tp->SetADCresult(ADC_ChAlert,ADC_result);
+
+    // now use both counters to set timepix variables. First set FADC bit, if triggered
+    // and if that is the case also write scintillator counts
+    // we only want to actually use the scint1,2 and fadc values, if the mode with which
+    // the communcation function was called, is actually one of those, which correspond to
+    // the CountingTime() function (FADC readout is only implemented there!)
+    bool isCountingMode = false;
+    isCountingMode = checkIfModeIsCounting(Mode);
+    
+    if( (_fadcBit == 1) &&
+	(isCountingMode == true) ){
+	// if fadc bit was set and Communication was called from CountingTime
+	// we set the clock cycle at which the FADC triggered and the clock cycles
+	// between last scintillator event and FADC trigger
+	_fadcFlag = true;
+	int fadcTriggerInLastFrame = (tp->GetI2cResult() << 8) + tp->GetExtraByte();
+	_hvFadcManager->SetFadcTriggerInLastFrame(fadcTriggerInLastFrame);
+	_hvFadcManager->SetScintillatorCounters(scint1_counter, scint2_counter);
+    }
       
     return err_code;
 }
-
 
 int FPGA::ReadoutFadcBit(){
 #if DEBUG==2

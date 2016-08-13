@@ -78,11 +78,7 @@ public:
     unsigned short GetExtraByte();
     void SetFADCtriggered(unsigned short FADCtriggered);
     unsigned short GetFADCtriggered();
-    // function to set the global member variables for scintillator counters
-    void SetScintillatorCounters(unsigned short scint1_counter,
-				 unsigned short scint2_counter);
-    // function to read back scintillator counters
-    std::pair<unsigned short, unsigned short> GetScintillatorCounters();
+
     // helper functions
     std::string GetChipName(unsigned short chip);
     int GetPixelsPerDimension();
@@ -144,11 +140,4 @@ private:
     int _pix_per_dimension;
     int _pix_total_num;
 
-    // scintillator counter variables (number of clock cycles between
-    // scintillator signal and FADC trigger
-    unsigned short _scint1_counter;
-    unsigned short _scint2_counter;
-
-
-    
 };

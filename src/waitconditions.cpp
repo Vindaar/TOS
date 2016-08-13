@@ -80,7 +80,7 @@ void Producer::run()
 	parent->mutexVBuffer.unlock();             
 
 
-	//check if simultainious FADC and chip readout is activated
+	//check if simultaneous FADC and chip readout is activated
 	if(parent->_useHvFadc)                   
 	{
 	    parent->mutexVBuffer.lock();             
@@ -128,6 +128,12 @@ void Producer::run()
 		      << std::endl;
 	    #endif
 
+	    
+	    // now also add information of this frame to the runMap, so that
+	    // we can write it to the file for the frame
+	    parent->_runMap["useHvFadc"]   = parent->_useHvFadc;
+	    parent->_runMap["fadcReadout"] = fadcReadout;
+
 	    //send events without fadc signal to the consumer or ...
 	    //To FIX the readout problem
 	    //if(!fadcReadoutNextEvent) (parent->Vbuffer)[(i % parent->BufferSize)][chip] = dataVec;
@@ -146,6 +152,16 @@ void Producer::run()
 		fadcParams = parent->_hvFadcManager->GetFadcParameterMap();
 		// add current event number to params map
 		fadcParams["eventNumber"] = i;
+		// now also read out the clock cycle at which the FADC triggered in the last
+		// frame and add it tot he fadcParams map
+		fadcParams["fadcTriggerClock"] = parent->_hvFadcManager->GetFadcTriggerInLastFrame();
+		// and get the corresponding clock values between scintillator events and this
+		// clock cycle
+		std::pair<unsigned short, unsigned short> scint_pair;
+		scint_pair = parent->_hvFadcManager->GetScintillatorCounters();
+		fadcParams["scint1ClockInt"] = scint_pair.first;
+		fadcParams["scint2ClockInt"] = scint_pair.second;
+		
 		//get nb of channels
 		int channels = 4;
 
@@ -308,8 +324,6 @@ void Consumer::run()
 	// first we build the filename for the output file based on the PathName defined in the
 	// PC constructor, false ( no pedestal run ) and i as the event number
 
-
-	std::cout << "creating filename..." << std::endl;
 	filePathName = parent->_hvFadcManager->buildFileName(parent->PathName, false, i);
 	
 	parent->mutexVBuffer.lock();
@@ -322,15 +336,40 @@ void Consumer::run()
 
 	// before we write actual data to the file, we write a header for the file
 	std::fstream outfile;
+	// get the parameters we are going to print into the header from the _runMap
+	int runTimeM          	 = boost::any_cast<int>(parent->_runMap["runTime"]); 
+	int runTimeFramesM    	 = boost::any_cast<unsigned short>(parent->_runMap["runTimeFrames"]);
+	std::string pathNameM 	 = boost::any_cast<std::string>(parent->_runMap["pathName"]);
+	int numChipsM         	 = boost::any_cast<unsigned short>(parent->_runMap["numChips"]);
+	int shutterTimeM      	 = boost::any_cast<int>(parent->_runMap["shutterTime"]);
+	std::string shutterModeM = boost::any_cast<std::string>(parent->_runMap["shutterMode"]);
+	int runModeM             = boost::any_cast<unsigned short>(parent->_runMap["runMode"]);
+	bool fastClockM          = boost::any_cast<bool>(parent->_runMap["fastClock"]);
+	bool extTriggerM         = boost::any_cast<bool>(parent->_runMap["externalTrigger"]);
+	bool useHvFadcM          = boost::any_cast<bool>(parent->_runMap["useHvFadc"]);
+	bool fadcReadoutM        = boost::any_cast<bool>(parent->_runMap["fadcReadout"]);
+	
 	outfile.open(filePathName, std::fstream::out);
-	outfile << "## RunName:     " << 0     << "\n"
-		<< "## EventNumber: " << i     << "\n"
-		<< "## FadcFlag:    " << false << "\n"
-		<< "## SzintCount:  " << 0     << "\n"
-		<< "## Date:        " << 0     << "\n"
+	outfile << "## [General]"                            << "\n"
+	        << "## runTime:       	 " << runTimeM       << "\n"
+		<< "## runTimeFrames: 	 " << runTimeFramesM << "\n"
+		<< "## pathName:         " << pathNameM      << "\n"
+		<< "## numChips:         " << numChipsM      << "\n"
+		<< "## shutterTime:      " << shutterTimeM   << "\n"
+		<< "## shutterMode:      " << shutterModeM   << "\n"
+		<< "## runMode:          " << runModeM       << "\n"
+		<< "## fastClock:        " << fastClockM     << "\n"
+		<< "## externalTrigger:  " << extTriggerM    << "\n"
+		<< "## [Event]"                              << "\n"
+		<< "## eventNumber       " << i              << "\n"
+		<< "## useHvFadc:    	 " << useHvFadcM     << "\n"
+		<< "## fadcReadout:    	 " << fadcReadoutM   << "\n"
+		<< "## szint1ClockInt:	 " << parent->_fadcParams["scint1ClockInt"] << "\n"
+		<< "## szint2ClockInt:	 " << parent->_fadcParams["scint2ClockInt"] << "\n"
+		<< "## fadcTriggerClock: " << parent->_fadcParams["fadcTriggerClock"]
 		<< std::endl;
 	
-	int hits [9] = {0};
+	int hits [9] = { };
 	// we now run over all chips, call the writeChipData function 
 	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
 	{
@@ -358,7 +397,6 @@ void Consumer::run()
 	    }
 	    #endif
 
-	    std::cout << "currently somewhere " << i << std::endl;
 	    // now call the writeChipData function to write the vector of this chip
 	    // to file
 	    // call function with filename, the vector of this chip and the chip number

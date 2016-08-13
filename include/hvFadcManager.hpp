@@ -241,6 +241,18 @@ public:
     // function to write FADC data to 'filename'
     bool writeFadcData(std::string filename, std::map<std::string, int> fadcParams, std::vector<int> fadcData);
 
+    // set and get the member variables for the clock cycle at which the FADC triggered
+    // in the last frame
+    void SetFadcTriggerInLastFrame(int numClock);
+    int GetFadcTriggerInLastFrame();
+
+    // ##################################################
+    // Scintillator functions
+    // function to set the global member variables for scintillator counters
+    void SetScintillatorCounters(unsigned short scint1_counter,
+				 unsigned short scint2_counter);
+    // function to read back scintillator counters
+    std::pair<unsigned short, unsigned short> GetScintillatorCounters();
 
 
     //**************************************************
@@ -555,9 +567,18 @@ private:
     int fadcPedestalNumRuns;
     int fadcChannelSource;
 
+    // member variable, which stores the clock cycle at which the FADC triggered in the last
+    // frame
+    int _fadcTriggerInLastFrame;
+
 
     int _sleepAcqTime;
     int _sleepTriggerTime;
+
+    // scintillator counter variables (number of clock cycles between
+    // scintillator signal and FADC trigger
+    unsigned short _scint1_counter;
+    unsigned short _scint2_counter;
     
     // special functions have no need to be public
     // --- HV Special Control ----------------------------------------------------

@@ -15,6 +15,8 @@
 #include "timepix.hpp"
 // include frame.hpp, so that we know about FrameArray
 #include "frame.hpp"
+// HV_FADC_Obj and related header files
+#include "hvFadcManager.hpp"
 
 // set a default socket buffer size, which is 'big enough'
 // this number is the maximum allowed size for my kernel (3.13.0-85-generic)
@@ -36,6 +38,9 @@ public:
     //D'tor
     ~FPGA();
 
+    // function to hand the hvFadcManager pointer to the FPGA object
+    void initHV_FADC(hvFadcManager* hvFadcManager);
+
     Timepix *tp;
     int ErrInfo;
     int okay();
@@ -44,7 +49,10 @@ public:
     int CountingStop();
     int CountingTrigger(int time);
     int CountingTime(std::string shutter_time, std::string shutter_range);
+    int CountingTime(int shutter_time, std::string shutter_range);
     int CountingTime(int time, int modeSelector);
+    // helper function to check, if a given TOF mode is part of CountingTime
+    bool checkIfModeIsCounting(int mode);
 
     // ReadoutFadcBit: Reads out the 16th(?) fpga bit - 1 if a trigger arrived as the shutter was open, 0 otherwise
     int ReadoutFadcBit();
@@ -81,6 +89,9 @@ public:
 
 private:
 
+    // pointer to hvFadcManager object
+    hvFadcManager *_hvFadcManager;
+    
     int _fadcBit;                 //< set to 1 if a signal was detected on the trigger in input/ 0 otherwise
     bool _fadcFlag;               //< true if _fadcBit was set to 1 since the flag was cleared the last time
     unsigned int _fadcShutterCountOn;

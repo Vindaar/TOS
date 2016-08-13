@@ -97,7 +97,7 @@ public:
 	      int runtime, 
 	      int shutter, 
 	      int filter, 
-	      unsigned short shutter_mode, 
+	      std::string shutter_mode, 
 	      unsigned short run_mode, 
 	      bool useFastClock,
 	      bool useExternalTrigger,
@@ -192,7 +192,7 @@ private:
     int filter;
     // shutter_mode is the mode used for the shutter, as in 'standard', 'long' or 'verylong'
     // defines the actual time the shutter is open
-    unsigned short shutter_mode; 
+    std::string shutter_mode; 
     // global variables to check during a run, whether we use an external trigger
     // and the fast clock
     bool _useExternalTrigger;
@@ -207,6 +207,9 @@ private:
     std::vector<std::vector< std::vector<int>* > > Vbuffer;
     std::vector<int> _fadcData;
     std::map<std::string, int> _fadcParams;
+    // the run map stores information regarding a currently running run, including
+    // the current event number etc. used to write header data
+    std::map<std::string, boost::any> _runMap;
 
     QWaitCondition bufferNotEmpty;
     QWaitCondition bufferNotFull;

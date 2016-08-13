@@ -32,7 +32,7 @@ PC::PC(Timepix *tp):
     ok=fpga->okay();
     int i,loop;
     int lfsr, linear;
-        
+    
     for(i=0;i<16384;++i){LFSR_LookUpTable[i]=0;}
     lfsr=0x3FFF;
 
@@ -130,7 +130,10 @@ void PC::initHV_FADC(hvFadcManager* hvFadcManager, bool useHvFadc)
 
     if(_useHvFadc)
     {
+	// set the pointer
 	_hvFadcManager = hvFadcManager;
+	// and call the corresponding FPGA function
+	fpga->initHV_FADC(hvFadcManager);
     }
     else
     {
@@ -139,8 +142,6 @@ void PC::initHV_FADC(hvFadcManager* hvFadcManager, bool useHvFadc)
   
     return;
 }
-
-
 
 int PC::okay(){
 #if DEBUG==2
@@ -2174,7 +2175,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
               int runtime_, 
               int shutterTime_, 
               int filter_, 
-              unsigned short shutter_mode_,
+              std::string shutter_mode_,
               unsigned short run_mode_, 
               bool useFastClock,
               bool useExternalTrigger,
@@ -2222,6 +2223,17 @@ int PC::DoRun(unsigned short runtimeFrames_,
 #else
     mkdir(PathName.c_str(),0755);
 #endif
+
+    // add information to _runMap to write them to headers
+    _runMap["runTime"]         = runtime;
+    _runMap["runTimeFrames"]   = runtimeFrames;
+    _runMap["shutterTime"]     = shutterTime;
+    _runMap["shutterMode"]     = shutter_mode;
+    _runMap["runMode"]         = run_mode;
+    _runMap["fastClock"]       = _useFastClock;
+    _runMap["externalTrigger"] = _useExternalTrigger;
+    _runMap["pathName"]        = PathName;
+    _runMap["numChips"]        = fpga->tp->GetNumChips();
   
     //WriteRunFile();
     for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++)
@@ -2527,7 +2539,13 @@ void PC::writeChipData(std::string filePathName, std::vector<int> *chipData, int
     }
     else{
 	// first write a chip header
-	f << "# chip:\t" << chip << "\n";
+	// get the chip name, so that we can write its name in the chip header
+	std::string chipName;
+	chipName = fpga->tp->GetChipName(chip);
+	f << "# chipNumber: " << chip << "\n"
+	  << "# chipName:   " << chipName << "\n"
+	  << "# numHits:    " << *chipData->begin() << "\n";
+
         //print data to file(s)
         for( std::vector<int>::iterator it = chipData->begin() + 1;
 	     it != ( chipData->end() );
@@ -2536,7 +2554,7 @@ void PC::writeChipData(std::string filePathName, std::vector<int> *chipData, int
 	    if (*(it+2) !=0){
 		f << *it << "\t" << *(it+1) << "\t" << *(it+2) << "\n";
 	    }
-        }  
+        }
 	f.close();
     }
 }
@@ -2554,11 +2572,12 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
     eventNumber = fadcParams["eventNumber"];
     
     FileName = _hvFadcManager->buildFileName(filePath, false, eventNumber);
+    std::cout << "calling writeChip from fadc readout function" << std::endl;
 
     //readout chip
     if (run_mode == 0)
     {
-	writeChipData(FileName, chipData, eventNumber);
+	writeChipData(FileName, chipData, _center_chip);
     }
     //TODO:: This should not be possible!!
     else

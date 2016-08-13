@@ -19,6 +19,9 @@
 hvFadcManager::hvFadcManager(std::string iniFilePath):
     _createdFlag(false),
     _settingsReadFlag(false),
+    _fadcTriggerInLastFrame(0),
+    _scint1_counter(0),
+    _scint2_counter(0),
     _hvModInitFlag(false)
 {
     // upon initialisation of hvFadcManager, we need to create the
@@ -2083,6 +2086,48 @@ std::map<std::string, int> hvFadcManager::GetFadcParameterMap(){
 
     return fadcParams;
 }
+
+void hvFadcManager::SetFadcTriggerInLastFrame(int numClock){
+    // sets the member variable, which stores the clock cycle at which the
+    // FADC triggered in the last frame, which was taken
+    // note: this member variable will not be set to 0 (except at initialization
+    //       of the hvFadcManager)
+    _fadcTriggerInLastFrame = numClock;
+}
+
+int hvFadcManager::GetFadcTriggerInLastFrame(){
+    // returns the member variable, which stores the clock cycle at which the
+    // FADC triggered in the last frame, which was taken
+    return _fadcTriggerInLastFrame;
+}
+
+
+
+// #############################################################################
+// ########################### Scintillator functions ##########################
+// #############################################################################
+
+void hvFadcManager::SetScintillatorCounters(unsigned short scint1_counter,
+					    unsigned short scint2_counter){
+    // this function sets the global timepix variables for the scintillor counters,
+    // which count the number of clock cycles between the last scintillator signals
+    // and the FADC trigger, which ended the shutter
+    _scint1_counter = scint1_counter;
+    _scint2_counter = scint2_counter;
+    std::cout << "setting scinti values " << _scint1_counter << "\t" << _scint2_counter << std::endl;
+}
+
+std::pair<unsigned short, unsigned short> hvFadcManager::GetScintillatorCounters(){
+    // this function retuns a pair of unsigned shorts, i.e. the scintillator counter
+    // variables, set in SetScintillatorCounters (called from Communication, if FADC
+    // triggered in a frame)
+    std::pair<unsigned short, unsigned short> scint_counter_pair;
+    // create the pair
+    scint_counter_pair = std::make_pair(_scint1_counter, _scint2_counter);
+    // and return
+    return scint_counter_pair;
+}
+
 
 
 
