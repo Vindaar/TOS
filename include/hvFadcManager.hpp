@@ -34,8 +34,22 @@
 #include <list>
 #include <set>
 
-// we need to include unistd.h, to get get_current_dir_name()
+// BOOST
+// boost classes to parse ini file
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+// convenience BOOST_FOREACH to iterate over STL containers
+#include <boost/foreach.hpp>
+
+
+
+// in case of windows, we need to include windows.h to use GetCurrentDirectory()
+#ifdef __WIN32__
+#include <windows.h>
+#else
+// for linux we need to include unistd.h, to get get_current_dir_name()
 #include <unistd.h>
+#endif
 
 // QT
 #include <QString>
@@ -113,6 +127,24 @@
 // class hvSetGroup;
 // class hvStatusGroup;
 // class hvMonitorGroup;
+
+class dummyHvChannel{
+    // this class is a dummy class, which stores all necessary parameters
+    // needed to set up a HV channel later on. This is used to properly read
+    // channel settings from the ini file, since one only has an hvModule object
+    // after the settings have been read
+public:
+    std::string name;
+    int number;
+    int voltageSet;
+    int voltageNominal;
+    float voltageBound;
+    float currentSet;
+    float currentNominal;
+    float currentBound;
+};
+
+
 
 
 // note: abbreveations used:
@@ -472,6 +504,8 @@ private:
 
     // list of channels in use (added by AddChannel)
     std::list<hvChannel *> _channelList;
+    // and a list of dummyHvChannels (class defined at the bottom of this file)
+    std::vector<dummyHvChannel> _dummyChannelVector;
 
     // voltageScheduler is a list of pairs containing voltages
     // and times (in minutes). the list is worked through from beginning
@@ -512,8 +546,9 @@ private:
     // ##################################################
     // TOS related variables
     // ##################################################
-    
-    QString iniFile;
+
+    std::string iniFile;
+    //QString iniFile;
 
     // group related
     GroupSTRUCT* anodeGridSetOnGroup;
@@ -594,10 +629,6 @@ private:
 
   
 };
-
-
-
-
 
 
 #endif

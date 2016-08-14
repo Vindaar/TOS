@@ -1,6 +1,6 @@
 #include "hvFadcManager.hpp"
-#include <QDir>
-#include <QSettings>
+//#include <QDir>
+//#include <QSettings>
 #include <QCoreApplication>
 #include "const.h"
 
@@ -28,7 +28,8 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     // vmemodule (HV) instance using the base Addresses
 
     // set the path of the ini file to the member variable
-    iniFile = QString::fromStdString(iniFilePath);
+    //iniFile = QString::fromStdString(iniFilePath);
+    iniFile = iniFilePath;
 
     // first read HV settings from ini file
     ReadHVSettings();
@@ -365,36 +366,34 @@ void hvFadcManager::InitHFMForTOS(){
     killEnabled = HV_module->SetKillEnable(setKillEnable);
     if (killEnabled == false) return;
 
-    // first create channel objects
-    // then create flex group from channel objects
-    // create channel objects
-    // since we're in a member function of hvFadcManager, we just hand the
-    // this pointer to the hvChannel as an hvFadcManager *
-    hvChannel *gridChannel;
-    std::string gridChannelName("grid");
-    gridChannel = new hvChannel(HV_module, gridChannelName, gridChannelNumber);
-    hvChannel *anodeChannel;
-    std::string anodeChannelName("anode");
-    anodeChannel = new hvChannel(HV_module, anodeChannelName, anodeChannelNumber);
-    hvChannel *cathodeChannel;
-    std::string cathodeChannelName("cathode");
-    cathodeChannel = new hvChannel(HV_module, cathodeChannelName, cathodeChannelNumber);
-
-    AddChannel(gridChannel);
-    AddChannel(anodeChannel);
-    AddChannel(cathodeChannel);
-
-    // create channel lists for groups
+    // define lists which will store the members of flex groups
     std::list<hvChannel *> anodeGridMembers;
     std::list<hvChannel *> monitorTripMembers;
-    std::list<hvChannel *> rampingMembers = monitorTripMembers;
+    std::list<hvChannel *> rampingMembers;
 
-    anodeGridMembers.push_back(gridChannel);
-    anodeGridMembers.push_back(anodeChannel);
+    // now simply run over dummyChannelVector to create all channels defined in the ini file
+    // and add correct channels to groups
+    BOOST_FOREACH( dummyHvChannel channel, _dummyChannelVector ){
+	bool good = false;
+	hvChannel *channelPtr;
+	channelPtr = new hvChannel(HV_module, channel.name, channel.number);
+	AddChannel(channelPtr);
 
-    monitorTripMembers.push_back(gridChannel);
-    monitorTripMembers.push_back(anodeChannel);
-    monitorTripMembers.push_back(cathodeChannel);
+	// now set channel event mask, voltages and currents
+	good = channelPtr->setVoltage(channel.voltageSet);
+	good = channelPtr->setVoltageBound(channel.voltageBound);
+	good = channelPtr->setCurrent(channel.currentSet);
+	if (good == false) return;
+	
+	// only add grid and anode to anode Grid group
+	if( (channel.name == "grid") ||
+	    (channel.name == "anode") ){
+	    anodeGridMembers.push_back(channelPtr);
+	}
+	// but add every channel to trip group and ramping group
+	monitorTripMembers.push_back(channelPtr);
+	rampingMembers.push_back(channelPtr);
+    }
     
     // create flex groups
     hvSetGroup *anodeGridSetOnGroup;
@@ -417,7 +416,6 @@ void hvFadcManager::InitHFMForTOS(){
 				     rampingMembers,
 				     rampingGroupNumber);
 
-				   
     // now with our fancy groups, we can just set the options we would like to
     // set
     // define master channel of SetGroup
@@ -441,61 +439,10 @@ void hvFadcManager::InitHFMForTOS(){
     AddFlexGroup(monitorTripGroup);
     AddFlexGroup(rampingGroup);
 
-    // TODO: need to set ModuleEventGroupMask for the groups,
-    //       in order to register group events for the wanted 
-    //       things
-    
-    // ModuleEventGroupMask: set everything to 0 except 
-    //                       gridGroupNumbers of all 3 defined groups
-
-
-    // ##################################################
-
-
-    // after defining the channel event mask, we need to write them
-    // to the channels
-    bool good;
-    good = gridChannel->setChannelEventMask(_eventMaskSet);
-    if (good == false) return;
-    good = anodeChannel->setChannelEventMask(_eventMaskSet);
-    if (good == false) return;
-    good = cathodeChannel->setChannelEventMask(_eventMaskSet);
-    if (good == false) return;
-    
     // call functino to set module event group mask for all active channels we're
     // using and make sure it works. Function uses _channelMap to set mask
-    
+    bool good = true;
     good = SetModuleEventGroupMask();
-    if (good == false) return;
-
-    // ##################################################
-    // Set voltages etc
-
-    // groups set up. now set voltages, currents
-    //****************************************************************
-
-    // set voltage set
-    good = gridChannel->setVoltage(gridVoltageSet);
-    if (good == false) return;
-    good = anodeChannel->setVoltage(anodeVoltageSet);
-    if (good == false) return;
-    good = cathodeChannel->setVoltage(cathodeVoltageSet);
-    if (good == false) return;
-
-    // set voltage bounds
-    good = gridChannel->setVoltageBound(gridVoltageBound);
-    if (good == false) return;
-    good = anodeChannel->setVoltageBound(anodeVoltageBound);
-    if (good == false) return;
-    good = cathodeChannel->setVoltageBound(cathodeVoltageBound);
-    if (good == false) return;
-
-    // set current set
-    good = gridChannel->setCurrent(gridCurrentSet);
-    if (good == false) return;
-    good = anodeChannel->setCurrent(anodeCurrentSet);
-    if (good == false) return;
-    good = cathodeChannel->setCurrent(cathodeCurrentSet);
     if (good == false) return;
 
     // now clear the channel status as far as necessary
@@ -1641,421 +1588,109 @@ void hvFadcManager::ReadHVSettings(){
     // member variable iniFile, which is set in the creator
     // this function is called in the creator    
 
-    // create path for iniFile 
-    #ifdef __WIN32__
-    // in case of using windows, we need to call the GetCurrentDirectory function
-    // as an input it receives: DWORD WINAPI GetCurrentDirectory(_In_  DWORD  nBufferLength, _Out_ LPTSTR lpBuffer);
-    // create TCHAR and char string of length MAX_INI_PATH_LENGTH defined in header of this file
-    TCHAR string[MAX_INI_PATH_LENGTH];
-    char  char_string[MAX_INI_PATH_LENGTH];
-    // call windows function with its weird arguments
-    GetCurrentDirectory(MAX_INI_PATH_LENGTH, string);
-    // QT function needs a char string as input, cannot deal with TCHAR, thus need to convert
-    WideCharToMultiByte(CP_ACP, 0, string, wcslen(string)+1, char_string, MAX_INI_PATH_LENGTH, NULL, NULL);
-    QDir dir(char_string);
-    #else
-    QDir dir(get_current_dir_name());
-    #endif
-    // TODO: check proper path
-    //       or rather: add option to give full path or
-    //       relative?
-    iniFile = dir.absolutePath() + '/' + iniFile;
-    std::cout << "Path to Ini File: " << iniFile.toStdString() << std::endl;
+    // // create path for iniFile 
+    // #ifdef __WIN32__
+    // // in case of using windows, we need to call the GetCurrentDirectory function
+    // // as an input it receives: DWORD WINAPI GetCurrentDirectory(_In_  DWORD  nBufferLength, _Out_ LPTSTR lpBuffer);
+    // // create TCHAR and char string of length MAX_INI_PATH_LENGTH defined in header of this file
+    // TCHAR string[MAX_INI_PATH_LENGTH];
+    // char  char_string[MAX_INI_PATH_LENGTH];
+    // // call windows function with its weird arguments
+    // GetCurrentDirectory(MAX_INI_PATH_LENGTH, string);
+    // // QT function needs a char string as input, cannot deal with TCHAR, thus need to convert
+    // WideCharToMultiByte(CP_ACP, 0, string, wcslen(string)+1, char_string, MAX_INI_PATH_LENGTH, NULL, NULL);
+    // QDir dir(char_string);
+    // #else
+    // QDir dir(get_current_dir_name());
+    // #endif
+    // // TODO: check proper path
+    // //       or rather: add option to give full path or
+    // //       relative?
+    iniFile = get_current_dir_name() + '/' + iniFile;
+    std::cout << "Path to Ini File: " << iniFile << std::endl;
 
-    // now we have read the QString with the path
-    // to the iniFile
-    // create a QSettings object from this file
-    // settings object contains every setting from file
-    // TODO: check if file exists
-    QSettings settings(iniFile, QSettings::IniFormat);
+    // // now we have read the QString with the path
+    // // to the iniFile
+    // // create a QSettings object from this file
+    // // settings object contains every setting from file
+    // // TODO: check if file exists
+    // QSettings settings(iniFile, QSettings::IniFormat);
     
-    // flag which tracks, if one or more settings was not found in the HVsettings.ini
-    bool containsNotFlag = false;
-    
+    // // flag which tracks, if one or more settings was not found in the HVsettings.ini
+    // bool containsNotFlag = false;
 
-    // check settings object for each expected variable
-    // if variable not contained, raise exception?
-    if (settings.contains("baseAddress_hv")){
-	// to get the baseAddress from the hexadecimal string
-	// in the .ini file, we need to do some ugly conversion
-	// first to QString, then to std::string, then to int,
-	// interpreted as hex int
-	QString temp;
-	temp = settings.value("baseAddress_hv").toString();
-	baseAddress_hv = stoi(temp.toStdString(), nullptr, 16);	
-    }
-    else{
-	containsNotFlag = true;
-	// if setting cannot be found, set default base address
-	// defined as macro in hvFadcManager.h
-	// TODO: think of some way to properly end the program
-	// if settings cannot be found
-	baseAddress_hv = DEFAULT_BASE_ADDRESS_HV;
-    }
-
-    if (settings.contains("sAddress_fadc")){
-	// get the sAddress for the fadc
-	sAddress_fadc = settings.value("sAddress_fadc").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	sAddress_fadc = DEFAULT_S_ADDRESS_FADC;
-    }
-
-    if (settings.contains("setKillEnable")){
-	setKillEnable = settings.value("setKillEnable").toBool();    
-    }
-    else{
-	containsNotFlag = true;
-	setKillEnable = DEFAULT_SET_KILL_ENABLE;
-    }
-
-    if (settings.contains("anodeGridGroupFlag")){
-	anodeGridGroupFlag = settings.value("anodeGridGroupFlag").toBool();
-    }
-    else{
-	containsNotFlag = true;
-	anodeGridGroupFlag = DEFAULT_ANODE_GRID_GROUP_FLAG;
-    }
-
-    if (settings.contains("anodeGridGroupMasterChannel")){
-	anodeGridGroupMasterChannel = settings.value("anodeGridGroupMasterChannel").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	anodeGridGroupMasterChannel = DEFAULT_ANODE_GRID_GROUP_MASTER_CHANNEL;
-    }
-
-    if (settings.contains("anodeGridGroupNumber")){
-	anodeGridGroupNumber = settings.value("anodeGridGroupNumber").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	anodeGridGroupNumber = DEFAULT_ANODE_GRID_GROUP_NUMBER;
-    }
+    boost::property_tree::ptree pt;
+    boost::property_tree::ini_parser::read_ini(iniFile, pt);
+    std::cout << pt.get<std::string>("General.baseAddress_hv") << std::endl;
+    std::cout << pt.get<std::string>("HvChannels.0_Name") << std::endl;
 
 
-    if (settings.contains("monitorTripGroupFlag")){
-	monitorTripGroupFlag = settings.value("monitorTripGroupFlag").toBool();
-    }
-    else{
-	containsNotFlag = true;
-	monitorTripGroupFlag = DEFAULT_MONITOR_TRIP_GROUP_FLAG;
-    }
+    // now simply get all values from the property tree created by boost
+    // general section
+    sAddress_fadc  = pt.get_optional<int>("General.sAddress_fadc").get_value_or(DEFAULT_S_ADDRESS_FADC);
+    baseAddress_hv = pt.get_optional<int>("General.baseAddress_hv").get_value_or(DEFAULT_BASE_ADDRESS_HV);
+    // hvModule section
+    setKillEnable  = pt.get_optional<bool>("HvModule.setKillEnable").get_value_or(DEFAULT_SET_KILL_ENABLE);
+    moduleVoltageRampSpeed  = pt.get_optional<int>("HvModule.moduleVoltageRampSpeed").get_value_or(DEFAULT_MODULE_VOLTAGE_RAMP_SPEED);
+    moduleCurrentRampSpeed  = pt.get_optional<int>("HvModule.moduleCurrentRampSpeed").get_value_or(DEFAULT_MODULE_CURRENT_RAMP_SPEED);
+    checkModuleTimeInterval = pt.get_optional<int>("HvModule.checkModuleTimeInterval").get_value_or(DEFAULT_CHECK_MODULE_TIME_INTERVAL);
 
-    if (settings.contains("monitorTripGroupNumber")){
-	monitorTripGroupNumber = settings.value("monitorTripGroupNumber").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	monitorTripGroupNumber = DEFAULT_MONITOR_TRIP_GROUP_NUMBER;
-    }
+    // hvGroups
+    anodeGridGroupFlag          = pt.get_optional<bool>("HvModule.anodeGridGroupFlag").get_value_or(DEFAULT_ANODE_GRID_GROUP_FLAG);
+    anodeGridGroupMasterChannel = pt.get_optional<int>("HvModule.anodeGridGroupMasterChannel").get_value_or(DEFAULT_ANODE_GRID_GROUP_FLAG);
+    anodeGridGroupNumber        = pt.get_optional<int>("HvModule.anodeGridGroupNumber").get_value_or(DEFAULT_ANODE_GRID_GROUP_NUMBER);
+    monitorTripGroupFlag        = pt.get_optional<bool>("HvModule.monitorTripGroupFlag").get_value_or(DEFAULT_MONITOR_TRIP_GROUP_FLAG);
+    monitorTripGroupNumber      = pt.get_optional<int>("HvModule.monitorTripGroupNumber").get_value_or(DEFAULT_MONITOR_TRIP_GROUP_NUMBER);
+    rampingGroupFlag            = pt.get_optional<bool>("HvModule.rampingGroupFlag").get_value_or(DEFAULT_RAMPING_GROUP_FLAG);
+    rampingGroupNumber          = pt.get_optional<int>("HvModule.rampingGroupNumber").get_value_or(DEFAULT_RAMPING_GROUP_NUMBER);
 
-    if (settings.contains("rampingGroupFlag")){
-	rampingGroupFlag = settings.value("rampingGroupFlag").toBool();
-    }
-    else{
-	containsNotFlag = true;
-	rampingGroupFlag = DEFAULT_RAMPING_GROUP_FLAG;
-    }
+    // Fadc
+    fadcTriggerType                 = pt.get_optional<int>("Fadc.fadcTriggerType").get_value_or(DEFAULT_FADC_TRIGGER_TYPE);
+    fadcFrequency                   = pt.get_optional<int>("Fadc.fadcFrequency").get_value_or(DEFAULT_FADC_FREQUENCY);
+    fadcPosttrig                    = pt.get_optional<int>("Fadc.fadcPosttrig").get_value_or(DEFAULT_FADC_POSTTRIG);
+    fadcPretrig                     = pt.get_optional<int>("Fadc.fadcPretrig").get_value_or(DEFAULT_FADC_PRETRIG);
+    fadcTriggerThresholdRegisterAll = pt.get_optional<int>("Fadc.fadcTriggerThresholdRegisterAll").get_value_or(DEFAULT_FADC_TRIGGER_THRESHOLD_REGISTER_ALL);
+    fadcPedestalRunTime             = pt.get_optional<int>("Fadc.fadcPedestalRunTime").get_value_or(DEFAULT_FADC_PEDESTAL_RUN_TIME);
+    fadcPedestalNumRuns             = pt.get_optional<int>("Fadc.fadcPedestalNumRuns").get_value_or(DEFAULT_FADC_PEDESTAL_NUM_RUNS);
+    fadcChannelSource               = pt.get_optional<int>("Fadc.fadcChannelSource").get_value_or(DEFAULT_FADC_CHANNEL_SOURCE);
 
-    if (settings.contains("rampingGroupNumber")){
-	rampingGroupNumber = settings.value("rampingGroupNumber").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	rampingGroupNumber = DEFAULT_RAMPING_GROUP_NUMBER;
-    }
-
-
-    // **************************************************
-    // *************** GRID VARIABLES *******************
-    // **************************************************
-
-    if (settings.contains("gridChannelNumber")){
-	gridChannelNumber = settings.value("gridChannelNumber").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	gridChannelNumber = DEFAULT_GRID_CHANNEL_NUMBER;
-    }
-
-    if (settings.contains("gridVoltageSet")){
-	gridVoltageSet = settings.value("gridVoltageSet").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	gridVoltageSet = DEFAULT_GRID_VOLTAGE_SET;
-    }
-
-    if (settings.contains("gridVoltageNominal")){
-	gridVoltageNominal = settings.value("gridVoltageNominal").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	gridVoltageNominal = DEFAULT_GRID_VOLTAGE_NOMINAL;
-    }
-
-    if (settings.contains("gridVoltageBound")){
-	gridVoltageBound = settings.value("gridVoltageBound").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	gridVoltageBound = DEFAULT_GRID_VOLTAGE_BOUND;
-    }
-
-    if (settings.contains("gridCurrentSet")){
-	gridCurrentSet = settings.value("gridCurrentSet").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	gridCurrentSet = DEFAULT_GRID_CURRENT_SET;
-    }
-
-    if (settings.contains("gridCurrentNominal")){
-	bool ok;
-	ok = true;
-	gridCurrentNominal = settings.value("gridCurrentNominal").toFloat(&ok);
-	if(ok == false){
-	    std::cout << "ERROR: Could not convert gridCurrentNominal to float!" << std::endl;
+    // now loop over HvChannels section to create all of the channels
+    int nHvChannels = 0;
+    for (auto& key : pt.get_child("HvChannels")) {
+	std::cout << key.first << "=" << key.second.get_value<std::string>() << "\n";
+	// set the nHvChannels variable to the number of elements in the dummyChannelVector
+	// minus 1, so that we can use nHvChannels to access the elements of the list
+	nHvChannels = _dummyChannelVector.size() - 1;
+	
+	if (key.first.find("Name") != std::string::npos){
+	    // if Name is in the current key, we add a new dummy channel to the dummyChannelVector
+	    dummyHvChannel channel;
+	    channel.name = key.second.get_value<std::string>();
+	    _dummyChannelVector.push_back(channel);
+	}
+	else if(key.first.find("Number") != std::string::npos){
+	    _dummyChannelVector[nHvChannels].number         = key.second.get_value<int>();
+	}
+	else if(key.first.find("VoltageSet") != std::string::npos){
+	    _dummyChannelVector[nHvChannels].voltageSet     = key.second.get_value<int>();
+	}
+	else if(key.first.find("VoltageNominal") != std::string::npos){
+	    _dummyChannelVector[nHvChannels].voltageNominal = key.second.get_value<int>();
+	}
+	else if(key.first.find("VoltageBound") != std::string::npos){
+	    _dummyChannelVector[nHvChannels].voltageBound   = key.second.get_value<float>();
+	}
+	else if(key.first.find("CurrentSet") != std::string::npos){
+	    _dummyChannelVector[nHvChannels].currentSet     = key.second.get_value<float>();
+	}
+	else if(key.first.find("CurrentNominal") != std::string::npos){
+	    _dummyChannelVector[nHvChannels].currentNominal = key.second.get_value<float>();
+	}
+	else if(key.first.find("CurrentBound") != std::string::npos){
+	    _dummyChannelVector[nHvChannels].currentBound   = key.second.get_value<float>();
 	}
     }
-    else{
-	containsNotFlag = true;
-	gridCurrentNominal = DEFAULT_GRID_CURRENT_NOMINAL;
-    }
-
-    if (settings.contains("gridCurrentBound")){
-	gridCurrentBound = settings.value("gridCurrentBound").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	gridCurrentBound = DEFAULT_GRID_CURRENT_BOUND;
-    }
-
-    // **************************************************
-    // *************** ANODE VARIABLES ******************
-    // **************************************************
-
-    if (settings.contains("anodeChannelNumber")){
-	anodeChannelNumber = settings.value("anodeChannelNumber").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	anodeChannelNumber = DEFAULT_ANODE_CHANNEL_NUMBER;
-    }
-
-    if (settings.contains("anodeVoltageSet")){
-	anodeVoltageSet = settings.value("anodeVoltageSet").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	anodeVoltageSet = DEFAULT_ANODE_VOLTAGE_SET;
-    }
-
-    if (settings.contains("anodeVoltageNominal")){
-	anodeVoltageNominal = settings.value("anodeVoltageNominal").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	anodeVoltageNominal = DEFAULT_ANODE_VOLTAGE_NOMINAL;
-    }
-
-    if (settings.contains("anodeVoltageBound")){
-	anodeVoltageBound = settings.value("anodeVoltageBound").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	anodeVoltageBound = DEFAULT_ANODE_VOLTAGE_BOUND;
-    }
-
-    if (settings.contains("anodeCurrentSet")){
-	anodeCurrentSet = settings.value("anodeCurrentSet").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	anodeCurrentSet = DEFAULT_ANODE_CURRENT_SET;
-    }
-
-    if (settings.contains("anodeCurrentNominal")){
-	anodeCurrentNominal = settings.value("anodeCurrentNominal").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	anodeCurrentNominal = DEFAULT_ANODE_CURRENT_NOMINAL;
-    }
-
-    if (settings.contains("anodeCurrentBound")){
-	anodeCurrentBound = settings.value("anodeCurrentBound").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	anodeCurrentBound = DEFAULT_ANODE_CURRENT_BOUND;
-    }
-
-    // **************************************************
-    // *************** CATHODE VARIABLES ******************
-    // **************************************************
-
-    if (settings.contains("cathodeChannelNumber")){
-	cathodeChannelNumber = settings.value("cathodeChannelNumber").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	cathodeChannelNumber = DEFAULT_CATHODE_CHANNEL_NUMBER;
-    }
-
-    if (settings.contains("cathodeVoltageSet")){
-	cathodeVoltageSet = settings.value("cathodeVoltageSet").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	cathodeVoltageSet = DEFAULT_CATHODE_VOLTAGE_SET;
-    }
-
-    if (settings.contains("cathodeVoltageNominal")){
-	cathodeVoltageNominal = settings.value("cathodeVoltageNominal").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	cathodeVoltageNominal = DEFAULT_CATHODE_VOLTAGE_NOMINAL;
-    }
-
-    if (settings.contains("cathodeVoltageBound")){
-	cathodeVoltageBound = settings.value("cathodeVoltageBound").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	cathodeVoltageBound = DEFAULT_CATHODE_VOLTAGE_BOUND;
-    }
-
-    if (settings.contains("cathodeCurrentSet")){
-	cathodeCurrentSet = settings.value("cathodeCurrentSet").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	cathodeCurrentSet = DEFAULT_CATHODE_CURRENT_SET;
-    }
-
-    if (settings.contains("cathodeCurrentNominal")){
-	cathodeCurrentNominal = settings.value("cathodeCurrentNominal").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	cathodeCurrentNominal = DEFAULT_CATHODE_CURRENT_NOMINAL;
-    }
-
-    if (settings.contains("cathodeCurrentBound")){
-	cathodeCurrentBound = settings.value("cathodeCurrentBound").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	cathodeCurrentBound = DEFAULT_CATHODE_CURRENT_BOUND;
-    }
-
-
-    // **************************************************
-    // ***************** MODULE SETTINGS ****************
-    // **************************************************
-
-    if (settings.contains("moduleVoltageRampSpeed")){
-	moduleVoltageRampSpeed = settings.value("moduleVoltageRampSpeed").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	moduleVoltageRampSpeed = DEFAULT_MODULE_VOLTAGE_RAMP_SPEED;
-    }
-
-    if (settings.contains("moduleCurrentRampSpeed")){
-	moduleCurrentRampSpeed = settings.value("moduleCurrentRampSpeed").toFloat();
-    }
-    else{
-	containsNotFlag = true;
-	moduleCurrentRampSpeed = DEFAULT_MODULE_CURRENT_RAMP_SPEED;
-    }
-
-    if (settings.contains("checkModuleTimeInterval")){
-	checkModuleTimeInterval = settings.value("checkModuleTimeInterval").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	checkModuleTimeInterval = DEFAULT_CHECK_MODULE_TIME_INTERVAL;
-    }
-
-    // **************************************************
-    // ***************** FADC SETTINGS ******************
-    // **************************************************
-
-    if (settings.contains("fadcTriggerType")){
-	fadcTriggerType = settings.value("fadcTriggerType").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	fadcTriggerType = DEFAULT_FADC_TRIGGER_TYPE;
-    }
-
-    if (settings.contains("fadcFrequency")){
-	fadcFrequency = settings.value("fadcFrequency").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	fadcFrequency = DEFAULT_FADC_FREQUENCY;
-    }
-
-    if (settings.contains("fadcPosttrig")){
-	fadcPosttrig = settings.value("fadcPosttrig").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	fadcPosttrig = DEFAULT_FADC_POSTTRIG;
-    }
-
-    if (settings.contains("fadcPretrig")){
-	fadcPretrig = settings.value("fadcPretrig").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	fadcPretrig = DEFAULT_FADC_PRETRIG;
-    }
-
-    if (settings.contains("fadcTriggerThresholdRegisterAll")){
-	fadcTriggerThresholdRegisterAll = settings.value("fadcTriggerThresholdRegisterAll").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	fadcTriggerThresholdRegisterAll = DEFAULT_FADC_TRIGGER_THRESHOLD_REGISTER_ALL;
-    }
     
-    if (settings.contains("fadcPedestalRunTime")){
-	fadcPedestalRunTime = settings.value("fadcPedestalRunTime").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	fadcPedestalRunTime = DEFAULT_FADC_PEDESTAL_RUN_TIME;
-    }
-    
-    if (settings.contains("fadcPedestalNumRuns")){
-	fadcPedestalNumRuns = settings.value("fadcPedestalNumRuns").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	fadcPedestalNumRuns = DEFAULT_FADC_PEDESTAL_NUM_RUNS;
-    }
-
-    if (settings.contains("fadcChannelSource")){
-	fadcChannelSource = settings.value("fadcChannelSource").toInt();
-    }
-    else{
-	containsNotFlag = true;
-	fadcChannelSource = DEFAULT_FADC_CHANNEL_SOURCE;
-    }
-
-    // set flag to true, which says whether settings have been read
-
-    if (containsNotFlag == true){
-	std::cout << "One or more settings could not be found in the .ini file."
-		  << std::endl;
-    }
     _settingsReadFlag = true;
 
 }
