@@ -258,8 +258,4 @@ private:
 #include "console.hpp"
 #endif
 			 
-#ifndef _GUI_HPP
-#include "gui.hpp"
-#endif
-
 #endif

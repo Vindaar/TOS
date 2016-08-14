@@ -80,7 +80,7 @@ windows|win32{
 
     # for windows add readline library, which needs to be put into 
     # include folder
-    HEADERS += external/readline/include/readline.h
+    HEADERS += external/readline/readline/readline.h
 
     LIBS += -lws2_32 -Wl,-Bdynamic -lreadline
 
@@ -90,10 +90,15 @@ windows|win32{
     CONFIG += staticlib
     INCLUDEPATH += $$PWD/../../../../Qt/Tools/mingw491_32/i686-w64-mingw32/lib
     DEPENDPATH += $$PWD/../../../../Qt/Tools/mingw491_32/i686-w64-mingw32/lib
-    INCLUDEPATH += -L"C:\Program Files (x86)\GnuWin32\lib" \
-                   -L./external/readline/lib
+    INCLUDEPATH += -I"C:\Program Files (x86)\GnuWin32\lib" \
+                    C:/local/boost_1_61_0/ \
+                    external/ \
+                    external/readline/ \
+                   -I./external/readline/lib
     DEPENDPATH += "C:\Program Files (x86)\GnuWin32\lib" \
-                  /external/readline/bin
+#                  "C:\local\boost_1_61_0\boost" \
+# readline5.dll unfortunately still not linked dynamically
+                  external/readline/bin
 }
 
 linux|unix{

@@ -1606,7 +1606,23 @@ void hvFadcManager::ReadHVSettings(){
     // // TODO: check proper path
     // //       or rather: add option to give full path or
     // //       relative?
-    iniFile = get_current_dir_name() + '/' + iniFile;
+
+#ifdef __WIN32__
+    // in case of using windows, we need to call the GetCurrentDirectory function
+    // as an input it receives: DWORD WINAPI GetCurrentDirectory(_In_  DWORD  nBufferLength, _Out_ LPTSTR lpBuffer);
+    // create TCHAR and char string of length MAX_INI_PATH_LENGTH defined in header of this file
+    TCHAR string[MAX_INI_PATH_LENGTH];
+    char  char_string[MAX_INI_PATH_LENGTH];
+    // call windows function with its weird arguments
+    GetCurrentDirectory(MAX_INI_PATH_LENGTH, string);
+    // need a char string, cannot deal with TCHAR, thus need to convert
+    WideCharToMultiByte(CP_ACP, 0, string, wcslen(string)+1, char_string, MAX_INI_PATH_LENGTH, NULL, NULL);
+    std::string prePath(char_string);
+#else
+    std::string prePath;
+    string = get_current_dir_name();
+#endif
+    iniFile = prePath + '/' + iniFile;
     std::cout << "Path to Ini File: " << iniFile << std::endl;
 
     // // now we have read the QString with the path
