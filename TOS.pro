@@ -16,14 +16,12 @@ DESTDIR = bin
 HEADERS += include/caseHeader.h \ 
            include/console.hpp \ 
            include/fpga.hpp \ 
-#           include/gui.hpp \ 
            include/header.hpp \ 
            include/pc.hpp \ 
            include/timepix.hpp \
            include/waitconditions.hpp \
            include/V1729a_VME.h \
            include/V1729a.h \
-#           include/HV_FADC_Obj.h \
            include/vmemodule.h \
            include/vmecontroller.h \
            include/vmusb.h \ 
@@ -45,12 +43,10 @@ HEADERS += include/caseHeader.h \
 SOURCES += src/caseFunctions.cc \
            src/console.cpp \
            src/fpga.cpp \ 
-#           src/gui.cpp \
            src/pc.cpp \
            src/timepix.cpp \
            src/tos.cpp \
            src/waitconditions.cpp \
-#           src/HV_FADC_Obj.cc \
            src/DeviceVME.cc \
            src/V1729a_VME.cc \
            src/vmecontroller.cpp \
