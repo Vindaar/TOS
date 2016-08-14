@@ -84,7 +84,7 @@ windows|win32{
 
     # for windows add readline library, which needs to be put into 
     # include folder
-    HEADERS += include/readline/readline.h
+    HEADERS += external/readline/include/readline.h
 
     LIBS += -lws2_32 -Wl,-Bdynamic -lreadline
 
@@ -94,8 +94,10 @@ windows|win32{
     CONFIG += staticlib
     INCLUDEPATH += $$PWD/../../../../Qt/Tools/mingw491_32/i686-w64-mingw32/lib
     DEPENDPATH += $$PWD/../../../../Qt/Tools/mingw491_32/i686-w64-mingw32/lib
-    INCLUDEPATH +=-L"C:\Program Files (x86)\GnuWin32\lib"
-    DEPENDPATH += "C:\Program Files (x86)\GnuWin32\lib"
+    INCLUDEPATH += -L"C:\Program Files (x86)\GnuWin32\lib" \
+                   -L./external/readline/lib
+    DEPENDPATH += "C:\Program Files (x86)\GnuWin32\lib" \
+                  /external/readline/bin
 }
 
 linux|unix{
