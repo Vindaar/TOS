@@ -1620,7 +1620,7 @@ void hvFadcManager::ReadHVSettings(){
     std::string prePath(char_string);
 #else
     std::string prePath;
-    string = get_current_dir_name();
+    prePath = get_current_dir_name();
 #endif
     iniFile = prePath + '/' + iniFile;
     std::cout << "Path to Ini File: " << iniFile << std::endl;
