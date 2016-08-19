@@ -54,13 +54,15 @@ public:
     bool isStop();
 
     void H_SetNominalValues();
-    bool ClearAllChannelEventStatus();
+    //bool ClearAllChannelEventStatus();
     int H_ConnectModule();
 
     // printing functions:
     void printStatus();
     void printEventStatus();
-
+    // function to reset the module event status. Calls ClearModuleEventStatus() defined in
+    // vmemodule.h and checks, if done corretly
+    bool clearModuleEventStatusAndCheck();
     // return true if event status of the module is 0
     bool isEventStatusGood();
 

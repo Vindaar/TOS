@@ -249,6 +249,45 @@ void hvModule::printStatus(){
 	      << std::endl;
 }
 
+
+bool hvModule::clearModuleEventStatusAndCheck(){
+    // this function trys to clear the module event statu
+    bool good = false;
+
+    updateModule();
+    if(_moduleEventStatus.Word == 0){
+	// in this case nothing to do, set good
+	good = true;
+    }
+
+    // define an empty module event status and initialize to 0
+    ModuleEventStatusSTRUCT moduleEventStatus = { };
+
+    int timeout = 1000;
+    while( (timeout > 1) &&
+	   (_moduleEventStatus.Word != moduleEventStatus.Word) ){
+	// call clear module event status function
+	ClearModuleEventStatus();
+	// sleep for a moment
+	sleepModule();
+	// and update update module to check in next iteration, if
+	// _moduleEventStatus member variable is empty now
+	updateModule();
+    }
+    if (timeout < 1){
+	std::cout << "TIMEOUT: could not reset module event." << std::endl;
+	good = false;
+    }
+    else{
+	std::cout << "timeout in clearModuleEventStatus " << timeout << std::endl;
+	good = true;
+    }    
+    
+    return good;
+}
+
+
+
 void hvModule::printEventStatus(){
     // this function prints the current module event status
     updateModule();

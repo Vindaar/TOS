@@ -21,6 +21,7 @@
 //c++
 #include <string>
 #include <sstream>
+#include <regex>
 
 //qt
 #include <qthread.h>
@@ -102,6 +103,8 @@ public:
 	      bool useFastClock,
 	      bool useExternalTrigger,
 	      bool useFadc = false);
+    // function to get the run number for the next run
+    int GetRunNumber();
 
 
     // function to write the data from a single chip to a specific file used during a run
@@ -228,6 +231,7 @@ private:
     std::string DataCompleteName;
     
     std::string RunPathName;
+    std::string RunFolderPreName;
     std::string RunFileName;
 
     std::string FSRPathName;

@@ -92,6 +92,8 @@ public:
     // function, which prints channel name, number, currently measured current
     // and set current
     void printCurrentMeasured();
+    // print voltage and current measured
+    void printVoltageAndCurrentMeasured();
     // function which prints the currently set nominal voltage and current
     void printVoltageCurrentNominal();
     // function to print the channel status    

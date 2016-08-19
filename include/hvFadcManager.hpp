@@ -58,7 +58,7 @@
 #include "tosCommandCompletion.hpp"
 
 // define a few macros
-#define DEFAULT_BASE_ADDRESS_HV                                   0x4400
+#define DEFAULT_BASE_ADDRESS_HV                                   0x4000
 #define DEFAULT_S_ADDRESS_FADC                                    1
 #define DEFAULT_SET_KILL_ENABLE                                   true
 #define DEFAULT_ANODE_GRID_GROUP_FLAG                             true
@@ -136,8 +136,8 @@ class dummyHvChannel{
 public:
     std::string name;
     int number;
-    int voltageSet;
-    int voltageNominal;
+    float voltageSet;
+    float voltageNominal;
     float voltageBound;
     float currentSet;
     float currentNominal;
@@ -285,6 +285,9 @@ public:
 				 unsigned short scint2_counter);
     // function to read back scintillator counters
     std::pair<unsigned short, unsigned short> GetScintillatorCounters();
+
+    // function to get the current date and time (only implemented for now...)
+    const std::string currentDateTime();
 
 
     //**************************************************
@@ -609,6 +612,9 @@ private:
 
     int _sleepAcqTime;
     int _sleepTriggerTime;
+
+    // bool variable, which is used to have a second thread running, while ramping up channels
+    bool _loop_stop;
 
     // scintillator counter variables (number of clock cycles between
     // scintillator signal and FADC trigger

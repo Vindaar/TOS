@@ -20,6 +20,7 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     _createdFlag(false),
     _settingsReadFlag(false),
     _fadcTriggerInLastFrame(0),
+    _loop_stop(false),
     _scint1_counter(0),
     _scint2_counter(0),
     _hvModInitFlag(false)
@@ -387,16 +388,24 @@ void hvFadcManager::InitHFMForTOS(){
 	
 	// only add grid and anode to anode Grid group
 	if( (channel.name == "grid") ||
-	    (channel.name == "anode") ){
+	    (channel.name == "anode") ||
+	    (channel.name == "Ring1") ){
 	    anodeGridMembers.push_back(channelPtr);
 	}
+	if (channel.name == "grid"){
+	    anodeGridGroupMasterChannel = channel.number;
+	}
 	// but add every channel to trip group and ramping group
-	monitorTripMembers.push_back(channelPtr);
+	if (channel.name != "szintillator"){
+	    monitorTripMembers.push_back(channelPtr);
+	}
 	rampingMembers.push_back(channelPtr);
     }
     
     // create flex groups
     hvSetGroup *anodeGridSetOnGroup;
+    std::cout << "some stuff\n"
+	      << anodeGridGroupMasterChannel << std::endl;
     anodeGridSetOnGroup = new hvSetGroup(HV_module,
 					 "anodeGridSetOnGroup", 
 					 anodeGridMembers,
@@ -453,6 +462,14 @@ void hvFadcManager::InitHFMForTOS(){
 		  << std::endl;
     }
 
+    // and clear module event status
+    good = HV_module->clearModuleEventStatusAndCheck();
+    if (good != true){
+	std::cout << "Could not reset module event status.\n"
+		  << "Probably will not start ramping."
+		  << std::endl;
+    }
+
     // now set all channels to on
     good = SetAllChannelsOn();
     if (good == false) return;
@@ -467,11 +484,30 @@ void hvFadcManager::InitHFMForTOS(){
     alreadyInBounds = CheckAllChannelsInVoltageBound();
     std::cout << "already in bounds? " << alreadyInBounds << std::endl;
 
+    // create seperate thread, which loops and will be stopped, if we type stop in terminal
     if (alreadyInBounds == false){
-	// now check if ramping started
-	bool rampUpFlag = true;
-	CheckModuleIsRamping(rampUpFlag);
+    	// now check if ramping started
+    	bool rampUpFlag = true;
+	std::thread loop_thread(&hvFadcManager::CheckModuleIsRamping, this, rampUpFlag);
+	_loop_stop = true;
+	//loop_thread.start();
+	const char *waitingPrompt = "> ";
+	std::set<std::string> allowedStrings = {"stop", "q"};
+	std::string input;
+	input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
+	if( (input != "stop") ||
+	    (input == "q") ){
+	    std::cout << "setting loop stop to false" << std::endl;
+	    _loop_stop = false;
+	}
+	loop_thread.join();
     }
+
+    // if (alreadyInBounds == false){
+    // 	// now check if ramping started
+    // 	bool rampUpFlag = true;
+    // 	CheckModuleIsRamping(rampUpFlag);
+    // }
 
     _hvModInitFlag = true;
 
@@ -489,7 +525,8 @@ void hvFadcManager::CheckModuleIsRamping(bool rampUpFlag){
     int timeout = 100;
     bool doneChecking = false;
     
-    while( (timeout > 0) &&
+    while( (_loop_stop == true) &&
+	   (timeout > 0) &&
 	   (doneChecking == false) ){
         // first we define bool variables, to check whether all channels are 
         // on and ramping
@@ -501,8 +538,7 @@ void hvFadcManager::CheckModuleIsRamping(bool rampUpFlag){
 	// and check whether the channels are on and voltage controlled
 	bool localControlled = true;
 	std::for_each( _channelList.begin(), _channelList.end(), [&localControlled, &rampUpFlag](hvChannel *ptrChannel){
-		ptrChannel->printVoltageMeasured();
-		ptrChannel->printCurrentMeasured();
+		ptrChannel->printVoltageAndCurrentMeasured();
 
 		if (rampUpFlag == true){
 		    // if we ramp up, check for onVoltageControlledRamped
@@ -782,7 +818,7 @@ void hvFadcManager::printModuleEventStatus(){
 // once gcc 5.2 is part of ubuntu repository, remove this function
 // and use the commented code in H_DumpErrorLogToFile instead
 // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
-const std::string currentDateTime() {
+const std::string hvFadcManager::currentDateTime() {
     time_t     now = time(0);
     struct tm  tstruct;
     char       buf[80];
@@ -945,7 +981,8 @@ void hvFadcManager::ShutDownHFMForTOS(){
         // and set Kill Enable to 0
         moduleControl.Word = H_GetModuleControl();
         moduleControl.Bit.DoClear = 1;
-        moduleControl.Bit.SetKillEnable = 0;
+	// do not disable kill enable
+        // moduleControl.Bit.SetKillEnable = 0;
         H_SetModuleControl(moduleControl.Word);
         
         // this should properly shut down the device
@@ -1479,19 +1516,6 @@ std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunF
     std::stringstream buildFileName;
     std::string fileName = "";
 
-    struct   timeval  tv;
-    struct   timezone tz;
-    struct   tm      *tm;
-    int hh, mm, ss;
-    int ms;
-
-    gettimeofday(&tv, &tz);
-    tm = localtime(&tv.tv_sec);
-    hh = tm->tm_hour;        // hours
-    mm = tm->tm_min;         // minutes
-    ss = tm->tm_sec;         // seconds
-    ms = tv.tv_usec/1000;    // mili seconds
-
     //FIXME!!
     if (pedestalRunFlag == true){
 	// depending on whether it is a pedestal run, the filename will start with...
@@ -1501,11 +1525,8 @@ std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunF
 	// ... or ... 
 	buildFileName << "/data";	
     }
-    buildFileName << std::setw(6) << std::setfill('0') << eventNumber << "_1_"
-		  << std::setw(2) << std::setfill('0') << hh
-		  << std::setw(2) << std::setfill('0') << mm
-		  << std::setw(2) << std::setfill('0') << ss
-		  << std::setw(3) << std::setfill('0') << ms << ".txt";
+    buildFileName << std::setw(6) << std::setfill('0') << eventNumber
+		  << ".txt";
 
     fileName = filePath + buildFileName.str();
 
@@ -1652,13 +1673,13 @@ void hvFadcManager::ReadHVSettings(){
     checkModuleTimeInterval = pt.get_optional<int>("HvModule.checkModuleTimeInterval").get_value_or(DEFAULT_CHECK_MODULE_TIME_INTERVAL);
 
     // hvGroups
-    anodeGridGroupFlag          = pt.get_optional<bool>("HvModule.anodeGridGroupFlag").get_value_or(DEFAULT_ANODE_GRID_GROUP_FLAG);
-    anodeGridGroupMasterChannel = pt.get_optional<int>("HvModule.anodeGridGroupMasterChannel").get_value_or(DEFAULT_ANODE_GRID_GROUP_FLAG);
-    anodeGridGroupNumber        = pt.get_optional<int>("HvModule.anodeGridGroupNumber").get_value_or(DEFAULT_ANODE_GRID_GROUP_NUMBER);
-    monitorTripGroupFlag        = pt.get_optional<bool>("HvModule.monitorTripGroupFlag").get_value_or(DEFAULT_MONITOR_TRIP_GROUP_FLAG);
-    monitorTripGroupNumber      = pt.get_optional<int>("HvModule.monitorTripGroupNumber").get_value_or(DEFAULT_MONITOR_TRIP_GROUP_NUMBER);
-    rampingGroupFlag            = pt.get_optional<bool>("HvModule.rampingGroupFlag").get_value_or(DEFAULT_RAMPING_GROUP_FLAG);
-    rampingGroupNumber          = pt.get_optional<int>("HvModule.rampingGroupNumber").get_value_or(DEFAULT_RAMPING_GROUP_NUMBER);
+    anodeGridGroupFlag          = pt.get_optional<bool>("HvGroups.anodeGridGroupFlag").get_value_or(DEFAULT_ANODE_GRID_GROUP_FLAG);
+    anodeGridGroupMasterChannel = pt.get_optional<int>("HvGroups.anodeGridGroupMasterChannel").get_value_or(DEFAULT_ANODE_GRID_GROUP_MASTER_CHANNEL);
+    anodeGridGroupNumber        = pt.get_optional<int>("HvGroups.anodeGridGroupNumber").get_value_or(DEFAULT_ANODE_GRID_GROUP_NUMBER);
+    monitorTripGroupFlag        = pt.get_optional<bool>("HvGroups.monitorTripGroupFlag").get_value_or(DEFAULT_MONITOR_TRIP_GROUP_FLAG);
+    monitorTripGroupNumber      = pt.get_optional<int>("HvGroups.monitorTripGroupNumber").get_value_or(DEFAULT_MONITOR_TRIP_GROUP_NUMBER);
+    rampingGroupFlag            = pt.get_optional<bool>("HvGroups.rampingGroupFlag").get_value_or(DEFAULT_RAMPING_GROUP_FLAG);
+    rampingGroupNumber          = pt.get_optional<int>("HvGroups.rampingGroupNumber").get_value_or(DEFAULT_RAMPING_GROUP_NUMBER);
 
     // Fadc
     fadcTriggerType                 = pt.get_optional<int>("Fadc.fadcTriggerType").get_value_or(DEFAULT_FADC_TRIGGER_TYPE);
@@ -1688,10 +1709,10 @@ void hvFadcManager::ReadHVSettings(){
 	    _dummyChannelVector[nHvChannels].number         = key.second.get_value<int>();
 	}
 	else if(key.first.find("VoltageSet") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].voltageSet     = key.second.get_value<int>();
+	    _dummyChannelVector[nHvChannels].voltageSet     = key.second.get_value<float>();
 	}
 	else if(key.first.find("VoltageNominal") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].voltageNominal = key.second.get_value<int>();
+	    _dummyChannelVector[nHvChannels].voltageNominal = key.second.get_value<float>();
 	}
 	else if(key.first.find("VoltageBound") != std::string::npos){
 	    _dummyChannelVector[nHvChannels].voltageBound   = key.second.get_value<float>();

@@ -311,6 +311,29 @@ void hvChannel::printCurrentMeasured(){
 	      << std::endl;
 }
 
+void hvChannel::printVoltageAndCurrentMeasured(){
+    // this function updates channel and prints the current value
+    // of voltage and current combined in 1 line
+    updateChannel();
+
+    std::cout << _channelName 
+	      << " #" 
+	      << _channelNumber 
+	      << " :\t"
+	      << _voltageMeasured
+	      << " / "
+	      << _voltageSet
+	      << " V"
+	      << "\t"
+	      << _currentMeasured
+	      << " / "
+	      << _currentSet
+	      << " mA"
+	      << std::endl;
+
+}
+
+
 void hvChannel::printVoltageCurrentNominal(){
     // this function updates the channel and then prints the
     // currently set nominal voltage and current

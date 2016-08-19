@@ -11,6 +11,8 @@
 
 #include "pc.hpp"
 #include <boost/any.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
 #include <cstdlib>
 
 
@@ -57,8 +59,9 @@ PC::PC(Timepix *tp):
     DataPathName = "data/singleFrames/";
     DataFileName = "data";
 
-    RunPathName  = "data/runs/";
-    RunFileName  = "run.txt";
+    RunPathName      = "data/runs/";
+    RunFolderPreName = "Run_";
+    RunFileName      = "run.txt";
 
     FSRPathName = "data/fsr/";
     FSRFileName = "fsr";
@@ -2224,6 +2227,15 @@ int PC::DoRun(unsigned short runtimeFrames_,
     mkdir(PathName.c_str(),0755);
 #endif
 
+    // now check which the next run number should be
+    int runNumber = 0;
+    runNumber = GetRunNumber();
+    if(runNumber == -1){
+	std::cout << "aborting run." << std::endl;
+	return -1;
+    }
+    
+
     // add information to _runMap to write them to headers
     _runMap["runTime"]         = runtime;
     _runMap["runTimeFrames"]   = runtimeFrames;
@@ -2236,7 +2248,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
     _runMap["numChips"]        = fpga->tp->GetNumChips();
   
     //WriteRunFile();
-    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++)
+    for (unsigned short chip = 1; chip <= fpga->tp->GetNumChips(); chip++)
     {
         sstream<<"_"<<chip;
         FileName=PathName+"/"; FileName+=FSRFileName; FileName+=sstream.str();
@@ -2245,8 +2257,8 @@ int PC::DoRun(unsigned short runtimeFrames_,
         fpga->tp->SaveMatrixToFile(FileName,chip);
         sstream.str("");
     }
-          
-  
+
+    
     MeasuringCounter = 0;
 
     // in case we use an external trigger, we call CountingTrigger()
@@ -2856,4 +2868,54 @@ void PC::SpeedTest(int wdh, int freq){ //outdated, not used any more
   
     fpga->GeneralReset(); fpga->GeneralReset(); fpga->GeneralReset();
 
+}
+
+
+int PC::GetRunNumber(){
+    // this function scans the RunPathName folder for folders, which
+    // correspond to runs to determine the run number of the next run
+    boost::filesystem::path p = boost::filesystem::current_path();
+    boost::filesystem::path runPath (std::string(p.string()).append("/" + RunPathName));
+
+    if(boost::filesystem::exists(runPath)){
+	// runPath contains the path to the runs folder
+	boost::filesystem::directory_iterator end_itr;
+	// and define a filter to extract only folders corresponding to runs
+	//std::regex filter(RunFolderPreName + "*");
+	std::regex filter("(Run*_*_)(.*)");
+	// and define a set in which we store all run numbers
+	std::set<int> runNumbers;
+	std::cout << "directory exists" << std::endl;
+	for( boost::filesystem::directory_iterator itr(runPath.string()); itr != end_itr; itr++){
+	    // first we check for each object, if it is a directory
+	    std::cout << "running over directories" << std::endl;
+	    if( !boost::filesystem::is_directory(itr->path()) ){
+		// if not a directory, skip
+		std::cout << "not a directory, skip " << itr->path().filename().string() << std::endl;
+		continue;
+	    }
+	    //std::smatch match;
+	    std::smatch match;
+	    // check whether the current directory matches our filter
+	    if( !std::regex_match( itr->path().filename().string(), match, filter ) ){
+		// if not skip this directory
+		std::cout << "what? " << match[0] << "\t" << match[1] << std::endl;
+		std::cout << "not a match, skip " << itr->path().filename().string() << std::endl;
+		continue;
+	    }
+	    // if it does, simply extract the run number from it
+	    std::smatch numberMatch;
+	    std::regex runNumberFilter("(_*_)(.*)");
+	    std::cout << "a match, try to match with _*_ " << std::endl;
+	    std::regex_match(itr->path().filename().string(), numberMatch, runNumberFilter);
+	    std::cout << "number match 0 " << numberMatch[0] << std::endl;
+	    std::cout << "number match 1 " << numberMatch[1] << std::endl;
+	}
+    }
+    else{
+	std::cout << "Run folder " << runPath << " does not exist." << std::endl;
+	return -1;
+    }
+
+    return 0;
 }

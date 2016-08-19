@@ -334,6 +334,11 @@ void Consumer::run()
 	parent->mutexVBuffer.unlock();
 
 
+	// get current date and time to output that into event file
+	std::string curDateAndTime;
+	curDateAndTime = parent->_hvFadcManager->currentDateTime();
+	
+
 	// before we write actual data to the file, we write a header for the file
 	std::fstream outfile;
 	// get the parameters we are going to print into the header from the _runMap
@@ -354,6 +359,7 @@ void Consumer::run()
 	        << "## runTime:       	 " << runTimeM       << "\n"
 		<< "## runTimeFrames: 	 " << runTimeFramesM << "\n"
 		<< "## pathName:         " << pathNameM      << "\n"
+		<< "## dateTime:         " << curDateAndTime << "\n"
 		<< "## numChips:         " << numChipsM      << "\n"
 		<< "## shutterTime:      " << shutterTimeM   << "\n"
 		<< "## shutterMode:      " << shutterModeM   << "\n"
@@ -361,7 +367,7 @@ void Consumer::run()
 		<< "## fastClock:        " << fastClockM     << "\n"
 		<< "## externalTrigger:  " << extTriggerM    << "\n"
 		<< "## [Event]"                              << "\n"
-		<< "## eventNumber       " << i              << "\n"
+		<< "## eventNumber:      " << i              << "\n"
 		<< "## useHvFadc:    	 " << useHvFadcM     << "\n"
 		<< "## fadcReadout:    	 " << fadcReadoutM   << "\n"
 		<< "## szint1ClockInt:	 " << parent->_fadcParams["scint1ClockInt"] << "\n"
@@ -400,9 +406,9 @@ void Consumer::run()
 	    // now call the writeChipData function to write the vector of this chip
 	    // to file
 	    // call function with filename, the vector of this chip and the chip number
-	    if (chip != parent->_center_chip){
+	    if ((chip + 1) != parent->_center_chip){
 		// in case we're currently not at the center chip, just call writeChipData
-		parent->writeChipData(filePathName, parent->Vbuffer[i % parent->BufferSize][chip], chip);
+		parent->writeChipData(filePathName, parent->Vbuffer[i % parent->BufferSize][chip], chip + 1);
 	    }
 	    else{
 		// if we're at the center chip, call the readoutFadc function, which internally

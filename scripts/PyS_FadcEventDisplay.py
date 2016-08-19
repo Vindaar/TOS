@@ -165,7 +165,7 @@ class WorkOnFile:
 
         fadc_values = readFadcFile(filepath_name)
         # for now hardcoded pedestal file
-        pedestalFile = "/home/tpc/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
+        pedestalFile = "/home/ingrid/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
         # apply the pedestal run
         fadc_values = applyPedestalRun(pedestalFile, fadc_values)
         # after applying the pedestal, also apply temporal correction

@@ -67,6 +67,7 @@ SOURCES += src/caseFunctions.cc \
 LIBS += -Wl,--no-as-needed \
         -Wl,--rpath=/usr/local/lib \
         -Wl,--rpath=/usr/lib \
+        -lboost_filesystem -lboost_system \
         -lreadline
 
 
