@@ -376,3 +376,57 @@ Cathode Event Status:
 ##### Module related #####
 TO BE IMPLEMENTED 
 
+
+
+######################### NEW ENTRY #########################
+
+Error log append happened at: 2016-08-19.15:30:18
+During event #: 10
+##### Event Group Status #####
+type: uint32_t 
+Each bit corresponds to one group. If a bit is set, the corresponding group had an event
+moduleEventGroupStatus: 0
+
+##### Channel Event Status #####
+Grid Event Status: 
+	 EventInputError:          0
+	 EventOnToOff:             0
+	 EventEndOfRamping:        0
+	 EventEmergency:           0
+	 EventControlledByVoltage: 0
+	 EventControlledByCurrent: 0
+	 EventCurrentBounds:       0
+	 EventExternalInhibit:     0
+	 EventCurrentTrip:         0
+	 EventCurrentLimit:        0
+	 EventVoltageLimit:        0
+
+Anode Event Status: 
+	 EventInputError:          0
+	 EventOnToOff:             0
+	 EventEndOfRamping:        0
+	 EventEmergency:           0
+	 EventControlledByVoltage: 0
+	 EventControlledByCurrent: 0
+	 EventCurrentBounds:       0
+	 EventExternalInhibit:     0
+	 EventCurrentTrip:         0
+	 EventCurrentLimit:        0
+	 EventVoltageLimit:        0
+
+Cathode Event Status: 
+	 EventInputError:          0
+	 EventOnToOff:             0
+	 EventEndOfRamping:        0
+	 EventEmergency:           0
+	 EventControlledByVoltage: 0
+	 EventControlledByCurrent: 0
+	 EventCurrentBounds:       0
+	 EventExternalInhibit:     0
+	 EventCurrentTrip:         0
+	 EventCurrentLimit:        0
+	 EventVoltageLimit:        0
+
+##### Module related #####
+TO BE IMPLEMENTED 
+

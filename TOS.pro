@@ -7,7 +7,7 @@ TEMPLATE = app
 TARGET = TOS
 DEPENDPATH += . src
 INCLUDEPATH += . include
-QMAKE_CXXFLAGS += -std=c++11 -o0 -g -Wall -W -pedantic -Wl,--no-as-needed
+QMAKE_CXXFLAGS += -std=c++17 -o0 -g -Wall -W -pedantic -Wl,--no-as-needed
 OBJECTS_DIR = tmp
 MOC_DIR = tmp
 DESTDIR = bin

@@ -623,6 +623,20 @@ int Console::UserInterface(){
 			  << std::endl;
 	    }
 	}
+	// function to call to ramp up
+	else if (ein.compare("RampChannels") == 0)
+	{
+	    // if the HV_FADC object is initialized
+	    if(_hvFadcManagerActive == true){
+		_hvFadcManager->RampChannels();
+	    }
+	    // if it is not initialized
+	    else{
+		std::cout << "Currently not using HV_FADC Object \n" 
+			  << "Call ActivateHFM command and try again"
+			  << std::endl;
+	    }
+	}
 
 	else if (ein.compare("ShutdownHFM") == 0){
 	    if (_hvFadcManagerActive == true){
@@ -2604,13 +2618,15 @@ int Console::CommandTHLScan(){
     bool allowDefaultOnEmptyInput = false;
     std::string input;
 
-    unsigned short chip;
     unsigned short coarselow;
     unsigned short coarsehigh;
-    std::cout << "Which chip do you want to THL scan? (1-" << pc->fpga->tp->GetNumChips() << ") " << std::flush;
-    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    chip = std::stoi(input);
+    std::cout << "Which chip do you want to THL scan? (1-"
+	      << pc->fpga->tp->GetNumChips() << ") \n"
+	      << "0 for all chips." << std::endl;
+
+    std::string inputChips;
+    inputChips = getUserInputNonNumericalDefault(_prompt);
+    if(inputChips == "quit") return -1;
     std::cout << "Start coarse " << std::flush;
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
@@ -2619,7 +2635,22 @@ int Console::CommandTHLScan(){
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     coarsehigh = std::stoi(input);
-    pc->DoTHLScan(chip,coarselow,coarsehigh);
+
+    
+    if (inputChips == "0"){
+	// in this case perform for all chips
+	for( int chip = 0; chip < pc->fpga->tp->GetNumChips(); chip++){
+	    
+	    pc->DoTHLScan(chip + 1, coarselow, coarsehigh);	    
+	}
+    }
+    else{
+	unsigned short chip;
+	chip = std::stoi(inputChips);
+	pc->DoTHLScan(chip, coarselow, coarsehigh);
+    }
+    
+
     return 0;
 }
 
@@ -2641,7 +2672,7 @@ int Console::CommandSCurve(){
 	      << ") " 
 	      << std::flush;
     std::cout << "Warning: Only CTPR = 1 will be used. Hence only column x = 0, "
-	      << "x= 32, ... Make sure that NONE of this columns is dead. "
+	      << "x= 32, ... Make sure that NONE of these columns are dead. "
 	      << "Otherwise put a column offset ( 0(no offset) to 31)" 
 	      << std::flush;
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);

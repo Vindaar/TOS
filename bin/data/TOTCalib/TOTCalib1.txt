@@ -14,3 +14,4 @@ pulse 350	chip 1	mean 132	std 32
 pulse 450	chip 1	mean 162	std 59
 pulse 100	chip 1	mean 71	std 5
 pulse 100	chip 1	mean 71.25	std 5.19615
+pulse 20	chip 1	mean 0	std 0

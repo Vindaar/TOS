@@ -175,7 +175,10 @@ public:
     hvModule* getHVModulePtr();
 
     void ReadHVSettings();
-    void InitHFMForTOS(); 
+    // init HFM sets all settings of HV and FADC, but does not start the ramp
+    void InitHFMForTOS();
+    // RampChannels starts the ramp up of all channels
+    void RampChannels(bool alreadyInBounds = false);
     void ShutDownHFMForTOS();
     void SetFadcSettings();
 

@@ -4,7 +4,7 @@ Preamp 255
 BuffAnalogA 127
 BuffAnalogB 127
 Hist 0
-THL 391
+THL 357
 Vcas 130
 FBK 128
 GND 80

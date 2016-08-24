@@ -79,6 +79,7 @@ const char *tosCommands[] = {"GeneralReset",
 // HV_FADC commands
 			     "InitHFM",
 			     "InitHV_FADC",
+			     "RampChannels",
 			     "ShutdownHFM",
 			     "ActivateHFM",
 			     "CheckHVModuleIsGood",

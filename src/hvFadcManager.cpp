@@ -470,9 +470,6 @@ void hvFadcManager::InitHFMForTOS(){
 		  << std::endl;
     }
 
-    // now set all channels to on
-    good = SetAllChannelsOn();
-    if (good == false) return;
 
     // before we start ramping up the HV modules, first set FADC settings
     std::cout << "Setting FADC settings" << std::endl;
@@ -483,6 +480,29 @@ void hvFadcManager::InitHFMForTOS(){
     bool alreadyInBounds = false;
     alreadyInBounds = CheckAllChannelsInVoltageBound();
     std::cout << "already in bounds? " << alreadyInBounds << std::endl;
+
+    std::string inputRamp;
+    std::set<std::string> allowedInputs = {"Y", "y", "N", "n"};
+    std::cout << "Do you wish to ramp up the channels now? (Y / n)" << std::endl;
+    inputRamp = getUserInputNonNumericalDefault("> ", &allowedInputs);
+    if ( (inputRamp == "") ||
+	 (inputRamp == "Y") ||
+	 (inputRamp == "y") ){
+	RampChannels(alreadyInBounds);
+    }
+
+    _hvModInitFlag = true;
+
+    // and all should be good :)
+}
+
+
+void hvFadcManager::RampChannels(bool alreadyInBounds){
+    // this function starts the ramp up of the channels
+    // now set all channels to on
+    bool good = false;
+    good = SetAllChannelsOn();
+    if (good == false) return;
 
     // create seperate thread, which loops and will be stopped, if we type stop in terminal
     if (alreadyInBounds == false){
@@ -503,16 +523,8 @@ void hvFadcManager::InitHFMForTOS(){
 	loop_thread.join();
     }
 
-    // if (alreadyInBounds == false){
-    // 	// now check if ramping started
-    // 	bool rampUpFlag = true;
-    // 	CheckModuleIsRamping(rampUpFlag);
-    // }
-
-    _hvModInitFlag = true;
-
-    // and all should be good :)
 }
+
 
 void hvFadcManager::CheckModuleIsRamping(bool rampUpFlag){
     // this is a convenience function, which checks whether the
@@ -1146,8 +1158,11 @@ void hvFadcManager::TurnChannelOnOff(){
     // also create a set of allowed strings for input
     std::set<std::string> allowedStrings;
     allowedStrings = PrintActiveChannels();
+    
+    allowedStrings.insert("all");
 
     std::cout << "Select channel to switch (on <-> off) / type quit: " << std::endl;
+    std::cout << "All to switch all channels (careful if some on, some off!)" << std::endl;
     std::string input;
     input = getUserInputNonNumericalNoDefault("> ", &allowedStrings);
     if(input == "quit"){
@@ -1158,9 +1173,14 @@ void hvFadcManager::TurnChannelOnOff(){
 	std::for_each( _channelList.begin(), _channelList.end(), [&input](hvChannel *ptrChannel){
 		// get channel number
 		std::string number;
-		number = std::to_string(ptrChannel->getChannelNumber());
-		// and switch correct channel
-		if(input == number){
+		if (input != "all") {
+		    number = std::to_string(ptrChannel->getChannelNumber());
+		    // and switch correct channel
+		    if(input == number){
+			ptrChannel->switchOnOff();
+		    }
+		}
+		else{
 		    ptrChannel->switchOnOff();
 		}
 	    } );
@@ -1541,58 +1561,63 @@ std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunF
 
 bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, int> fadcParams, std::vector<int> fadcData){
     // this function is used to write FADC data to the file 'filename'
-    
-    // create output file stream
-    std::ofstream outFile(filename);
 
     // define flag which is used to return whether file was written
     bool good = false;
-
-    std::cout << "writing FADC data to " << filename << std::endl;
-    // TODO: change local variable here!!!!
-    int channels = 4;
-   
     
-    //write data to output file
-    if( outFile.is_open() )
-    {
-	//write petrig/postrig/etc to file
-	outFile << "# nb of channels: "  << fadcParams["NumChannels"]  << std::endl;
-	outFile << "# channel mask: "    << fadcParams["ChannelMask"]  << std::endl;
-	outFile << "# postrig: "         << fadcParams["PostTrig"]     << std::endl;
-	outFile << "# pretrig: "         << fadcParams["PreTrig"]      << std::endl;
-	outFile << "# triggerrecord: "   << fadcParams["TriggerRec"]   << std::endl;
-	outFile << "# frequency: "       << fadcParams["Frequency"]    << std::endl;
-	outFile << "# sampling mode: "   << fadcParams["ModeRegister"] << std::endl;
-	outFile << "# pedestal run: "    << fadcParams["PedestalRun"]  << std::endl;
-	outFile << "#Data:" << std::endl;
+    // only does anything, if hvFadcManager is active!
+    if (_hvModInitFlag == true){
+        
+        // create output file stream
+        std::ofstream outFile(filename);
 
 
-	// TODO: why unsigned int used? problematic, since channels is int.
-	// -> changed iData and iVector to int
-	//"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
-	std::cout << "number of channels?! " << channels << std::endl;
-	for(int iData = 0; iData < 3*channels; iData++)
-	    outFile << "#" << fadcData[iData] << std::endl;
-    
-	//print the actual data to file
-	for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
-	    outFile << fadcData[iVector] << std::endl;
-          
-	//"skip the remaining data points
-	for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
-	    outFile << "# " << fadcData.at(iRest) << std::endl;
+        std::cout << "writing FADC data to " << filename << std::endl;
+        // TODO: change local variable here!!!!
+        int channels = 4;
+       
+        
+        //write data to output file
+        if( outFile.is_open() )
+        {
+    	//write petrig/postrig/etc to file
+    	outFile << "# nb of channels: "  << fadcParams["NumChannels"]  << std::endl;
+    	outFile << "# channel mask: "    << fadcParams["ChannelMask"]  << std::endl;
+    	outFile << "# postrig: "         << fadcParams["PostTrig"]     << std::endl;
+    	outFile << "# pretrig: "         << fadcParams["PreTrig"]      << std::endl;
+    	outFile << "# triggerrecord: "   << fadcParams["TriggerRec"]   << std::endl;
+    	outFile << "# frequency: "       << fadcParams["Frequency"]    << std::endl;
+    	outFile << "# sampling mode: "   << fadcParams["ModeRegister"] << std::endl;
+    	outFile << "# pedestal run: "    << fadcParams["PedestalRun"]  << std::endl;
+    	outFile << "#Data:" << std::endl;
 
-	good = true;
 
-    }//end of if( outFile.is_open() )
-    else{
-	// could not write to file
-	good = false;
+    	// TODO: why unsigned int used? problematic, since channels is int.
+    	// -> changed iData and iVector to int
+    	//"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
+    	std::cout << "number of channels?! " << channels << std::endl;
+    	for(int iData = 0; iData < 3*channels; iData++)
+    	    outFile << "#" << fadcData[iData] << std::endl;
+        
+    	//print the actual data to file
+    	for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
+    	    outFile << fadcData[iVector] << std::endl;
+              
+    	//"skip the remaining data points
+    	for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
+    	    outFile << "# " << fadcData.at(iRest) << std::endl;
+
+    	good = true;
+
+        }//end of if( outFile.is_open() )
+        else{
+    	// could not write to file
+    	good = false;
+        }
+
+        //close output file
+        outFile.close();
     }
-
-    //close output file
-    outFile.close();
 
     return good;
 }

@@ -85,11 +85,10 @@ void Producer::run()
 	{
 	    parent->mutexVBuffer.lock();             
 	    //if there was a trigger from the fadc: stop data taking and readout the chip and fadc event
-	    // if((parent->fpga->ReadoutFadcFlag()) == 1)
-	    // {
-	    fadcReadout = true;
-	    parent->fpga->ClearFadcFlag();
-	    //}
+	    if((parent->fpga->ReadoutFadcFlag()) == 1){
+		fadcReadout = true;
+		parent->fpga->ClearFadcFlag();
+	    }
 	    parent->mutexVBuffer.unlock();
 
 	    // TODO: check what this means?!
@@ -140,8 +139,9 @@ void Producer::run()
 	    // start by writing the data we read from the chip to the VBuffer
 	    (parent->Vbuffer)[(i % parent->BufferSize)][chip] = dataVec;
 
-	    if ( (fadcReadout == true) &&
-		 (chip == parent->_center_chip) ){
+	    if ( (parent->_useHvFadc == true) &&
+		 (fadcReadout == true) &&
+		 ((chip + 1) == parent->_center_chip) ){
 		// in case we're using the FADC and we're currently on the center chip,
 		// we're going to read out the FADC
         
@@ -227,16 +227,18 @@ void Producer::run()
 	    parent->mutexVBuffer.lock();
 	    // TODO: deprecated. Call different function!
 	    isGood = (parent->_hvFadcManager)->H_CheckHVModuleIsGood(true);
-	    parent->mutexVBuffer.unlock();             
-	    if (isGood == -1){
-		// this means something is wrong with HV
-		// - call a function to report about problem (dump to file)
-		// - stop the run with error message
-		parent->mutexVBuffer.lock();
-		(parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
-		parent->mutexVBuffer.unlock();
-		parent->StopRun();
-	    }
+	    parent->mutexVBuffer.unlock();
+
+	    // TODO:!! IMPORTANT!!! TAKE BACK IN AFTER CORRECTING CHECKHVMODULEISGOOD!!!
+	    // if (isGood == -1){
+	    // 	// this means something is wrong with HV
+	    // 	// - call a function to report about problem (dump to file)
+	    // 	// - stop the run with error message
+	    // 	parent->mutexVBuffer.lock();
+	    // 	(parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
+	    // 	parent->mutexVBuffer.unlock();
+	    // 	parent->StopRun();
+	    // }
 	    
 	}
 
@@ -344,6 +346,7 @@ void Consumer::run()
 	// get the parameters we are going to print into the header from the _runMap
 	int runTimeM          	 = boost::any_cast<int>(parent->_runMap["runTime"]); 
 	int runTimeFramesM    	 = boost::any_cast<unsigned short>(parent->_runMap["runTimeFrames"]);
+	int runNumberM           = boost::any_cast<int>(parent->_runMap["runNumber"]); 
 	std::string pathNameM 	 = boost::any_cast<std::string>(parent->_runMap["pathName"]);
 	int numChipsM         	 = boost::any_cast<unsigned short>(parent->_runMap["numChips"]);
 	int shutterTimeM      	 = boost::any_cast<int>(parent->_runMap["shutterTime"]);
@@ -356,6 +359,7 @@ void Consumer::run()
 	
 	outfile.open(filePathName, std::fstream::out);
 	outfile << "## [General]"                            << "\n"
+	        << "## runNumber:        " << runNumberM     << "\n"
 	        << "## runTime:       	 " << runTimeM       << "\n"
 		<< "## runTimeFrames: 	 " << runTimeFramesM << "\n"
 		<< "## pathName:         " << pathNameM      << "\n"
@@ -405,15 +409,18 @@ void Consumer::run()
 
 	    // now call the writeChipData function to write the vector of this chip
 	    // to file
-	    // call function with filename, the vector of this chip and the chip number
-	    if ((chip + 1) != parent->_center_chip){
-		// in case we're currently not at the center chip, just call writeChipData
-		parent->writeChipData(filePathName, parent->Vbuffer[i % parent->BufferSize][chip], chip + 1);
-	    }
-	    else{
+
+	    if ( (parent->_useHvFadc == true) &&
+		 (fadcReadoutM == true) &&
+		 ((chip + 1) == parent->_center_chip) ){
 		// if we're at the center chip, call the readoutFadc function, which internally
 		// calls writeChipData and also writes the FADC data to file
 		parent->readoutFadc(parent->PathName, parent->_fadcParams, parent->Vbuffer[i % parent->BufferSize][chip], parent->_fadcData);
+	    }
+	    else{
+		// in case we're currently not at the center chip, just call writeChipData
+		// or the HFM is not initialized
+		parent->writeChipData(filePathName, parent->Vbuffer[i % parent->BufferSize][chip], chip + 1);
 	    }
 
 	    // now call readoutFADC to print the FADC 

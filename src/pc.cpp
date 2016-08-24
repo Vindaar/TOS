@@ -337,6 +337,10 @@ int PC::DoDACScan(int DACstoScan,unsigned short chip) {
 
 int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh){
         fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
+
+	std::fstream thlStream;
+	thlStream.open("data/THLScan.txt", std::fstream::app);
+	
         for(unsigned int coarse=coarselow;coarse<=coarsehigh;coarse++){
                 fpga->GeneralReset();
                 usleep(10000);
@@ -352,17 +356,27 @@ int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short c
                         fpga->WriteReadFSR();
                         usleep(10000 );
 			// was 255, 0 before
-                        fpga->CountingTime(4, 1);
+                        //fpga->CountingTime(4, 1);
+			fpga->CountingTime(13, 2);
                         std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
                         int hits = 0;
                         int result=0;
                         fpga->DataChipFPGA(result);
                         hits = fpga->DataFPGAPC(data,chip);
                         usleep(20000);
-                        std::cout << "Hits: " << hits <<  "    Coarse: "<<coarse<<"    THL: "<< thl <<std::endl;
+                        std::cout << "Hits:\t" << hits
+				  << "\tCoarse:\t" << coarse
+				  << "\tTHL: " << thl
+				  << std::endl;
+			thlStream << "Hits:\t" << hits
+				  << "\tCoarse:\t" << coarse
+				  << "\tTHL: " << thl
+				  << std::endl;
                         delete data;
                 }
         }
+	thlStream.close();	
+	
         return 0;
 }
 
@@ -430,7 +444,7 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
                                                 for(y=0;y<256;y++){
                                                         for(x=0+offset;x<256;x=x+32){
                                                                 if (LFSR_LookUpTable[(*VecData)[chip][y][x]] >= 0 and LFSR_LookUpTable[(*VecData)[chip][y][x]]!=11810 and (fpga->tp->GetMask(y,x,chip))==1){
-                                                                        hit_counter +=1;
+                                                                        hit_counter += 1;
                                                                         hitsum +=LFSR_LookUpTable[(*VecData)[chip][y][x]];
                                                                 }
                                                         }
@@ -2213,20 +2227,6 @@ int PC::DoRun(unsigned short runtimeFrames_,
     time_t Time_SecondsPassed;
     struct tm * TimeStruct;
 
-    time(&Time_SecondsPassed); TimeStruct=localtime(&Time_SecondsPassed);
-    strftime(TimeName,19,"Run%y%m%d_%H-%M-%S",TimeStruct);
-#ifdef __WIN32__
-    mkdir(RunPathName.c_str());
-#else
-    mkdir(RunPathName.c_str(),0755);
-#endif
-    PathName = RunPathName; PathName+=TimeName;
-#ifdef __WIN32__
-    mkdir(PathName.c_str());
-#else
-    mkdir(PathName.c_str(),0755);
-#endif
-
     // now check which the next run number should be
     int runNumber = 0;
     runNumber = GetRunNumber();
@@ -2234,11 +2234,32 @@ int PC::DoRun(unsigned short runtimeFrames_,
 	std::cout << "aborting run." << std::endl;
 	return -1;
     }
+
+    time(&Time_SecondsPassed);
+    TimeStruct=localtime(&Time_SecondsPassed);
+    strftime(TimeName,19,"%y%m%d-%H-%M",TimeStruct);
+#ifdef __WIN32__
+    mkdir(RunPathName.c_str());
+#else
+    mkdir(RunPathName.c_str(),0755);
+#endif
+    
+    PathName  = RunPathName;
+    PathName += "Run_" + std::to_string(runNumber) + "_" + TimeName;
+    std::cout << PathName << "\n\n" << std::endl;
+
+    
+#ifdef __WIN32__
+    mkdir(PathName.c_str());
+#else
+    mkdir(PathName.c_str(),0755);
+#endif
     
 
     // add information to _runMap to write them to headers
     _runMap["runTime"]         = runtime;
     _runMap["runTimeFrames"]   = runtimeFrames;
+    _runMap["runNumber"]       = runNumber;
     _runMap["shutterTime"]     = shutterTime;
     _runMap["shutterMode"]     = shutter_mode;
     _runMap["runMode"]         = run_mode;
@@ -2577,46 +2598,52 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
     std::cout << "Enter: PC::readoutFADC()" << std::endl;
 #endif 
 
-    //build filename
-    std::string fileName;
+    // check if HFM is active
+    if (_useHvFadc == true){
+        //build filename
+        std::string fileName;
 
-    int eventNumber = 0;
-    eventNumber = fadcParams["eventNumber"];
+        int eventNumber = 0;
+        eventNumber = fadcParams["eventNumber"];
+        
+        FileName = _hvFadcManager->buildFileName(filePath, false, eventNumber);
+        std::cout << "calling writeChip from fadc readout function" << std::endl;
+
+        //readout chip
+        if (run_mode == 0)
+        {
+	    writeChipData(FileName, chipData, _center_chip);
+        }
+        //TODO:: This should not be possible!!
+        else
+        { 
+	    std::cout << "full matrix readout not implemented" << std::endl;
+	    std::cout << "if this error message appears on your screen, something went really wrong!!" << std::endl;
+        }
+
+        //readout FADC 
+        //get nb of channels
+        int channels = 4;
+
+        if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2))
+        {
+	    if( !(fadcParams["ChannelMask"] & 8) ) channels--;
+	    if( !(fadcParams["ChannelMask"] & 4) ) channels--;
+	    if( !(fadcParams["ChannelMask"] & 2) ) channels--;
+	    if( !(fadcParams["ChannelMask"] & 1) ) channels--;
+        }
+
+        //set filename and open file for FADC data
+        FileName = FileName + "-fadc";
+        std::cout << "outfile " << FileName << std::endl;
+
+        // write data to file
+        _hvFadcManager->writeFadcData(FileName, fadcParams, fadcData);
+    }
+    else{
+	std::cout << "HFM not active. readoutFADC should never have been called." << std::endl;
+    }
     
-    FileName = _hvFadcManager->buildFileName(filePath, false, eventNumber);
-    std::cout << "calling writeChip from fadc readout function" << std::endl;
-
-    //readout chip
-    if (run_mode == 0)
-    {
-	writeChipData(FileName, chipData, _center_chip);
-    }
-    //TODO:: This should not be possible!!
-    else
-    { 
-	std::cout << "full matrix readout not implemented" << std::endl;
-	std::cout << "if this error message appears on your screen, something went really wrong!!" << std::endl;
-    }
-
-    //readout FADC 
-    //get nb of channels
-    int channels = 4;
-
-    if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2))
-    {
-	if( !(fadcParams["ChannelMask"] & 8) ) channels--;
-	if( !(fadcParams["ChannelMask"] & 4) ) channels--;
-	if( !(fadcParams["ChannelMask"] & 2) ) channels--;
-	if( !(fadcParams["ChannelMask"] & 1) ) channels--;
-    }
-
-    //set filename and open file for FADC data
-    FileName = FileName + "-fadc";
-    std::cout << "outfile " << FileName << std::endl;
-
-    // write data to file
-    _hvFadcManager->writeFadcData(FileName, fadcParams, fadcData);
-
     return;
 }
 
@@ -2877,39 +2904,37 @@ int PC::GetRunNumber(){
     boost::filesystem::path p = boost::filesystem::current_path();
     boost::filesystem::path runPath (std::string(p.string()).append("/" + RunPathName));
 
+    std::set<int> runNumberSet;
+
     if(boost::filesystem::exists(runPath)){
 	// runPath contains the path to the runs folder
 	boost::filesystem::directory_iterator end_itr;
 	// and define a filter to extract only folders corresponding to runs
 	//std::regex filter(RunFolderPreName + "*");
-	std::regex filter("(Run*_*_)(.*)");
+
+	std::regex filter("(Run)_(.*)_(.*)");
 	// and define a set in which we store all run numbers
 	std::set<int> runNumbers;
 	std::cout << "directory exists" << std::endl;
 	for( boost::filesystem::directory_iterator itr(runPath.string()); itr != end_itr; itr++){
 	    // first we check for each object, if it is a directory
-	    std::cout << "running over directories" << std::endl;
 	    if( !boost::filesystem::is_directory(itr->path()) ){
 		// if not a directory, skip
 		std::cout << "not a directory, skip " << itr->path().filename().string() << std::endl;
 		continue;
 	    }
+	    std::cout << "path " << itr->path().filename().string() << std::endl;
 	    //std::smatch match;
 	    std::smatch match;
+	    // define variable for path
+	    std::string path = itr->path().filename().string();
+	  
 	    // check whether the current directory matches our filter
-	    if( !std::regex_match( itr->path().filename().string(), match, filter ) ){
-		// if not skip this directory
-		std::cout << "what? " << match[0] << "\t" << match[1] << std::endl;
-		std::cout << "not a match, skip " << itr->path().filename().string() << std::endl;
-		continue;
+	    if( std::regex_match( path, match, filter ) ){
+		std::cout << "a match " << itr->path().filename().string() << std::endl;
+		// now add match[2] to set of run numbers
+		runNumberSet.insert(std::stoi(match[2]));
 	    }
-	    // if it does, simply extract the run number from it
-	    std::smatch numberMatch;
-	    std::regex runNumberFilter("(_*_)(.*)");
-	    std::cout << "a match, try to match with _*_ " << std::endl;
-	    std::regex_match(itr->path().filename().string(), numberMatch, runNumberFilter);
-	    std::cout << "number match 0 " << numberMatch[0] << std::endl;
-	    std::cout << "number match 1 " << numberMatch[1] << std::endl;
 	}
     }
     else{
@@ -2917,5 +2942,14 @@ int PC::GetRunNumber(){
 	return -1;
     }
 
-    return 0;
+    // after running over all folder, we simply choose get the highest run number and
+    // return + 1 of it as the new run number
+    int runNumber = 0;
+    if( !runNumberSet.empty() ){
+	int highestNum;
+	highestNum = *runNumberSet.rbegin();
+	runNumber = highestNum + 1;
+    }
+
+    return runNumber;
 }
