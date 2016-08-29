@@ -6,6 +6,7 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.animation as animation
+from matplotlib.lines import Line2D
 import os
 import time
 from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc
@@ -60,6 +61,23 @@ class WorkOnFile:
         self.septem        = septem
         self.chip_subplots = chip_subplots
         self.fadcPlot      = fadcPlot
+        #self.fadcPlot.plot(np.arange(100), np.zeros(100), color='blue')
+        self.fadcPlotLine  = self.fadcPlot.plot([], [], color = 'blue')
+        #self.fadcPlot.add_line(self.fadcPlotLine)
+
+        # zero initialized numpy array
+        temp_array         = np.zeros((256, 256))
+        self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0, vmax=250) for i in xrange(len(self.chip_subplots))]
+        for im in self.im_list:
+            im.set_cmap('viridis')
+
+        # and now create the colorbar
+        try:
+            cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, self.septem.row3.bottom, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
+            cb = plt.colorbar(self.im_list[-1], cax = cbaxes)
+        except UnboundLocalError:
+            print filename
+            
     
     def connect(self):
         # connect both figures (septem and FADC windows) to the keypress event
@@ -75,6 +93,8 @@ class WorkOnFile:
     def refresh_filepath(self):
         # this function refreshes from the filepath
         files, filesFadc = create_files_from_path_combined(self.filepath)
+        if len(filesFadc) == 0:
+            filesFadc = ['data000205.txt-fadc']
         self.filelist = files
         self.filelistFadc = filesFadc
 
@@ -131,7 +151,7 @@ class WorkOnFile:
         # show the last frame
         self.refresh_filepath()
         print 'length of file list ', len(self.filelist)
-        ani     = MyFuncAnimation(self.fig,     self.work_on_file_interactive_end, interval=500)
+        ani     = MyFuncAnimation(self.fig,     self.work_on_file_interactive_end, interval=500, blit=False)
         #aniFadc = animation.FuncAnimation(self.figFadc, self.work_on_file_interactive_end, interval=500)
         plt.show()
 
@@ -162,9 +182,9 @@ class WorkOnFile:
         # p2.start()
 
         # now plot septem
-        plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots)#, out_q1.get(), out_q1.get())
+        plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)#, out_q1.get(), out_q1.get())
         # and fadc data
-        plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot)#, out_q2.get())
+        plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)#, out_q2.get())
 
         # p1.join()
         # p2.join()
@@ -177,11 +197,15 @@ class WorkOnFile:
         self.refresh_filepath()
         # and set filename to last element in list
         filename = self.filelist[-1]
-        filenameFadc = self.filelistFadc[-1]
+
         # now plot
-        plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots)
+        b = plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)
         # and fadc data
-        plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot)
+        if len(self.filelistFadc) > 0:
+            filenameFadc = self.filelistFadc[-1]
+            plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
+
+        return b
 
 
     def work_on_file_interactive(self, i):
@@ -194,11 +218,11 @@ class WorkOnFile:
 
         filenameFadc = self.filelistFadc[i]
         # now plot
-        plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots)
+        b = plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)
         # and fadc data
-        b = plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot)
+        plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
 
-        return self.chip_subplots
+        return b#self.chip_subplots
 
 def main(args):
 

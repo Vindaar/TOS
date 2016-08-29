@@ -3,6 +3,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 from septemFiles import read_zero_suppressed_data_file
 from septemClasses import Fadc
 from profilehooks import profile
@@ -15,7 +16,7 @@ def make_ticklabels_invisible(fig):
             tl.set_visible(False)
 
 #@profile
-def plot_file(filepath, filename, sep, fig, chip_subplots):#, evHeader, chpHeaderList):
+def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):#, evHeader, chpHeaderList):
 
     # create full path to file
     filepathName = filepath + filename
@@ -23,8 +24,9 @@ def plot_file(filepath, filename, sep, fig, chip_subplots):#, evHeader, chpHeade
     evHeader, chpHeaderList = read_zero_suppressed_data_file(filepathName)
 
     # clear all axes
-    for ax in chip_subplots:
-        ax.cla()
+    # not necessary anymore, since we use image.set_data
+    #for ax in chip_subplots:
+    #    ax.cla()
 
     # and remove the text symbol from before
     texts = fig.texts
@@ -38,11 +40,12 @@ def plot_file(filepath, filename, sep, fig, chip_subplots):#, evHeader, chpHeade
     header_box = fig.text(0.5, 0.9, header_text,
                           bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
                           family = 'monospace',
-                          transform = ax.transAxes,
+                          transform = chip_subplots[-1].transAxes,
                           horizontalalignment = 'center',
                           verticalalignment = 'center',
                           multialignment = 'left')
-    
+
+    plots_to_hide = range(7)
     for i, chpHeader in enumerate(chpHeaderList):
         chip_data = chpHeader.pixData
         try:
@@ -54,8 +57,16 @@ def plot_file(filepath, filename, sep, fig, chip_subplots):#, evHeader, chpHeade
 
             # now get current chip number so that we plot on to the correct chip
             chipNum = int(chpHeader.attr["chipNumber"])
-            im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])
-            #chip_subplots[chipNum - 1].invert_yaxis()
+
+            # now create an image, but rather use im_list to set the correct image data
+            im_list[chipNum - 1].set_data(chip_full_array)
+                        
+            # # now remove this chip from the plots_to_hide list
+            plots_to_hide.remove(chipNum - 1)
+            im_list[chipNum - 1].set_visible(True)
+
+            # not needed anymore
+            #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1], vmin=0, vmax=250)
             if chipNum not in [6, 7]:
                 # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
                 # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
@@ -64,9 +75,6 @@ def plot_file(filepath, filename, sep, fig, chip_subplots):#, evHeader, chpHeade
                 # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
                 # coordinate is at the top right. thus invert x axis
                 chip_subplots[chipNum - 1].invert_xaxis()
-            #print "plotting for chip ", chipNum
-            chip_full_array = np.ones((256,256))
-            im.set_cmap('viridis')
 
         except IndexError:
             print 'IndexError: chip', chpHeader.attr["chipNumber"], ' has no hits'
@@ -74,27 +82,23 @@ def plot_file(filepath, filename, sep, fig, chip_subplots):#, evHeader, chpHeade
         except TypeError:
             print 'TypeError: chip', chpHeader.attr["chipNumber"], ' has no hits'
 
-
+    # now set all plots invisible, which were not updated this time
+    for i in plots_to_hide:
+        print "removing ", i
+        im_list[i].set_visible(False)
+    
     make_ticklabels_invisible(chip_subplots)
-
-    # and create colorbar
-    try:
-        cbaxes = fig.add_axes([sep.row2.right - 0.03, sep.row3.bottom, 0.03, (sep.row3.top - sep.row3.bottom)])
-        cb = plt.colorbar(im, cax = cbaxes)
-    except UnboundLocalError:
-        print filename
+    #fig.canvas.draw()
 
     # and now plot everythin
-    #plt.show()
-    # plt.draw()
     plt.pause(0.01)
 
-    return chip_subplots
+    return chip_subplots + im_list
     
     
 
 #@profile
-def plot_fadc_file(filepath, filename, fadcPlot):#, fadc):
+def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
 
     print 'working on ', filename#self.filelist[self.i]
     # first we create an FADC object and give the filename to it
@@ -106,7 +110,7 @@ def plot_fadc_file(filepath, filename, fadcPlot):#, fadc):
     fadc = Fadc(filepathName)
     
     # clear plot from before and write labels
-    fadcPlot.cla()
+    # fadcPlot.cla()
     fadcPlot.set_xlabel('Time / clock cycles')
     fadcPlot.set_ylabel('U / fadc ticks')
 
@@ -116,12 +120,21 @@ def plot_fadc_file(filepath, filename, fadcPlot):#, fadc):
     #channel2 = fadc.channel2
     channel3 = fadc.channel3
 
+    print 'channel!!!', channel3
+
     # and plot everything
     #fadcPlot.set_title(filepathName)
     #fadcPlot.plot(np.arange(np.size(channel0)), channel0, color='purple')
     #fadcPlot.plot(np.arange(np.size(channel1)), channel1, color='red')
     #fadcPlot.plot(np.arange(np.size(channel2)), channel2, color='green')
-    fadcPlot.plot(np.arange(np.size(channel3)), channel3, color='blue')
+    print fadcPlotLine
+    fadcPlotLine[0].set_data(np.arange(np.size(channel3)), channel3)#, color='blue')
+
+    fadcPlot.relim()
+    fadcPlot.autoscale_view()
+
+    #fadcPlotLine.set_visible(True)
+    #fadcPlot.figure.canvas.draw()
 
     plt.pause(0.01)
 

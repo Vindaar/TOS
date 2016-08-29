@@ -2,6 +2,7 @@
 # regards to septem event display
 
 import os
+import scandir
 import numpy as np
 from septemClasses import eventHeader, chipHeaderData
 
@@ -37,7 +38,8 @@ def read_zero_suppressed_data_file(filepath):#, out_q1):
             chpHeaderList[-1].add_pixel(line)
     # after we're done reading the last file, we still need to convert the listOfPixels
     # of the last element in the chpHeaderList to an array:
-    chpHeaderList[-1].convert_list_to_array()
+    if len(chpHeaderList) > 0:
+        chpHeaderList[-1].convert_list_to_array()
 
     #print evHeader.attr
     #for chp in chpHeaderList:
@@ -88,21 +90,27 @@ def create_files_from_path_combined(folder):
     # or FADC events in a folder
     # functions returns list of two lists.
     # [septemFiles, fadcFiles]
-    files = os.listdir(folder)
+    #files = scandir.walk(folder)#os.listdir(folder)
+    #print files
+    #import sys
+    #sys.exit()
     # filter files by data in file and no fadc flag in filename
     n = 0
     eventFiles = []
     files_fadc = []
-    
-    for el in files:
-        if "data" in el and "fadc" not in el:
-            n += 1
-            eventFiles.append(el)
-        elif "fadc" in el:
-            # print el
-            n += 1
-            files_fadc.append(el)
 
+    for path, folder, files in scandir.walk(folder):#files:
+        for el in files:
+            if "data" in el and "fadc" not in el:
+                n += 1
+                eventFiles.append(el)
+            elif "fadc" in el:
+                # print el
+                n += 1
+                files_fadc.append(el)
+
+#    print eventFiles
+#    print files_fadc
     eventFiles.sort()
     files_fadc.sort()
 

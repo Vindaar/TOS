@@ -200,8 +200,14 @@ class eventHeader:
             event = "Event # : ".ljust(nFill)
             event += self.attr["eventNumber"] + "\n"
         except KeyError:
-            event = "Event # : ".ljust(nFill)
-            event += self.attr["eventNumber:"] + "\n"
+            try:
+                event = "Event # : ".ljust(nFill)
+                event += self.attr["eventNumber:"] + "\n"
+            except KeyError:
+                print 'KeyError: eventNumber not found in file', filename
+                print self.attr
+                import sys
+                sys.exit()
             
         date = "Date : ".ljust(nFill)
         date += self.attr["dateTime"] + "\n"
@@ -222,7 +228,7 @@ class eventHeader:
             fadcTrClock = ""
 
         szint = "Szint clock : ".ljust(nFill)
-        szint += self.attr["szint1ClockInt"] + "\n"
+        szint += self.attr["szint2ClockInt"] + "\n"
         
         fname = "Filename : ".ljust(nFill)
         fname += filename
@@ -256,9 +262,10 @@ class chipHeaderData:
     def add_pixel(self, el):
         # this function is used to add a single pixel to the listOfPixels
         el = el.split()
-        pixel = (int(el[0]), int(el[1]), int(el[2]))
-        if pixel[2] != 11810:
-            self.listOfPixels.append(pixel)
+        if len(el) == 3:
+            pixel = (int(el[0]), int(el[1]), int(el[2]))
+            if pixel[2] != 11810:
+                self.listOfPixels.append(pixel)
 
     def convert_list_to_array(self):
         # this function is called after all data has been read from the data file
