@@ -30,8 +30,8 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):#, evHeader,
 
     # and remove the text symbol from before
     texts = fig.texts
-    if len(texts) > 0:
-        texts[0].remove()
+    for i in range(len(texts)):
+        texts[-1].remove()
     # now add the header for this event. We add it to the last axes in the list
     # (for no special reason)
     # call function to get the header text
@@ -45,18 +45,27 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):#, evHeader,
                           verticalalignment = 'center',
                           multialignment = 'left')
 
+    # define the variable, in which we store the number of hits for each chip to
+    # print at the top left
+    hits_text = "Hits\n"
+
     plots_to_hide = range(7)
     for i, chpHeader in enumerate(chpHeaderList):
         chip_data = chpHeader.pixData
+        # now get current chip number so that we plot on to the correct chip
+        chipNum = int(chpHeader.attr["chipNumber"])
+        # and get the number of hits
+        numHits = int(np.size(chip_data))#chpHeader.attr["numHits"])
+        # use both to create the hits box
+        hits_text += "Chip #%i : %i" % (chipNum, numHits)
+        if chipNum != 7:
+            hits_text += "\n"
         try:
             chip_full_array = np.zeros((256, 256))
             # now input the chip data into the image array (need to invert
             # x and y column. imshow shows the data as row, column
             # which means y, x coordinates
             chip_full_array[chip_data[:,1], chip_data[:,0]] = chip_data[:,2]
-
-            # now get current chip number so that we plot on to the correct chip
-            chipNum = int(chpHeader.attr["chipNumber"])
 
             # now create an image, but rather use im_list to set the correct image data
             im_list[chipNum - 1].set_data(chip_full_array)
@@ -81,6 +90,16 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):#, evHeader,
             print chip_data
         except TypeError:
             print 'TypeError: chip', chpHeader.attr["chipNumber"], ' has no hits'
+
+
+    # now create the hits box
+    hits_box = fig.text(0.2, 0.9, hits_text,
+                        bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
+                        family = 'monospace',
+                        transform = chip_subplots[-1].transAxes,
+                        horizontalalignment = 'center',
+                        verticalalignment = 'center',
+                        multialignment = 'left')
 
     # now set all plots invisible, which were not updated this time
     for i in plots_to_hide:

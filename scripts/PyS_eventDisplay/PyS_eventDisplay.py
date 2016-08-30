@@ -66,7 +66,7 @@ class WorkOnFile:
         self.filepath       = filepath
         self.filelist       = []
         self.filelistFadc   = []
-        #self.filesDict      = filesDict
+        # and assign the namespace of the multiprocessing manager
         self.ns             = ns
 
         self.fig            = figure
@@ -308,25 +308,32 @@ def main(args):
 
 
     grid = gridspec.GridSpecFromSubplotSpec(3, 1, [row1, row2, row3])
-    
+
+    # create a new filelist manager, which allows the communication between the main thread and 
+    # the file checking thread
     filelistManager = myManager()
     filelistManager.start()
     
-    #tm = mp.Manager()
-    
+    # and create the namespace, which will be given to both thread, so they can access
+    # the same resources
     ns                 = mp.Manager().Namespace()
+    # define a flag for the refreshing thread, so it knows when to stop
     ns.doRefresh       = True
+    # define the ordered dictionary, in which we store the filenames
     ns.filelist        = filelistManager.OrderedDict()
+    # individual lists, which are generated from the dictionary
     ns.filelistEvents  = []
     ns.filelistFadc    = []
     ns.nfiles          = 0
+    # and the interval, in which the thread refreshes the filelist
     ns.refreshInterval = 0.2
     print ns
     
+    # now create the main thread, which starts the plotting
     files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns)
     files.connect()
 
-    
+    # and the second thread, which performs the refreshing
     p2 = mp.Process(target = refresh, args = (ns, folder) )
     p2.start()
     plt.show()
