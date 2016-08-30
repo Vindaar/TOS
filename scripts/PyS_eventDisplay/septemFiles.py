@@ -5,6 +5,7 @@ import os
 import scandir
 import numpy as np
 from septemClasses import eventHeader, chipHeaderData
+import collections
 
 def read_zero_suppressed_data_file(filepath):#, out_q1):
     # this function reads a single file, created by the septem board
@@ -85,28 +86,36 @@ def create_files_from_path_fadc(folder):
     return files_fadc
 
 
-def create_files_from_path_combined(folder):
+def create_files_from_path_combined(folder, test = False):
     # this function removes any files which are not chip events
     # or FADC events in a folder
     # functions returns list of two lists.
     # [septemFiles, fadcFiles]
     #files = scandir.walk(folder)#os.listdir(folder)
     #print files
-    #import sys
-    #sys.exit()
     # filter files by data in file and no fadc flag in filename
     n = 0
     eventFiles = []
     files_fadc = []
 
+    
+    # we store the files for events and FADC events in a dictionary, where
+    # the key is the filename of the event, and the value is the FADC filename
+    filesDict = {}
+
     for path, folder, files in scandir.walk(folder):#files:
         for el in files:
             if "data" in el and "fadc" not in el:
-                n += 1
+                #n += 1
+                filesDict[el] = ""
                 eventFiles.append(el)
             elif "fadc" in el:
-                # print el
-                n += 1
+                #n += 1
+                # in case there is an FADC file, strip the FADC flag off it
+                # and assign the value to the dictionary
+                eventName = el.rstrip("-fadc")
+                filesDict[eventName] = el
+                #print 'happens!\n\n\n', el, eventName
                 files_fadc.append(el)
 
 #    print eventFiles
@@ -114,4 +123,17 @@ def create_files_from_path_combined(folder):
     eventFiles.sort()
     files_fadc.sort()
 
-    return [eventFiles, files_fadc]
+    #filesDict.sort()
+    #print filesDict
+    filesDict = collections.OrderedDict( sorted( filesDict.items() ) )
+
+    #print filesDict
+    #print filesDict.keys()[205]
+
+    #import sys
+    #sys.exit()
+    
+    if test == False:
+        return [eventFiles, files_fadc]
+    else:
+        return filesDict

@@ -101,6 +101,10 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):#, evHeader,
 def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
 
     print 'working on ', filename#self.filelist[self.i]
+    # make sure fadc plot is visible
+    fadcPlotLine[0].set_visible(True)
+
+
     # first we create an FADC object and give the filename to it
     
     # create full path to file
@@ -109,25 +113,19 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     # and the splitting by channels
     fadc = Fadc(filepathName)
     
-    # clear plot from before and write labels
-    # fadcPlot.cla()
-    fadcPlot.set_xlabel('Time / clock cycles')
-    fadcPlot.set_ylabel('U / fadc ticks')
-
-
     #channel0 = fadc.channel0
     #channel1 = fadc.channel1
     #channel2 = fadc.channel2
     channel3 = fadc.channel3
-
-    print 'channel!!!', channel3
+    
+    #print 'channel!!!', channel3
 
     # and plot everything
     #fadcPlot.set_title(filepathName)
     #fadcPlot.plot(np.arange(np.size(channel0)), channel0, color='purple')
     #fadcPlot.plot(np.arange(np.size(channel1)), channel1, color='red')
     #fadcPlot.plot(np.arange(np.size(channel2)), channel2, color='green')
-    print fadcPlotLine
+    #print fadcPlotLine
     fadcPlotLine[0].set_data(np.arange(np.size(channel3)), channel3)#, color='blue')
 
     fadcPlot.relim()

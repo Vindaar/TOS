@@ -15,15 +15,22 @@ from septemPlot  import plot_file, plot_fadc_file
 from septemFiles import read_zero_suppressed_data_file
 import multiprocessing as mp
 from profilehooks import profile
+import collections
+from multiprocessing.managers import BaseManager, Namespace, NamespaceProxy
+import time
     
 ##################################################
 ########## WORK ON FILE ##########################
 ##################################################
 
+class myManager(BaseManager):
+    pass
 
+myManager.register('OrderedDict', collections.OrderedDict)
+
+lock = mp.Lock()
 
 from matplotlib import animation
-
 class MyFuncAnimation(animation.FuncAnimation):
     """
     Unfortunately, it seems that the _blit_clear method of the Animation
@@ -42,28 +49,40 @@ class MyFuncAnimation(animation.FuncAnimation):
 
 
 
-def CreateFadcObj(filePathName, out_q2):
-    fadc = Fadc(filePathName)
-    out_q2.put(fadc)
+def refresh(ns, filepath):
+    while ns.doRefresh == True:
+        lock.acquire()
+        ns.filelist = create_files_from_path_combined(filepath, True)
+        ns.filelistEvents = ns.filelist.keys()
+        ns.filelistFadc   = ns.filelist.values()
+        ns.nfiles         = len(ns.filelistEvents)
+        refreshInterval   = ns.refreshInterval
+        lock.release()
+        time.sleep(refreshInterval)
 
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
-    def __init__(self, filepath, figure, septem, chip_subplots, fadcPlot):
-        self.filepath      = filepath
-        self.filelist      = []
-        self.filelistFadc  = []
-        # now refresh the filepath to get the current filelists
-        self.refresh_filepath()
-        
-        self.fig           = figure
-        self.i             = 0
-        self.nfiles        = len(self.filelist)
-        self.septem        = septem
-        self.chip_subplots = chip_subplots
-        self.fadcPlot      = fadcPlot
-        #self.fadcPlot.plot(np.arange(100), np.zeros(100), color='blue')
-        self.fadcPlotLine  = self.fadcPlot.plot([], [], color = 'blue')
-        #self.fadcPlot.add_line(self.fadcPlotLine)
+    def __init__(self, filepath, figure, septem, chip_subplots, fadcPlot, ns):
+        self.filepath       = filepath
+        self.filelist       = []
+        self.filelistFadc   = []
+        #self.filesDict      = filesDict
+        self.ns             = ns
+
+        self.fig            = figure
+        self.i              = 0
+        self.nfiles         = self.ns.nfiles
+        self.septem         = septem
+        self.chip_subplots  = chip_subplots
+        self.fadcPlot       = fadcPlot
+        self.fadcPlotLine   = self.fadcPlot.plot([], [], color = 'blue')
+        # write the labels for the FADC plot (only needed to be done once, so no need to call
+        # on each call to FADC plot)
+        self.fadcPlot.set_xlabel('Time / clock cycles')
+        self.fadcPlot.set_ylabel('U / fadc ticks')
+        # initialize the FADC plot to be invisible, since possible that no FADC event
+        # for first event
+        self.fadcPlotLine[0].set_visible(False)
 
         # zero initialized numpy array
         temp_array         = np.zeros((256, 256))
@@ -77,24 +96,29 @@ class WorkOnFile:
             cb = plt.colorbar(self.im_list[-1], cax = cbaxes)
         except UnboundLocalError:
             print filename
-            
+
     
     def connect(self):
         # connect both figures (septem and FADC windows) to the keypress event
         self.cidpress     = self.fig.canvas.mpl_connect('key_press_event', self.press)
-        #self.cidpressFadc = self.figFadc.canvas.mpl_connect('key_press_event', self.press)
-        self.work_on_file()
 
     def disconnect(self):
         # disconnect both windows again
         self.fig.canvas.mpl_disconnect(self.cidpress)
-        #self.figFadc.canvas.mpl_disconnect(self.cidpress)
+        lock.acquire()
+        self.ns.doRefresh = False
+        lock.release()
+        # upon disconnecting, we also stop the filelist updater thread
+
+    def refresh_filepath_cont(self):
+        # this function is called by the filelist updater thread, which continuously 
+        # updates the filelist, based on the interval given by updateInterval
+        filesDict = create_files_from_path_combined(self.filepath)
+
 
     def refresh_filepath(self):
         # this function refreshes from the filepath
         files, filesFadc = create_files_from_path_combined(self.filepath)
-        if len(filesFadc) == 0:
-            filesFadc = ['data000205.txt-fadc']
         self.filelist = files
         self.filelistFadc = filesFadc
 
@@ -105,7 +129,10 @@ class WorkOnFile:
             print ''
             print 'keypress read:', c
             print 'going to next file #', self.i
-            self.i += 1            
+            self.i += 1
+            lock.acquire()
+            self.nfiles = self.ns.nfiles
+            lock.release()
             if self.i < self.nfiles:
                 self.work_on_file()
             else:
@@ -137,8 +164,6 @@ class WorkOnFile:
         elif c == 'q':
             print ''
             print c, 'was pressed. Exit program.'
-            #self.fig.close()
-            #self.figFadc.close()
             plt.close('all')
             self.disconnect()
         # else:
@@ -149,89 +174,56 @@ class WorkOnFile:
     def loop_work_on_file_end(self):
         # this function is used to automatically refresh the frames during a run, as to always
         # show the last frame
-        self.refresh_filepath()
-        print 'length of file list ', len(self.filelist)
-        ani     = MyFuncAnimation(self.fig,     self.work_on_file_interactive_end, interval=500, blit=False)
-        #aniFadc = animation.FuncAnimation(self.figFadc, self.work_on_file_interactive_end, interval=500)
+        ani     = MyFuncAnimation(self.fig, self.work_on_file_interactive_end, interval=500, blit=False)
         plt.show()
-
         
     def loop_work_on_file(self):
         # this function is used to automatically run over all files of a given frame
-        self.refresh_filepath()
-        print 'length of file list ', len(self.filelist)
-        ani = MyFuncAnimation(self.fig, self.work_on_file_interactive, interval=200, blit=True)
+        ani = MyFuncAnimation(self.fig, self.work_on_file, interval=200, blit=False)
         plt.show()
 
-    def work_on_file(self):
+    def work_on_file(self, i = None):
+        # input i: i is the index for which we plot the file. if none is given, we simply use
+        #          the member variable self.i
+        #          allows one to use the animation functions in order to automatically run over all
+        #          files
 
-        # NOTE: experimental multithreading
-        # get the filename to work on
-        filename     = self.filelist[self.i]
-        filenameFadc = self.filelistFadc[self.i]
+        if i is None:
+            # if no i as argument given, use self.i
+            i = self.i
 
-        # out_q1 = mp.Queue()
-        # out_q2 = mp.Queue()
+        # set the filenames to None, to easier check whether files dictionary was already
+        # populated
+        filename     = None
+        filenameFadc = None
 
-        # p1 = mp.Process(target=read_zero_suppressed_data_file, 
-        #                 args=(self.filepath + filename, out_q1))
-        # p2 = mp.Process(target=CreateFadcObj, 
-        #                 args=(self.filepath + filenameFadc, out_q2))
-        # # start the process
-        # p1.start()
-        # p2.start()
-
+        # acquire lock and get necessary elements from namespace
+        lock.acquire()
+        if self.ns.nfiles > 0:
+            filename     = self.ns.filelistEvents[i]
+            filenameFadc = self.ns.filelistFadc[i]
+        lock.release()
         # now plot septem
-        plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)#, out_q1.get(), out_q1.get())
-        # and fadc data
-        plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)#, out_q2.get())
+        if filename is not None:
+            plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)
+            if filenameFadc is not "":
+                # only call fadc plotting function, if there is a corresponding FADC event
+                plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
+            else:
+                # else set fadc plot to invisible
+                print "No FADC file found for this event."
+                self.fadcPlotLine[0].set_visible(False)
+                self.fig.canvas.draw()
 
-        # p1.join()
-        # p2.join()
-
-        
     def work_on_file_interactive_end(self, i):
         # this function is being called by matplotlib animation to perform automatic updates
         # of the filelist and always plot the last element of the list
-        # refresh filepath
-        self.refresh_filepath()
-        # and set filename to last element in list
-        filename = self.filelist[-1]
+        # it is simply a wrapper around work_on_file, with the argument -1, as to always call the 
+        # last element of the files dictionary
+        self.work_on_file(-1)
 
-        # now plot
-        b = plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)
-        # and fadc data
-        if len(self.filelistFadc) > 0:
-            filenameFadc = self.filelistFadc[-1]
-            plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
-
-        return b
-
-
-    def work_on_file_interactive(self, i):
-        # this function is being called by matplotlib animation to perform automatic updates
-        # of the
-        if i == len(self.filelist) - 1:
-            # if i number of files in the filelist - 1, we refresh the list
-            self.refresh_filepath()
-        filename = self.filelist[i]
-
-        filenameFadc = self.filelistFadc[i]
-        # now plot
-        b = plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)
-        # and fadc data
-        plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
-
-        return b#self.chip_subplots
 
 def main(args):
-
-    # read a test file:
-    # if len(args) > 0:
-    #     filepath = args[0]
-    # else:
-    #     filepath = '/home/ingrid/PyS_eventDisplay/Run160813_19-03-12/data000105_1_190450879.txt'
-
 
     singleFile = False
     if len(args) > 0:
@@ -250,9 +242,6 @@ def main(args):
     # get list of files in folder
     if singleFile == False:
         files, filesFadc = create_files_from_path_combined(folder)
-        print 'stuff'
-        for el in files:
-            print el
     else:
         path = args[0].split('/')[:-1]
         folder = ""
@@ -319,18 +308,29 @@ def main(args):
 
 
     grid = gridspec.GridSpecFromSubplotSpec(3, 1, [row1, row2, row3])
-
-    #grid.tight_layout(fig, rect=[0, 0, 0.5, 1])
     
-    #grid.update(left=0.1, right=0.9, top=0.9, bottom=0.1)
+    filelistManager = myManager()
+    filelistManager.start()
     
-        
-
-    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot)
+    #tm = mp.Manager()
+    
+    ns                 = mp.Manager().Namespace()
+    ns.doRefresh       = True
+    ns.filelist        = filelistManager.OrderedDict()
+    ns.filelistEvents  = []
+    ns.filelistFadc    = []
+    ns.nfiles          = 0
+    ns.refreshInterval = 0.2
+    print ns
+    
+    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns)
     files.connect()
-    plt.show()
-    #plot_file(filepath)
 
+    
+    p2 = mp.Process(target = refresh, args = (ns, folder) )
+    p2.start()
+    plt.show()
+    p2.join()
 
 if __name__=="__main__":
     import sys

@@ -297,7 +297,7 @@ class Fadc:
         self.channel2 = []
         self.channel3 = []
 
-        self.pedestalDefaultPath = "/home/ingrid/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
+        self.pedestalDefaultPath = "/home/basti/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
 
         # now apply the pedestal run
         self.applyPedestalRun()
