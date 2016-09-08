@@ -328,7 +328,7 @@ void hvChannel::printVoltageAndCurrentMeasured(){
 	      << _currentMeasured
 	      << " / "
 	      << _currentSet
-	      << " mA"
+	      << " A"
 	      << std::endl;
 
 }
@@ -768,7 +768,7 @@ bool hvChannel::onVoltageControlledRamped(bool printFlag){
     good *= voltageInBounds();
 
     if (printFlag == true){
-	printVoltageMeasured();
+	printVoltageAndCurrentMeasured();
     }
 
     return good;

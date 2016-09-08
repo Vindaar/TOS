@@ -1849,7 +1849,7 @@ int Console::CommandCountingTrigger(){
     // this function is used to set the time the shutter opens after 
     // a trigger from an external trigger
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTrigger()"<<ein<<std::endl;	
+    std::cout<<"Enter Console::CommandCountingTrigger()" << std::endl;	
 #endif
     int result=0;
     unsigned int time;
@@ -3382,7 +3382,6 @@ int Console::CommandSwitchTriggerConnection(){
     // default CommandSwitchTriggerConnection function
 #if DEBUG==2
     std::cout << "Enter Console::CommandCountingTime()"
-	      << ein
 	      << std::endl;	
 #endif
     std::string input;

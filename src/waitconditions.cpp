@@ -46,11 +46,20 @@ void Producer::run()
 	//start measurement at the fadc
 	if((parent->_useHvFadc) && !(parent->_hvFadcManager == NULL))
 	{
+	    // before we start the acquisition, reset the i2c value of the timepix
+	    // object (FADC trigger at clock cycle calculated from it)
+	    parent->fpga->tp->SetI2C(0);
+	    // reset extra byte
+	    parent->fpga->tp->SetExtraByte(0);
+	    // and reset the calculated fadc trigger at clock cycle
+	    parent->_hvFadcManager->SetFadcTriggerInLastFrame(0);
+	    // and the scintillator counters
+	    parent->_hvFadcManager->SetScintillatorCounters(0, 0);
+	    
 	    parent->mutexVBuffer.lock();               
 	    (parent->_hvFadcManager)->F_StartAcquisition();       //< start acq
 	    parent->mutexVBuffer.unlock();             
 
-	    std::cout << "fadc active" << std::endl;
 	}
 
 	// in case we use an external trigger, we call CountingTrigger()

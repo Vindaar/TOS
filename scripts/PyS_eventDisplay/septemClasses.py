@@ -196,6 +196,10 @@ class eventHeader:
         # columns to fill all strings to
         
         nFill = 24
+
+        runNum = "Run # : ".ljust(nFill)
+        runNum += self.attr["runNumber"] + "\n"
+        
         try:
             event = "Event # : ".ljust(nFill)
             event += self.attr["eventNumber"] + "\n"
@@ -212,9 +216,6 @@ class eventHeader:
         date = "Date : ".ljust(nFill)
         date += self.attr["dateTime"] + "\n"
         
-        runNum = "RunNumber : ".ljust(nFill)
-        runNum += "\n" # + self.attr["runNumber"]
-
         shutter = "Shutter time / mode : ".ljust(nFill)
         shutter += self.attr["shutterTime"] + " / " + self.attr["shutterMode"] + "\n"
 
@@ -233,7 +234,7 @@ class eventHeader:
         fname = "Filename : ".ljust(nFill)
         fname += filename
 
-        header = event + date + runNum + shutter + fadcTrig + fadcTrClock + szint + fname
+        header = runNum + event + date + shutter + fadcTrig + fadcTrClock + szint + fname
           
         return header
 
@@ -297,7 +298,7 @@ class Fadc:
         self.channel2 = []
         self.channel3 = []
 
-        self.pedestalDefaultPath = "/home/basti/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
+        self.pedestalDefaultPath = "/home/ingrid/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
 
         # now apply the pedestal run
         self.applyPedestalRun()

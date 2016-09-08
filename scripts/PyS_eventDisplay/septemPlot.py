@@ -74,16 +74,12 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):#, evHeader,
             plots_to_hide.remove(chipNum - 1)
             im_list[chipNum - 1].set_visible(True)
 
+            print '\n stt', np.max(chip_data[:,2])
+            im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], 80))
+
+
             # not needed anymore
-            #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1], vmin=0, vmax=250)
-            if chipNum not in [6, 7]:
-                # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
-                # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
-                chip_subplots[chipNum - 1].invert_yaxis()
-            else:
-                # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
-                # coordinate is at the top right. thus invert x axis
-                chip_subplots[chipNum - 1].invert_xaxis()
+            #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])#, vmin=0, vmax=250)
 
         except IndexError:
             print 'IndexError: chip', chpHeader.attr["chipNumber"], ' has no hits'
@@ -103,11 +99,18 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):#, evHeader,
 
     # now set all plots invisible, which were not updated this time
     for i in plots_to_hide:
-        print "removing ", i
         im_list[i].set_visible(False)
+
+    try:
+        cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
+        cb = plt.colorbar(im_list[3], cax = cbaxes)
+        fig.canvas.draw()
+    except UnboundLocalError:
+        print filename
     
     make_ticklabels_invisible(chip_subplots)
     #fig.canvas.draw()
+
 
     # and now plot everythin
     plt.pause(0.01)
@@ -123,6 +126,7 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     # make sure fadc plot is visible
     fadcPlotLine[0].set_visible(True)
 
+    
 
     # first we create an FADC object and give the filename to it
     
@@ -140,7 +144,7 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     #print 'channel!!!', channel3
 
     # and plot everything
-    #fadcPlot.set_title(filepathName)
+    fadcPlot.set_title(filepathName)
     #fadcPlot.plot(np.arange(np.size(channel0)), channel0, color='purple')
     #fadcPlot.plot(np.arange(np.size(channel1)), channel1, color='red')
     #fadcPlot.plot(np.arange(np.size(channel2)), channel2, color='green')

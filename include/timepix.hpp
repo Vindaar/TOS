@@ -18,6 +18,7 @@
 #define DEFAULT_CHIP_ID_OFFSET_3_CHIPS              189
 #define DEFAULT_CHIP_ID_OFFSET_5_CHIPS              190
 #define DEFAULT_CHIP_ID_OFFSET_7_CHIPS              192
+#define DEFAULT_CHIP_ID_OFFSET_7_CHIPS_AT_CERN      191
 #define DEFAULT_CHIP_ID_OFFSET_8_CHIPS              193
 // define some macros for the size of arrays
 #define DEFAULT_FSR_SIZE                            52

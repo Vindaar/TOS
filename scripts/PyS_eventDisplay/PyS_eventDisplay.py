@@ -82,20 +82,34 @@ class WorkOnFile:
         self.fadcPlot.set_ylabel('U / fadc ticks')
         # initialize the FADC plot to be invisible, since possible that no FADC event
         # for first event
-        self.fadcPlotLine[0].set_visible(False)
+        #self.fadcPlotLine[0].set_visible(False)
 
         # zero initialized numpy array
         temp_array         = np.zeros((256, 256))
-        self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0, vmax=250) for i in xrange(len(self.chip_subplots))]
+        #self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0, vmax=250) for i in xrange(len(self.chip_subplots))]
+        self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0) for i in xrange(len(self.chip_subplots))]
         for im in self.im_list:
             im.set_cmap('viridis')
 
         # and now create the colorbar
-        try:
-            cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, self.septem.row3.bottom, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
-            cb = plt.colorbar(self.im_list[-1], cax = cbaxes)
-        except UnboundLocalError:
-            print filename
+        # try:
+        #     cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, self.septem.row3.bottom, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
+        #     cb = plt.colorbar(self.im_list[3], cax = cbaxes)
+        # except UnboundLocalError:
+        #     print filename
+
+
+        # and now invert the correct plots
+        for i in xrange(7):
+            if i not in [6, 7]:
+                # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
+                # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
+                self.chip_subplots[i - 1].invert_yaxis()
+            else:
+                # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
+                # coordinate is at the top right. thus invert x axis
+                self.chip_subplots[i - 1].invert_xaxis()
+
 
     
     def connect(self):
@@ -174,7 +188,7 @@ class WorkOnFile:
     def loop_work_on_file_end(self):
         # this function is used to automatically refresh the frames during a run, as to always
         # show the last frame
-        ani     = MyFuncAnimation(self.fig, self.work_on_file_interactive_end, interval=500, blit=False)
+        ani     = MyFuncAnimation(self.fig, self.work_on_file_interactive_end, interval=300, blit=False)
         plt.show()
         
     def loop_work_on_file(self):
@@ -212,7 +226,8 @@ class WorkOnFile:
             else:
                 # else set fadc plot to invisible
                 print "No FADC file found for this event."
-                self.fadcPlotLine[0].set_visible(False)
+                self.fadcPlotLine[0].set_visible(True)
+                #self.fadcPlot.set_title(self.filepath + filenameFadc)
                 self.fig.canvas.draw()
 
     def work_on_file_interactive_end(self, i):
@@ -326,7 +341,7 @@ def main(args):
     ns.filelistFadc    = []
     ns.nfiles          = 0
     # and the interval, in which the thread refreshes the filelist
-    ns.refreshInterval = 0.2
+    ns.refreshInterval = 0.05
     print ns
     
     # now create the main thread, which starts the plotting
