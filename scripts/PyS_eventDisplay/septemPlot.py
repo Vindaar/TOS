@@ -16,7 +16,7 @@ def make_ticklabels_invisible(fig):
             tl.set_visible(False)
 
 #@profile
-def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):#, evHeader, chpHeaderList):
+def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):
 
     # create full path to file
     filepathName = filepath + filename
@@ -160,3 +160,70 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     plt.pause(0.01)
 
     return fadcPlot
+
+
+def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays):
+    # this function plots the occupancy plots, which are created by the 
+    # create_occupancy_plot function
+    
+    # first remove the texts from before, if any
+    texts = fig.texts
+    for i in range(len(texts)):
+        texts[-1].remove()
+
+
+    # define the variable, in which we store the number of hits for each chip to
+    # print at the top left
+    hits_text = "".ljust(10) + "Hits".ljust(10) + "max values\n"
+
+    # now perform plotting
+    plots_to_hide = range(7)
+    for i, chip_array in enumerate(chip_arrays):
+        # get number of non zero elements in this array
+        numHits = np.count_nonzero(chip_array)
+        maxVals = np.max(chip_array)
+        # use both to create the hits box
+        hits_text += ("Chip #%i : %i" % (i, numHits)).ljust(20)
+        hits_text += str(int(maxVals))
+        if i != 6:
+            hits_text += "\n"
+        try:
+            # now create an image, but rather use im_list to set the correct image data
+            im_list[i].set_data(chip_array)
+                        
+            # # now remove this chip from the plots_to_hide list
+            plots_to_hide.remove(i)
+            im_list[i].set_visible(True)
+            
+            im_list[i].set_clim(0, np.max(chip_array))#, 80))
+
+        except IndexError:
+            print 'IndexError: chip', i, ' has no hits'
+        except TypeError:
+            print 'TypeError: chip', i, ' has no hits'
+
+
+    # now create the hits box
+    hits_box = fig.text(0.2, 0.9, hits_text,
+                        bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
+                        family = 'monospace',
+                        transform = chip_subplots[-1].transAxes,
+                        horizontalalignment = 'center',
+                        verticalalignment = 'center',
+                        multialignment = 'left')
+
+    # now set all plots invisible, which were not updated this time
+    for i in plots_to_hide:
+        im_list[i].set_visible(False)
+
+    try:
+        cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
+        cb = plt.colorbar(im_list[3], cax = cbaxes)
+        fig.canvas.draw()
+    except UnboundLocalError:
+        print 'something is bad'
+    
+    make_ticklabels_invisible(chip_subplots)
+
+    # and now plot everythin
+    plt.pause(0.01)
