@@ -50,6 +50,9 @@ class septem:
     def __init__(self, padding, fig_x_size, fig_y_size, scaling_factor):
         # self.pChip: simple prototype chip to use the sizes in calculations
         #             for the septem board
+        # set number of chips for septem board
+        self.nChips = 7
+
         # include a padding all around the septem event display of 'padding'
         # use size of figure to scale septem accordingly to have it always properly
         # scaled for the given figure
@@ -148,22 +151,7 @@ class eventHeader:
     # this class is used to store the data from the header of a single event
     # (zero suppressed from septem board)
     def __init__(self):
-        # all following variables currently not used
-        # self.runTime          = 0
-        # self.runTimeFrames    = 0
-        # self.pathName         = ""
-        # self.numChips         = 0
-        # self.shutterTime      = 0
-        # self.shutterMode      = ""
-        # self.runMode          = 0
-        # self.fastClock        = 0
-        # self.externalTrigger  = 0
-        # self.eventNumber      = 0
-        # self.useHvFadc        = 0
-        # self.fadcReadout      = 0
-        # self.szint1ClockInt   = 0
-        # self.szint2ClockInt   = 0
-        # self.fadcTriggerClock = 0
+        # initialize an empty dictionary for all our header elements
         self.attr = {}
     def set_attribute(self, el):
         # this function is called to set one of the attributes
@@ -171,7 +159,8 @@ class eventHeader:
         if "[" and "]" not in el:
             # the following two keys are a problem: eventNumber accidentally
             # did not have (?) a :, dateTime has several : in line
-            problem_strings = ["eventNumber", "dateTime"]
+            # problem_strings = ["eventNumber", "dateTime"]
+            problem_strings = ["dateTime"]
             if all(x not in el for x in problem_strings):
                 el  = el.split(":")
                 val = el[1].strip()

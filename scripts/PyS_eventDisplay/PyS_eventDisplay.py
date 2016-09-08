@@ -10,9 +10,9 @@ from matplotlib.lines import Line2D
 import os
 import time
 from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc
-from septemFiles import create_files_from_path_combined
-from septemPlot  import plot_file, plot_fadc_file
-from septemFiles import read_zero_suppressed_data_file
+from septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file
+from septemPlot  import plot_file, plot_fadc_file, plot_occupancy
+
 import multiprocessing as mp
 from profilehooks import profile
 import collections
@@ -173,6 +173,10 @@ class WorkOnFile:
             # in the filelist
             print 'jumping to last file and start automatically refreshing'
             self.loop_work_on_file()
+        elif c == 'o':
+            # if o is typed, we create an occupancy plot of the whole run
+            print 'creating occupancy plot...'
+            self.create_occupancy_plot()
                         
                 
         elif c == 'q':
@@ -237,10 +241,45 @@ class WorkOnFile:
         # last element of the files dictionary
         self.work_on_file(-1)
 
+    def create_occupancy_plot(self):
+        # create an occupancy plot. count number of times each pixel was hit during the 
+        # whole run
+
+        # create a list of numpy arrays. one array for each occupancy plot of each chip
+        chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
+        # we run over all files of the event list, i.e. all files of run
+        for el in self.ns.filelistEvents:
+            # we create the event and chip header object
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + el)
+            # now go through each chip header and add data of frame
+            # to chip_arrays
+            for chpHeader in chpHeaderList:
+                # get the data of the frame for this chip
+                chip_data = chpHeader.pixData
+                chip_num  = int(chpHeader.attr["chipNumber"])
+                # and now add chip data to chip_arrays if non empty
+                if np.size(chip_data) > 0:
+                    chip_arrays[chip_num - 1, chip_data[:,1], chip_data[:,0]] += 1
+
+            event_num = int(evHeader.attr["eventNumber"])
+            if event_num % 1000 == 0:
+                print event_num, ' events done.' 
+
+        print chip_arrays
+        print np.nonzero(chip_arrays)
+        plot_occupancy(self.filepath, 
+                       self.septem, 
+                       self.fig, 
+                       self.chip_subplots, 
+                       self.im_list, 
+                       chip_arrays)
+        
 
 def main(args):
 
     singleFile = False
+    occupancyFlag = False
+
     if len(args) > 0:
         try:
             f = open(args[0], 'r')
@@ -248,10 +287,18 @@ def main(args):
             f.close()
         except IOError:
             folder = args[0]
+
+        # now we check whether the -o flag was given from the command line
+        # this activates occupancy mode, i.e. it creates an occupancy plot of the whole run
+        if "-o" in args:
+            occupancy_flag = True
     else:
         print 'No argument given. Please give a folder from which to read files'
         import sys
         sys.exit()
+
+
+
 
 
     # get list of files in folder
