@@ -62,7 +62,7 @@ def refresh(ns, filepath):
 
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
-    def __init__(self, filepath, figure, septem, chip_subplots, fadcPlot, ns):
+    def __init__(self, filepath, figure, septem, chip_subplots, fadcPlot, ns, cb_flag, cb_value):
         self.filepath       = filepath
         self.filelist       = []
         self.filelistFadc   = []
@@ -83,6 +83,10 @@ class WorkOnFile:
         # initialize the FADC plot to be invisible, since possible that no FADC event
         # for first event
         #self.fadcPlotLine[0].set_visible(False)
+
+        # color bar related variables
+        self.cb_flag  = cb_flag
+        self.cb_value = cb_value
 
         # zero initialized numpy array
         temp_array         = np.zeros((256, 256))
@@ -223,7 +227,7 @@ class WorkOnFile:
         lock.release()
         # now plot septem
         if filename is not None:
-            plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)
+            plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list, self.cb_flag, self.cb_value)
             if filenameFadc is not "":
                 # only call fadc plotting function, if there is a corresponding FADC event
                 plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
@@ -280,6 +284,12 @@ def main(args):
     singleFile = False
     occupancyFlag = False
 
+    # define flag and variable for the color bar settings
+    # cb_flag defines that we not use a fixed value of the colorbar scale, but rather
+    # the percentile given by cb_value of the center chip
+    cb_flag  = True
+    cb_value = 80
+
     if len(args) > 0:
         try:
             f = open(args[0], 'r')
@@ -292,6 +302,26 @@ def main(args):
         # this activates occupancy mode, i.e. it creates an occupancy plot of the whole run
         if "-o" in args:
             occupancy_flag = True
+        if "--cb_flag" in args:
+            try:
+                ind  = args.index("--cb_flag")
+                flag = args[ind + 1]
+                if flag == "1":
+                    cb_flag = True
+                else:
+                    cb_flag = False
+            except IndexError:
+                print 'If you enter cb_flag please enter 1 or 0 afterwards.'
+                import sys
+                sys.exit()
+        if "--cb_value" in args:
+            try:
+                ind  = args.index("--cb_value")
+                cb_value = float(args[ind + 1])
+            except IndexError:
+                print 'If you enter cb_value please enter a value to use afterwards.'
+                import sys
+                sys.exit()
     else:
         print 'No argument given. Please give a folder from which to read files'
         import sys
@@ -392,7 +422,7 @@ def main(args):
     print ns
     
     # now create the main thread, which starts the plotting
-    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns)
+    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb_flag, cb_value)
     files.connect()
 
     # and the second thread, which performs the refreshing

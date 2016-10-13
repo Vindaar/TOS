@@ -16,7 +16,7 @@ def make_ticklabels_invisible(fig):
             tl.set_visible(False)
 
 #@profile
-def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):
+def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_value):
 
     # create full path to file
     filepathName = filepath + filename
@@ -75,8 +75,11 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):
             im_list[chipNum - 1].set_visible(True)
 
             print '\n stt', np.max(chip_data[:,2])
-            im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], 80))
-
+            #im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], 80))
+            if cb_flag == True:
+                im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], cb_value))
+            else:
+                im_list[chipNum - 1].set_clim(0, cb_value)
 
             # not needed anymore
             #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])#, vmin=0, vmax=250)
