@@ -52,7 +52,7 @@ class MyFuncAnimation(animation.FuncAnimation):
 def refresh(ns, filepath):
     while ns.doRefresh == True:
         lock.acquire()
-        print 'updating filelist'
+        #print 'updating filelist'
         ns.filelist = create_files_from_path_combined(filepath, True)
         ns.filelistEvents = ns.filelist.keys()
         ns.filelistFadc   = ns.filelist.values()
@@ -60,7 +60,7 @@ def refresh(ns, filepath):
         refreshInterval   = ns.refreshInterval
         lock.release()
         time.sleep(refreshInterval)
-        print 'done updating filelist'
+        #print 'done updating filelist'
 
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
@@ -111,13 +111,11 @@ class WorkOnFile:
                 # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
                 # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
                 self.chip_subplots[i - 1].invert_yaxis()
-                print 'inverting1 ', i
             else:
                 # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
                 # coordinate is at the top right. thus invert x axis
                 self.chip_subplots[i - 1].invert_xaxis()
                 #self.chip_subplots[i - 1].invert_yaxis()
-                print 'inverting2, ', i
                 
         # for some reason I'm not entirely sure of right now, we also need to
         # invert the y axis of the last chip (7)
@@ -352,9 +350,6 @@ def main(args):
         sys.exit()
 
 
-
-
-
     # get list of files in folder
     if singleFile == False:
         files, filesFadc = create_files_from_path_combined(folder)
@@ -364,11 +359,7 @@ def main(args):
         for el in path:
             folder += el + '/'
         files = [args[0].split('/')[-1]]
-        print folder
-        print files
 
-
-    print folder#, files
     # initialize a septem object
     fig_x_size = 15
     fig_y_size = 10
