@@ -186,8 +186,12 @@ class eventHeader:
         
         nFill = 24
 
-        runNum = "Run # : ".ljust(nFill)
-        runNum += self.attr["runNumber"] + "\n"
+        try:
+            runNum = "Run # : ".ljust(nFill)
+            runNum += self.attr["runNumber"] + "\n"
+        except KeyError:
+            print 'no run number contained, continue without'
+            runNum = ''
         
         try:
             event = "Event # : ".ljust(nFill)
@@ -287,7 +291,7 @@ class Fadc:
         self.channel2 = []
         self.channel3 = []
 
-        self.pedestalDefaultPath = "/home/ingrid/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
+        self.pedestalDefaultPath = "/home/schmidt/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
 
         # now apply the pedestal run
         self.applyPedestalRun()

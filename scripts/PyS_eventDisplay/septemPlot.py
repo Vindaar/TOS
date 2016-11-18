@@ -147,7 +147,9 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     #print 'channel!!!', channel3
 
     # and plot everything
-    fadcPlot.set_title(filepathName)
+    # create title build from Run folder and filename:
+    plot_title = filepath.rstrip("/").split("/")[-1] + "/" + filename
+    fadcPlot.set_title(plot_title)
     #fadcPlot.plot(np.arange(np.size(channel0)), channel0, color='purple')
     #fadcPlot.plot(np.arange(np.size(channel1)), channel1, color='red')
     #fadcPlot.plot(np.arange(np.size(channel2)), channel2, color='green')

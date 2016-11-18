@@ -106,16 +106,22 @@ class WorkOnFile:
 
 
         # and now invert the correct plots
-        for i in xrange(7):
+        for i in xrange(8):
             if i not in [6, 7]:
                 # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
                 # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
                 self.chip_subplots[i - 1].invert_yaxis()
+                print 'inverting1 ', i
             else:
                 # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
                 # coordinate is at the top right. thus invert x axis
                 self.chip_subplots[i - 1].invert_xaxis()
-
+                #self.chip_subplots[i - 1].invert_yaxis()
+                print 'inverting2, ', i
+                
+        # for some reason I'm not entirely sure of right now, we also need to
+        # invert the y axis of the last chip (7)
+        self.chip_subplots[6].invert_yaxis()
 
     
     def connect(self):
