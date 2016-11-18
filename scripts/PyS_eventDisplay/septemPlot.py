@@ -165,7 +165,7 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     return fadcPlot
 
 
-def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays):
+def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays, cb_flag, cb_value):
     # this function plots the occupancy plots, which are created by the 
     # create_occupancy_plot function
     
@@ -197,8 +197,11 @@ def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays):
             # # now remove this chip from the plots_to_hide list
             plots_to_hide.remove(i)
             im_list[i].set_visible(True)
-            
-            im_list[i].set_clim(0, np.max(chip_array))#, 80))
+
+            if cb_flag == True:
+                im_list[i].set_clim(0, np.percentile(chip_array, cb_value))
+            else:
+                im_list[i].set_clim(0, cb_value)
 
         except IndexError:
             print 'IndexError: chip', i, ' has no hits'

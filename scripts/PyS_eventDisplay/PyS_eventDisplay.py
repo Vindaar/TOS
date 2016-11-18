@@ -52,6 +52,7 @@ class MyFuncAnimation(animation.FuncAnimation):
 def refresh(ns, filepath):
     while ns.doRefresh == True:
         lock.acquire()
+        print 'updating filelist'
         ns.filelist = create_files_from_path_combined(filepath, True)
         ns.filelistEvents = ns.filelist.keys()
         ns.filelistFadc   = ns.filelist.values()
@@ -59,6 +60,7 @@ def refresh(ns, filepath):
         refreshInterval   = ns.refreshInterval
         lock.release()
         time.sleep(refreshInterval)
+        print 'done updating filelist'
 
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
@@ -117,6 +119,22 @@ class WorkOnFile:
 
     
     def connect(self):
+        # before we connect the key press events, we check if refresh ran once
+        # files are read, before we accept any input
+        # we check 50 times if the number of files is larger than 0 (which
+        # indicates that we have finished reading the files in the folder
+        # at least once), and wait 100ms after each check.
+        for _ in xrange(50):
+            lock.acquire()
+            nfiles = self.ns.nfiles
+            lock.release()
+            if nfiles > 0:
+                print 'nfiles : ', nfiles
+                break
+            else:
+                print 'waiting...'
+                time.sleep(0.1)
+
         # connect both figures (septem and FADC windows) to the keypress event
         self.cidpress     = self.fig.canvas.mpl_connect('key_press_event', self.press)
 
@@ -269,14 +287,14 @@ class WorkOnFile:
             if event_num % 1000 == 0:
                 print event_num, ' events done.' 
 
-        print chip_arrays
-        print np.nonzero(chip_arrays)
         plot_occupancy(self.filepath, 
                        self.septem, 
                        self.fig, 
                        self.chip_subplots, 
                        self.im_list, 
-                       chip_arrays)
+                       chip_arrays,
+                       self.cb_flag,
+                       self.cb_value)
         
 
 def main(args):
@@ -420,14 +438,18 @@ def main(args):
     # and the interval, in which the thread refreshes the filelist
     ns.refreshInterval = 0.05
     print ns
-    
+
+    # we start the file refreshing (second) thread first, because we only
+    # want to accept key inputs, after the files have been read a single
+    # time.
+    # and the second thread, which performs the refreshing
+    p2 = mp.Process(target = refresh, args = (ns, folder) )
+    p2.start()
+
     # now create the main thread, which starts the plotting
     files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb_flag, cb_value)
     files.connect()
 
-    # and the second thread, which performs the refreshing
-    p2 = mp.Process(target = refresh, args = (ns, folder) )
-    p2.start()
     plt.show()
     p2.join()
 
