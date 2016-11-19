@@ -30,3 +30,9 @@ will create the Makefile for the project from the QT project file. Then a simple
 make
 ```
 should (hopefully) compile successfully.
+Linux and Windows are now both supported by a single project file (TOS.pro). Just call qmake and
+it will decide by itself, which configuration it has to use!
+
+NOTE:
+On my linux machine, I need to use QT4 in order to create the makefile from the TOS.pro file:
+qmake-qt4 TOS.pro
