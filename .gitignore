@@ -1,17 +1,23 @@
 # gitignore file
-tmp/*
-bin/TOS
-bin/data/runs/*
-bin/data/singleFrames/*
+# Qt creator
 Makefile
 HV_FADC_Object.pro
 HV_FADC_Object.pro.user
-#*#
+
+# temporary files
 tmp/*
-*.*~
 Backup/*
-*.*~
+
+# data files
+bin/data/runs/*
+bin/data/singleFrames/*
+
+# editors
+*~
+
+# python
 *.pyc
 scripts/PyS_eventDisplay/*.lprof
 *.*#
+
 TAGS
