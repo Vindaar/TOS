@@ -8,9 +8,9 @@ TARGET = TOS
 DEPENDPATH += . src
 INCLUDEPATH += . include
 QMAKE_CXXFLAGS += -std=c++14 -o0 -g -Wall -W -pedantic -Wl,--no-as-needed
-OBJECTS_DIR = tmp
-MOC_DIR = tmp
-DESTDIR = bin
+OBJECTS_DIR = output/tmp
+MOC_DIR = output/tmp
+DESTDIR = output/bin
 
 # Input
 HEADERS += include/caseHeader.h \ 
@@ -92,7 +92,7 @@ INCLUDEPATH += /usr/include/qt4/QtCore
 # win32 and unix variables should be decideded automatically by qmake!
 # just calling qmake-qt4 TOS.pro should suffice
 windows|win32{
-    message(Compiling for windows)
+    message(Generating Makefile for windows)
 
     # for windows add readline library, which needs to be put into 
     # include folder
@@ -118,6 +118,5 @@ windows|win32{
 }
 
 linux|unix{
-    message(Compiling for linux)
+    message(Generating Makefile for linux)
 }
-
