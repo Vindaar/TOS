@@ -1,7 +1,6 @@
-// this is the implementation of the hvModule class
-
 #include "hvInterface/hvModule.hpp"
 #include <bitset>
+
 
 hvModule::hvModule(CVmeController *vmeController, int baseAddress)
     : CVmeModule(vmeController, baseAddress),
@@ -39,23 +38,11 @@ hvModule::~hvModule(){
 }
 
 bool hvModule::CheckIsConnectionGood(){
-    // this function checks, whether the connection to the module
-    // could be established and if not, try for a certain time
-    // if we cannot establish connection, return false
-    // Since it's exactly the same thing we do, when we try to connect to the module
-    // for the first time, this is just a wrapper around that function
     return ConnectModule();
 }
 
 bool hvModule::ConnectModule(){
-    // this function tries to connect to the module
-    // returns:
-    // bool good: true if connected, false otherwise
-    
-    // first call ConnectModule
     bool good;
-    // connect module calls the IsConnected() function from vmemodule.h (function in header)
-    // returns 0 if no connection established, 1 is connection is good
     good = IsConnected();
 
     int timeout;
@@ -84,8 +71,6 @@ bool hvModule::ConnectModule(){
 }
 
 bool hvModule::IsKillEnabled(){
-    // this function simply gets the module status of the module (by updating module)
-    // and checks whether the IsKillEnable bit is activated
     bool killEnabled;
     updateModule();
 
@@ -95,9 +80,6 @@ bool hvModule::IsKillEnabled(){
 }
 
 void hvModule::updateModule(){
-    // this function updates the module member variables, i.e. it reads all 
-    // functions for which the hvModule has a member variable
-
     _moduleEventGroupMask = GetModuleEventGroupMask(); 
     // TODO: add more
 
@@ -109,9 +91,6 @@ void hvModule::updateModule(){
 }
 
 bool hvModule::SetKillEnable(bool setKillEnable){
-    // this function trys to set kill enable flag to value
-    // given to function
-    
     // now we have all values to set up the HV for TOS
     // first set kill enable
     // enable Kill Mode
@@ -179,23 +158,16 @@ void hvModule::SetFlexGroup(int group, GroupSTRUCT groupObject){
 }
 
 void hvModule::sleepModule(){
-    // function which calls sleep for this thread for time given by 
-    // macro in header
-
     std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_HV_SLEEP_TIME));
 }
 
 bool hvModule::isStop(){
-     // function returns isStop bit from moduleStatus
     updateModule();
     return _isStop;
 }
 
 
 bool hvModule::setStopModule(bool stop){
-    // this function gets the current module status, by updating the module
-    // checks if the isStop bit is set to stop, if not, get module control
-    // set bit the way we want and set
     bool good;
 
     updateModule();
@@ -228,7 +200,6 @@ bool hvModule::setStopModule(bool stop){
 
 
 void hvModule::printStatus(){
-    // this function prints the current module status
     updateModule();
 
     std::cout << "IsAdjustment "     << _moduleStatus.Bit.IsAdjustment << "\n"
@@ -251,7 +222,6 @@ void hvModule::printStatus(){
 
 
 bool hvModule::clearModuleEventStatusAndCheck(){
-    // this function trys to clear the module event statu
     bool good = false;
 
     updateModule();
@@ -287,9 +257,7 @@ bool hvModule::clearModuleEventStatusAndCheck(){
 }
 
 
-
 void hvModule::printEventStatus(){
-    // this function prints the current module event status
     updateModule();
 
     std::cout << "EventRestart "            << _moduleEventStatus.Bit.EventRestart << "\n"
@@ -303,8 +271,6 @@ void hvModule::printEventStatus(){
 
 
 bool hvModule::isEventStatusGood(){
-    // this is a simple check on the module event status.
-    // returns true, if no event status bit is set, false otherwise
     updateModule();
     bool good;
     
