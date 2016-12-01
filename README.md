@@ -36,3 +36,12 @@ it will decide by itself, which configuration it has to use!
 NOTE:
 On my linux machine, I need to use QT4 in order to create the makefile from the TOS.pro file:
 qmake-qt4 TOS.pro
+
+## Documentation
+
+You can generate the source documentation (doxygen) with
+```
+make doc
+```
+
+A good start to read the documentation is the file `output/doc/html/classes.html`.

@@ -89,6 +89,14 @@ LIBS += -Wl,--no-as-needed \
 # external QT headers
 INCLUDEPATH += /usr/include/qt4/QtCore 
 
+ # documentation target
+dox.target = doc
+dox.commands = doxygen doc/TOS.doxyfile;
+dox.CONFIG = phony
+dox.depends =
+
+QMAKE_EXTRA_TARGETS += dox
+
 # win32 and unix variables should be decideded automatically by qmake!
 # just calling qmake-qt4 TOS.pro should suffice
 windows|win32{
