@@ -6,7 +6,7 @@ hvModule::hvModule(CVmeController *vmeController, int baseAddress)
     : CVmeModule(vmeController, baseAddress),
       _isConnected(0),
       _hvModInitFlag(false),
-      _hvModCreatedFlag(false){
+      _hvModCreatedFlag(false) {
     // upon initialisation of hvModule, we need to create the
     // vmemodule (HV) instance using the base Addresses
 
@@ -14,13 +14,12 @@ hvModule::hvModule(CVmeController *vmeController, int baseAddress)
     // the vmeController, we need to initialize our own VmeController and 
     // thus point it to the VmeController member variable
     // initialize the USB Controller
-    if (vmeController == NULL){
-	VmeController = new CVmUsb();
-	VmeController->initController(0);
-	_createdOwnVmeController = true;
-    }
-    else{
-	_createdOwnVmeController = false;
+    if (vmeController == NULL) {
+        VmeController = new CVmUsb();
+        VmeController->initController(0);
+        _createdOwnVmeController = true;
+    } else {
+        _createdOwnVmeController = false;
     }
 
     // now we check, whether we can connect to the HV module
@@ -30,10 +29,10 @@ hvModule::hvModule(CVmeController *vmeController, int baseAddress)
     _hvModCreatedFlag = true;
 }
 
-hvModule::~hvModule(){
+hvModule::~hvModule() {
     // destructor needs to delete vmecontroller
-    if (_createdOwnVmeController == true){
-	delete(VmeController);
+    if (_createdOwnVmeController == true) {
+        delete(VmeController);
     }
 }
 
@@ -47,21 +46,21 @@ bool hvModule::ConnectModule(){
 
     int timeout;
     timeout = 1000;
+
     while( (good == 0) && 
-	   (timeout > 0) ){
-	// if no good connection is available, try to establish it
-	good = IsConnected();
-	sleepModule();
-	timeout--;
+           (timeout > 0) ) {
+        // if no good connection is available, try to establish it
+        good = IsConnected();
+        sleepModule();
+        timeout--;
     }
-    if (timeout < 1){
-	// in this case we timed out and could not establish a connection
-	std::cout << "Connection to HV module could not be established" << std::endl;
-	good = false;
-    }
-    else{
-	std::cout << "timeout in ConnectModule " << timeout << std::endl;
-	good = true;
+    if (timeout < 1) {
+        // in this case we timed out and could not establish a connection
+        std::cout << "Connection to HV module could not be established" << std::endl;
+        good = false;
+    } else {
+        std::cout << "timeout in ConnectModule " << timeout << std::endl;
+        good = true;
     }
     
     // set the member variable to good so that one can always see, if connection was established correctly
@@ -98,39 +97,36 @@ bool hvModule::SetKillEnable(bool setKillEnable){
     bool killEnabled = false;
 
     if(_isConnected){
-	// only if connection was establish
+        // only if connection was establish
         int timeout = 1000;
-        while ( ( killEnabled == false ) &&
-		(timeout > 0) ){
-	    // set kill enable
-	    SetModuleKillEnable(setKillEnable);
-	    sleepModule();
-	    // check if it had any effect
-	    killEnabled = IsKillEnabled();
-	    timeout--;
+
+        while ((killEnabled == false) &&
+               (timeout > 0) ) {
+            // set kill enable
+            SetModuleKillEnable(setKillEnable);
+            sleepModule();
+            // check if it had any effect
+            killEnabled = IsKillEnabled();
+            timeout--;
         }
-        if (timeout == 0){
-	    std::cout << "TIMEOUT: Module could not be set to SetKillEnable" << std::endl;
-	    // for now throw exception without anything else
-	    // TODO: set this up properly!!!
-	    // throw();
+
+        if (timeout == 0) {
+            std::cout << "TIMEOUT: Module could not be set to SetKillEnable" << std::endl;
+            // for now throw exception without anything else
+            // TODO: set this up properly!!!
+            // throw();
+        } else {
+            std::cout << "timeout in SetKillEnable " << timeout << std::endl;
+            std::cout << "Module successfully set to SetKillEnable = " << setKillEnable << std::endl;
         }
-        else{
-	    std::cout << "timeout in SetKillEnable " << timeout << std::endl;
-	    std::cout << "Module successfully set to SetKillEnable = " << setKillEnable << std::endl;
-        }
-    }
-    else{
-	std::cout << "connection to module is not established. Connect first" << std::endl;
+    } else {
+        std::cout << "connection to module is not established. Connect first" << std::endl;
     }
 
     return killEnabled;
 }
 
-GroupSTRUCT hvModule::GetFlexGroup(int group){
-    // by Sebastian Schmidt
-    // call both get flex group functions from the module
-    // and return the group built from that
+GroupSTRUCT hvModule::GetFlexGroup(int group) {
     // note: initialization with designated initializer illegal in c++
     // thus, initialization includes comments for readability
     GroupSTRUCT groupObject;
@@ -146,10 +142,6 @@ GroupSTRUCT hvModule::GetFlexGroup(int group){
 
 
 void hvModule::SetFlexGroup(int group, GroupSTRUCT groupObject){
-    // by Sebastian Schmidt
-    // call both set flex group functions from the module
-    // and write them to the HV module
-
     SetModuleFlexGroupMemberList(group, groupObject.MemberList1.Word);
     
     // we're using Type 1, because in our implementation we're only properly
@@ -172,27 +164,27 @@ bool hvModule::setStopModule(bool stop){
 
     updateModule();
     if(_isStop == stop){
-	// in this case nothing to do, set good
-	good = true;
+        // in this case nothing to do, set good
+        good = true;
     }
 
     int timeout = 1000;
-    while( (timeout > 1) &&
-	   (_isStop != stop) ){
-	// update module, 
-	updateModule();
-	// set moduleControl bit setStop to 1
-	_moduleControl.Bit.SetStop = 1;
-	// and write to module
-	SetModuleControl(_moduleControl.Word);
+    while((timeout > 1) &&
+          (_isStop != stop) ) {
+        // update module,
+        updateModule();
+        // set moduleControl bit setStop to 1
+        _moduleControl.Bit.SetStop = 1;
+        // and write to module
+        SetModuleControl(_moduleControl.Word);
     }
-    if (timeout < 1){
-	std::cout << "TIMEOUT: could not set module to SetStop == " << good << std::endl;
-	good = false;
-    }
-    else{
-	std::cout << "timeout in setStopModule " << timeout << std::endl;
-	good = true;
+
+    if (timeout < 1) {
+        std::cout << "TIMEOUT: could not set module to SetStop == " << good << std::endl;
+        good = false;
+    } else {
+        std::cout << "timeout in setStopModule " << timeout << std::endl;
+        good = true;
     }    
     
     return good;
@@ -203,21 +195,21 @@ void hvModule::printStatus(){
     updateModule();
 
     std::cout << "IsAdjustment "     << _moduleStatus.Bit.IsAdjustment << "\n"
-	      << "IsInterlockOut "    << _moduleStatus.Bit.IsInterlockOut << "\n"
-	      << "IsStop "            << _moduleStatus.Bit.IsStop << "\n"
-	      << "IsServiceNeeded "   << _moduleStatus.Bit.IsServiceNeeded << "\n"
-	      << "IsInputError "      << _moduleStatus.Bit.IsInputError << "\n"
-	      << "IsSpecialMode "     << _moduleStatus.Bit.IsSpecialMode << "\n"
-	      << "IsCommandComplete " << _moduleStatus.Bit.IsCommandComplete << "\n"
-	      << "IsNoSumError "      << _moduleStatus.Bit.IsNoSumError << "\n"
-	      << "IsNoRamp "          << _moduleStatus.Bit.IsNoRamp << "\n"
-	      << "IsSafetyLoopGood "  << _moduleStatus.Bit.IsSafetyLoopGood << "\n"
-	      << "IsEventActive "     << _moduleStatus.Bit.IsEventActive << "\n"
-	      << "IsModuleGood "      << _moduleStatus.Bit.IsModuleGood << "\n"
-	      << "IsSupplyGood "      << _moduleStatus.Bit.IsSupplyGood << "\n"
-	      << "IsTemperatureGood " << _moduleStatus.Bit.IsTemperatureGood << "\n"
-	      << "IsKillEnable "      << _moduleStatus.Bit.IsKillEnable
-	      << std::endl;
+              << "IsInterlockOut "    << _moduleStatus.Bit.IsInterlockOut << "\n"
+              << "IsStop "            << _moduleStatus.Bit.IsStop << "\n"
+              << "IsServiceNeeded "   << _moduleStatus.Bit.IsServiceNeeded << "\n"
+              << "IsInputError "      << _moduleStatus.Bit.IsInputError << "\n"
+              << "IsSpecialMode "     << _moduleStatus.Bit.IsSpecialMode << "\n"
+              << "IsCommandComplete " << _moduleStatus.Bit.IsCommandComplete << "\n"
+              << "IsNoSumError "      << _moduleStatus.Bit.IsNoSumError << "\n"
+              << "IsNoRamp "          << _moduleStatus.Bit.IsNoRamp << "\n"
+              << "IsSafetyLoopGood "  << _moduleStatus.Bit.IsSafetyLoopGood << "\n"
+              << "IsEventActive "     << _moduleStatus.Bit.IsEventActive << "\n"
+              << "IsModuleGood "      << _moduleStatus.Bit.IsModuleGood << "\n"
+              << "IsSupplyGood "      << _moduleStatus.Bit.IsSupplyGood << "\n"
+              << "IsTemperatureGood " << _moduleStatus.Bit.IsTemperatureGood << "\n"
+              << "IsKillEnable "      << _moduleStatus.Bit.IsKillEnable
+              << std::endl;
 }
 
 
@@ -225,32 +217,31 @@ bool hvModule::clearModuleEventStatusAndCheck(){
     bool good = false;
 
     updateModule();
-    if(_moduleEventStatus.Word == 0){
-	// in this case nothing to do, set good
-	good = true;
+    if(_moduleEventStatus.Word == 0) {
+        // in this case nothing to do, set good
+        good = true;
     }
 
     // define an empty module event status and initialize to 0
     ModuleEventStatusSTRUCT moduleEventStatus = { };
 
     int timeout = 1000;
-    while( (timeout > 1) &&
-	   (_moduleEventStatus.Word != moduleEventStatus.Word) ){
-	// call clear module event status function
-	ClearModuleEventStatus();
-	// sleep for a moment
-	sleepModule();
-	// and update update module to check in next iteration, if
-	// _moduleEventStatus member variable is empty now
-	updateModule();
+    while((timeout > 1) &&
+          (_moduleEventStatus.Word != moduleEventStatus.Word)) {
+        // call clear module event status function
+        ClearModuleEventStatus();
+        // sleep for a moment
+        sleepModule();
+        // and update update module to check in next iteration, if
+        // _moduleEventStatus member variable is empty now
+        updateModule();
     }
     if (timeout < 1){
-	std::cout << "TIMEOUT: could not reset module event." << std::endl;
-	good = false;
-    }
-    else{
-	std::cout << "timeout in clearModuleEventStatus " << timeout << std::endl;
-	good = true;
+        std::cout << "TIMEOUT: could not reset module event." << std::endl;
+        good = false;
+    } else {
+        std::cout << "timeout in clearModuleEventStatus " << timeout << std::endl;
+        good = true;
     }    
     
     return good;
@@ -261,12 +252,12 @@ void hvModule::printEventStatus(){
     updateModule();
 
     std::cout << "EventRestart "            << _moduleEventStatus.Bit.EventRestart << "\n"
-	      << "EventServiceNeeded "      << _moduleEventStatus.Bit.EventServiceNeeded << "\n"
-	      << "EventInputError "         << _moduleEventStatus.Bit.EventInputError << "\n"
-	      << "EventSafetyLoopNotGood "  << _moduleEventStatus.Bit.EventSafetyLoopNotGood << "\n"
-	      << "EventSupplyNotGood "      << _moduleEventStatus.Bit.EventSupplyNotGood << "\n"
-	      << "EventTemperatureNotGood " << _moduleEventStatus.Bit.EventTemperatureNotGood
-	      << std::endl;
+              << "EventServiceNeeded "      << _moduleEventStatus.Bit.EventServiceNeeded << "\n"
+              << "EventInputError "         << _moduleEventStatus.Bit.EventInputError << "\n"
+              << "EventSafetyLoopNotGood "  << _moduleEventStatus.Bit.EventSafetyLoopNotGood << "\n"
+              << "EventSupplyNotGood "      << _moduleEventStatus.Bit.EventSupplyNotGood << "\n"
+              << "EventTemperatureNotGood " << _moduleEventStatus.Bit.EventTemperatureNotGood
+              << std::endl;
 }
 
 
@@ -275,10 +266,9 @@ bool hvModule::isEventStatusGood(){
     bool good;
     
     if (_moduleEventStatus.Word == 0){
-	good = true;
-    }
-    else{
-	good = false;
+        good = true;
+    } else {
+        good = false;
     }
 
     std::bitset<16> bits(_moduleEventStatus.Word);
