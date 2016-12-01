@@ -15,7 +15,8 @@ bin/data/singleFrames/*
 # editors
 *~
 
-# python
+# generated files
+bin/TOS
 *.pyc
 scripts/PyS_eventDisplay/*.lprof
 *.*#
