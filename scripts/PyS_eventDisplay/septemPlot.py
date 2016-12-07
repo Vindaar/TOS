@@ -16,7 +16,12 @@ def make_ticklabels_invisible(fig):
             tl.set_visible(False)
 
 #@profile
-def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_value):
+def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_value, cb_chip):
+
+    # using im_list we now define a variable for the number of chips we have
+    # (single or septem). That way, we can distinguish in the loop in which
+    # we set the data
+    nChips = len(im_list)
 
     # create full path to file
     filepathName = filepath + filename
@@ -54,6 +59,14 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
         chip_data = chpHeader.pixData
         # now get current chip number so that we plot on to the correct chip
         chipNum = int(chpHeader.attr["chipNumber"])
+
+        # using the chip number we can determine whether we still continue or stop now
+        # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
+        if chipNum > nChips:
+            # if the chip number is larger than nChips (note, not >=, because we start
+            # counting chips at 1.
+            break
+
         # and get the number of hits
         numHits = int(np.size(chip_data))#chpHeader.attr["numHits"])
         # use both to create the hits box
@@ -100,13 +113,23 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
                         verticalalignment = 'center',
                         multialignment = 'left')
 
-    # now set all plots invisible, which were not updated this time
-    for i in plots_to_hide:
-        im_list[i].set_visible(False)
+    # now set all plots invisible, which were not updated this time (only done, if we even
+    # have more than 1 plot)
+    if nChips > 1:
+        for i in plots_to_hide:
+            im_list[i].set_visible(False)
 
     try:
-        cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
-        cb = plt.colorbar(im_list[3], cax = cbaxes)
+        # either set the colorbar to the center chip in case of the septemboard or 
+        # to chip 0 in case of a single chip
+        # NOTE: the hardcoding of the numbers here isn't really nice. But since it's a one time thing
+        # it should be excused.
+        if nChips > 1:
+            cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
+            cb = plt.colorbar(im_list[cb_chip], cax = cbaxes)
+        else:
+            cbaxes = fig.add_axes([sep.row2.right + 0.005, sep.row3.bottom + 0.036, 0.015, (sep.row3.top - sep.row3.bottom)])
+            cb = plt.colorbar(im_list[0], cax = cbaxes)
         fig.canvas.draw()
     except UnboundLocalError:
         print filename
@@ -167,15 +190,26 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     return fadcPlot
 
 
-def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays, cb_flag, cb_value):
+def plot_occupancy(filepath, 
+                   sep, 
+                   fig, 
+                   chip_subplots, 
+                   im_list, 
+                   chip_arrays, 
+                   cb_flag, 
+                   cb_value, 
+                   cb_chip):
     # this function plots the occupancy plots, which are created by the 
     # create_occupancy_plot function
+
+    # define nChips based on the chip_subplots list, to differentiate between
+    # single chip and septemboard
+    nChips = len(chip_subplots)
     
     # first remove the texts from before, if any
     texts = fig.texts
     for i in range(len(texts)):
         texts[-1].remove()
-
 
     # define the variable, in which we store the number of hits for each chip to
     # print at the top left
@@ -184,6 +218,12 @@ def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays, cb_f
     # now perform plotting
     plots_to_hide = range(7)
     for i, chip_array in enumerate(chip_arrays):
+        # using the iterator i, we determine if we break or not
+        # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
+        if i > nChips:
+            # if i is larger than nChips, we break
+            break
+
         # get number of non zero elements in this array
         numHits = np.count_nonzero(chip_array)
         maxVals = np.max(chip_array)
@@ -220,13 +260,22 @@ def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays, cb_f
                         verticalalignment = 'center',
                         multialignment = 'left')
 
-    # now set all plots invisible, which were not updated this time
-    for i in plots_to_hide:
-        im_list[i].set_visible(False)
+    # now set all plots invisible, which were not updated this time (only if septemboard)
+    if nChips > 1:
+        for i in plots_to_hide:
+            im_list[i].set_visible(False)
 
     try:
-        cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
-        cb = plt.colorbar(im_list[3], cax = cbaxes)
+        # either set the colorbar to the center chip in case of the septemboard or 
+        # to chip 0 in case of a single chip
+        # NOTE: the hardcoding of the numbers here isn't really nice. But since it's a one time thing
+        # it should be excused.
+        if nChips > 1:
+            cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
+            cb = plt.colorbar(im_list[cb_chip], cax = cbaxes)
+        else:
+            cbaxes = fig.add_axes([sep.row2.right + 0.005, sep.row3.bottom + 0.036, 0.015, (sep.row3.top - sep.row3.bottom)])
+            cb = plt.colorbar(im_list[0], cax = cbaxes)
         fig.canvas.draw()
     except UnboundLocalError:
         print 'something is bad'
