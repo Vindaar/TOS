@@ -17,7 +17,7 @@ def make_ticklabels_invisible(subplots):
             tl.set_visible(False)
 
 #@profile
-def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_value, cb_chip):
+def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_value, cb_chip, cb):
 
     # using im_list we now define a variable for the number of chips we have
     # (single or septem). That way, we can distinguish in the loop in which
@@ -115,30 +115,38 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
                         multialignment = 'left')
 
     # now set all plots invisible, which were not updated this time (only done, if we even
-    # have more than 1 plot)
+    # have more than 1 plot) and update the colorbar
     if nChips > 1:
         for i in plots_to_hide:
             im_list[i].set_visible(False)
-
-    try:
-        # either set the colorbar to the center chip in case of the septemboard or 
-        # to chip 0 in case of a single chip
-        # NOTE: the hardcoding of the numbers here isn't really nice. But since it's a one time thing
-        # it should be excused.
-        if nChips > 1:
-            cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
-            cb = plt.colorbar(im_list[cb_chip], cax = cbaxes)
-        else:
-            cbaxes = fig.add_axes([sep.row2.right + 0.005, sep.row3.bottom + 0.036, 0.015, (sep.row3.top - sep.row3.bottom)])
-            cb = plt.colorbar(im_list[0], cax = cbaxes)
+        # update colorbar
+        cb.update_normal(im_list[cb_chip])
+    else:
+        # only update colorbar in this case
+        cb.update_normal(im_list[0])
+        # now we draw the canvas again. This is only done, because when using an animation 
+        # (auto updating), sometimes otherwise we'd end up with a blank canvas where the plots
+        # should be.
+        # alternatively, one can call the update_normal function again
         fig.canvas.draw()
-    except UnboundLocalError:
-        print filename
+
+    # NOTE: pure debugging to see if more and more artists are being created
+    # axes = fig.get_axes()
+    # for i, ax in enumerate(axes):
+    #     print 'Axes number ', i
+    #     print 'name ', ax.name
+    #     print 'title ', ax.title
+    #     children = ax.get_children()
+    #     for child in children:
+    #         print child
+    #         # if i == 2:
+    #         #     print matplotlib.artist.getp(child)
+    #     print '\n\n'
 
     make_ticklabels_invisible(chip_subplots)
 
     # and now plot everythin
-    plt.pause(0.01)
+    plt.pause(0.000001)
 
     return chip_subplots + im_list
     
@@ -166,8 +174,6 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     #channel2 = fadc.channel2
     channel3 = fadc.channel3
     
-    #print 'channel!!!', channel3
-
     # and plot everything
     # create title build from Run folder and filename:
     plot_title = filepath.rstrip("/").split("/")[-1] + "/" + filename
@@ -197,7 +203,8 @@ def plot_occupancy(filepath,
                    chip_arrays, 
                    cb_flag, 
                    cb_value, 
-                   cb_chip):
+                   cb_chip,
+                   cb):
     # this function plots the occupancy plots, which are created by the 
     # create_occupancy_plot function
 
@@ -263,21 +270,11 @@ def plot_occupancy(filepath,
     if nChips > 1:
         for i in plots_to_hide:
             im_list[i].set_visible(False)
-
-    try:
-        # either set the colorbar to the center chip in case of the septemboard or 
-        # to chip 0 in case of a single chip
-        # NOTE: the hardcoding of the numbers here isn't really nice. But since it's a one time thing
-        # it should be excused.
-        if nChips > 1:
-            cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
-            cb = plt.colorbar(im_list[cb_chip], cax = cbaxes)
-        else:
-            cbaxes = fig.add_axes([sep.row2.right + 0.005, sep.row3.bottom + 0.036, 0.015, (sep.row3.top - sep.row3.bottom)])
-            cb = plt.colorbar(im_list[0], cax = cbaxes)
-        fig.canvas.draw()
-    except UnboundLocalError:
-        print 'something is bad'
+        # update colorbar
+        cb.update_normal(im_list[cb_chip])
+    else:
+        # only update colorbar in this case
+        cb.update_normal(im_list[0])
     
     make_ticklabels_invisible(chip_subplots)
 
@@ -315,15 +312,12 @@ def plot_pixel_histogram(filepath,
     for i, hitsList in enumerate(nHitsList):
         # using the iterator i, we determine if we break or not
         # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
-
         if i >= nChips:
             break
 
         # now either plot a single plot (if single chip), or one for each
         # chip
-        #if single_chip_flag is False:
-        print i
-        #print hitsList
+
         im_list[i].set_visible(False)
         
         #fig2 = plt.figure(2)
@@ -333,7 +327,7 @@ def plot_pixel_histogram(filepath,
         print pos
 
         print pos.x0, pos.y0, pos.x1, pos.y1
-        histo = fig.add_axes([pos.x0, pos.y0, pos.width, pos.height])
+        histo = fig.add_axes([pos.x0 + 0.05 * pos.width, pos.y0, pos.width * 0.95, pos.height * 0.95])
         histo.hist(hitsList, 20, histtype = 'bar')
 
         #chip_subplots[i].hist(hitsList, 100, histtype = 'bar')
@@ -359,13 +353,16 @@ def plot_pixel_histogram(filepath,
     #                     verticalalignment = 'center',
     #                     multialignment = 'now')
 
+    axes = fig.get_axes()
+    for ax in axes:
+        print ax.get_children()
 
-
-    fig.canvas.draw()
+    #fig.canvas.draw()
 
     # left set all plots invisible, which were not updated this time (only if septemboard)
     #if nChips > 1:
     for i in xrange(nChips):
+        print 'visible no', i
         im_list[i].set_visible(False)
     
     make_ticklabels_invisible(chip_subplots)
