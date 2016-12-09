@@ -103,7 +103,7 @@ class WorkOnFile:
         # for first event
         #self.fadcPlotLine[0].set_visible(False)
 
-        # color bar related variables
+        # color bar related variables (colorbar is created after image list is created)
         self.cb_flag  = cb_flag
         self.cb_value = cb_value
         self.cb_chip  = cb_chip
@@ -115,13 +115,24 @@ class WorkOnFile:
         for im in self.im_list:
             im.set_cmap('viridis')
 
-        # and now create the colorbar
-        # try:
-        #     cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, self.septem.row3.bottom, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
-        #     cb = plt.colorbar(self.im_list[3], cax = cbaxes)
-        # except UnboundLocalError:
-        #     print filename
+        # now to create the colorbar
+        try:
+            # either set the colorbar to the center chip in case of the septemboard or 
+            # to chip 0 in case of a single chip
+            # NOTE: the hardcoding of the numbers here isn't really nice. But since it's a one time thing
+            # it should be excused.
+            if len(self.chip_subplots) > 1:
+                cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, self.septem.row3.bottom, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
+                cb = plt.colorbar(self.im_list[self.cb_chip], cax = cbaxes)
+            else:
+                cbaxes = self.fig.add_axes([self.septem.row2.right + 0.005, self.septem.row3.bottom + 0.036, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
+                cb = plt.colorbar(self.im_list[0], cax = cbaxes)
+            self.fig.canvas.draw()
+        except UnboundLocalError:
+            print filename
 
+        # and assign newly created colorbar as member variable
+        self.cb = cb
 
         # and now invert the correct plots, if septemboard is used
         if self.single_chip_flag == False:
@@ -141,8 +152,9 @@ class WorkOnFile:
             self.chip_subplots[6].invert_yaxis()
         else:
             self.chip_subplots[0].invert_yaxis()
-
     
+
+
     def connect(self):
         # before we connect the key press events, we check if refresh ran once
         # files are read, before we accept any input
@@ -204,12 +216,12 @@ class WorkOnFile:
             print ''
             print 'keypress read:', c
             print 'going to previous file'
-            if self.i > 0:
-                self.i -= 1
-                print self.i
-                self.work_on_file()
-            else:
-                self.work_on_file()
+            #if self.i > 0:
+            self.i -= 1
+            print self.i
+            self.work_on_file()
+            #else:
+            #    self.work_on_file()
         elif c == 'e':
             # if e is typed, we jump to the end of the list and automatically
             # always get the last frame
@@ -274,7 +286,7 @@ class WorkOnFile:
         lock.release()
         # now plot septem
         if filename is not None:
-            plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list, self.cb_flag, self.cb_value, self.cb_chip)
+            plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list, self.cb_flag, self.cb_value, self.cb_chip, self.cb)
             if filenameFadc is not "":
                 # only call fadc plotting function, if there is a corresponding FADC event
                 plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
@@ -324,7 +336,8 @@ class WorkOnFile:
                        chip_arrays,
                        self.cb_flag,
                        self.cb_value,
-                       self.cb_chip)
+                       self.cb_chip,
+                       self.cb)
 
 
     def create_pixel_histogram(self):
