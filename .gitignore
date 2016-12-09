@@ -6,12 +6,10 @@ Makefile
 HV_FADC_Object.pro
 HV_FADC_Object.pro.user
 #*#
-<<<<<<< HEAD
 tmp/*
 *.*~
-=======
 Backup/*
 *.*~
+*.pyc
 *.*#
 TAGS
->>>>>>> 80cb2c823bf35b429b02c7bfc1960e9efbf8f116
