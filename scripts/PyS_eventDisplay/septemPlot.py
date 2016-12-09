@@ -69,9 +69,9 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
             break
 
         # and get the number of hits (we use numHits)
-        numHits = chpHeader.attr["numHits"]) # int(np.size(chip_data))
+        numHits = chpHeader.attr["numHits"] # int(np.size(chip_data))
         # use both to create the hits box
-        hits_text += "Chip #%i : %i" % (chipNum, numHits)
+        hits_text += "Chip #%i : %s" % (chipNum, numHits)
         if chipNum != 7:
             hits_text += "\n"
         try:
@@ -120,8 +120,6 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
         for i in plots_to_hide:
             im_list[i].set_visible(False)
 
-    print 'number of axes1', fig.get_axes()
-
     try:
         # either set the colorbar to the center chip in case of the septemboard or 
         # to chip 0 in case of a single chip
@@ -137,13 +135,7 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
     except UnboundLocalError:
         print filename
 
-    axes = fig.get_axes()
-    for el in axes:
-        print matplotlib.artist.getp(el)
-    
     make_ticklabels_invisible(chip_subplots)
-    #fig.canvas.draw()
-
 
     # and now plot everythin
     plt.pause(0.01)

@@ -139,6 +139,8 @@ class WorkOnFile:
             # for some reason I'm not entirely sure of right now, we also need to
             # invert the y axis of the last chip (7)
             self.chip_subplots[6].invert_yaxis()
+        else:
+            self.chip_subplots[0].invert_yaxis()
 
     
     def connect(self):
