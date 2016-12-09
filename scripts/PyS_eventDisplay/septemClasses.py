@@ -258,8 +258,11 @@ class chipHeaderData:
         el = el.split()
         if len(el) == 3:
             pixel = (int(el[0]), int(el[1]), int(el[2]))
-            if pixel[2] != 11810:
-                self.listOfPixels.append(pixel)
+            # we use all pixels, even those which have a value of the maximum count
+            # 11810. There's a single pixel (255, 0), which is always at 11810, but
+            # we ignore that.
+            #if pixel[2] != 11810:
+            self.listOfPixels.append(pixel)
 
     def convert_list_to_array(self):
         # this function is called after all data has been read from the data file

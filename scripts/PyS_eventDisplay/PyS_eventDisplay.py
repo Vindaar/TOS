@@ -11,7 +11,7 @@ import os
 import time
 from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc
 from septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file
-from septemPlot  import plot_file, plot_fadc_file, plot_occupancy
+from septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
 
 import multiprocessing as mp
 from profilehooks import profile
@@ -222,6 +222,10 @@ class WorkOnFile:
             # if o is typed, we create an occupancy plot of the whole run
             print 'creating occupancy plot...'
             self.create_occupancy_plot()
+        elif c == 'h':
+            # if h is typed, we create the pixel histogram for each chip
+            print 'creating pixel histogram...'
+            self.create_pixel_histogram()
                         
                 
         elif c == 'q':
@@ -319,6 +323,41 @@ class WorkOnFile:
                        self.cb_flag,
                        self.cb_value,
                        self.cb_chip)
+
+
+    def create_pixel_histogram(self):
+        # create the pixel histogram for all chips of the current run
+        
+        # define a list of lists for the number of hits for each chip
+        nHitsList = [ [] for _ in xrange(self.septem.nChips)]
+
+        for el in self.ns.filelistEvents:
+            # we create the event and chip header object
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + el)
+            # now go through each chip header and add data of frame
+            # to chip_arrays
+            for chpHeader in chpHeaderList:
+                # get the data of the frame for this chip
+                chip_data = chpHeader.pixData
+                chip_num  = int(chpHeader.attr["chipNumber"])
+                # and now add chip data to chip_arrays if non empty
+                nHits = np.size(chip_data)
+                if nHits > 0:
+                    # now if we have 1 hits or more, add event to histogram
+                    # chipnum - 1, because we count from 1
+                    nHitsList[chip_num - 1].append(nHits)
+                
+            event_num = int(evHeader.attr["eventNumber"])
+            if event_num % 1000 == 0:
+                print event_num, ' events done.' 
+
+        plot_pixel_histogram(self.filepath,
+                             self.fig,
+                             self.septem,
+                             self.chip_subplots,
+                             self.im_list,
+                             nHitsList,
+                             self.single_chip_flag)
         
 
 
