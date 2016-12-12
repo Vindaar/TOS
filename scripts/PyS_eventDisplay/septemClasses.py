@@ -150,9 +150,11 @@ class event:
 class eventHeader:
     # this class is used to store the data from the header of a single event
     # (zero suppressed from septem board)
-    def __init__(self):
+    def __init__(self, filepath):
         # initialize an empty dictionary for all our header elements
         self.attr = {}
+        self.runname  = filepath.split('/')[-2]
+        self.filename = filepath.split('/')[-1]
     def set_attribute(self, el):
         # this function is called to set one of the attributes
         # input: el: string of complete line
@@ -179,7 +181,7 @@ class eventHeader:
         else:
             return
 
-    def get_event_header_text(self, filename):
+    def get_event_header_text(self):
         # this function returns the string, which is used for
         # the header of the event display
         # columns to fill all strings to
@@ -201,7 +203,7 @@ class eventHeader:
                 event = "Event # : ".ljust(nFill)
                 event += self.attr["eventNumber:"] + "\n"
             except KeyError:
-                print 'KeyError: eventNumber not found in file', filename
+                print 'KeyError: eventNumber not found in file', self.filename
                 print self.attr
                 import sys
                 sys.exit()
@@ -225,9 +227,37 @@ class eventHeader:
         szint += self.attr["szint2ClockInt"] + "\n"
         
         fname = "Filename : ".ljust(nFill)
-        fname += filename
+        fname += self.filename
 
         header = runNum + event + date + shutter + fadcTrig + fadcTrClock + szint + fname
+          
+        return header
+
+    def get_run_header_text(self):
+        # this function returns the string, which is used for
+        # the header of the occupancy plot for the run, which
+        # this event corresponds to
+        # columns to fill all strings to
+        
+        nFill = 24
+
+        try:
+            runNum = "Run # : ".ljust(nFill)
+            runNum += self.attr["runNumber"] + "\n"
+        except KeyError:
+            print 'Run number not available yet, skipping'
+            runNum = ""
+        
+        date = "Date : ".ljust(nFill)
+        date += self.attr["dateTime"] + "\n"
+        
+        shutter = "Shutter time / mode : ".ljust(nFill)
+        shutter += self.attr["shutterTime"] + " / " + self.attr["shutterMode"] + "\n"
+
+        rname = "Run path : ".ljust(nFill)
+        rname += self.runname
+
+        header = runNum + date + shutter + rname
           
         return header
 
@@ -396,3 +426,36 @@ class Fadc:
         fadc_values = np.asarray(fadc_values)
         # and return
         return fadc_values
+
+
+class customColorbar:
+    # this class defines the colorbar we use for this project
+    # it's basically just a container for the different settings we
+    # use in the event display. 
+    # NOTE: one might inherit from the matplotlib colorbar class, but that
+    # would be messy overkill I reckon
+    def __init__(self, cb_flag, cb_value, cb_chip):
+        # the arguments used during construction are 
+        # cb_flag : type bool
+        #           controls whether we use an absolute maximum value (0) for the colorbar
+        #           or a percentile of the given data array (1)
+        # cb_value: type int
+        #           either the absolute maximum value (cb_flag == 0) or the percentile to
+        #           use for the upper value (cb_flag == 1)
+        # cb_chip : type int
+        #           the chip to which the colorbar is applied
+        self.flag  = cb_flag
+        self.value = cb_value
+        self.chip  = cb_chip
+        
+        # assign the colorbar object to be None from initialization. 
+        # can check whether colorbar was assigned already that way
+        self.cb    = None
+
+    def assign_colorbar(self, cb):
+        # this function is used to assign a matplot colorbar to this object
+        self.cb    = cb
+
+    def update_normal(self, im_object):
+        # this function wraps the colorbar update normal function
+        return self.cb.update_normal(im_object)

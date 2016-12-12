@@ -1,5 +1,6 @@
 # gitignore file
 tmp/*
+bin/TOS
 bin/data/runs/*
 bin/data/singleFrames/*
 Makefile

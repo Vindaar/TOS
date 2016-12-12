@@ -17,7 +17,7 @@ def make_ticklabels_invisible(subplots):
             tl.set_visible(False)
 
 #@profile
-def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_value, cb_chip, cb):
+def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
 
     # using im_list we now define a variable for the number of chips we have
     # (single or septem). That way, we can distinguish in the loop in which
@@ -41,7 +41,7 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
     # now add the header for this event. We add it to the last axes in the list
     # (for no special reason)
     # call function to get the header text
-    header_text = evHeader.get_event_header_text(filename)
+    header_text = evHeader.get_event_header_text()
     # and put it at the top
     header_box = fig.text(0.5, 0.9, header_text,
                           bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
@@ -88,12 +88,10 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
             plots_to_hide.remove(chipNum - 1)
             im_list[chipNum - 1].set_visible(True)
 
-            print '\n stt', np.max(chip_data[:,2])
-            #im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], 80))
-            if cb_flag == True:
-                im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], cb_value))
+            if cb.flag == True:
+                im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], cb.value))
             else:
-                im_list[chipNum - 1].set_clim(0, cb_value)
+                im_list[chipNum - 1].set_clim(0, cb.value)
 
             # not needed anymore
             #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])#, vmin=0, vmax=250)
@@ -120,7 +118,7 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb_flag, cb_
         for i in plots_to_hide:
             im_list[i].set_visible(False)
         # update colorbar
-        cb.update_normal(im_list[cb_chip])
+        cb.update_normal(im_list[cb.chip])
     else:
         # only update colorbar in this case
         cb.update_normal(im_list[0])
@@ -196,14 +194,12 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
 
 
 def plot_occupancy(filepath, 
+                   header_text,
                    sep, 
                    fig, 
                    chip_subplots, 
                    im_list, 
                    chip_arrays, 
-                   cb_flag, 
-                   cb_value, 
-                   cb_chip,
                    cb):
     # this function plots the occupancy plots, which are created by the 
     # create_occupancy_plot function
@@ -221,6 +217,17 @@ def plot_occupancy(filepath,
     # print at the top left
     hits_text = "".ljust(10) + "Hits".ljust(10) + "max values\n"
 
+    # we're going to use the first event of the run to create the event
+    # header for the occupancy plot
+    header_box = fig.text(0.5, 0.9, header_text,
+                          bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
+                          family = 'monospace',
+                          transform = chip_subplots[-1].transAxes,
+                          horizontalalignment = 'center',
+                          verticalalignment = 'center',
+                          multialignment = 'left')
+
+
     # now perform plotting
     plots_to_hide = range(7)
     for i, chip_array in enumerate(chip_arrays):
@@ -236,26 +243,26 @@ def plot_occupancy(filepath,
         # use both to create the hits box
         hits_text += ("Chip #%i : %i" % (i, numHits)).ljust(20)
         hits_text += str(int(maxVals))
+
         if i != 6:
             hits_text += "\n"
         try:
             # now create an image, but rather use im_list to set the correct image data
             im_list[i].set_data(chip_array)
-                        
+
             # # now remove this chip from the plots_to_hide list
             plots_to_hide.remove(i)
             im_list[i].set_visible(True)
 
-            if cb_flag == True:
-                im_list[i].set_clim(0, np.percentile(chip_array, cb_value))
+            if cb.flag == True:
+                im_list[i].set_clim(0, np.percentile(chip_array, cb.value))
             else:
-                im_list[i].set_clim(0, cb_value)
+                im_list[i].set_clim(0, cb.value)
 
         except IndexError:
             print 'IndexError: chip', i, ' has no hits'
         except TypeError:
             print 'TypeError: chip', i, ' has no hits'
-
 
     # now create the hits box
     hits_box = fig.text(0.2, 0.9, hits_text,
@@ -271,7 +278,7 @@ def plot_occupancy(filepath,
         for i in plots_to_hide:
             im_list[i].set_visible(False)
         # update colorbar
-        cb.update_normal(im_list[cb_chip])
+        cb.update_normal(im_list[cb.chip])
     else:
         # only update colorbar in this case
         cb.update_normal(im_list[0])

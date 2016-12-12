@@ -15,7 +15,7 @@ def read_zero_suppressed_data_file(filepath):#, out_q1):
     # single hash ' # '  indicates the header for a single chip
     f = open(filepath, 'r').readlines()
 
-    evHeader  = eventHeader()
+    evHeader  = eventHeader(filepath)
     chpHeaderList = []
     for line in f:
         line = line.strip()
@@ -42,14 +42,7 @@ def read_zero_suppressed_data_file(filepath):#, out_q1):
     if len(chpHeaderList) > 0:
         chpHeaderList[-1].convert_list_to_array()
 
-    #print evHeader.attr
-    #for chp in chpHeaderList:
-        #print chp.attr
-
-
     return [evHeader, chpHeaderList]
-    # out_q1.put(evHeader)
-    # out_q1.put(chpHeaderList)
 
 def create_files_from_path(folder):
     # this function removes any files which are not chip events in a folder

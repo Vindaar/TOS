@@ -9,7 +9,7 @@ import matplotlib.animation as animation
 from matplotlib.lines import Line2D
 import os
 import time
-from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc
+from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
 from septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file
 from septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
 
@@ -64,6 +64,7 @@ def refresh(ns, filepath):
 
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
+
     def __init__(self, 
                  filepath, 
                  figure, 
@@ -71,20 +72,19 @@ class WorkOnFile:
                  chip_subplots, 
                  fadcPlot, 
                  ns, 
-                 cb_flag, 
-                 cb_value, 
-                 cb_chip):
-        self.filepath       = filepath
-        self.filelist       = []
-        self.filelistFadc   = []
+                 cb):
+        self.filepath         = filepath
+        self.filelist         = []
+        self.filelistFadc     = []
+        self.current_filename = ""
         # and assign the namespace of the multiprocessing manager
-        self.ns             = ns
+        self.ns               = ns
 
-        self.fig            = figure
-        self.i              = 0
-        self.nfiles         = self.ns.nfiles
-        self.septem         = septem
-        self.chip_subplots  = chip_subplots
+        self.fig              = figure
+        self.i                = 0
+        self.nfiles           = self.ns.nfiles
+        self.septem           = septem
+        self.chip_subplots    = chip_subplots
         # from the chip_suplots list we now deduce, whether we plot for a single
         # chip or a septemboard
         self.single_chip_flag = False
@@ -95,6 +95,7 @@ class WorkOnFile:
 
         self.fadcPlot       = fadcPlot
         self.fadcPlotLine   = self.fadcPlot.plot([], [], color = 'blue')
+
         # write the labels for the FADC plot (only needed to be done once, so no need to call
         # on each call to FADC plot)
         self.fadcPlot.set_xlabel('Time / clock cycles')
@@ -103,10 +104,8 @@ class WorkOnFile:
         # for first event
         #self.fadcPlotLine[0].set_visible(False)
 
-        # color bar related variables (colorbar is created after image list is created)
-        self.cb_flag  = cb_flag
-        self.cb_value = cb_value
-        self.cb_chip  = cb_chip
+        # assign colorbar
+        self.cb = cb
 
         # zero initialized numpy array
         temp_array         = np.zeros((256, 256))
@@ -119,20 +118,26 @@ class WorkOnFile:
         try:
             # either set the colorbar to the center chip in case of the septemboard or 
             # to chip 0 in case of a single chip
-            # NOTE: the hardcoding of the numbers here isn't really nice. But since it's a one time thing
-            # it should be excused.
+            # NOTE: the hardcoding of the numbers here isn't really nice. But since it's 
+            # a one time thing it should be excused.
             if len(self.chip_subplots) > 1:
-                cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, self.septem.row3.bottom, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
-                cb = plt.colorbar(self.im_list[self.cb_chip], cax = cbaxes)
+                cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, 
+                                            self.septem.row3.bottom, 
+                                            0.015, 
+                                            (self.septem.row3.top - self.septem.row3.bottom)])
+                cb_object = plt.colorbar(self.im_list[self.cb.chip], cax = cbaxes)
             else:
-                cbaxes = self.fig.add_axes([self.septem.row2.right + 0.005, self.septem.row3.bottom + 0.036, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
-                cb = plt.colorbar(self.im_list[0], cax = cbaxes)
+                cbaxes = self.fig.add_axes([self.septem.row2.right + 0.005, 
+                                            self.septem.row3.bottom + 0.036, 
+                                            0.015, 
+                                            (self.septem.row3.top - self.septem.row3.bottom)])
+                cb_object = plt.colorbar(self.im_list[0], cax = cbaxes)
             self.fig.canvas.draw()
         except UnboundLocalError:
             print filename
 
         # and assign newly created colorbar as member variable
-        self.cb = cb
+        self.cb.assign_colorbar(cb_object)
 
         # and now invert the correct plots, if septemboard is used
         if self.single_chip_flag == False:
@@ -153,8 +158,6 @@ class WorkOnFile:
         else:
             self.chip_subplots[0].invert_yaxis()
     
-
-
     def connect(self):
         # before we connect the key press events, we check if refresh ran once
         # files are read, before we accept any input
@@ -236,6 +239,10 @@ class WorkOnFile:
             # if o is typed, we create an occupancy plot of the whole run
             print 'creating occupancy plot...'
             self.create_occupancy_plot()
+        elif c == 's':
+            # if s is typed, we save the current figure
+            print 'saving figure...'
+            self.save_figure(self.current_filename)
         elif c == 'h':
             # if h is typed, we create the pixel histogram for each chip
             print 'creating pixel histogram...'
@@ -286,10 +293,23 @@ class WorkOnFile:
         lock.release()
         # now plot septem
         if filename is not None:
-            plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list, self.cb_flag, self.cb_value, self.cb_chip, self.cb)
+            # before we plot the file, we set the file, we're going to plot as the
+            # current file (to save the figure, if wanted)
+            self.current_filename = self.filepath.split('/')[-1] + "_" + filename
+            
+            plot_file(self.filepath, 
+                      filename, 
+                      self.septem,
+                      self.fig,
+                      self.chip_subplots,
+                      self.im_list,
+                      self.cb)
             if filenameFadc is not "":
                 # only call fadc plotting function, if there is a corresponding FADC event
-                plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
+                plot_fadc_file(self.filepath, 
+                               filenameFadc, 
+                               self.fadcPlot, 
+                               self.fadcPlotLine)
             else:
                 # else set fadc plot to invisible
                 print "No FADC file found for this event."
@@ -310,6 +330,7 @@ class WorkOnFile:
 
         # create a list of numpy arrays. one array for each occupancy plot of each chip
         chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
+
         # we run over all files of the event list, i.e. all files of run
         for el in self.ns.filelistEvents:
             # we create the event and chip header object
@@ -326,19 +347,39 @@ class WorkOnFile:
 
             event_num = int(evHeader.attr["eventNumber"])
             if event_num % 1000 == 0:
-                print event_num, ' events done.' 
+                print event_num, ' events done.'
+
+        # now create the header text box for the occupancy plot
+        if len(self.ns.filelistEvents) > 0:
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + self.ns.filelistEvents[0])
+            header_text = evHeader.get_run_header_text()
+        else:
+            print 'filelist not filled yet or empty; returning.'
+            return
+
+        nEvents = "\n# events : ".ljust(25)
+        nEvents += str(len(self.ns.filelistEvents))
+
+        header_text += nEvents
+
+        # before we plot the file, we set the file, we're going to plot as the
+        # current file (to save the figure, if wanted)
+        self.current_filename = "occupancy_" + self.filepath.split('/')[-2]
 
         plot_occupancy(self.filepath, 
+                       header_text,
                        self.septem, 
                        self.fig, 
                        self.chip_subplots, 
-                       self.im_list, 
+                       self.im_list,
                        chip_arrays,
-                       self.cb_flag,
-                       self.cb_value,
-                       self.cb_chip,
                        self.cb)
 
+    def save_figure(self, output):
+        # this function simply saves the currently shown plot as a png in
+        # the current working directory
+        output = output.rstrip(".txt") + ".png"
+        plt.savefig(output)
 
     def create_pixel_histogram(self):
         # create the pixel histogram for all chips of the current run
@@ -373,7 +414,6 @@ class WorkOnFile:
                              self.im_list,
                              nHitsList,
                              self.single_chip_flag)
-        
 
 
 def create_chip_axes(sep, fig, single_chip_flag):
@@ -509,6 +549,10 @@ def main(args):
         sys.exit()
 
 
+    # create a custom colorbar object to store colorbar related properties; 
+    # initialize with values either as defaults from above or command line argument
+    cb = customColorbar(cb_flag, cb_value, cb_chip)
+
     # get list of files in folder
     if singleFile == False:
         files, filesFadc = create_files_from_path_combined(folder)
@@ -568,7 +612,7 @@ def main(args):
     p2.start()
 
     # now create the main thread, which starts the plotting
-    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb_flag, cb_value, cb_chip)
+    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb)
     files.connect()
 
     plt.show()
