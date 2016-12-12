@@ -41,7 +41,7 @@
 
   TTree *tree = new TTree("treeone","Equalisation Result");
 
-  int nlines = tree->ReadFile("thresholdMeans7.txt","x:y:min:max:bit:opt");
+  int nlines = tree->ReadFile("thresholdMeans3.txt","x:y:min:max:bit:opt");
 
   Float_t x,y,min,max,bit,opt;
 
