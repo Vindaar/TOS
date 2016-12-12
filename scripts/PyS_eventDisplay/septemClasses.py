@@ -150,9 +150,11 @@ class event:
 class eventHeader:
     # this class is used to store the data from the header of a single event
     # (zero suppressed from septem board)
-    def __init__(self):
+    def __init__(self, filepath):
         # initialize an empty dictionary for all our header elements
         self.attr = {}
+        self.runname  = filepath.split('/')[-2]
+        self.filename = filepath.split('/')[-1]
     def set_attribute(self, el):
         # this function is called to set one of the attributes
         # input: el: string of complete line
@@ -179,7 +181,7 @@ class eventHeader:
         else:
             return
 
-    def get_event_header_text(self, filename):
+    def get_event_header_text(self):
         # this function returns the string, which is used for
         # the header of the event display
         # columns to fill all strings to
@@ -197,7 +199,7 @@ class eventHeader:
                 event = "Event # : ".ljust(nFill)
                 event += self.attr["eventNumber:"] + "\n"
             except KeyError:
-                print 'KeyError: eventNumber not found in file', filename
+                print 'KeyError: eventNumber not found in file', self.filename
                 print self.attr
                 import sys
                 sys.exit()
@@ -221,9 +223,33 @@ class eventHeader:
         szint += self.attr["szint2ClockInt"] + "\n"
         
         fname = "Filename : ".ljust(nFill)
-        fname += filename
+        fname += self.filename
 
         header = runNum + event + date + shutter + fadcTrig + fadcTrClock + szint + fname
+          
+        return header
+
+    def get_run_header_text(self):
+        # this function returns the string, which is used for
+        # the header of the occupancy plot for the run, which
+        # this event corresponds to
+        # columns to fill all strings to
+        
+        nFill = 24
+
+        runNum = "Run # : ".ljust(nFill)
+        runNum += self.attr["runNumber"] + "\n"
+        
+        date = "Date : ".ljust(nFill)
+        date += self.attr["dateTime"] + "\n"
+        
+        shutter = "Shutter time / mode : ".ljust(nFill)
+        shutter += self.attr["shutterTime"] + " / " + self.attr["shutterMode"] + "\n"
+
+        rname = "Run path : ".ljust(nFill)
+        rname += self.runname
+
+        header = runNum + date + shutter + rname
           
         return header
 

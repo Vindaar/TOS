@@ -35,7 +35,7 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):
     # now add the header for this event. We add it to the last axes in the list
     # (for no special reason)
     # call function to get the header text
-    header_text = evHeader.get_event_header_text(filename)
+    header_text = evHeader.get_event_header_text()
     # and put it at the top
     header_box = fig.text(0.5, 0.9, header_text,
                           bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
@@ -162,7 +162,7 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     return fadcPlot
 
 
-def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays):
+def plot_occupancy(filepath, header_text, sep, fig, chip_subplots, im_list, chip_arrays):
     # this function plots the occupancy plots, which are created by the 
     # create_occupancy_plot function
     
@@ -176,6 +176,17 @@ def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays):
     # print at the top left
     hits_text = "".ljust(10) + "Hits".ljust(10) + "max values\n"
 
+    # we're going to use the first event of the run to create the event
+    # header for the occupancy plot
+    header_box = fig.text(0.5, 0.9, header_text,
+                          bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
+                          family = 'monospace',
+                          transform = chip_subplots[-1].transAxes,
+                          horizontalalignment = 'center',
+                          verticalalignment = 'center',
+                          multialignment = 'left')
+
+
     # now perform plotting
     plots_to_hide = range(7)
     for i, chip_array in enumerate(chip_arrays):
@@ -185,23 +196,27 @@ def plot_occupancy(filepath, sep, fig, chip_subplots, im_list, chip_arrays):
         # use both to create the hits box
         hits_text += ("Chip #%i : %i" % (i, numHits)).ljust(20)
         hits_text += str(int(maxVals))
+
         if i != 6:
             hits_text += "\n"
         try:
             # now create an image, but rather use im_list to set the correct image data
             im_list[i].set_data(chip_array)
-                        
+
             # # now remove this chip from the plots_to_hide list
             plots_to_hide.remove(i)
-            im_list[i].set_visible(True)
-            
-            im_list[i].set_clim(0, np.max(chip_array))#, 80))
+            #im_list[i].set_visible(True)
+
+            # create array of non zero elements
+            data_nz = chip_array[np.nonzero(chip_array)[0], np.nonzero(chip_array)[1]]
+
+            # and set the colormap range
+            im_list[i].set_clim(0, np.percentile(data_nz, 50))
 
         except IndexError:
             print 'IndexError: chip', i, ' has no hits'
         except TypeError:
             print 'TypeError: chip', i, ' has no hits'
-
 
     # now create the hits box
     hits_box = fig.text(0.2, 0.9, hits_text,

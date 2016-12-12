@@ -63,19 +63,20 @@ def refresh(ns, filepath):
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
     def __init__(self, filepath, figure, septem, chip_subplots, fadcPlot, ns):
-        self.filepath       = filepath
-        self.filelist       = []
-        self.filelistFadc   = []
+        self.filepath         = filepath
+        self.filelist         = []
+        self.filelistFadc     = []
+        self.current_filename = ""
         # and assign the namespace of the multiprocessing manager
-        self.ns             = ns
+        self.ns               = ns
 
-        self.fig            = figure
-        self.i              = 0
-        self.nfiles         = self.ns.nfiles
-        self.septem         = septem
-        self.chip_subplots  = chip_subplots
-        self.fadcPlot       = fadcPlot
-        self.fadcPlotLine   = self.fadcPlot.plot([], [], color = 'blue')
+        self.fig              = figure
+        self.i                = 0
+        self.nfiles           = self.ns.nfiles
+        self.septem           = septem
+        self.chip_subplots    = chip_subplots
+        self.fadcPlot         = fadcPlot
+        self.fadcPlotLine     = self.fadcPlot.plot([], [], color = 'blue')
         # write the labels for the FADC plot (only needed to be done once, so no need to call
         # on each call to FADC plot)
         self.fadcPlot.set_xlabel('Time / clock cycles')
@@ -101,14 +102,14 @@ class WorkOnFile:
 
         # and now invert the correct plots
         for i in xrange(7):
-            if i not in [6, 7]:
+            if i not in [5, 6]:
                 # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
                 # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
-                self.chip_subplots[i - 1].invert_yaxis()
+                self.chip_subplots[i].invert_yaxis()
             else:
                 # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
                 # coordinate is at the top right. thus invert x axis
-                self.chip_subplots[i - 1].invert_xaxis()
+                self.chip_subplots[i].invert_xaxis()
 
 
     
@@ -177,6 +178,10 @@ class WorkOnFile:
             # if o is typed, we create an occupancy plot of the whole run
             print 'creating occupancy plot...'
             self.create_occupancy_plot()
+        elif c == 's':
+            # if s is typed, we save the current figure
+            print 'saving figure...'
+            self.save_figure(self.current_filename)
                         
                 
         elif c == 'q':
@@ -223,6 +228,10 @@ class WorkOnFile:
         lock.release()
         # now plot septem
         if filename is not None:
+            # before we plot the file, we set the file, we're going to plot as the
+            # current file (to save the figure, if wanted)
+            self.current_filename = self.filepath.split('/')[-1] + "_" + filename
+            
             plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)
             if filenameFadc is not "":
                 # only call fadc plotting function, if there is a corresponding FADC event
@@ -247,6 +256,7 @@ class WorkOnFile:
 
         # create a list of numpy arrays. one array for each occupancy plot of each chip
         chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
+
         # we run over all files of the event list, i.e. all files of run
         for el in self.ns.filelistEvents:
             # we create the event and chip header object
@@ -263,16 +273,39 @@ class WorkOnFile:
 
             event_num = int(evHeader.attr["eventNumber"])
             if event_num % 1000 == 0:
-                print event_num, ' events done.' 
+                print event_num, ' events done.'
 
-        print chip_arrays
-        print np.nonzero(chip_arrays)
-        plot_occupancy(self.filepath, 
+        # now create the header text box for the occupancy plot
+        if len(self.ns.filelistEvents) > 0:
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + self.ns.filelistEvents[0])
+            header_text = evHeader.get_run_header_text()
+        else:
+            print 'filelist not filled yet or empty; returning.'
+            return
+        
+
+        nEvents = "\n# events : ".ljust(25)
+        nEvents += str(len(self.ns.filelistEvents))
+
+        header_text += nEvents
+
+        # before we plot the file, we set the file, we're going to plot as the
+        # current file (to save the figure, if wanted)
+        self.current_filename = "occupancy_" + self.filepath.split('/')[-2]
+
+        plot_occupancy(self.filepath,
+                       header_text,
                        self.septem, 
                        self.fig, 
                        self.chip_subplots, 
                        self.im_list, 
                        chip_arrays)
+
+    def save_figure(self, output):
+        # this function simply saves the currently shown plot as a png in
+        # the current working directory
+        output = output.rstrip(".txt") + ".png"
+        plt.savefig(output)
         
 
 def main(args):
@@ -296,9 +329,6 @@ def main(args):
         print 'No argument given. Please give a folder from which to read files'
         import sys
         sys.exit()
-
-
-
 
 
     # get list of files in folder
