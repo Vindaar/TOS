@@ -9,14 +9,20 @@ from septemClasses import Fadc
 from profilehooks import profile
 
 
-def make_ticklabels_invisible(fig):
-    for i, ax in enumerate(fig):
+def make_ticklabels_invisible(subplots):
+    
+    for i, ax in enumerate(subplots):
         #ax.text(0.5, 0.5, "ax%d" % (i+1), va="center", ha="center")
         for tl in ax.get_xticklabels() + ax.get_yticklabels():
             tl.set_visible(False)
 
 #@profile
-def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):
+def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
+
+    # using im_list we now define a variable for the number of chips we have
+    # (single or septem). That way, we can distinguish in the loop in which
+    # we set the data
+    nChips = len(im_list)
 
     # create full path to file
     filepathName = filepath + filename
@@ -54,10 +60,18 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):
         chip_data = chpHeader.pixData
         # now get current chip number so that we plot on to the correct chip
         chipNum = int(chpHeader.attr["chipNumber"])
-        # and get the number of hits
-        numHits = int(np.size(chip_data))#chpHeader.attr["numHits"])
+
+        # using the chip number we can determine whether we still continue or stop now
+        # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
+        if chipNum > nChips:
+            # if the chip number is larger than nChips (note, not >=, because we start
+            # counting chips at 1.
+            break
+
+        # and get the number of hits (we use numHits)
+        numHits = chpHeader.attr["numHits"] # int(np.size(chip_data))
         # use both to create the hits box
-        hits_text += "Chip #%i : %i" % (chipNum, numHits)
+        hits_text += "Chip #%i : %s" % (chipNum, numHits)
         if chipNum != 7:
             hits_text += "\n"
         try:
@@ -74,9 +88,10 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):
             plots_to_hide.remove(chipNum - 1)
             im_list[chipNum - 1].set_visible(True)
 
-            print '\n stt', np.max(chip_data[:,2])
-            im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], 80))
-
+            if cb.flag == True:
+                im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], cb.value))
+            else:
+                im_list[chipNum - 1].set_clim(0, cb.value)
 
             # not needed anymore
             #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])#, vmin=0, vmax=250)
@@ -97,23 +112,39 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list):
                         verticalalignment = 'center',
                         multialignment = 'left')
 
-    # now set all plots invisible, which were not updated this time
-    for i in plots_to_hide:
-        im_list[i].set_visible(False)
-
-    try:
-        cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
-        cb = plt.colorbar(im_list[3], cax = cbaxes)
+    # now set all plots invisible, which were not updated this time (only done, if we even
+    # have more than 1 plot) and update the colorbar
+    if nChips > 1:
+        for i in plots_to_hide:
+            im_list[i].set_visible(False)
+        # update colorbar
+        cb.update_normal(im_list[cb.chip])
+    else:
+        # only update colorbar in this case
+        cb.update_normal(im_list[0])
+        # now we draw the canvas again. This is only done, because when using an animation 
+        # (auto updating), sometimes otherwise we'd end up with a blank canvas where the plots
+        # should be.
+        # alternatively, one can call the update_normal function again
         fig.canvas.draw()
-    except UnboundLocalError:
-        print filename
-    
-    make_ticklabels_invisible(chip_subplots)
-    #fig.canvas.draw()
 
+    # NOTE: pure debugging to see if more and more artists are being created
+    # axes = fig.get_axes()
+    # for i, ax in enumerate(axes):
+    #     print 'Axes number ', i
+    #     print 'name ', ax.name
+    #     print 'title ', ax.title
+    #     children = ax.get_children()
+    #     for child in children:
+    #         print child
+    #         # if i == 2:
+    #         #     print matplotlib.artist.getp(child)
+    #     print '\n\n'
+
+    make_ticklabels_invisible(chip_subplots)
 
     # and now plot everythin
-    plt.pause(0.01)
+    plt.pause(0.000001)
 
     return chip_subplots + im_list
     
@@ -141,10 +172,10 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     #channel2 = fadc.channel2
     channel3 = fadc.channel3
     
-    #print 'channel!!!', channel3
-
     # and plot everything
-    fadcPlot.set_title(filepathName)
+    # create title build from Run folder and filename:
+    plot_title = filepath.rstrip("/").split("/")[-1] + "/" + filename
+    fadcPlot.set_title(plot_title)
     #fadcPlot.plot(np.arange(np.size(channel0)), channel0, color='purple')
     #fadcPlot.plot(np.arange(np.size(channel1)), channel1, color='red')
     #fadcPlot.plot(np.arange(np.size(channel2)), channel2, color='green')
@@ -162,15 +193,25 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     return fadcPlot
 
 
-def plot_occupancy(filepath, header_text, sep, fig, chip_subplots, im_list, chip_arrays):
+def plot_occupancy(filepath, 
+                   header_text,
+                   sep, 
+                   fig, 
+                   chip_subplots, 
+                   im_list, 
+                   chip_arrays, 
+                   cb):
     # this function plots the occupancy plots, which are created by the 
     # create_occupancy_plot function
+
+    # define nChips based on the chip_subplots list, to differentiate between
+    # single chip and septemboard
+    nChips = len(chip_subplots)
     
     # first remove the texts from before, if any
     texts = fig.texts
     for i in range(len(texts)):
         texts[-1].remove()
-
 
     # define the variable, in which we store the number of hits for each chip to
     # print at the top left
@@ -190,6 +231,12 @@ def plot_occupancy(filepath, header_text, sep, fig, chip_subplots, im_list, chip
     # now perform plotting
     plots_to_hide = range(7)
     for i, chip_array in enumerate(chip_arrays):
+        # using the iterator i, we determine if we break or not
+        # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
+        if i > nChips:
+            # if i is larger than nChips, we break
+            break
+
         # get number of non zero elements in this array
         numHits = np.count_nonzero(chip_array)
         maxVals = np.max(chip_array)
@@ -205,13 +252,12 @@ def plot_occupancy(filepath, header_text, sep, fig, chip_subplots, im_list, chip
 
             # # now remove this chip from the plots_to_hide list
             plots_to_hide.remove(i)
-            #im_list[i].set_visible(True)
+            im_list[i].set_visible(True)
 
-            # create array of non zero elements
-            data_nz = chip_array[np.nonzero(chip_array)[0], np.nonzero(chip_array)[1]]
-
-            # and set the colormap range
-            im_list[i].set_clim(0, np.percentile(data_nz, 50))
+            if cb.flag == True:
+                im_list[i].set_clim(0, np.percentile(chip_array, cb.value))
+            else:
+                im_list[i].set_clim(0, cb.value)
 
         except IndexError:
             print 'IndexError: chip', i, ' has no hits'
@@ -227,18 +273,107 @@ def plot_occupancy(filepath, header_text, sep, fig, chip_subplots, im_list, chip
                         verticalalignment = 'center',
                         multialignment = 'left')
 
-    # now set all plots invisible, which were not updated this time
-    for i in plots_to_hide:
-        im_list[i].set_visible(False)
-
-    try:
-        cbaxes = fig.add_axes([sep.row2.right - 0.015, sep.row3.bottom, 0.015, (sep.row3.top - sep.row3.bottom)])
-        cb = plt.colorbar(im_list[3], cax = cbaxes)
-        fig.canvas.draw()
-    except UnboundLocalError:
-        print 'something is bad'
+    # now set all plots invisible, which were not updated this time (only if septemboard)
+    if nChips > 1:
+        for i in plots_to_hide:
+            im_list[i].set_visible(False)
+        # update colorbar
+        cb.update_normal(im_list[cb.chip])
+    else:
+        # only update colorbar in this case
+        cb.update_normal(im_list[0])
     
     make_ticklabels_invisible(chip_subplots)
 
     # and now plot everythin
     plt.pause(0.01)
+
+
+def plot_pixel_histogram(filepath,
+                         fig,
+                         sep,
+                         chip_subplots,
+                         im_list,
+                         nHitsList,
+                         single_chip_flag):
+
+    # this function plots the pixel histogram, i.e. a histogram of the number
+    # of pixels active in an event of the whole run
+
+    # define nChips based on the chip_subplots list, to differentiate between
+    # single chip and septemboard
+    nChips = len(chip_subplots)
+    
+    # first remove the texts from before, if any
+    texts = fig.texts
+    for i in range(len(texts)):
+        texts[-1].remove()
+
+    # define the variable, in which we store the number of hits for each chip to
+    # print at the top left
+    # hits_text = "".ljust(10) + "Hits".ljust(10) + "max values\n"
+
+    # now perform plotting
+    plots_to_hide = range(7)
+    print nChips, 'h'
+    for i, hitsList in enumerate(nHitsList):
+        # using the iterator i, we determine if we break or not
+        # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
+        if i >= nChips:
+            break
+
+        # now either plot a single plot (if single chip), or one for each
+        # chip
+
+        im_list[i].set_visible(False)
+        
+        #fig2 = plt.figure(2)
+        
+        #plt.hist(hitsList, 100, histtype = 'bar')
+        pos = chip_subplots[i].get_position()
+        print pos
+
+        print pos.x0, pos.y0, pos.x1, pos.y1
+        histo = fig.add_axes([pos.x0 + 0.05 * pos.width, pos.y0, pos.width * 0.95, pos.height * 0.95])
+        histo.hist(hitsList, 20, histtype = 'bar')
+
+        #chip_subplots[i].hist(hitsList, 100, histtype = 'bar')
+        #else:
+            
+
+        # hits_text += ("Chip #%i : %i" % (i, numHits)).ljust(20)
+        # hits_text += str(int(maxVals))
+        #if i != 6:
+        #    hits_text += "\n"
+
+        # TODO: still need plots_to_hide for case in which histogram of one chip
+        # might be empty?
+        # plots_to_hide.remove(i)
+
+
+    # now create the hits box
+    # hits_box = fig.text(0.2, 0.9, hits_text,
+    #                     bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
+    #                     family = 'monospace',
+    #                     transform = chip_subplots[-1].transAxes,
+    #                     horizontalalignment = 'center',
+    #                     verticalalignment = 'center',
+    #                     multialignment = 'now')
+
+    axes = fig.get_axes()
+    for ax in axes:
+        print ax.get_children()
+
+    #fig.canvas.draw()
+
+    # left set all plots invisible, which were not updated this time (only if septemboard)
+    #if nChips > 1:
+    for i in xrange(nChips):
+        print 'visible no', i
+        im_list[i].set_visible(False)
+    
+    make_ticklabels_invisible(chip_subplots)
+
+    # and now plot everythin
+    plt.pause(0.01)
+    

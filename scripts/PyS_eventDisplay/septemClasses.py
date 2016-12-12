@@ -188,8 +188,12 @@ class eventHeader:
         
         nFill = 24
 
-        runNum = "Run # : ".ljust(nFill)
-        runNum += self.attr["runNumber"] + "\n"
+        try:
+            runNum = "Run # : ".ljust(nFill)
+            runNum += self.attr["runNumber"] + "\n"
+        except KeyError:
+            print 'no run number contained, continue without'
+            runNum = ''
         
         try:
             event = "Event # : ".ljust(nFill)
@@ -237,8 +241,12 @@ class eventHeader:
         
         nFill = 24
 
-        runNum = "Run # : ".ljust(nFill)
-        runNum += self.attr["runNumber"] + "\n"
+        try:
+            runNum = "Run # : ".ljust(nFill)
+            runNum += self.attr["runNumber"] + "\n"
+        except KeyError:
+            print 'Run number not available yet, skipping'
+            runNum = ""
         
         date = "Date : ".ljust(nFill)
         date += self.attr["dateTime"] + "\n"
@@ -280,8 +288,11 @@ class chipHeaderData:
         el = el.split()
         if len(el) == 3:
             pixel = (int(el[0]), int(el[1]), int(el[2]))
-            if pixel[2] != 11810:
-                self.listOfPixels.append(pixel)
+            # we use all pixels, even those which have a value of the maximum count
+            # 11810. There's a single pixel (255, 0), which is always at 11810, but
+            # we ignore that.
+            #if pixel[2] != 11810:
+            self.listOfPixels.append(pixel)
 
     def convert_list_to_array(self):
         # this function is called after all data has been read from the data file
@@ -313,7 +324,7 @@ class Fadc:
         self.channel2 = []
         self.channel3 = []
 
-        self.pedestalDefaultPath = "/home/ingrid/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
+        self.pedestalDefaultPath = "/home/schmidt/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
 
         # now apply the pedestal run
         self.applyPedestalRun()
@@ -415,3 +426,36 @@ class Fadc:
         fadc_values = np.asarray(fadc_values)
         # and return
         return fadc_values
+
+
+class customColorbar:
+    # this class defines the colorbar we use for this project
+    # it's basically just a container for the different settings we
+    # use in the event display. 
+    # NOTE: one might inherit from the matplotlib colorbar class, but that
+    # would be messy overkill I reckon
+    def __init__(self, cb_flag, cb_value, cb_chip):
+        # the arguments used during construction are 
+        # cb_flag : type bool
+        #           controls whether we use an absolute maximum value (0) for the colorbar
+        #           or a percentile of the given data array (1)
+        # cb_value: type int
+        #           either the absolute maximum value (cb_flag == 0) or the percentile to
+        #           use for the upper value (cb_flag == 1)
+        # cb_chip : type int
+        #           the chip to which the colorbar is applied
+        self.flag  = cb_flag
+        self.value = cb_value
+        self.chip  = cb_chip
+        
+        # assign the colorbar object to be None from initialization. 
+        # can check whether colorbar was assigned already that way
+        self.cb    = None
+
+    def assign_colorbar(self, cb):
+        # this function is used to assign a matplot colorbar to this object
+        self.cb    = cb
+
+    def update_normal(self, im_object):
+        # this function wraps the colorbar update normal function
+        return self.cb.update_normal(im_object)

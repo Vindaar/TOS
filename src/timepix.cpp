@@ -51,6 +51,7 @@ Timepix::Timepix(int nbOfChips){
 		      << std::endl;
 	    _chipIdOffset = DEFAULT_CHIP_ID_OFFSET_1_CHIP;
     }
+    std::cout << "Chip ID offset being set to " << _chipIdOffset << std::endl;
 
     int x,y;
 	

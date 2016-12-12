@@ -9,9 +9,9 @@ import matplotlib.animation as animation
 from matplotlib.lines import Line2D
 import os
 import time
-from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc
+from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
 from septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file
-from septemPlot  import plot_file, plot_fadc_file, plot_occupancy
+from septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
 
 import multiprocessing as mp
 from profilehooks import profile
@@ -52,6 +52,7 @@ class MyFuncAnimation(animation.FuncAnimation):
 def refresh(ns, filepath):
     while ns.doRefresh == True:
         lock.acquire()
+        #print 'updating filelist'
         ns.filelist = create_files_from_path_combined(filepath, True)
         ns.filelistEvents = ns.filelist.keys()
         ns.filelistFadc   = ns.filelist.values()
@@ -59,10 +60,19 @@ def refresh(ns, filepath):
         refreshInterval   = ns.refreshInterval
         lock.release()
         time.sleep(refreshInterval)
+        #print 'done updating filelist'
 
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
-    def __init__(self, filepath, figure, septem, chip_subplots, fadcPlot, ns):
+
+    def __init__(self, 
+                 filepath, 
+                 figure, 
+                 septem, 
+                 chip_subplots, 
+                 fadcPlot, 
+                 ns, 
+                 cb):
         self.filepath         = filepath
         self.filelist         = []
         self.filelistFadc     = []
@@ -75,8 +85,17 @@ class WorkOnFile:
         self.nfiles           = self.ns.nfiles
         self.septem           = septem
         self.chip_subplots    = chip_subplots
-        self.fadcPlot         = fadcPlot
-        self.fadcPlotLine     = self.fadcPlot.plot([], [], color = 'blue')
+        # from the chip_suplots list we now deduce, whether we plot for a single
+        # chip or a septemboard
+        self.single_chip_flag = False
+        if len(self.chip_subplots) == 1:
+            # turn to true if only one axis object in list
+            self.single_chip_flag = True
+
+
+        self.fadcPlot       = fadcPlot
+        self.fadcPlotLine   = self.fadcPlot.plot([], [], color = 'blue')
+
         # write the labels for the FADC plot (only needed to be done once, so no need to call
         # on each call to FADC plot)
         self.fadcPlot.set_xlabel('Time / clock cycles')
@@ -85,6 +104,9 @@ class WorkOnFile:
         # for first event
         #self.fadcPlotLine[0].set_visible(False)
 
+        # assign colorbar
+        self.cb = cb
+
         # zero initialized numpy array
         temp_array         = np.zeros((256, 256))
         #self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0, vmax=250) for i in xrange(len(self.chip_subplots))]
@@ -92,28 +114,67 @@ class WorkOnFile:
         for im in self.im_list:
             im.set_cmap('viridis')
 
-        # and now create the colorbar
-        # try:
-        #     cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, self.septem.row3.bottom, 0.015, (self.septem.row3.top - self.septem.row3.bottom)])
-        #     cb = plt.colorbar(self.im_list[3], cax = cbaxes)
-        # except UnboundLocalError:
-        #     print filename
-
-
-        # and now invert the correct plots
-        for i in xrange(7):
-            if i not in [5, 6]:
-                # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
-                # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
-                self.chip_subplots[i].invert_yaxis()
+        # now to create the colorbar
+        try:
+            # either set the colorbar to the center chip in case of the septemboard or 
+            # to chip 0 in case of a single chip
+            # NOTE: the hardcoding of the numbers here isn't really nice. But since it's 
+            # a one time thing it should be excused.
+            if len(self.chip_subplots) > 1:
+                cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, 
+                                            self.septem.row3.bottom, 
+                                            0.015, 
+                                            (self.septem.row3.top - self.septem.row3.bottom)])
+                cb_object = plt.colorbar(self.im_list[self.cb.chip], cax = cbaxes)
             else:
-                # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
-                # coordinate is at the top right. thus invert x axis
-                self.chip_subplots[i].invert_xaxis()
+                cbaxes = self.fig.add_axes([self.septem.row2.right + 0.005, 
+                                            self.septem.row3.bottom + 0.036, 
+                                            0.015, 
+                                            (self.septem.row3.top - self.septem.row3.bottom)])
+                cb_object = plt.colorbar(self.im_list[0], cax = cbaxes)
+            self.fig.canvas.draw()
+        except UnboundLocalError:
+            print filename
 
+        # and assign newly created colorbar as member variable
+        self.cb.assign_colorbar(cb_object)
 
+        # and now invert the correct plots, if septemboard is used
+        if self.single_chip_flag == False:
+            for i in xrange(8):
+                if i not in [6, 7]:
+                    # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
+                    # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
+                    self.chip_subplots[i - 1].invert_yaxis()
+                else:
+                    # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
+                    # coordinate is at the top right. thus invert x axis
+                    self.chip_subplots[i - 1].invert_xaxis()
+                    #self.chip_subplots[i - 1].invert_yaxis()
+                    
+            # for some reason I'm not entirely sure of right now, we also need to
+            # invert the y axis of the last chip (7)
+            self.chip_subplots[6].invert_yaxis()
+        else:
+            self.chip_subplots[0].invert_yaxis()
     
     def connect(self):
+        # before we connect the key press events, we check if refresh ran once
+        # files are read, before we accept any input
+        # we check 50 times if the number of files is larger than 0 (which
+        # indicates that we have finished reading the files in the folder
+        # at least once), and wait 100ms after each check.
+        for _ in xrange(50):
+            lock.acquire()
+            nfiles = self.ns.nfiles
+            lock.release()
+            if nfiles > 0:
+                print 'nfiles : ', nfiles
+                break
+            else:
+                print 'waiting...'
+                time.sleep(0.1)
+
         # connect both figures (septem and FADC windows) to the keypress event
         self.cidpress     = self.fig.canvas.mpl_connect('key_press_event', self.press)
 
@@ -158,12 +219,12 @@ class WorkOnFile:
             print ''
             print 'keypress read:', c
             print 'going to previous file'
-            if self.i > 0:
-                self.i -= 1
-                print self.i
-                self.work_on_file()
-            else:
-                self.work_on_file()
+            #if self.i > 0:
+            self.i -= 1
+            print self.i
+            self.work_on_file()
+            #else:
+            #    self.work_on_file()
         elif c == 'e':
             # if e is typed, we jump to the end of the list and automatically
             # always get the last frame
@@ -182,6 +243,10 @@ class WorkOnFile:
             # if s is typed, we save the current figure
             print 'saving figure...'
             self.save_figure(self.current_filename)
+        elif c == 'h':
+            # if h is typed, we create the pixel histogram for each chip
+            print 'creating pixel histogram...'
+            self.create_pixel_histogram()
                         
                 
         elif c == 'q':
@@ -232,10 +297,19 @@ class WorkOnFile:
             # current file (to save the figure, if wanted)
             self.current_filename = self.filepath.split('/')[-1] + "_" + filename
             
-            plot_file(self.filepath, filename, self.septem, self.fig, self.chip_subplots, self.im_list)
+            plot_file(self.filepath, 
+                      filename, 
+                      self.septem,
+                      self.fig,
+                      self.chip_subplots,
+                      self.im_list,
+                      self.cb)
             if filenameFadc is not "":
                 # only call fadc plotting function, if there is a corresponding FADC event
-                plot_fadc_file(self.filepath, filenameFadc, self.fadcPlot, self.fadcPlotLine)
+                plot_fadc_file(self.filepath, 
+                               filenameFadc, 
+                               self.fadcPlot, 
+                               self.fadcPlotLine)
             else:
                 # else set fadc plot to invisible
                 print "No FADC file found for this event."
@@ -282,7 +356,6 @@ class WorkOnFile:
         else:
             print 'filelist not filled yet or empty; returning.'
             return
-        
 
         nEvents = "\n# events : ".ljust(25)
         nEvents += str(len(self.ns.filelistEvents))
@@ -293,25 +366,140 @@ class WorkOnFile:
         # current file (to save the figure, if wanted)
         self.current_filename = "occupancy_" + self.filepath.split('/')[-2]
 
-        plot_occupancy(self.filepath,
+        plot_occupancy(self.filepath, 
                        header_text,
                        self.septem, 
                        self.fig, 
                        self.chip_subplots, 
-                       self.im_list, 
-                       chip_arrays)
+                       self.im_list,
+                       chip_arrays,
+                       self.cb)
 
     def save_figure(self, output):
         # this function simply saves the currently shown plot as a png in
         # the current working directory
         output = output.rstrip(".txt") + ".png"
         plt.savefig(output)
+
+    def create_pixel_histogram(self):
+        # create the pixel histogram for all chips of the current run
         
+        # define a list of lists for the number of hits for each chip
+        nHitsList = [ [] for _ in xrange(self.septem.nChips)]
+
+        for el in self.ns.filelistEvents:
+            # we create the event and chip header object
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + el)
+            # now go through each chip header and add data of frame
+            # to chip_arrays
+            for chpHeader in chpHeaderList:
+                # get the data of the frame for this chip
+                chip_data = chpHeader.pixData
+                chip_num  = int(chpHeader.attr["chipNumber"])
+                # and now add chip data to chip_arrays if non empty
+                nHits = np.size(chip_data)
+                if nHits > 0:
+                    # now if we have 1 hits or more, add event to histogram
+                    # chipnum - 1, because we count from 1
+                    nHitsList[chip_num - 1].append(nHits)
+                
+            event_num = int(evHeader.attr["eventNumber"])
+            if event_num % 1000 == 0:
+                print event_num, ' events done.' 
+
+        plot_pixel_histogram(self.filepath,
+                             self.fig,
+                             self.septem,
+                             self.chip_subplots,
+                             self.im_list,
+                             nHitsList,
+                             self.single_chip_flag)
+
+
+def create_chip_axes(sep, fig, single_chip_flag):
+    # this function receives the septem object and creates the axes for the chip layout
+    # from it. The list of axes and the grid is returned
+    
+    # define a list of chip subplots
+    chip_subplots = []
+
+    if single_chip_flag is False:
+        # need to add row 3 first, since this is actually chip 1, 2 from left to right
+        row3 = gridspec.GridSpec(1, 2)
+        row3.update(left=sep.row3.left, 
+                    right=sep.row3.right, 
+                    wspace=sep.row3.wspace, 
+                    top=sep.row3.top, 
+                    bottom = sep.row3.bottom, 
+                    hspace=0)
+        ch1 = fig.add_subplot(row3[0, 0])
+        chip_subplots.append(ch1)
+        ch2 = fig.add_subplot(row3[0, 1])
+        chip_subplots.append(ch2)
+
+        # now add row 2, with chips 3, 4 and 5, from left to right
+        row2 = gridspec.GridSpec(1, 3)
+        row2.update(left=sep.row2.left, 
+                    right=sep.row2.right, 
+                    wspace=sep.row2.wspace, 
+                    top=sep.row2.top, 
+                    bottom = sep.row2.bottom, 
+                    hspace=0)
+        # add the three center channels
+        ch3 = fig.add_subplot(row2[0, 0])
+        chip_subplots.append(ch3)
+        ch4 = fig.add_subplot(row2[0, 1])
+        chip_subplots.append(ch4)
+        ch5 = fig.add_subplot(row2[0, 2])
+        chip_subplots.append(ch5)
+
+        # define the first row of subplots using gridSpec
+        # first row is chips 7, 6 from left to right
+        row1 = gridspec.GridSpec(1, 2)
+        # updates the positions
+        row1.update(left=sep.row1.left, 
+                    right=sep.row1.right, 
+                    wspace=sep.row1.wspace, 
+                    top=sep.row1.top, 
+                    bottom = sep.row1.bottom, 
+                    hspace=0)
+        # and add the correct chips to the grid
+        ch6 = fig.add_subplot(row1[0, 1])
+        chip_subplots.append(ch6)
+        ch7 = fig.add_subplot(row1[0, 0])
+        chip_subplots.append(ch7)
+
+        # now create the grid object from the individual rows
+        grid = gridspec.GridSpecFromSubplotSpec(3, 1, [row1, row2, row3])
+    else:
+        # in this case we only use a single chip
+        chip = gridspec.GridSpec(1, 1)
+        chip.update(left = sep.row2.left,
+                    right = sep.row2.right, 
+                    top = sep.row1.top, 
+                    wspace = 0,
+                    bottom = sep.row3.bottom,
+                    hspace = 0)
+        chipPlot = fig.add_subplot(chip[0])
+        chip_subplots.append(chipPlot)
+    
+    return chip_subplots
 
 def main(args):
 
     singleFile = False
     occupancyFlag = False
+    # following flag used to differentiate between single chip and septemboard
+    single_chip_flag = False
+
+    # define flag and variable for the color bar settings
+    # cb_flag defines that we not use a fixed value of the colorbar scale, but rather
+    # the percentile given by cb_value of the center chip
+    cb_flag  = True
+    cb_value = 80
+    # and the chip for which we set the colorbar (3 default, is the center chip of a
+    # septemboard)
+    cb_chip  = 3
 
     if len(args) > 0:
         try:
@@ -325,11 +513,45 @@ def main(args):
         # this activates occupancy mode, i.e. it creates an occupancy plot of the whole run
         if "-o" in args:
             occupancy_flag = True
+        if "--cb_flag" in args:
+            try:
+                ind  = args.index("--cb_flag")
+                flag = args[ind + 1]
+                if flag == "1":
+                    cb_flag = True
+                else:
+                    cb_flag = False
+            except IndexError:
+                print 'If you enter cb_flag please enter 1 or 0 afterwards.'
+                import sys
+                sys.exit()
+        if "--cb_value" in args:
+            try:
+                ind  = args.index("--cb_value")
+                cb_value = float(args[ind + 1])
+            except IndexError:
+                print 'If you enter cb_value please enter a value to use afterwards.'
+                import sys
+                sys.exit()
+        if "--cb_chip" in args:
+            try:
+                ind  = args.index("--cb_chip")
+                cb_chip = int(args[ind + 1])
+            except IndexError:
+                print 'If you enter cb_chip please enter a value to use afterwards.'
+                import sys
+                sys.exit()
+        if "--single_chip" in args:
+            single_chip_flag = True
     else:
         print 'No argument given. Please give a folder from which to read files'
         import sys
         sys.exit()
 
+
+    # create a custom colorbar object to store colorbar related properties; 
+    # initialize with values either as defaults from above or command line argument
+    cb = customColorbar(cb_flag, cb_value, cb_chip)
 
     # get list of files in folder
     if singleFile == False:
@@ -340,11 +562,7 @@ def main(args):
         for el in path:
             folder += el + '/'
         files = [args[0].split('/')[-1]]
-        print folder
-        print files
 
-
-    print folder#, files
     # initialize a septem object
     fig_x_size = 15
     fig_y_size = 10
@@ -361,45 +579,10 @@ def main(args):
     fadc.update(left=0.55, right=0.95, top=0.7, bottom=0.25)
     fadcPlot = fig.add_subplot(fadc[0])
 
-    # enable interactive plotting
-
-
-    # define a list of chip subplots
-    chip_subplots = []
-
-    # need to add row 3 first, since this is actually chip 1, 2 from left to right
-    row3 = gridspec.GridSpec(1, 2)
-    row3.update(left=sep.row3.left, right=sep.row3.right, wspace=sep.row3.wspace, top=sep.row3.top, bottom = sep.row3.bottom, hspace=0)
-    ch1 = fig.add_subplot(row3[0, 0])
-    chip_subplots.append(ch1)
-    ch2 = fig.add_subplot(row3[0, 1])
-    chip_subplots.append(ch2)
-
-    # now add row 2, with chips 3, 4 and 5, from left to right
-    row2 = gridspec.GridSpec(1, 3)
-    row2.update(left=sep.row2.left, right=sep.row2.right, wspace=sep.row2.wspace, top=sep.row2.top, bottom = sep.row2.bottom, hspace=0)
-    # add the three center channels
-    ch3 = fig.add_subplot(row2[0, 0])
-    chip_subplots.append(ch3)
-    ch4 = fig.add_subplot(row2[0, 1])
-    chip_subplots.append(ch4)
-    ch5 = fig.add_subplot(row2[0, 2])
-    chip_subplots.append(ch5)
-
     
-    # define the first row of subplots using gridSpec
-    # first row is chips 7, 6 from left to right
-    row1 = gridspec.GridSpec(1, 2)
-    # updates the positions
-    row1.update(left=sep.row1.left, right=sep.row1.right, wspace=sep.row1.wspace, top=sep.row1.top, bottom = sep.row1.bottom, hspace=0)
-    # and add the correct chips to the grid
-    ch6 = fig.add_subplot(row1[0, 1])
-    chip_subplots.append(ch6)
-    ch7 = fig.add_subplot(row1[0, 0])
-    chip_subplots.append(ch7)
+    # create the axes for the chip layout 
+    chip_subplots = create_chip_axes(sep, fig, single_chip_flag)
 
-
-    grid = gridspec.GridSpecFromSubplotSpec(3, 1, [row1, row2, row3])
 
     # create a new filelist manager, which allows the communication between the main thread and 
     # the file checking thread
@@ -420,14 +603,18 @@ def main(args):
     # and the interval, in which the thread refreshes the filelist
     ns.refreshInterval = 0.05
     print ns
-    
-    # now create the main thread, which starts the plotting
-    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns)
-    files.connect()
 
+    # we start the file refreshing (second) thread first, because we only
+    # want to accept key inputs, after the files have been read a single
+    # time.
     # and the second thread, which performs the refreshing
     p2 = mp.Process(target = refresh, args = (ns, folder) )
     p2.start()
+
+    # now create the main thread, which starts the plotting
+    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb)
+    files.connect()
+
     plt.show()
     p2.join()
 

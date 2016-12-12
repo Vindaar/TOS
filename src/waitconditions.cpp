@@ -100,10 +100,10 @@ void Producer::run()
 	    }
 	    parent->mutexVBuffer.unlock();
 
-	    // TODO: check what this means?!
-	    //To FIX the readout problem
-	    parent->fpga->DataChipFPGA(result);
 	}
+	
+	// now call the first function for the readout
+	parent->fpga->DataChipFPGA(result);
  
     
 	//Producer filling the VBuffer (or a readout vec) for the readout
@@ -124,12 +124,16 @@ void Producer::run()
 	    //chip readout
 	    //To FIX the readout problem
 	    // TODO: understand this
-	    if(parent->_useHvFadc){
-		parent->fpga->DataFPGAPC(dataVec, chip + 1);
-	    }
-	    else{
-		parent->fpga->SerialReadOutReadSend(dataVec, chip + 1);
-	    }
+	    //if(parent->_useHvFadc){
+	    parent->fpga->DataFPGAPC(dataVec, chip + 1);
+
+	    // NOTE: The following was from the time, when one was still using a single Chip
+	    // the SerialReadOutReadSend function is not properly implemented in the Virtex Firmware for 
+	    // multiple chips!
+	    //}
+	    // else{
+	    // 	parent->fpga->SerialReadOutReadSend(dataVec, chip + 1);
+	    // }
 	    #if DEBUG==2
 	    std::cout << "Producer NumHits chip: " << chip+1 
 		      << " " << dataVec->at(0) 
@@ -335,6 +339,10 @@ void Consumer::run()
 	// first we build the filename for the output file based on the PathName defined in the
 	// PC constructor, false ( no pedestal run ) and i as the event number
 
+
+	// TODO: understand how this works, if one calls the Run function without activating the
+	// HFM. In that case, _hvFadcManager should be pointing to NULL, thus the function 
+	// should not be well defined.
 	filePathName = parent->_hvFadcManager->buildFileName(parent->PathName, false, i);
 	
 	parent->mutexVBuffer.lock();
