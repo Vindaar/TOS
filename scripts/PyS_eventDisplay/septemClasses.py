@@ -204,9 +204,16 @@ class eventHeader:
                 event += self.attr["eventNumber:"] + "\n"
             except KeyError:
                 print 'KeyError: eventNumber not found in file', self.filename
+                # NOTE: this keeps popping up in files, which do indeed HAVE an eventNumber:
+                # line, but have no active pixels (which does not seem to make sense in a
+                # calibratin run)
                 print self.attr
-                import sys
-                sys.exit()
+                # NOTE2: the print in the line before is empty in these cases, too. so this
+                # is definitely weird
+                # workaround, we return an empty header
+                return ""
+                #import sys
+                #sys.exit()
             
         date = "Date : ".ljust(nFill)
         date += self.attr["dateTime"] + "\n"
@@ -324,7 +331,7 @@ class Fadc:
         self.channel2 = []
         self.channel3 = []
 
-        self.pedestalDefaultPath = "/home/schmidt/TOS/bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
+        self.pedestalDefaultPath = "../../bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
 
         # now apply the pedestal run
         self.applyPedestalRun()

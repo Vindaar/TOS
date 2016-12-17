@@ -53,9 +53,16 @@ def refresh(ns, filepath):
     while ns.doRefresh == True:
         lock.acquire()
         #print 'updating filelist'
-        ns.filelist = create_files_from_path_combined(filepath, True)
-        ns.filelistEvents = ns.filelist.keys()
-        ns.filelistFadc   = ns.filelist.values()
+        # NOTE: the following commented lines are used, if one reads the data into
+        # and OrderedDict. However, sorting this dictionary is exceptionally slow
+        # as I only realized now. Thus, we go back to the old version of simply
+        # creating two seperate lists for events and FADC events. This is much faster
+        # (about a factor of 2! on 50000 files: 150ms for creating the list and
+        #  another 220ms for sorting of the OrderedDict)
+        # ns.filelist       = create_files_from_path_combined(filepath, True)
+        # ns.filelistEvents = ns.filelist.keys()
+        # ns.filelistFadc   = ns.filelist.values()
+        ns.filelistEvents, ns.filelistFadc = create_files_from_path_combined(filepath, False)
         ns.nfiles         = len(ns.filelistEvents)
         refreshInterval   = ns.refreshInterval
         lock.release()
@@ -279,6 +286,8 @@ class WorkOnFile:
         if i is None:
             # if no i as argument given, use self.i
             i = self.i
+        else:
+            self.i = i
 
         # set the filenames to None, to easier check whether files dictionary was already
         # populated
@@ -304,7 +313,8 @@ class WorkOnFile:
                       self.chip_subplots,
                       self.im_list,
                       self.cb)
-            if filenameFadc is not "":
+            #if filenameFadc is not "":
+            if filenameFadc.rstrip("-fadc") == filename:
                 # only call fadc plotting function, if there is a corresponding FADC event
                 plot_fadc_file(self.filepath, 
                                filenameFadc, 
@@ -312,7 +322,7 @@ class WorkOnFile:
                                self.fadcPlotLine)
             else:
                 # else set fadc plot to invisible
-                print "No FADC file found for this event."
+                print("No FADC file found for event %s." % filename)
                 self.fadcPlotLine[0].set_visible(True)
                 #self.fadcPlot.set_title(self.filepath + filenameFadc)
                 self.fig.canvas.draw()
@@ -601,7 +611,7 @@ def main(args):
     ns.filelistFadc    = []
     ns.nfiles          = 0
     # and the interval, in which the thread refreshes the filelist
-    ns.refreshInterval = 0.05
+    ns.refreshInterval = 0.0001
     print ns
 
     # we start the file refreshing (second) thread first, because we only

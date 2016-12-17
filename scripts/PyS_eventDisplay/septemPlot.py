@@ -42,6 +42,14 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
     # (for no special reason)
     # call function to get the header text
     header_text = evHeader.get_event_header_text()
+    if header_text == "":
+        # in the (buggy) case, in which we read a file, which is empty, besides
+        # an event header, we don't plot (well... nothing to plot anyways), and
+        # return a None object.
+        # TODO: fix problem in TOS, which causes these files to be created in the
+        # first place
+        return None
+
     # and put it at the top
     header_box = fig.text(0.5, 0.9, header_text,
                           bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
@@ -55,7 +63,7 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
     # print at the top left
     hits_text = "Hits\n"
 
-    plots_to_hide = range(7)
+    plots_to_hide = range(nChips)
     for i, chpHeader in enumerate(chpHeaderList):
         chip_data = chpHeader.pixData
         # now get current chip number so that we plot on to the correct chip
@@ -66,6 +74,7 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
         if chipNum > nChips:
             # if the chip number is larger than nChips (note, not >=, because we start
             # counting chips at 1.
+            plots_to_hide = plots_to_hide[:chipNum]
             break
 
         # and get the number of hits (we use numHits)
@@ -114,9 +123,11 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
 
     # now set all plots invisible, which were not updated this time (only done, if we even
     # have more than 1 plot) and update the colorbar
+    for i in plots_to_hide:
+        im_list[i].set_visible(False)
+
+        
     if nChips > 1:
-        for i in plots_to_hide:
-            im_list[i].set_visible(False)
         # update colorbar
         cb.update_normal(im_list[cb.chip])
     else:

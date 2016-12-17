@@ -89,6 +89,17 @@ PC::PC(Timepix *tp):
     MeasuringCounter=0;
 
     DataInBuffer = 0;
+
+
+    // now we make sure we're using a septemboard. If not, we have to set the 
+    // main chip back to the first chip (to read out the FADC!)
+    int nChips = fpga->tp->GetNumChips();
+    if (nChips == 1){
+	// thus we set the single chip as the main chip
+	_center_chip = nChips;
+    }
+    
+    
 }
 
 PC::~PC(){

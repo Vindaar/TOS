@@ -100,25 +100,28 @@ def create_files_from_path_combined(folder, test = False):
         for el in files:
             if "data" in el and "fadc" not in el:
                 #n += 1
-                filesDict[el] = ""
-                eventFiles.append(el)
+                if test == True:
+                    filesDict[el] = ""
+                else:
+                    eventFiles.append(el)
             elif "fadc" in el:
                 #n += 1
                 # in case there is an FADC file, strip the FADC flag off it
                 # and assign the value to the dictionary
                 eventName = el.rstrip("-fadc")
-                filesDict[eventName] = el
+                if test == True:
+                    filesDict[eventName] = el
                 #print 'happens!\n\n\n', el, eventName
-                files_fadc.append(el)
+                else:
+                    files_fadc.append(el)
 
-#    print eventFiles
-#    print files_fadc
-    eventFiles.sort()
-    files_fadc.sort()
-
-    #filesDict.sort()
-    #print filesDict
-    filesDict = collections.OrderedDict( sorted( filesDict.items() ) )
+    # print eventFiles
+    # print files_fadc
+    if test == False:
+        eventFiles.sort()
+        files_fadc.sort()
+    else:
+        filesDict = collections.OrderedDict( sorted( filesDict.items() ) )
 
     #print filesDict
     #print filesDict.keys()[205]
