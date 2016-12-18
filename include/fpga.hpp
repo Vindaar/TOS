@@ -12,6 +12,7 @@
 #define _FPGA_HPP
 
 #include "header.hpp"
+#include "protocol_constants.hpp"
 #include "timepix.hpp"
 // include frame.hpp, so that we know about FrameArray
 #include "frame.hpp"

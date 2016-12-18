@@ -10,6 +10,7 @@
 /**********************************************************************/
 
 #include "header.hpp"
+#include "protocol_constants.hpp"
 #include <string>
 
 

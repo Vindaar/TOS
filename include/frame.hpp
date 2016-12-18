@@ -6,6 +6,7 @@
 
 // project related files
 #include "header.hpp"
+#include "protocol_constants.hpp"
 
 #include <map>
 #include <boost/any.hpp>
