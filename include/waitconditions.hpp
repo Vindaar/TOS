@@ -8,39 +8,32 @@
 #include <thread>
 #include "helper_functions.hpp"
 
-
 class PC;
 
- class Producer : public QThread
- {
- public:
 
-	 Producer( PC* par ) : parent(par) {}
-	 ~Producer(){};
+class Producer : public QThread
+{
+public:
+    Producer( PC* par ) : parent(par) {}
+    ~Producer() {};
 
-     void run();
+    void run();
 
- protected:
-
-     PC* parent;
-
- };
+protected:
+    PC* parent;
+};
 
 
- class Consumer : public QThread
- {
- public:
+class Consumer : public QThread
+{
+public:
+    Consumer (PC* par ) : parent(par) {}
+    ~Consumer() {};
 
-	 Consumer (PC* par ) : parent(par) {}
-	 ~Consumer(){};
+    void run();
 
-     void run();
-
- protected:
-
-	 PC* parent;
-
- };
-
+protected:
+    PC* parent;
+};
 
 #endif
