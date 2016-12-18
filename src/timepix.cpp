@@ -11,6 +11,10 @@
 
 #include "timepix.hpp"
 
+#include <iostream>
+#include <fstream>
+
+
 Timepix::Timepix(int nbOfChips){
 #if DEBUG == 2
     std::cout<<"Enter Timepix::Timepix()"<<std::endl;	

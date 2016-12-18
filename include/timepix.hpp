@@ -9,8 +9,9 @@
 /*                              Johannes-Gutenberg Universitaet Mainz */
 /**********************************************************************/
 
-#include "header.hpp"
 #include "protocol_constants.hpp"
+
+#include <vector>
 #include <string>
 
 
