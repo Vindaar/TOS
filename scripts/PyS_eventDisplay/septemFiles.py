@@ -79,7 +79,7 @@ def create_files_from_path_fadc(folder):
     return files_fadc
 
 
-def create_files_from_path_combined(folder, test = False):
+def create_files_from_path_combined(folder, eventSet, fadcSet, test = False):
     # this function removes any files which are not chip events
     # or FADC events in a folder
     # functions returns list of two lists.
@@ -99,28 +99,38 @@ def create_files_from_path_combined(folder, test = False):
     for path, folder, files in scandir.walk(folder):#files:
         for el in files:
             if "data" in el and "fadc" not in el:
-                #n += 1
-                if test == True:
-                    filesDict[el] = ""
-                else:
-                    eventFiles.append(el)
+                el = int(el.split('/')[-1].lstrip('data').rstrip('.txt'))
+                if el not in eventSet:
+                    eventSet.add(el)
             elif "fadc" in el:
-                #n += 1
-                # in case there is an FADC file, strip the FADC flag off it
-                # and assign the value to the dictionary
-                eventName = el.rstrip("-fadc")
-                if test == True:
-                    filesDict[eventName] = el
-                #print 'happens!\n\n\n', el, eventName
-                else:
-                    files_fadc.append(el)
+                el = int(el.split('/')[-1].lstrip('data').rstrip('.txt-fadc'))
+                if el not in fadcSet:
+                    fadcSet.add(el)
+        
+        # for el in files:
+        #     if "data" in el and "fadc" not in el:
+        #         #n += 1
+        #         if test == True:
+        #             filesDict[el] = ""
+        #         else:
+        #             eventFiles.append(el)
+        #     elif "fadc" in el:
+        #         #n += 1
+        #         # in case there is an FADC file, strip the FADC flag off it
+        #         # and assign the value to the dictionary
+        #         eventName = el.rstrip("-fadc")
+        #         if test == True:
+        #             filesDict[eventName] = el
+        #         #print 'happens!\n\n\n', el, eventName
+        #         else:
+        #             files_fadc.append(el)
 
     # print eventFiles
     # print files_fadc
-    if test == False:
-        eventFiles.sort()
-        files_fadc.sort()
-    else:
+    #if test == False:
+        # eventFiles.sort()
+        # files_fadc.sort()
+    if test == True:
         filesDict = collections.OrderedDict( sorted( filesDict.items() ) )
 
     #print filesDict
@@ -130,6 +140,44 @@ def create_files_from_path_combined(folder, test = False):
     #sys.exit()
     
     if test == False:
-        return [eventFiles, files_fadc]
+    #     return [eventFiles, files_fadc]
+        return [eventSet, fadcSet]
     else:
         return filesDict
+    
+
+def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcFlag):
+    # this function is used to create a full filename from a filepath,
+    # given an event number and a set (either the event set or the fadc set)
+    # and returns the full filename
+    # input:
+    # event_num_set: a set of numbers corresponding to the events, which exist
+    # event_number:  the wanted event for which to create the filename (can be negative,
+    #                see the first comments below)
+    # nFiles:        the total number of events, which exist. This has to be given,
+    #                because if we only create the filename for FADC files, we need to
+    #                now the total number (which we then cannot deduce from the number
+    #                of elements in the set)
+    # fadcFlag:      controls whether we create an event filename or an FADC filename
+
+    # first check, whether event_number is a negative number. In this case, we
+    # want to subtract this from nFiles (to iterate from the back)
+    if event_number < 0:
+        # since event_number is negative, simply add the numbers
+        event_number = nfiles + event_number
+
+        # check whether event_number in event_num_set:
+    if event_number in event_num_set:
+        # if it is in the set, create the filename
+        # differentiate between fadcFlag
+        if fadcFlag is False:
+            filename = "data" + str(event_number).zfill(6) + '.txt'
+        else:
+            filename = "data" + str(event_number).zfill(6) + '.txt-fadc'
+        # and return
+        return filename
+    else:
+        # if it's not in set, return None
+        return None
+            
+    

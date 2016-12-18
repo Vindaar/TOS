@@ -133,10 +133,12 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
     else:
         # only update colorbar in this case
         cb.update_normal(im_list[0])
+        #cb.update_normal(im_list[0])
         # now we draw the canvas again. This is only done, because when using an animation 
         # (auto updating), sometimes otherwise we'd end up with a blank canvas where the plots
         # should be.
         # alternatively, one can call the update_normal function again
+        fig.canvas.draw()
         fig.canvas.draw()
 
     # NOTE: pure debugging to see if more and more artists are being created

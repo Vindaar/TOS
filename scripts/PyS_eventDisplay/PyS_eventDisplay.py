@@ -10,19 +10,14 @@ from matplotlib.lines import Line2D
 import os
 import time
 from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
-from septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file
+from septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, create_filename_from_event_number
 from septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
 
 import multiprocessing as mp
-from profilehooks import profile
 import collections
 from multiprocessing.managers import BaseManager, Namespace, NamespaceProxy
 import time
     
-##################################################
-########## WORK ON FILE ##########################
-##################################################
-
 class myManager(BaseManager):
     pass
 
@@ -62,12 +57,26 @@ def refresh(ns, filepath):
         # ns.filelist       = create_files_from_path_combined(filepath, True)
         # ns.filelistEvents = ns.filelist.keys()
         # ns.filelistFadc   = ns.filelist.values()
-        ns.filelistEvents, ns.filelistFadc = create_files_from_path_combined(filepath, False)
-        ns.nfiles         = len(ns.filelistEvents)
+        #ns.filelistEvents, ns.filelistFadc = create_files_from_path_combined(filepath, False)
+        ns.eventSet, ns.fadcSet = create_files_from_path_combined(filepath,
+                                                                  ns.eventSet,
+                                                                  ns.fadcSet,
+                                                                  False)
+        ns.nfiles         = len(ns.eventSet)
         refreshInterval   = ns.refreshInterval
         lock.release()
         time.sleep(refreshInterval)
         #print 'done updating filelist'
+
+
+
+##################################################
+########## WORK ON FILE ##########################
+##################################################
+
+# NOTE: this class is included in the main script, because it is the workhorse
+# of the whole GUI. Thus, it might not be wise to put it into the septemClasses
+# file.
 
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
@@ -81,8 +90,6 @@ class WorkOnFile:
                  ns, 
                  cb):
         self.filepath         = filepath
-        self.filelist         = []
-        self.filelistFadc     = []
         self.current_filename = ""
         # and assign the namespace of the multiprocessing manager
         self.ns               = ns
@@ -111,13 +118,27 @@ class WorkOnFile:
         # for first event
         #self.fadcPlotLine[0].set_visible(False)
 
-        # assign colorbar
+        # assign the colorbar object to a member variable
         self.cb = cb
+
+
+        # animation related:
+        self.ani_end_event_source = None
+        self.ani_end_running      = False
+        self.ani_loop_event_source = None
+        self.ani_loop_running      = False
+
+        
 
         # zero initialized numpy array
         temp_array         = np.zeros((256, 256))
         #self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0, vmax=250) for i in xrange(len(self.chip_subplots))]
-        self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0) for i in xrange(len(self.chip_subplots))]
+        self.im_list       = [chip_subplots[i].imshow(temp_array,
+                                                      interpolation='none',
+                                                      axes=chip_subplots[i],
+                                                      vmin=0)
+                              for i in xrange(len(self.chip_subplots))]
+        # and set the colormaps for the plots
         for im in self.im_list:
             im.set_cmap('viridis')
 
@@ -193,18 +214,6 @@ class WorkOnFile:
         lock.release()
         # upon disconnecting, we also stop the filelist updater thread
 
-    def refresh_filepath_cont(self):
-        # this function is called by the filelist updater thread, which continuously 
-        # updates the filelist, based on the interval given by updateInterval
-        filesDict = create_files_from_path_combined(self.filepath)
-
-
-    def refresh_filepath(self):
-        # this function refreshes from the filepath
-        files, filesFadc = create_files_from_path_combined(self.filepath)
-        self.filelist = files
-        self.filelistFadc = filesFadc
-
     def press(self, event):
         c = event.key
         sys.stdout.flush()
@@ -235,13 +244,21 @@ class WorkOnFile:
         elif c == 'e':
             # if e is typed, we jump to the end of the list and automatically
             # always get the last frame
-            print 'jumping to last file and start automatically refreshing'
-            self.loop_work_on_file_end()
+            if self.ani_end_running == False:
+                print 'jumping to last file and start automatically refreshing'
+                self.loop_work_on_file_end()
+            else:
+                # in the event this animation is running, we stop it
+                self.stop_animation()
         elif c == 'l':
             # if l is typed, we start to automatically go through all files
             # in the filelist
-            print 'jumping to last file and start automatically refreshing'
-            self.loop_work_on_file()
+            if self.ani_loop_running == False:
+                print 'jumping to last file and start automatically refreshing'
+                self.loop_work_on_file()
+            else:
+                # stop the animation
+                self.stop_animation()
         elif c == 'o':
             # if o is typed, we create an occupancy plot of the whole run
             print 'creating occupancy plot...'
@@ -258,7 +275,15 @@ class WorkOnFile:
                 
         elif c == 'q':
             print ''
+            # call stop animation to stop any running animations,
+            # before closing (makes sure there's no error on exit)
+            wait_flag = self.stop_animation()
+            if wait_flag is True:
+                # we built in a wait of 2 seconds, to make sure the animation is actually
+                # stopped before we quit
+                time.sleep(2)
             print c, 'was pressed. Exit program.'
+            
             plt.close('all')
             self.disconnect()
         # else:
@@ -269,14 +294,52 @@ class WorkOnFile:
     def loop_work_on_file_end(self):
         # this function is used to automatically refresh the frames during a run, as to always
         # show the last frame
-        ani     = MyFuncAnimation(self.fig, self.work_on_file_interactive_end, interval=300, blit=False)
+        ani = MyFuncAnimation(self.fig, self.work_on_file_interactive_end, interval=300, blit=False)
+        self.ani_end_event_source = ani#.event_source
+        self.ani_end_running      = True
         plt.show()
         
     def loop_work_on_file(self):
         # this function is used to automatically run over all files of a given frame
         ani = MyFuncAnimation(self.fig, self.work_on_file, interval=200, blit=False)
+        self.ani_loop_event_source = ani#.event_source
+        self.ani_loop_running      = True
         plt.show()
 
+    def stop_animation(self):
+        # this function stops the func animations
+        # TODO: make sure that we DO stop the animation. currently
+        # have to press several times to stop. problematic, 
+        # because this way we cannot set the flag to False again,
+        # because then it couldn't be stopped
+
+        # define wait_flag which is returned to signal to the quit function
+        # of the GUI, whether it should wait 2 seconds or not
+        wait_flag = False
+        
+        
+        if self.ani_end_running == True:
+            print 'stopping the run animation...'
+            # using the animation's _stop function (THANKS matplotlib source code...)
+            # we can stop the animation properly
+            self.ani_end_event_source._stop()
+        if self.ani_loop_running == True:
+            print 'stopping the loop animation...'
+            self.ani_loop_event_source._stop()
+        # now wait for 0.5 seconds to make sure it stops
+        if self.ani_end_running is True or self.ani_loop_running is True:
+            # first set the running flags to False (if we end up in here
+            # either one or both are NOT running anymore, so it is fine
+            # if both are set to False)
+            self.ani_end_running  = False
+            self.ani_loop_running = False
+            print 'waiting for animations to stop...'
+            wait_flag = True
+            time.sleep(0.5)
+
+        # return the wait_flag
+        return wait_flag
+        
     def work_on_file(self, i = None):
         # input i: i is the index for which we plot the file. if none is given, we simply use
         #          the member variable self.i
@@ -286,7 +349,17 @@ class WorkOnFile:
         if i is None:
             # if no i as argument given, use self.i
             i = self.i
+        elif i == -1:
+            # in case we have called work_on_file_end(), we supply -1 to work_on_file.
+            # this can be problematic, if we stop the function and want to go back
+            # from this event, because -1 is relative to the number of current events. so
+            # in case we have an ongoing run, this will change all the time, making it
+            # impossible to go back (because more and more events are created)
+            lock.acquire()
+            self.i = self.ns.nfiles
+            lock.release()
         else:
+            # else, we just set self.i to i
             self.i = i
 
         # set the filenames to None, to easier check whether files dictionary was already
@@ -297,8 +370,17 @@ class WorkOnFile:
         # acquire lock and get necessary elements from namespace
         lock.acquire()
         if self.ns.nfiles > 0:
-            filename     = self.ns.filelistEvents[i]
-            filenameFadc = self.ns.filelistFadc[i]
+            # now given the index i, which corresponds to our event number
+            # we need to create the filenames for the event and the FADC
+            # events
+            filename     = create_filename_from_event_number(self.ns.eventSet,
+                                                             i,
+                                                             self.ns.nfiles,
+                                                             fadcFlag = False)
+            filenameFadc = create_filename_from_event_number(self.ns.fadcSet,
+                                                             i,
+                                                             self.ns.nfiles,
+                                                             fadcFlag = True)
         lock.release()
         # now plot septem
         if filename is not None:
@@ -314,7 +396,7 @@ class WorkOnFile:
                       self.im_list,
                       self.cb)
             #if filenameFadc is not "":
-            if filenameFadc.rstrip("-fadc") == filename:
+            if filenameFadc is not None:
                 # only call fadc plotting function, if there is a corresponding FADC event
                 plot_fadc_file(self.filepath, 
                                filenameFadc, 
@@ -335,16 +417,27 @@ class WorkOnFile:
         self.work_on_file(-1)
 
     def create_occupancy_plot(self):
+        # TODO: think about another way to run over all files. NOT SURE, but it seems
+        # that creating all filenames from scratch (via the function from the event number)
+        # is (in this case) a waste of resources.
+        # Idea: create function, which does what create_filename_from_event_number does
+        # but returns list of filenames from eventSet
+        
         # create an occupancy plot. count number of times each pixel was hit during the 
         # whole run
 
         # create a list of numpy arrays. one array for each occupancy plot of each chip
         chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
 
-        # we run over all files of the event list, i.e. all files of run
-        for el in self.ns.filelistEvents:
+        # we run over all files of the event number set, i.e. all files of run
+        for eventNumber in self.ns.eventSet:
+            # first create the filename
+            filename     = create_filename_from_event_number(self.ns.eventSet,
+                                                             eventNumber,
+                                                             self.ns.nfiles,
+                                                             fadcFlag = False)
             # we create the event and chip header object
-            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + el)
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
             # now go through each chip header and add data of frame
             # to chip_arrays
             for chpHeader in chpHeaderList:
@@ -360,15 +453,20 @@ class WorkOnFile:
                 print event_num, ' events done.'
 
         # now create the header text box for the occupancy plot
-        if len(self.ns.filelistEvents) > 0:
-            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + self.ns.filelistEvents[0])
+        if len(self.ns.eventSet) > 0:
+            # need to read one of the files to get the header. Choose first file, thus
+            filename     = create_filename_from_event_number(self.ns.eventSet,
+                                                             0,
+                                                             self.ns.nfiles,
+                                                             fadcFlag = False)
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
             header_text = evHeader.get_run_header_text()
         else:
             print 'filelist not filled yet or empty; returning.'
             return
 
         nEvents = "\n# events : ".ljust(25)
-        nEvents += str(len(self.ns.filelistEvents))
+        nEvents += str(len(self.ns.eventSet))
 
         header_text += nEvents
 
@@ -397,9 +495,14 @@ class WorkOnFile:
         # define a list of lists for the number of hits for each chip
         nHitsList = [ [] for _ in xrange(self.septem.nChips)]
 
-        for el in self.ns.filelistEvents:
+        for eventNumber in self.ns.eventSet:
+            # first create the filename to supply it to read function
+            filename     = create_filename_from_event_number(self.ns.eventSet,
+                                                             eventNumber,
+                                                             self.ns.nfiles,
+                                                             fadcFlag = False)
             # we create the event and chip header object
-            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + el)
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
             # now go through each chip header and add data of frame
             # to chip_arrays
             for chpHeader in chpHeaderList:
@@ -564,9 +667,9 @@ def main(args):
     cb = customColorbar(cb_flag, cb_value, cb_chip)
 
     # get list of files in folder
-    if singleFile == False:
-        files, filesFadc = create_files_from_path_combined(folder)
-    else:
+    # if singleFile == False:
+    #     files, filesFadc = create_files_from_path_combined(folder, None, None, False)
+    if singleFile == True:
         path = args[0].split('/')[:-1]
         folder = ""
         for el in path:
@@ -599,7 +702,7 @@ def main(args):
     filelistManager = myManager()
     filelistManager.start()
     
-    # and create the namespace, which will be given to both thread, so they can access
+    # and create the namespace, which will be given to both threads, so they can access
     # the same resources
     ns                 = mp.Manager().Namespace()
     # define a flag for the refreshing thread, so it knows when to stop
@@ -607,8 +710,13 @@ def main(args):
     # define the ordered dictionary, in which we store the filenames
     ns.filelist        = filelistManager.OrderedDict()
     # individual lists, which are generated from the dictionary
-    ns.filelistEvents  = []
-    ns.filelistFadc    = []
+    # ns.filelistEvents  = []
+    # ns.filelistFadc    = []
+    # these two sets are the successors to the previously used list of
+    # files. We now only store the event numbers and create the corresponding
+    # filenames on the fly from the path
+    ns.eventSet        = set()
+    ns.fadcSet         = set()
     ns.nfiles          = 0
     # and the interval, in which the thread refreshes the filelist
     ns.refreshInterval = 0.0001
