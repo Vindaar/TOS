@@ -11,13 +11,21 @@
 #ifndef _FPGA_HPP
 #define _FPGA_HPP
 
-#include "header.hpp"
-#include "protocol_constants.hpp"
 #include "timepix.hpp"
-// include frame.hpp, so that we know about FrameArray
 #include "frame.hpp"
-// HV_FADC_Obj and related header files
-#include "hvFadcManager.hpp"
+#include "protocol_constants.hpp"
+
+#ifdef __WIN32__
+    #include <winsock2.h>
+#else
+    #include <netinet/in.h>
+#endif
+
+#include <vector>
+#include <string>
+
+class hvFadcManager;
+
 
 // set a default socket buffer size, which is 'big enough'
 // this number is the maximum allowed size for my kernel (3.13.0-85-generic)

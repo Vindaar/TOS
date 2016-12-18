@@ -11,7 +11,11 @@
 
 #include "fpga.hpp"
 #include "networkWrapper.hpp"
-//#define DEBUG 2
+#include "hvFadcManager.hpp"
+
+#include <iostream>
+#include <cmath>
+
 
 //C~tor
 FPGA::FPGA(Timepix *tp_pointer_from_parent):
