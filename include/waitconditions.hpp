@@ -3,7 +3,9 @@
 
 #include <thread>
 #include "helper_functions.hpp"
+#include "pc.hpp"
 #include <QThread>
+
 
 class PC;
 

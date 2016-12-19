@@ -12,28 +12,10 @@
 #ifndef _CONSOLE_HPP
 #define _CONSOLE_HPP 1
 
-//project
-#include "header.hpp"
-#include "pc.hpp"
-
-//c++
-#include <string>
-#include <sstream>
-// set and cmath used for CountingTime()
-#include <set>
-#include <cmath>
-#include <thread>
 #include <atomic>
-#include <chrono>
-
-//TOS and FADC
-#include "caseHeader.h"
-
-//FADC stuff
-#include "High-Level-functions_VME.h"
-
-// HV FADC manager
-#include "hvFadcManager.hpp"
+#include <set>
+#include <string>
+#include <list>
 
 // MCP2210
 #include "mcp2210/temp_auslese.hpp"
@@ -41,6 +23,12 @@
 // include readline history library to achieve command completion etc
 #include <readline/history.h>
 #include "tosCommandCompletion.hpp"
+
+class V1729a;
+class PC;
+class hvFadcManager;
+class Timepix;
+
 
 #define DEFAULT_USER_INPUT_PROMPT                   "> " 
 

@@ -19,6 +19,12 @@
 
 #include <regex>
 
+#ifdef __WIN32__
+    #include <io.h>
+#else
+    #include <sys/stat.h>
+#endif
+
 
 PC::PC(Timepix *tp):
     _useHvFadc(false),

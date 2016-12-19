@@ -1,8 +1,12 @@
-#include "pc.hpp"
 #include "waitconditions.hpp"
+#include "pc.hpp"
+#include "hvFadcManager.hpp"
 #include "fpga.hpp"
 
 #include <QWaitCondition>
+
+#include <iostream>
+#include <fstream>
 
 
 /* Here the Consumer and Producer Threads for the multi-threaded readout are implemented

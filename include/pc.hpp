@@ -32,6 +32,12 @@ class Frame;
 // center chip on a septem board
 #define DEFAULT_CENTER_CHIP                       4
 
+/** Talkativness
+ * TALKATIVNESS=0: almost now std::cout
+ * TALKATIVNESS=1: more std::cout
+ */
+#define TALKATIVNESS 1
+
 
 class PC:public QThread{
     friend class Producer;

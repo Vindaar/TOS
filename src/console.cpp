@@ -16,10 +16,12 @@
 /**********************************************************************/
 
 #include "console.hpp"
+#include "V1729a.h"
+#include "pc.hpp"
+#include "hvFadcManager.hpp"
+#include "timepix.hpp"
 #include "fpga.hpp"
-
-#include <string>
-#include <thread>
+#include "caseHeader.h"
 
 
 //C~tor
