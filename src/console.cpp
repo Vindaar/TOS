@@ -16,6 +16,8 @@
 /**********************************************************************/
 
 #include "console.hpp"
+#include "fpga.hpp"
+
 #include <string>
 #include <thread>
 

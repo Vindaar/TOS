@@ -12,25 +12,22 @@
 #ifndef _PC_HPP
 #define _PC_HPP 1 
 
-//project
-#include "header.hpp"
-#include "fpga.hpp"
-#include "waitconditions.hpp"
-#include "frame.hpp"
-
-//c++
-#include <string>
-#include <sstream>
-#include <regex>
-#include <atomic>
-
-//qt
-#include <QThread>
 #include <QWaitCondition>
 #include <QMutex>
+#include <QThread>
 
-// HV_FADC_Obj and related header files
-#include "hvFadcManager.hpp"
+#include <boost/any.hpp>
+
+#include <map>
+#include <set>
+#include <string>
+#include <atomic>
+
+class Timepix;
+class hvFadcManager;
+class FPGA;
+class Frame;
+
 
 // center chip on a septem board
 #define DEFAULT_CENTER_CHIP                       4

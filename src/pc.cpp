@@ -10,10 +10,14 @@
 /**********************************************************************/
 
 #include "pc.hpp"
-#include <boost/any.hpp>
+#include "hvFadcManager.hpp"
+#include "fpga.hpp"
+#include "timepix.hpp"
+#include "waitconditions.hpp"
+
 #include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
-#include <cstdlib>
+
+#include <regex>
 
 
 PC::PC(Timepix *tp):

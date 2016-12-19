@@ -1,5 +1,6 @@
-#include "waitconditions.hpp"
 #include "pc.hpp"
+#include "waitconditions.hpp"
+#include "fpga.hpp"
 
 #include <QWaitCondition>
 
