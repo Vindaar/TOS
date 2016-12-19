@@ -8,6 +8,8 @@
 /*                                        Institut fuer Physik - ETAP */
 /*                              Johannes-Gutenberg Universitaet Mainz */
 /**********************************************************************/
+#ifndef TOS_TIMEPIX_HPP
+#define TOS_TIMEPIX_HPP
 
 #include "protocol_constants.hpp"
 
@@ -144,3 +146,5 @@ private:
     int _pix_total_num;
 
 };
+
+#endif
