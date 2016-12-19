@@ -4,12 +4,11 @@
 #ifndef _FRAME_HPP
 #define _FRAME_HPP 1
 
-// project related files
-#include "header.hpp"
 #include "protocol_constants.hpp"
 
+#include <array>
+#include <vector>
 #include <map>
-#include <boost/any.hpp>
 
 
 // define a short hand for the data type in which frames are stored
