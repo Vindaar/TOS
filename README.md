@@ -38,6 +38,19 @@ NOTE:
 On my linux machine, I need to use QT4 in order to create the makefile from the TOS.pro file:
 qmake-qt4 TOS.pro
 
+### Compile-time flags
+
+The following debug levels are available:
+0: no debug output
+1: status messages via the console
+2: messaging Function-Entries
+
+The following performance levels are available:
+0: data file is human-readable
+1: data is just dumped, without LFSR-conversion
+
+The compile-time flags can be edited in `TOS.pro`.
+
 ## Documentation
 
 You can generate the source documentation (doxygen) with

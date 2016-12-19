@@ -11,12 +11,13 @@ QMAKE_CXXFLAGS += -std=c++14 -o0 -g -Wall -W -pedantic -Wl,--no-as-needed
 OBJECTS_DIR = output/tmp
 MOC_DIR = output/tmp
 DESTDIR = output/bin
+DEFINES += "PERFORMANCE=0"
+DEFINES += "DEBUG=0"
 
 # Input
 HEADERS += include/caseHeader.h \ 
            include/console.hpp \ 
            include/fpga.hpp \ 
-           include/header.hpp \ 
            include/pc.hpp \ 
            include/timepix.hpp \
            include/waitconditions.hpp \

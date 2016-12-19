@@ -17,20 +17,16 @@
 // /*                                                                    */
 // /**********************************************************************/
 
-// //TOS
-#include "header.hpp"
 #include "console.hpp"
-
-
-// //STD C++
-#include <cstdlib>
-#include <string>
-
-// HV_FADC_Obj and related header files
 #include "hvFadcManager.hpp"
+
 #include <QTextStream>
 #include <QString>
 #include <QCoreApplication>
+
+#include <cstdlib>
+#include <string>
+
 
 #ifdef __WIN32__
 const WORD MAX_CONSOLE_LINES = 500;
