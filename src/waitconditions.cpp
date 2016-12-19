@@ -1,6 +1,9 @@
 #include "waitconditions.hpp"
 #include "pc.hpp"
 
+#include <QWaitCondition>
+
+
 /* Here the Consumer and Producer Threads for the multi-threaded readout are implemented
  *
  */

@@ -30,6 +30,7 @@
 #include "hvFadcManager.hpp"
 #include <QTextStream>
 #include <QString>
+#include <QCoreApplication>
 
 #ifdef __WIN32__
 const WORD MAX_CONSOLE_LINES = 500;

@@ -1,12 +1,9 @@
 #ifndef _WAITCONDITIONS_HPP
 #define _WAITCONDITIONS_HPP
 
-#include <QtCore>
-#include <stdio.h>
-#include <stdlib.h>
-#include "header.hpp"
 #include <thread>
 #include "helper_functions.hpp"
+#include <QThread>
 
 class PC;
 

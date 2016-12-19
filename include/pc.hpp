@@ -25,8 +25,9 @@
 #include <atomic>
 
 //qt
-#include <qthread.h>
-#include <qmutex.h>
+#include <QThread>
+#include <QWaitCondition>
+#include <QMutex>
 
 // HV_FADC_Obj and related header files
 #include "hvFadcManager.hpp"
