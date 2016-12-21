@@ -12,5 +12,6 @@ tmp/*
 Backup/*
 *.*~
 *.pyc
+scripts/PyS_eventDisplay/*.lprof
 *.*#
 TAGS
