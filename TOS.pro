@@ -50,6 +50,7 @@ HEADERS += include/caseHeader.h \
 
 SOURCES += src/caseFunctions.cc \
            src/console.cpp \
+           src/console/serialization.cpp \
            src/fpga.cpp \ 
            src/pc.cpp \
            src/timepix.cpp \
