@@ -23,6 +23,8 @@
 #include "fpga.hpp"
 #include "caseHeader.h"
 
+#include <boost/filesystem.hpp>
+
 
 //C~tor
 Console::Console():
@@ -2104,37 +2106,29 @@ int Console::CommandSaveMatrix(){
 }
 
 
-int Console::CommandLoadMatrix(){
-    bool numericalInput = false;
-    bool allowDefaultOnEmptyInput = false;
+int Console::CommandLoadMatrix() {
+    for (unsigned short chip_id = 1; chip_id <= pc->fpga->tp->GetNumChips(); chip_id++){
+	    std::string default_path = pc->GetMatrixFileName(chip_id);
 
-    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-	std::string ein;
-	std::string f=pc->GetMatrixFileName(chip);
-	std::cout << "Matrix filename for chip "
-		  << chip
-		  << " (press ENTER to load from "
-		  << pc->GetMatrixFileName(chip) 
-		  << "): " 
-		  << std::endl;
-	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (ein == "quit") return -1;
-	f=ein;
-	FILE* f1=fopen(f.c_str(),"r"); 
-	if(f1==NULL) {
-	    std::cout<<"File not found"<<std::endl; 
-	    return -1;
-	}
-	if (f1 != NULL) {
-	    pc->fpga->tp->LoadMatrixFromFile(f,chip);
-	    std::cout<<"Matrix loaded from "<<f<<"\n"<<std::flush;
-	}
-	pc->fpga->tp->SaveMatrixToFile(pc->GetMatrixFileName(chip),chip);
-	std::cout<<"Matrix saved to program folder as "<<pc->GetMatrixFileName(chip)<<"\n"<<std::flush;
+        std::cout << "Matrix filename for chip "
+            << chip_id
+            << " (press ENTER to load from "
+            << default_path
+            << "): "
+            << std::endl;
+
+        std::string filename;
+        if (!getUserInputOrDefaultFile(_prompt, default_path, filename))
+            return -1;
+
+	    pc->fpga->tp->LoadMatrixFromFile(filename, chip_id);
+	    std::cout << "Matrix loaded from " << filename << std::endl << std::flush;
+
+	    pc->fpga->tp->SaveMatrixToFile(default_path, chip_id);
+	    std::cout << "Matrix saved to program folder as " << default_path << std::endl << std::flush;
     }
     return 0;
 }
-
 
 int Console::CommandWriteReadFSR(){
 #if DEBUG==2
@@ -2190,8 +2184,10 @@ int Console::CommandLoadFSR(){
 		  << pc->GetFSRFileName(chip) 
 		  << "): " 
 		  << std::endl;
+
 	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (ein == "quit") return -1;
+
 	if(ein==""){
 	    // per default we wish to load the fsr.txt file
 	    f = pc->GetFSRFileName(chip);
