@@ -6,14 +6,17 @@
 #define _TOS_COMMAND_COMPLETION_HPP 1
 
 
-// include the necessary readline libraries
-#include <stdio.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+
+#include <boost/filesystem/path.hpp>
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
 #include <stdexcept>
 #include <set>
+
 
 // the following array contains all possible TOS commands
 // TODO: change const char array to something nicer
@@ -57,10 +60,6 @@ std::string getUserInputNonNumericalDefault(  const char *prompt,
 std::string getUserInputNonNumericalNoDefault(const char *prompt, 
 					      std::set<std::string> allowedStrings);
 
-
-
-
-
-
+bool getUserInputOrDefaultFile(const char *prompt, const std::string& default_path, std::string& filename);
 
 #endif

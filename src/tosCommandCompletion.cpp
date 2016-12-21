@@ -7,6 +7,15 @@
 #include "tosCommandCompletion.hpp"
 #include <algorithm>
 
+#include <boost/filesystem.hpp>
+
+#include <stdio.h>
+#include <string>
+
+
+namespace fs = boost::filesystem;
+
+
 const char *tosCommands[] = {"GeneralReset", 
                              "1", 
                              "UserInterface", 
@@ -333,3 +342,23 @@ std::string getUserInputNonNumericalNoDefault(const char *prompt, std::set<std::
     return getUserInputNonNumericalNoDefault(prompt, &allowedStrings);
 }
 
+bool getUserInputOrDefaultFile(const char *prompt, const std::string& default_path, std::string& filename) {
+    std::string input = getUserInput(prompt, false, true).c_str();
+
+    if (input == "quit") {
+        // User aborted the command
+        return false;
+    } else if (input == "")
+	    // Choose the default file
+        filename = default_path;
+    else
+	    // Choose the user-defined file
+        filename = input;
+
+    if (!fs::exists(fs::path(filename))) {
+	    std::cout << "File not found: " << filename << std::endl;
+        return false;
+    }
+
+    return true;
+}
