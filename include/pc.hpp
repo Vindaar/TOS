@@ -22,6 +22,7 @@
 #include <set>
 #include <string>
 #include <atomic>
+#include <vector>
 
 class Timepix;
 class hvFadcManager;
