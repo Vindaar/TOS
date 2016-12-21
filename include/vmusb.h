@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 #ifdef Q_OS_LINUX
 	#define __stdcall
