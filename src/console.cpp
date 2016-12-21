@@ -2081,29 +2081,6 @@ int Console::CommandSetMatrix(){
     return result;
 }
 
-int Console::CommandSaveMatrix(){
-    bool numericalInput = false;
-    bool allowDefaultOnEmptyInput = false;
-
-    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-	std::string ein;
-	std::string f=pc->GetMatrixFileName(chip);
-	std::cout << "Matrix filename for chip "
-		  << chip 
-		  << ": (press ENTER to save in "
-		  << pc->GetMatrixFileName(chip) 
-		  << "): " 
-		  << std::endl;
-	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (ein == "quit") return -1;
-	f=ein.c_str();
-	pc->fpga->tp->SaveMatrixToFile(f,chip);
-	std::cout<<"Matrix saved to "<<f<<"\n"<<std::flush;
-    }
-    return 0;
-}
-
-
 int Console::CommandWriteReadFSR(){
 #if DEBUG==2
     std::cout<<"Enter Console::CommandWriteReadFSR()\n"<<std::flush;
@@ -2116,31 +2093,6 @@ int Console::CommandWriteReadFSR(){
     std::cout<<"\tWriteReadFSR accomplished\n"<<std::flush;
     return result;
 }
-
-
-int Console::CommandSaveFSR(){
-    bool numericalInput = false;
-    bool allowDefaultOnEmptyInput = false;
-
-    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-	std::string ein;
-	std::string f=pc->GetFSRFileName(chip);
-	std::cout << "FSR filename for chip "
-		  << chip
-		  << ": (press ENTER to save in " 
-		  << pc->GetFSRFileName(chip) 
-		  << "): " 
-		  << std::endl;
-	ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (ein == "quit") return -1;
-	f=ein.c_str();
-	pc->fpga->tp->SaveFSRToFile(f,chip);
-	std::cout<<"FSR saved in "<<f<<"\n"<<std::flush;
-    }
-    return 0;
-}
-
-
 
 int Console::CommandSetDAC(){
 #if DEBUG==2
