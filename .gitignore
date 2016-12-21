@@ -5,6 +5,7 @@ HV_FADC_Object.pro
 HV_FADC_Object.pro.user
 
 # temporary files
+tmp/*
 Backup/*
 
 # data files
