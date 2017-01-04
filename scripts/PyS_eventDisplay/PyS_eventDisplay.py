@@ -9,9 +9,9 @@ import matplotlib.animation as animation
 from matplotlib.lines import Line2D
 import os
 import time
-from septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
-from septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, create_filename_from_event_number
-from septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
+from septemModule.septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
+from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, create_filename_from_event_number
+from septemModule.septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
 
 import multiprocessing as mp
 import collections
