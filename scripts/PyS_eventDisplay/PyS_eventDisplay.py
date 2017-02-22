@@ -89,24 +89,26 @@ class WorkOnFile:
                  fadcPlot, 
                  ns, 
                  cb,
-                 start_iter):
+                 args_dict):
         self.filepath         = filepath
         self.current_filename = ""
         # and assign the namespace of the multiprocessing manager
         self.ns               = ns
 
         self.fig              = figure
-        self.i                = start_iter
+        self.i                = args_dict["start_iter"]
         self.nfiles           = self.ns.nfiles
         self.septem           = septem
         self.chip_subplots    = chip_subplots
         # from the chip_suplots list we now deduce, whether we plot for a single
         # chip or a septemboard
-        self.single_chip_flag = False
-        if len(self.chip_subplots) == 1:
-            # turn to true if only one axis object in list
-            self.single_chip_flag = True
-
+        self.single_chip_flag = args_dict["single_chip_flag"]
+        # TODO: check if the following is now redundant that we include the single_chip_flag
+        # in the args_dict
+        # if len(self.chip_subplots) == 1:
+        #     # turn to true if only one axis object in list
+        #     self.single_chip_flag = True
+        self.ignore_full_frames = args_dict["ignore_full_frames"]
 
         self.fadcPlot       = fadcPlot
         self.fadcPlotLine   = self.fadcPlot.plot([], [], color = 'blue')
@@ -263,7 +265,7 @@ class WorkOnFile:
         elif c == 'o':
             # if o is typed, we create an occupancy plot of the whole run
             print 'creating occupancy plot...'
-            self.create_occupancy_plot()
+            self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames)
         elif c == 's':
             # if s is typed, we save the current figure
             print 'saving figure...'
@@ -624,6 +626,9 @@ def main(args):
     # septemboard)
     cb_chip  = 3
 
+    # args dict contains additional arguments to be given to the WorkOnFile object
+    args_dict = {}
+
     if len(args) > 0:
         try:
             f = open(args[0], 'r')
@@ -665,16 +670,25 @@ def main(args):
                 import sys
                 sys.exit()
         if "--single_chip" in args:
-            single_chip_flag = True
+            args_dict["single_chip_flag"] = True
+        else:
+            args_dict["single_chip_flag"] = False
         if "--start_iter" in args:
             try:
                 ind = args.index("--start_iter")
-                start_iter = int(args[ind + 1])
+                args_dict["start_iter"] = int(args[ind + 1])
             except IndexError:
                 print 'If you enter --start_iter please enter a start value.'
-                start_iter = 0
+                args_dict["start_iter"] = 0
         else:
-            start_iter = 0
+                args_dict["start_iter"] = 0
+        if "--ignore_full_frames" in args:
+            # if this is given as argument, we will drop events with more than 4096 pixels per chip
+            # in the occupancy, since maximum of zero suppressed readout
+            args_dict["ignore_full_frames"] = True
+        else:
+            args_dict["ignore_full_frames"] = False
+                
     else:
         print 'No argument given. Please give a folder from which to read files'
         import sys
@@ -713,7 +727,7 @@ def main(args):
 
     
     # create the axes for the chip layout 
-    chip_subplots = create_chip_axes(sep, fig, single_chip_flag)
+    chip_subplots = create_chip_axes(sep, fig, args_dict["single_chip_flag"])
 
 
     # create a new filelist manager, which allows the communication between the main thread and 
@@ -749,7 +763,7 @@ def main(args):
     p2.start()
 
     # now create the main thread, which starts the plotting
-    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb, start_iter)
+    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb, args_dict)
     files.connect()
 
     plt.show()
