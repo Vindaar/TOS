@@ -6,6 +6,7 @@ import scandir
 import numpy as np
 from septemClasses import eventHeader, chipHeaderData
 import collections
+import cPickle
 
 def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     # this function reads a single file, created by the septem board
@@ -194,3 +195,47 @@ def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcF
         return None
             
     
+def create_occupancy_filename(filepath, iBatch):
+    # this function creates a correct filename for an occupancy plot
+    name = ("out/occupancy_batch_%i_" % iBatch) + filepath.split('/')[-2]
+    return name
+
+def create_pickle_filename(filename):
+    pickle_filename = "out/cPickle_" + filename + ".dat"
+    return pickle_filename
+
+def dump_occupancy_data(filename, data, header_text):
+    # this function cPickles the data needed for an occupancy plot and 
+    # dumps it
+    filename = filename.lstrip("out/")
+    pickle_filename = create_pickle_filename(filename)
+    data_dump = open(pickle_filename, 'wb')
+    
+    # create a dictionary to store the data
+    data_dict = {"chip_arrays"  : data,
+                 "header_text" : header_text}
+                    
+    cPickle.dump(data_dict, data_dump, -1)
+    data_dump.close()
+
+def load_occupancy_dump(filename):
+    # this function loads a data dump created by dump_occupancy_data()
+    pickle_filename = create_pickle_filename(filename)
+    data_dump = open(pickle_filename, 'r')
+    data_dict = cPickle.load(data_dump)
+    data_dump.close()
+    
+    data         = data_dict["chip_arrays"]
+    header_text  = data_dict["header_text"]
+
+    return data, header_text
+
+def check_occupancy_dump_exist(filename):
+    # checks whether occupancy dump exists
+    outfolder = os.listdir('out/')
+    
+    if filename in outfolder:
+        return True
+    else:
+        return False
+

@@ -10,8 +10,9 @@ from matplotlib.lines import Line2D
 import os
 import time
 from septemModule.septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
-from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, create_filename_from_event_number
+from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump
 from septemModule.septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
+from septemModule.septemMisc import add_line_to_header
 
 import multiprocessing as mp
 import collections
@@ -67,7 +68,6 @@ def refresh(ns, filepath):
         lock.release()
         time.sleep(refreshInterval)
         #print 'done updating filelist'
-
 
 
 ##################################################
@@ -265,7 +265,7 @@ class WorkOnFile:
         elif c == 'o':
             # if o is typed, we create an occupancy plot of the whole run
             print 'creating occupancy plot...'
-            self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames)
+            self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames, nbatches = 24)
         elif c == 's':
             # if s is typed, we save the current figure
             print 'saving figure...'
@@ -419,7 +419,36 @@ class WorkOnFile:
         # last element of the files dictionary
         self.work_on_file(-1)
 
-    def create_occupancy_plot(self, ignore_full_frames = False):
+
+    def create_occupancy_plot(self, ignore_full_frames = False, nbatches = 1):
+        # this function checks whether a dumped occupancy plot can be found, 
+        # if so this one is plotted, else create_occupancy_data is called
+
+        
+        for i in xrange(nbatches):
+            # get filename for batch
+            occupancy_filename = create_occupancy_filename(self.filepath, i)
+            data_dump_filename = create_pickle_filename(occupancy_filename)
+            
+            file_exists = check_occupancy_dump_exist(data_dump_filename)
+            if file_exists is True:
+                # now load dump and plot
+                chip_arrays, header_text = load_occupancy_dump(data_dump_filename)
+                plot_occupancy(occupancy_filename, 
+                               header_text,
+                               self.septem, 
+                               self.fig, 
+                               self.chip_subplots, 
+                               self.im_list,
+                               chip_arrays,
+                               self.cb)
+            else:
+                self.create_occupancy_data(ignore_full_frames, nbatches)
+
+    def create_occupancy_data(self, ignore_full_frames, nbatches):
+        # create an occupancy plot. count number of times each pixel was hit during the 
+        # whole run
+
         # TODO: think about another way to run over all files. NOT SURE, but it seems
         # that creating all filenames from scratch (via the function from the event number)
         # is (in this case) a waste of resources.
@@ -430,20 +459,60 @@ class WorkOnFile:
         #                           the occupancy creation, which have more than 4096 
         #                           active pixels. In that case data is lost (only 4096)
         #                           pixels fit in zero suppressed readout.
+        # int nbatches            : this integer determines whether and if into how many
+        #                           batches we split the data and thus create nbatches many
+        #                           occupancy plots
+
+        # first create the header text box for the occupancy plot
+        if len(self.ns.eventSet) > 0:
+            # need to read one of the files to get the header. Choose first file, thus
+            filename     = create_filename_from_event_number(self.ns.eventSet,
+                                                             0,
+                                                             self.ns.nfiles,
+                                                             fadcFlag = False)
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
+            header_text = evHeader.get_run_header_text()
+        else:
+            print 'filelist not filled yet or empty; returning.'
+            return
         
-        # create an occupancy plot. count number of times each pixel was hit during the 
-        # whole run
+
+        header_text = add_line_to_header(header_text, 
+                                         "# events",
+                                         len(self.ns.eventSet))
+        header_text = add_line_to_header(header_text, 
+                                         "ignore_full_frames",
+                                         ignore_full_frames)
+        header_text = add_line_to_header(header_text, 
+                                         "n_batches",
+                                         nbatches)
+
+        if nbatches > 1:
+            # in this case we save all plots
+            save_figures = True
+            # need sorted list for iteration
+            eventNumbers = sorted(list(self.ns.eventSet))
+            nEventsPerBatch = np.ceil(len(eventNumbers) / nbatches)
+        else:
+            # assign iterable object 'events' our normal eventSet
+            # in case of nbatches == 1, we don't care about the order in which
+            # we iterate over the batches
+            eventNumbers    = self.ns.eventSet
+            nEventsPerBatch = len(eventNumbers)
 
         # create a list of numpy arrays. one array for each occupancy plot of each chip
         chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
 
+        # counter for batches
+        iBatch = 0
+
         # we run over all files of the event number set, i.e. all files of run
-        for eventNumber in self.ns.eventSet:
+        for eventNumber in eventNumbers:
             # first create the filename
-            filename     = create_filename_from_event_number(self.ns.eventSet,
-                                                             eventNumber,
-                                                             self.ns.nfiles,
-                                                             fadcFlag = False)
+            filename = create_filename_from_event_number(self.ns.eventSet,
+                                                         eventNumber,
+                                                         self.ns.nfiles,
+                                                         fadcFlag = False)
             # we create the event and chip header object
             evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
             # now go through each chip header and add data of frame
@@ -464,36 +533,36 @@ class WorkOnFile:
             if event_num % 1000 == 0:
                 print event_num, ' events done.'
 
-        # now create the header text box for the occupancy plot
-        if len(self.ns.eventSet) > 0:
-            # need to read one of the files to get the header. Choose first file, thus
-            filename     = create_filename_from_event_number(self.ns.eventSet,
-                                                             0,
-                                                             self.ns.nfiles,
-                                                             fadcFlag = False)
-            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
-            header_text = evHeader.get_run_header_text()
-        else:
-            print 'filelist not filled yet or empty; returning.'
-            return
+            # now check whether we plot
+            if (eventNumber == max(eventNumbers) or 
+                eventNumber % nEventsPerBatch == 0 and 
+                eventNumber > 0):
+                # now plot the occupancy of the thus generated data
+                # now set the file we're going to plot as the
+                # current file (to save the figure, if wanted)
+                iBatch += 1
+                self.current_filename = create_occupancy_filename(self.filepath, iBatch)
 
-        nEvents = "\n# events : ".ljust(25)
-        nEvents += str(len(self.ns.eventSet))
+                # add batch number to header_text
+                header_current = add_line_to_header(header_text,
+                                                    "i_batch",
+                                                    iBatch)
+        
+                # before the plot, dump the file to a cPickle
+                dump_occupancy_data(self.current_filename, chip_arrays, header_current)
 
-        header_text += nEvents
+                plot_occupancy(self.current_filename, 
+                               header_current,
+                               self.septem, 
+                               self.fig, 
+                               self.chip_subplots, 
+                               self.im_list,
+                               chip_arrays,
+                               self.cb)
 
-        # before we plot the file, we set the file, we're going to plot as the
-        # current file (to save the figure, if wanted)
-        self.current_filename = "occupancy_" + self.filepath.split('/')[-2]
 
-        plot_occupancy(self.filepath, 
-                       header_text,
-                       self.septem, 
-                       self.fig, 
-                       self.chip_subplots, 
-                       self.im_list,
-                       chip_arrays,
-                       self.cb)
+
+
 
     def save_figure(self, output):
         # this function simply saves the currently shown plot as a png in

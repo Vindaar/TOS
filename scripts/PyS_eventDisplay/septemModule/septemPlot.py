@@ -206,7 +206,7 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     return fadcPlot
 
 
-def plot_occupancy(filepath, 
+def plot_occupancy(filename, 
                    header_text,
                    sep, 
                    fig, 
@@ -297,6 +297,9 @@ def plot_occupancy(filepath,
         cb.update_normal(im_list[0])
     
     make_ticklabels_invisible(chip_subplots)
+
+    # now save the file
+    plt.savefig(filename + ".pdf")
 
     # and now plot everythin
     plt.pause(0.01)
