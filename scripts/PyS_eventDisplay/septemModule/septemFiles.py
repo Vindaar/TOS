@@ -15,7 +15,14 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     # the zero suppressed files are setup as follows:
     # double hash ' ## ' indicates the file header (information about run and event)
     # single hash ' # '  indicates the header for a single chip
-    f = open(filepath, 'r').readlines()
+    if header_only == True:
+        # in case we only want the header, give the sizehint equal to 1
+        # for very large files, not the whole file will be read, speeding up the
+        # process
+        f = open(filepath, 'r').readlines(sizehint = 1)
+    else:
+        # else read whole file (until EOF)
+        f = open(filepath, 'r').readlines()
 
     evHeader  = eventHeader(filepath)
     chpHeaderList = []
