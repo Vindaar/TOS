@@ -7,13 +7,15 @@ import numpy as np
 from septemClasses import eventHeader, chipHeaderData
 import collections
 
-def read_zero_suppressed_data_file(filepath):#, out_q1):
+def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     # this function reads a single file, created by the septem board
     # with the zero suppressed readout
+    # the optional flag header_only can be used to only read the header.
+    # in this case the pix data array will be set to []
     # the zero suppressed files are setup as follows:
     # double hash ' ## ' indicates the file header (information about run and event)
     # single hash ' # '  indicates the header for a single chip
-    f = open(filepath, 'r').readlines()
+    f = open(filepath, 'r').readlines(1)
 
     evHeader  = eventHeader(filepath)
     chpHeaderList = []
@@ -34,15 +36,21 @@ def read_zero_suppressed_data_file(filepath):#, out_q1):
                 chpHeaderList.append(chpHeader)
             # in this case read the chip header
             chpHeaderList[-1].set_attribute(line)
-        else:
+        elif header_only == False:
             # in this case we're reading actual pixel data
             chpHeaderList[-1].add_pixel(line)
+        else:
+            # else (header_only is True), we break from the loop
+            break
+    
     # after we're done reading the last file, we still need to convert the listOfPixels
     # of the last element in the chpHeaderList to an array:
     if len(chpHeaderList) > 0:
         chpHeaderList[-1].convert_list_to_array()
 
+
     return [evHeader, chpHeaderList]
+
 
 def create_files_from_path(folder):
     # this function removes any files which are not chip events in a folder

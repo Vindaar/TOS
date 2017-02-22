@@ -88,14 +88,15 @@ class WorkOnFile:
                  chip_subplots, 
                  fadcPlot, 
                  ns, 
-                 cb):
+                 cb,
+                 start_iter):
         self.filepath         = filepath
         self.current_filename = ""
         # and assign the namespace of the multiprocessing manager
         self.ns               = ns
 
         self.fig              = figure
-        self.i                = 0
+        self.i                = start_iter
         self.nfiles           = self.ns.nfiles
         self.septem           = septem
         self.chip_subplots    = chip_subplots
@@ -656,6 +657,15 @@ def main(args):
                 sys.exit()
         if "--single_chip" in args:
             single_chip_flag = True
+        if "--start_iter" in args:
+            try:
+                ind = args.index("--start_iter")
+                start_iter = int(args[ind + 1])
+            except IndexError:
+                print 'If you enter --start_iter please enter a start value.'
+                start_iter = 0
+        else:
+            start_iter = 0
     else:
         print 'No argument given. Please give a folder from which to read files'
         import sys
@@ -730,7 +740,7 @@ def main(args):
     p2.start()
 
     # now create the main thread, which starts the plotting
-    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb)
+    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb, start_iter)
     files.connect()
 
     plt.show()
