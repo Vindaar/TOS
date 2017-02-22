@@ -15,7 +15,7 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     # the zero suppressed files are setup as follows:
     # double hash ' ## ' indicates the file header (information about run and event)
     # single hash ' # '  indicates the header for a single chip
-    f = open(filepath, 'r').readlines(1)
+    f = open(filepath, 'r').readlines()
 
     evHeader  = eventHeader(filepath)
     chpHeaderList = []
@@ -47,8 +47,6 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     # of the last element in the chpHeaderList to an array:
     if len(chpHeaderList) > 0:
         chpHeaderList[-1].convert_list_to_array()
-
-
     return [evHeader, chpHeaderList]
 
 

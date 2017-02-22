@@ -124,8 +124,8 @@ class WorkOnFile:
 
 
         # animation related:
-        self.ani_end_event_source = None
-        self.ani_end_running      = False
+        self.ani_end_event_source  = None
+        self.ani_end_running       = False
         self.ani_loop_event_source = None
         self.ani_loop_running      = False
 
@@ -417,12 +417,17 @@ class WorkOnFile:
         # last element of the files dictionary
         self.work_on_file(-1)
 
-    def create_occupancy_plot(self):
+    def create_occupancy_plot(self, ignore_full_frames = False):
         # TODO: think about another way to run over all files. NOT SURE, but it seems
         # that creating all filenames from scratch (via the function from the event number)
         # is (in this case) a waste of resources.
         # Idea: create function, which does what create_filename_from_event_number does
         # but returns list of filenames from eventSet
+
+        # bool ignore_full_frames : this flag controls whether we drop all events from 
+        #                           the occupancy creation, which have more than 4096 
+        #                           active pixels. In that case data is lost (only 4096)
+        #                           pixels fit in zero suppressed readout.
         
         # create an occupancy plot. count number of times each pixel was hit during the 
         # whole run
@@ -446,7 +451,11 @@ class WorkOnFile:
                 chip_data = chpHeader.pixData
                 chip_num  = int(chpHeader.attr["chipNumber"])
                 # and now add chip data to chip_arrays if non empty
-                if np.size(chip_data) > 0:
+                npix = np.size(chip_data)
+                if npix > 0 and ignore_full_frames is False:
+                    chip_arrays[chip_num - 1, chip_data[:,1], chip_data[:,0]] += 1
+                elif npix > 0 and ignore_full_frames is True and npix < 4097:
+                    # if ignore_full_frames is True we drop all events with more than 4096 pixels
                     chip_arrays[chip_num - 1, chip_data[:,1], chip_data[:,0]] += 1
 
             event_num = int(evHeader.attr["eventNumber"])
