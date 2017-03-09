@@ -37,21 +37,21 @@ hvChannel::~hvChannel(){
     // float currentNominalOff = 0;
 
     if(_rampDownUponDelete == true){
-	// in this case ramp down channel
-	bool good;
-	good =  setVoltage(voltageOff);
-	good *= setCurrent(currentOff);
-	if(good == false){
-	    // either voltage or current could not be set
-	    // TODO: decide what to do
-	}
+        // in this case ramp down channel
+        bool good;
+        good =  setVoltage(voltageOff);
+        good *= setCurrent(currentOff);
+        if(good == false){
+            // either voltage or current could not be set
+            // TODO: decide what to do
+        }
        
-	// setVoltageNominal(voltageNominalOff);
-	// setCurrentNominal(currentNominalOff);
+        // setVoltageNominal(voltageNominalOff);
+        // setCurrentNominal(currentNominalOff);
 
-	// TODO: understand if it should be enough to turn off channel, once 
-	// we have set the voltage and current to 0
-	turnOff();
+        // TODO: understand if it should be enough to turn off channel, once 
+        // we have set the voltage and current to 0
+        turnOff();
     }
 
 }
@@ -116,22 +116,22 @@ bool hvChannel::setVoltage(float voltage){
     bool good;
     int timeout = 1000;
     while( (timeout > 0) &&
-	   (_voltageSet != voltage) ){
-	// first set voltage to voltageSet
-	_hvModule->SetChannelVoltageSet(_channelNumber, voltage);
-	// wait default time and...
-	sleepChannel();
-	// .. read current voltag, by updating channel
-	updateChannel();
-	timeout--;
+           (_voltageSet != voltage) ){
+        // first set voltage to voltageSet
+        _hvModule->SetChannelVoltageSet(_channelNumber, voltage);
+         // wait default time and...
+        sleepChannel();
+        // .. read current voltag, by updating channel
+        updateChannel();
+        timeout--;
     }
     if(timeout < 1){
-	std::cout << "TIMEOUT: could not set voltage to " << voltage << " V" << std::endl;
-	good = false;
+        std::cout << "TIMEOUT: could not set voltage to " << voltage << " V" << std::endl;
+        good = false;
     }
     else{
-	std::cout << "timeout in setVoltage " << timeout << std::endl;
-	good = true;
+        std::cout << "timeout in setVoltage " << timeout << std::endl;
+        good = true;
     }
 
     // if we're not in if, all is good
@@ -144,22 +144,22 @@ bool hvChannel::setCurrent(float current){
     bool good;
     int timeout = 1000;
     while( (timeout > 0) &&
-	   (_currentSet != current) ){
-	// first set current to currentSet
-	_hvModule->SetChannelCurrentSet(_channelNumber, current);
-	// wait default time and...
-	sleepChannel();
-	// .. read current voltag, by updating channel
-	updateChannel();
-	timeout--;
+           (_currentSet != current) ){
+        // first set current to currentSet
+        _hvModule->SetChannelCurrentSet(_channelNumber, current);
+        // wait default time and...
+        sleepChannel();
+        // .. read current voltag, by updating channel
+        updateChannel();
+        timeout--;
     }
     if(timeout < 1){
-	std::cout << "TIMEOUT: could not set current to " << current << " mA" << std::endl;
-	good = false;
+        std::cout << "TIMEOUT: could not set current to " << current << " mA" << std::endl;
+        good = false;
     }
     else{
-	std::cout << "timeout in setCurrent " << timeout << std::endl;
-	good = true;
+        std::cout << "timeout in setCurrent " << timeout << std::endl;
+        good = true;
     }
 
     // if we're not in if, all is good
@@ -174,22 +174,22 @@ bool hvChannel::setVoltageNominal(float voltage){
     bool good;
     int timeout = 1000;
     while( (timeout > 0) &&
-	   (_voltageNominal != voltage) ){
-	// first set voltage to voltageSet
-	_hvModule->SetChannelVoltageNominal(_channelNumber, voltage);
-	// wait default time and...
-	sleepChannel();
-	// .. read current voltag, by updating channel
-	updateChannel();
-	timeout--;
+           (_voltageNominal != voltage) ){
+        // first set voltage to voltageSet
+        _hvModule->SetChannelVoltageNominal(_channelNumber, voltage);
+        // wait default time and...
+        sleepChannel();
+        // .. read current voltag, by updating channel
+        updateChannel();
+        timeout--;
     }
     if(timeout < 1){
-	std::cout << "TIMEOUT: could not set voltage nominal to " << voltage << " V" << std::endl;
-	good = false;
+        std::cout << "TIMEOUT: could not set voltage nominal to " << voltage << " V" << std::endl;
+        good = false;
     }
     else{
-	std::cout << "timeout in setVoltageNominal " << timeout << std::endl;
-	good = true;
+        std::cout << "timeout in setVoltageNominal " << timeout << std::endl;
+        good = true;
     }
 
     // if we're not in if, all is good
@@ -202,22 +202,22 @@ bool hvChannel::setCurrentNominal(float current){
     bool good;
     int timeout = 1000;
     while( (timeout > 0) &&
-	   (_currentNominal != current) ){
-	// first set current to currentSet
-	_hvModule->SetChannelCurrentNominal(_channelNumber, current);
-	// wait default time and...
-	sleepChannel();
-	// .. read current voltag, by updating channel
-	updateChannel();
-	timeout--;
+           (_currentNominal != current) ){
+        // first set current to currentSet
+        _hvModule->SetChannelCurrentNominal(_channelNumber, current);
+        // wait default time and...
+        sleepChannel();
+        // .. read current voltag, by updating channel
+        updateChannel();
+        timeout--;
     }
     if(timeout < 1){
-	std::cout << "TIMEOUT: could not set current nominal to " << current << " muA" << std::endl;
-	good = false;
+        std::cout << "TIMEOUT: could not set current nominal to " << current << " muA" << std::endl;
+        good = false;
     }
     else{
-	std::cout << "timeout in setCurrentNominal " << timeout << std::endl;
-	good = true;
+        std::cout << "timeout in setCurrentNominal " << timeout << std::endl;
+        good = true;
     }
 
     // if we're not in if, all is good
@@ -284,14 +284,14 @@ void hvChannel::printVoltageMeasured(){
     updateChannel();
 
     std::cout << _channelName 
-	      << " #" 
-	      << _channelNumber 
-	      << " :\t"
-	      << _voltageMeasured
-	      << " / "
-	      << _voltageSet
-	      << " V"
-	      << std::endl;
+              << " #" 
+              << _channelNumber 
+              << " :\t"
+              << _voltageMeasured
+              << " / "
+              << _voltageSet
+              << " V"
+              << std::endl;
 
 }
 
@@ -301,14 +301,14 @@ void hvChannel::printCurrentMeasured(){
     updateChannel();
 
     std::cout << _channelName 
-	      << " #" 
-	      << _channelNumber 
-	      << " :\t"
-	      << _currentMeasured
-	      << " / "
-	      << _currentSet
-	      << " mA"
-	      << std::endl;
+              << " #" 
+              << _channelNumber 
+              << " :\t"
+              << _currentMeasured
+              << " / "
+              << _currentSet
+              << " mA"
+              << std::endl;
 }
 
 void hvChannel::printVoltageAndCurrentMeasured(){
@@ -317,19 +317,19 @@ void hvChannel::printVoltageAndCurrentMeasured(){
     updateChannel();
 
     std::cout << _channelName 
-	      << " #" 
-	      << _channelNumber 
-	      << " :\t"
-	      << _voltageMeasured
-	      << " / "
-	      << _voltageSet
-	      << " V"
-	      << "\t"
-	      << _currentMeasured
-	      << " / "
-	      << _currentSet
-	      << " A"
-	      << std::endl;
+              << " #" 
+              << _channelNumber 
+              << " :\t"
+              << _voltageMeasured
+              << " / "
+              << _voltageSet
+              << " V"
+              << "\t"
+              << _currentMeasured
+              << " / "
+              << _currentSet
+              << " A"
+              << std::endl;
 
 }
 
@@ -340,15 +340,15 @@ void hvChannel::printVoltageCurrentNominal(){
     updateChannel();
 
     std::cout << "voltage nominal: " << _voltageNominal << " V\n"
-	      << "current nominal: " << _currentNominal << " mA\n"
-	      << std::endl;
+              << "current nominal: " << _currentNominal << " mA\n"
+              << std::endl;
 }
 
 void hvChannel::printChannelName(){
     // this function prints the channel name and number
     std::cout << "#" << _channelNumber
-	      << " " << _channelName
-	      << std::endl;
+              << " " << _channelName
+              << std::endl;
 }
 
 void hvChannel::printChannelIsOn(){
@@ -356,9 +356,9 @@ void hvChannel::printChannelIsOn(){
     updateChannel();
     
     std::cout << "#" << _channelNumber
-	      << " " << _channelName
-	      << " : " << _isOn
-	      << std::endl;
+              << " " << _channelName
+              << " : " << _isOn
+              << std::endl;
 }
 
 void hvChannel::printChannelEventStatus(){
@@ -367,19 +367,19 @@ void hvChannel::printChannelEventStatus(){
     
     std::cout << "Channel " << _channelName << " # " << _channelNumber << std::endl;;
     std::cout << "Current status of Channel Event Status bits:\n"
-	      << "     input error:         	\t" << _channelEventStatus.Bit.EventInputError << "\n"
-	      << "     on to off:           	\t" << _channelEventStatus.Bit.EventOnToOff << "\n"
-	      << "     end of ramping:      	\t" << _channelEventStatus.Bit.EventEndOfRamping << "\n"
-	      << "     controlled by voltage:\t" << _channelEventStatus.Bit.EventControlledByVoltage << "\n"
-	      << "     controlled by current:\t" << _channelEventStatus.Bit.EventControlledByCurrent << "\n"
-	      << "     current bounds:       \t" << _channelEventStatus.Bit.EventCurrentBounds << "\n"
-	      << "     voltage bounds:       \t" << _channelEventStatus.Bit.EventVoltageBounds << "\n"
-	      << "     external inhibit:     \t" << _channelEventStatus.Bit.EventExternalInhibit << "\n"
-	      << "     current tripped:      \t" << _channelEventStatus.Bit.EventCurrentTrip << "\n"
-	      << "     current limit:        \t" << _channelEventStatus.Bit.EventCurrentLimit << "\n"
-	      << "     voltage limit:        \t" << _channelEventStatus.Bit.EventVoltageLimit << "\n"
-	      << "     emergency:            \t" << _channelEventStatus.Bit.EventEmergency
-	      << std::endl;
+              << "     input error:             \t" << _channelEventStatus.Bit.EventInputError << "\n"
+              << "     on to off:               \t" << _channelEventStatus.Bit.EventOnToOff << "\n"
+              << "     end of ramping:          \t" << _channelEventStatus.Bit.EventEndOfRamping << "\n"
+              << "     controlled by voltage:\t" << _channelEventStatus.Bit.EventControlledByVoltage << "\n"
+              << "     controlled by current:\t" << _channelEventStatus.Bit.EventControlledByCurrent << "\n"
+              << "     current bounds:       \t" << _channelEventStatus.Bit.EventCurrentBounds << "\n"
+              << "     voltage bounds:       \t" << _channelEventStatus.Bit.EventVoltageBounds << "\n"
+              << "     external inhibit:     \t" << _channelEventStatus.Bit.EventExternalInhibit << "\n"
+              << "     current tripped:      \t" << _channelEventStatus.Bit.EventCurrentTrip << "\n"
+              << "     current limit:        \t" << _channelEventStatus.Bit.EventCurrentLimit << "\n"
+              << "     voltage limit:        \t" << _channelEventStatus.Bit.EventVoltageLimit << "\n"
+              << "     emergency:            \t" << _channelEventStatus.Bit.EventEmergency
+              << std::endl;
 }
 
 void hvChannel::printChannelStatus(){
@@ -388,19 +388,19 @@ void hvChannel::printChannelStatus(){
 
     std::cout << "Channel " << _channelName << " # " << _channelNumber << std::endl;;
     std::cout << "Current status of Channel Status bits:\n"
-	      << "    input error:         	\t" << _channelStatus.Bit.InputError << "\n"
-	      << "    is on:           	\t" << _channelStatus.Bit.isOn << "\n"
-	      << "    is ramping:      	\t" << _channelStatus.Bit.isRamping << "\n"
-	      << "    controlled by voltage:\t" << _channelStatus.Bit.ControlledByVoltage << "\n"
-	      << "    controlled by current:\t" << _channelStatus.Bit.ControlledByCurrent << "\n"
-	      << "    current bounds:       \t" << _channelStatus.Bit.CurrentBounds << "\n"
-	      << "    voltage bounds:       \t" << _channelStatus.Bit.VoltageBounds << "\n"
-	      << "    external inhibit:     \t" << _channelStatus.Bit.ExternalInhibit << "\n"
-	      << "    current tripped:      \t" << _channelStatus.Bit.CurrentTrip << "\n"
-	      << "    current limit:        \t" << _channelStatus.Bit.CurrentLimit << "\n"
-	      << "    voltage limit:        \t" << _channelStatus.Bit.VoltageLimit << "\n"
-	      << "    is in emergency:      \t" << _channelStatus.Bit.isEmergency
-	      << std::endl;
+              << "    input error:              \t" << _channelStatus.Bit.InputError << "\n"
+              << "    is on:            \t" << _channelStatus.Bit.isOn << "\n"
+              << "    is ramping:       \t" << _channelStatus.Bit.isRamping << "\n"
+              << "    controlled by voltage:\t" << _channelStatus.Bit.ControlledByVoltage << "\n"
+              << "    controlled by current:\t" << _channelStatus.Bit.ControlledByCurrent << "\n"
+              << "    current bounds:       \t" << _channelStatus.Bit.CurrentBounds << "\n"
+              << "    voltage bounds:       \t" << _channelStatus.Bit.VoltageBounds << "\n"
+              << "    external inhibit:     \t" << _channelStatus.Bit.ExternalInhibit << "\n"
+              << "    current tripped:      \t" << _channelStatus.Bit.CurrentTrip << "\n"
+              << "    current limit:        \t" << _channelStatus.Bit.CurrentLimit << "\n"
+              << "    voltage limit:        \t" << _channelStatus.Bit.VoltageLimit << "\n"
+              << "    is in emergency:      \t" << _channelStatus.Bit.isEmergency
+              << std::endl;
 }
 
 void hvChannel::printChannel(){
@@ -429,46 +429,46 @@ bool hvChannel::setChannelEventMask(std::set<std::string> eventMaskSet){
 
     // TODO: make sure this works! Doesn't seem like it!!!
 
-    if( eventMaskSet.find("InputError") 	      != maskSetEnd ){
-	channelEventMask.Bit.MaskEventInputError          = 1;
+    if( eventMaskSet.find("InputError")               != maskSetEnd ){
+        channelEventMask.Bit.MaskEventInputError          = 1;
     }
-    if( eventMaskSet.find("OnToOff") 	      != maskSetEnd ){
-	channelEventMask.Bit.MaskEventOnToOff 		   = 1;	
+    if( eventMaskSet.find("OnToOff")          != maskSetEnd ){
+        channelEventMask.Bit.MaskEventOnToOff              = 1; 
     }
-    if( eventMaskSet.find("EndOfRamping") 	      != maskSetEnd ){
-	std::cout << "EOR" << std::endl;
-	channelEventMask.Bit.MaskEventEndOfRamping	   = 1;	
+    if( eventMaskSet.find("EndOfRamping")             != maskSetEnd ){
+        std::cout << "EOR" << std::endl;
+        channelEventMask.Bit.MaskEventEndOfRamping         = 1; 
     }
-    if( eventMaskSet.find("Emergency") 	      != maskSetEnd ){
-	std::cout << "EMERG" << std::endl;
-	channelEventMask.Bit.MaskEventEmergency 	   = 1;	
+    if( eventMaskSet.find("Emergency")        != maskSetEnd ){
+        std::cout << "EMERG" << std::endl;
+        channelEventMask.Bit.MaskEventEmergency            = 1; 
     }
     if( eventMaskSet.find("ControlledByCurrent") != maskSetEnd ){
-	channelEventMask.Bit.MaskEventControlledByVoltage  = 1;	
+        channelEventMask.Bit.MaskEventControlledByVoltage  = 1; 
     }
     if( eventMaskSet.find("ControlledByVoltage") != maskSetEnd ){
-	channelEventMask.Bit.MaskEventControlledByCurrent  = 1;	
+        channelEventMask.Bit.MaskEventControlledByCurrent  = 1; 
     }
     if( eventMaskSet.find("CurrentBounds")       != maskSetEnd ){
-	channelEventMask.Bit.MaskEventCurrentBounds 	   = 1;	
+        channelEventMask.Bit.MaskEventCurrentBounds        = 1; 
     }
     if( eventMaskSet.find("VoltageBounds")       != maskSetEnd ){
-	channelEventMask.Bit.MaskEventVoltageBounds	   = 1;	
+        channelEventMask.Bit.MaskEventVoltageBounds        = 1; 
     }
     if( eventMaskSet.find("ExternalInhibit")     != maskSetEnd ){
-	channelEventMask.Bit.MaskEventExternalInhibit	   = 1;	
+        channelEventMask.Bit.MaskEventExternalInhibit      = 1; 
     }
-    if( eventMaskSet.find("CurrentTrip") 	      != maskSetEnd ){
-	std::cout << "CurTrip" << std::endl;
-	channelEventMask.Bit.MaskEventCurrentTrip	   = 1;	
+    if( eventMaskSet.find("CurrentTrip")              != maskSetEnd ){
+        std::cout << "CurTrip" << std::endl;
+        channelEventMask.Bit.MaskEventCurrentTrip          = 1; 
     }
-    if( eventMaskSet.find("CurrentLimit") 	      != maskSetEnd ){
-	std::cout << "CurLim" << std::endl;
-	channelEventMask.Bit.MaskEventCurrentLimit	   = 1;	
+    if( eventMaskSet.find("CurrentLimit")             != maskSetEnd ){
+        std::cout << "CurLim" << std::endl;
+        channelEventMask.Bit.MaskEventCurrentLimit         = 1; 
     }
-    if( eventMaskSet.find("VoltageLimit") 	      != maskSetEnd ){
-	std::cout << "VolLim" << std::endl;
-	channelEventMask.Bit.MaskEventVoltageLimit 	   = 1;	
+    if( eventMaskSet.find("VoltageLimit")             != maskSetEnd ){
+        std::cout << "VolLim" << std::endl;
+        channelEventMask.Bit.MaskEventVoltageLimit         = 1; 
     }
 
     // now we have filled channelEventMask with all bits given in 
@@ -478,21 +478,21 @@ bool hvChannel::setChannelEventMask(std::set<std::string> eventMaskSet){
     bool good;
     int timeout = 1000;
     while( (timeout > 0) &&
-	   (_channelEventMask.Word != channelEventMask.Word) ){
-	_hvModule->SetChannelEventMask(_channelNumber, channelEventMask.Word);
-	// wait default time and...
-	sleepChannel();
-	// .. read current channel event mask by updating channel
-	updateChannel();
-	timeout--;
+           (_channelEventMask.Word != channelEventMask.Word) ){
+        _hvModule->SetChannelEventMask(_channelNumber, channelEventMask.Word);
+        // wait default time and...
+        sleepChannel();
+        // .. read current channel event mask by updating channel
+        updateChannel();
+        timeout--;
     }
     if(timeout < 1){
-	std::cout << "TIMEOUT: could not set channel event mask" << std::endl;
-	good = false;
+        std::cout << "TIMEOUT: could not set channel event mask" << std::endl;
+        good = false;
     }
     else{
-	std::cout << "timeout in setChannelEventMask " << timeout << std::endl;
-	good = true;
+        std::cout << "timeout in setChannelEventMask " << timeout << std::endl;
+        good = true;
     }
 
     return good;
@@ -528,19 +528,19 @@ bool hvChannel::clearChannelEventStatus(bool forceEmpty){
     updateChannel();
     // now check whether channel status is non zero (and forceEmpty is not set)
     if( (forceEmpty == false) &&
-	(_channelStatus.Word != 0) ){
-	// output that channel status non zero, so cannot clear all event status
-	// bits
-	std::cout << "Channel status is non-zero. Cannot reset every event status bit.\n"
-		  << "Will clear all non set event bits for which channel status is zero."
-		  << std::endl;
-	emptyChannelEventStatus.Word = _channelStatus.Word;
-	// not all event bits correspond to channel status exactly. i.e., we can reset
-	// the EndOfRamping and OnToOff bits, even if (corresponding bit->) channel is ramping
-	// and channel is on. Thus, set these two bits to zero in our event status, which we
-	// want to set
-	emptyChannelEventStatus.Bit.EventEndOfRamping = 0;
-	emptyChannelEventStatus.Bit.EventOnToOff      = 0;
+        (_channelStatus.Word != 0) ){
+        // output that channel status non zero, so cannot clear all event status
+        // bits
+        std::cout << "Channel status is non-zero. Cannot reset every event status bit.\n"
+                  << "Will clear all non set event bits for which channel status is zero."
+                  << std::endl;
+        emptyChannelEventStatus.Word = _channelStatus.Word;
+        // not all event bits correspond to channel status exactly. i.e., we can reset
+        // the EndOfRamping and OnToOff bits, even if (corresponding bit->) channel is ramping
+        // and channel is on. Thus, set these two bits to zero in our event status, which we
+        // want to set
+        emptyChannelEventStatus.Bit.EventEndOfRamping = 0;
+        emptyChannelEventStatus.Bit.EventOnToOff      = 0;
     }
 
     // debug output to see if correct bits are set in case channel status non zero
@@ -549,35 +549,35 @@ bool hvChannel::clearChannelEventStatus(bool forceEmpty){
 
     
     while( (timeout > 0) &&
-	   (_channelEventStatus.Word != emptyChannelEventStatus.Word) ){
-	// clear channel event status. In case channel status bits are set, the
-	// resulting _channelEventStatus should be correct
-	_hvModule->ClearChannelEventStatus(_channelNumber);
-	// sleep and update channel
-	sleepChannel();
-	updateChannel();
-	timeout--;
+           (_channelEventStatus.Word != emptyChannelEventStatus.Word) ){
+        // clear channel event status. In case channel status bits are set, the
+        // resulting _channelEventStatus should be correct
+        _hvModule->ClearChannelEventStatus(_channelNumber);
+        // sleep and update channel
+        sleepChannel();
+        updateChannel();
+        timeout--;
     }
     if( timeout < 1 ){
-	std::cout << "TIMEOUT: could not reset channel status!\n"
-		  << "Do you wish to print channel status? (y/N)"
-		  << std::endl;
-	std::string input;
-	std::set<std::string> allowedStrings = {"y", "Y", "n", "N"};
-	input = getUserInputNonNumericalDefault("> ", &allowedStrings);
-	if (input == "quit") good = false;
-	else if( (input == "y") || 
-		 (input == "Y") ){
-	    printChannelEventStatus();
-	}
-	else{
-	    good = false;
-	}
+        std::cout << "TIMEOUT: could not reset channel status!\n"
+                  << "Do you wish to print channel status? (y/N)"
+                  << std::endl;
+        std::string input;
+        std::set<std::string> allowedStrings = {"y", "Y", "n", "N"};
+        input = getUserInputNonNumericalDefault("> ", &allowedStrings);
+        if (input == "quit") good = false;
+        else if( (input == "y") || 
+                 (input == "Y") ){
+            printChannelEventStatus();
+        }
+        else{
+            good = false;
+        }
     }
     else{
-	// in this case all went fine and we successfully reset channel
-	std::cout << "timeout in clearChannelEventStatus " << timeout << std::endl;
-	good = true;
+        // in this case all went fine and we successfully reset channel
+        std::cout << "timeout in clearChannelEventStatus " << timeout << std::endl;
+        good = true;
     }
     return good;
 }
@@ -589,10 +589,10 @@ bool hvChannel::switchOnOff(){
     bool good = false;
 
     if(_isOn == true){
-	good = turnOff();
+        good = turnOff();
     }
     else{
-	good = turnOn();
+        good = turnOn();
     }
 
     return good;
@@ -607,21 +607,21 @@ bool hvChannel::turnOn(){
     // be already on
     updateChannel();
     while( (timeout > 0) &&
-	   (_isOn == false) ){
-	// set channel on
-	_hvModule->SetChannelOn(_channelNumber);
-	// sleep
-	sleepChannel();
-	// update channel (updates _isOn)
-	updateChannel();
-	timeout--;
+           (_isOn == false) ){
+        // set channel on
+        _hvModule->SetChannelOn(_channelNumber);
+        // sleep
+        sleepChannel();
+        // update channel (updates _isOn)
+        updateChannel();
+        timeout--;
     }
     if (timeout < 1){
-	std::cout << "TIMEOUT: could not turn on channel! Check channel event status!"
-		  << std::endl;
-	// TODO: include flag to print event status in case of timeout to understand
-	// what's going on
-	// printEventStatus();
+        std::cout << "TIMEOUT: could not turn on channel! Check channel event status!"
+                  << std::endl;
+        // TODO: include flag to print event status in case of timeout to understand
+        // what's going on
+        // printEventStatus();
     }
     std::cout << "timeout in turnOn " << timeout << std::endl;
     return _isOn;
@@ -633,21 +633,21 @@ bool hvChannel::turnOff(){
     // in this case turn on channel
     int timeout = 1000;
     while( (timeout > 0) &&
-	   (_isOn == true) ){
-	// set channel on
-	_hvModule->SetChannelOff(_channelNumber);
-	// sleep
-	sleepChannel();
-	// update channel (updates _isOn)
-	updateChannel();
-	timeout--;
+           (_isOn == true) ){
+        // set channel on
+        _hvModule->SetChannelOff(_channelNumber);
+        // sleep
+        sleepChannel();
+        // update channel (updates _isOn)
+        updateChannel();
+        timeout--;
     }
     if (timeout < 1){
-	std::cout << "TIMEOUT: could not turn on channel! Check channel event status!"
-		  << std::endl;
-	// TODO: include flag to print event status in case of timeout to understand
-	// what's going on
-	printChannelEventStatus();
+        std::cout << "TIMEOUT: could not turn on channel! Check channel event status!"
+                  << std::endl;
+        // TODO: include flag to print event status in case of timeout to understand
+        // what's going on
+        printChannelEventStatus();
     }
     
     // return the inverse of _isOn, since we want to return true, if the channel
@@ -690,21 +690,21 @@ bool hvChannel::finishedRampingDown(){
     
     bool finishedRampingDown = false;
     if( (_isOn == false) &&
-	(_isRamping == true) ){
-	finishedRampingDown = false;
+        (_isRamping == true) ){
+        finishedRampingDown = false;
     }
     else{
-	finishedRampingDown = true;
+        finishedRampingDown = true;
     }
     // now try to force the channel event status to zero. 
     // clearChannelEventStatus(true);
     // only once the channel event status is actually zero, can we
     // say the ramping down finished
     // if (_channelEventStatus.Word == 0){
-    // 	finishedRampingDown = true;
+    //  finishedRampingDown = true;
     // }
     // else{
-    // 	finishedRampingDown = false;
+    //  finishedRampingDown = false;
     // }
 
     return finishedRampingDown;
@@ -723,11 +723,11 @@ bool hvChannel::voltageInBounds(){
 
     bool good = false;
     if( (_voltageMeasured > voltageMin) &&
-	(_voltageMeasured < voltageMax) ){
-	good = true;
+        (_voltageMeasured < voltageMax) ){
+        good = true;
     }
     else{
-	good = false;
+        good = false;
     }
 
     return good;
@@ -739,10 +739,10 @@ bool hvChannel::channelStatusNonZero(){
     updateChannel();
     bool active = false;
     if(_channelStatus.Word != 0){
-	active = true;
+        active = true;
     }
     else{
-	active = false;
+        active = false;
     }
     return active;
 }
@@ -768,7 +768,7 @@ bool hvChannel::onVoltageControlledRamped(bool printFlag){
     good *= voltageInBounds();
 
     if (printFlag == true){
-	printVoltageAndCurrentMeasured();
+        printVoltageAndCurrentMeasured();
     }
 
     return good;
