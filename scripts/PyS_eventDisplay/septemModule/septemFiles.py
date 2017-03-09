@@ -20,7 +20,7 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
         # in case we only want the header, give the sizehint equal to 1
         # for very large files, not the whole file will be read, speeding up the
         # process
-        f = open(filepath, 'r').readlines(sizehint = 1)
+        f = open(filepath, 'r').readlines(1)
     else:
         # else read whole file (until EOF)
         f = open(filepath, 'r').readlines()
@@ -170,7 +170,7 @@ def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcF
     #                see the first comments below)
     # nFiles:        the total number of events, which exist. This has to be given,
     #                because if we only create the filename for FADC files, we need to
-    #                now the total number (which we then cannot deduce from the number
+    #                know the total number (which we then cannot deduce from the number
     #                of elements in the set)
     # fadcFlag:      controls whether we create an event filename or an FADC filename
 
@@ -193,21 +193,24 @@ def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcF
     else:
         # if it's not in set, return None
         return None
-            
     
 def create_occupancy_filename(filepath, iBatch):
     # this function creates a correct filename for an occupancy plot
-    name = ("out/occupancy_batch_%i_" % iBatch) + filepath.split('/')[-2]
-    return name
+    folder_name = os.path.basename(os.path.dirname(filepath))
+    name = ("occupancy_batch_%s_" % str(iBatch).zfill(2)) + folder_name
+    out_path = os.path.join("out/", name)
+    return out_path
 
 def create_pickle_filename(filename):
-    pickle_filename = "out/cPickle_" + filename + ".dat"
+    foldername = os.path.dirname(filename)
+    basename   = os.path.basename(filename)
+    new_fname  = "cPickle_" + basename + ".dat"
+    pickle_filename = os.path.join(foldername, new_fname)
     return pickle_filename
 
 def dump_occupancy_data(filename, data, header_text):
     # this function cPickles the data needed for an occupancy plot and 
     # dumps it
-    filename = filename.lstrip("out/")
     pickle_filename = create_pickle_filename(filename)
     data_dump = open(pickle_filename, 'wb')
     
@@ -220,8 +223,7 @@ def dump_occupancy_data(filename, data, header_text):
 
 def load_occupancy_dump(filename):
     # this function loads a data dump created by dump_occupancy_data()
-    pickle_filename = create_pickle_filename(filename)
-    data_dump = open(pickle_filename, 'r')
+    data_dump = open(filename, 'r')
     data_dict = cPickle.load(data_dump)
     data_dump.close()
     
@@ -232,9 +234,11 @@ def load_occupancy_dump(filename):
 
 def check_occupancy_dump_exist(filename):
     # checks whether occupancy dump exists
+    basename = os.path.basename(filename)
+
     outfolder = os.listdir('out/')
     
-    if filename in outfolder:
+    if basename in outfolder:
         return True
     else:
         return False

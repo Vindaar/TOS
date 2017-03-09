@@ -12,7 +12,7 @@ import time
 from septemModule.septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
 from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump
 from septemModule.septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
-from septemModule.septemMisc import add_line_to_header
+from septemModule.septemMisc import add_line_to_header, calc_length_of_run
 
 import multiprocessing as mp
 import collections
@@ -109,6 +109,9 @@ class WorkOnFile:
         #     # turn to true if only one axis object in list
         #     self.single_chip_flag = True
         self.ignore_full_frames = args_dict["ignore_full_frames"]
+
+        self.batches_dict = { "nbatches"     : args_dict["nbatches"],
+                              "batches_flag" : args_dict["batches_flag"] }
 
         self.fadcPlot       = fadcPlot
         self.fadcPlotLine   = self.fadcPlot.plot([], [], color = 'blue')
@@ -265,7 +268,7 @@ class WorkOnFile:
         elif c == 'o':
             # if o is typed, we create an occupancy plot of the whole run
             print 'creating occupancy plot...'
-            self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames, nbatches = 24)
+            self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames, batches_dict = self.batches_dict)
         elif c == 's':
             # if s is typed, we save the current figure
             print 'saving figure...'
@@ -420,10 +423,22 @@ class WorkOnFile:
         self.work_on_file(-1)
 
 
-    def create_occupancy_plot(self, ignore_full_frames = False, nbatches = 1):
+    def create_occupancy_plot(self, 
+                              batches_dict,
+                              ignore_full_frames = False):                              
         # this function checks whether a dumped occupancy plot can be found, 
         # if so this one is plotted, else create_occupancy_data is called
 
+        batches_flag = batches_dict["batches_flag"]
+        nbatches     = batches_dict["nbatches"]
+
+        if batches_flag is True and nbatches is None:
+            # in this case calculate nbatches to ~1 batch per hour
+            nbatches = calc_length_of_run(self.filepath, self.ns.eventSet) 
+            print('Calculated to use %i batches for occupancy plot.' % nbatches)
+        elif batches_flag is False:
+            # set batches to 1
+            nbatches = 1
         
         for i in xrange(nbatches):
             # get filename for batch
@@ -432,20 +447,26 @@ class WorkOnFile:
             
             file_exists = check_occupancy_dump_exist(data_dump_filename)
             if file_exists is True:
+                print('%s file exists, loading data...' % data_dump_filename)
                 # now load dump and plot
                 chip_arrays, header_text = load_occupancy_dump(data_dump_filename)
-                plot_occupancy(occupancy_filename, 
-                               header_text,
-                               self.septem, 
-                               self.fig, 
-                               self.chip_subplots, 
-                               self.im_list,
-                               chip_arrays,
-                               self.cb)
             else:
-                self.create_occupancy_data(ignore_full_frames, nbatches)
+                print('No data dump found for file %s, reading data...' % data_dump_filename)
+                chip_arrays, header_text = self.create_occupancy_data_batch(ignore_full_frames,
+                                                                            i,
+                                                                            nbatches)
+            plot_occupancy(occupancy_filename, 
+                           header_text,
+                           self.septem, 
+                           self.fig, 
+                           self.chip_subplots, 
+                           self.im_list,
+                           chip_arrays,
+                           self.cb)            
+                
+                
 
-    def create_occupancy_data(self, ignore_full_frames, nbatches):
+    def create_occupancy_data_batch(self, ignore_full_frames, iter_batch, nbatches):
         # create an occupancy plot. count number of times each pixel was hit during the 
         # whole run
 
@@ -459,9 +480,9 @@ class WorkOnFile:
         #                           the occupancy creation, which have more than 4096 
         #                           active pixels. In that case data is lost (only 4096)
         #                           pixels fit in zero suppressed readout.
-        # int nbatches            : this integer determines whether and if into how many
-        #                           batches we split the data and thus create nbatches many
-        #                           occupancy plots
+        # int iter_batch          : this integer determines the batch we're going to calculate
+        #                           in this function call
+        # int nbatches            : total number of batches for call of create_occupancy_plot
 
         # first create the header text box for the occupancy plot
         if len(self.ns.eventSet) > 0:
@@ -486,6 +507,9 @@ class WorkOnFile:
         header_text = add_line_to_header(header_text, 
                                          "n_batches",
                                          nbatches)
+        header_text = add_line_to_header(header_text, 
+                                         "iter_batch",
+                                         iter_batch)
 
         if nbatches > 1:
             # in this case we save all plots
@@ -503,11 +527,16 @@ class WorkOnFile:
         # create a list of numpy arrays. one array for each occupancy plot of each chip
         chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
 
-        # counter for batches
-        iBatch = 0
+        # calculate starting point for loop
+        nStart = iter_batch * nEventsPerBatch
 
         # we run over all files of the event number set, i.e. all files of run
         for eventNumber in eventNumbers:
+            if eventNumber < nStart:
+                # continue if not yet reached start of dataset
+                continue
+            elif eventNumber == nStart:
+                print("starting batch #%i at event #%i" % (iter_batch, nStart))
             # first create the filename
             filename = create_filename_from_event_number(self.ns.eventSet,
                                                          eventNumber,
@@ -535,32 +564,19 @@ class WorkOnFile:
 
             # now check whether we plot
             if (eventNumber == max(eventNumbers) or 
-                eventNumber % nEventsPerBatch == 0 and 
+                eventNumber == (iter_batch + 1) * nEventsPerBatch - 1 and 
                 eventNumber > 0):
                 # now plot the occupancy of the thus generated data
                 # now set the file we're going to plot as the
                 # current file (to save the figure, if wanted)
-                iBatch += 1
-                self.current_filename = create_occupancy_filename(self.filepath, iBatch)
+                self.current_filename = create_occupancy_filename(self.filepath, iter_batch)
 
-                # add batch number to header_text
-                header_current = add_line_to_header(header_text,
-                                                    "i_batch",
-                                                    iBatch)
-        
                 # before the plot, dump the file to a cPickle
-                dump_occupancy_data(self.current_filename, chip_arrays, header_current)
+                dump_occupancy_data(self.current_filename, chip_arrays, header_text)
 
-                plot_occupancy(self.current_filename, 
-                               header_current,
-                               self.septem, 
-                               self.fig, 
-                               self.chip_subplots, 
-                               self.im_list,
-                               chip_arrays,
-                               self.cb)
+                print('finished batch #%i at event #%i' % (iter_batch, eventNumber))
 
-
+                return chip_arrays, header_text
 
 
 
@@ -757,6 +773,17 @@ def main(args):
             args_dict["ignore_full_frames"] = True
         else:
             args_dict["ignore_full_frames"] = False
+        if "--batches" in args:
+            try:
+                ind = args.index("--batches")
+                args_dict["nbatches"] = int(args[ind + 1])
+                args_dict["batches_flag"] = True
+            except IndexError:
+                args_dict["nbatches"] = None
+                args_dict["batches_flag"] = True
+        else:
+            args_dict["batches_flag"] = False
+
                 
     else:
         print 'No argument given. Please give a folder from which to read files'
