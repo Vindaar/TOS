@@ -10,6 +10,13 @@ def add_line_to_header(header, str_to_add, value):
     header += string
     return header
 
+def get_TOS_date_syntax():
+    # returns the syntax used in TOS for all dates (incl time)
+    # as a string, which can be used for python's datetime 
+    # strptime function
+    return '%Y-%m-%d.%H:%M:%S'
+
+
 def calc_length_of_run(run_folder, eventSet):
     """
        This function calculates the total length of a run based on the
@@ -28,7 +35,7 @@ def calc_length_of_run(run_folder, eventSet):
     evHeaderFirst, chpHeadersFirst = read_zero_suppressed_data_file(first, True)
     evHeaderLast, chpHeadersLast   = read_zero_suppressed_data_file(last, True)
 
-    date_syntax = '%Y-%m-%d.%H:%M:%S'
+    date_syntax = get_TOS_date_syntax()
     dateFirst = datetime.strptime(evHeaderFirst.attr["dateTime"], date_syntax)
     dateLast  = datetime.strptime(evHeaderLast.attr["dateTime"], date_syntax)
 
@@ -37,5 +44,10 @@ def calc_length_of_run(run_folder, eventSet):
 
     return int(hours)
     
-    
-    
+def get_iter_batch_from_header_text(header_text):
+    # this function returns the iter_batch number from a given
+    # header text
+    header_els = header_text.split('\n')
+    batch_lst  = [b for b in header_els if "iter_batch" in b]
+    batch_num  = int(batch_lst[0].split(':')[-1])
+    return batch_num

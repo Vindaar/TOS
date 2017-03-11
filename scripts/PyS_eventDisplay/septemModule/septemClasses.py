@@ -466,3 +466,105 @@ class customColorbar:
     def update_normal(self, im_object):
         # this function wraps the colorbar update normal function
         return self.cb.update_normal(im_object)
+
+
+
+class Pixels:
+    """ simple pixel class, which stores information about
+        which chip a list of pixels corresponds to.
+        input is the chip number and a list of indices for the x 
+        position of the pixels and a corresponding list of y 
+        indices
+    """
+
+    def __init__(self, chip, pixels_x, pixels_y):
+        self.chip   = chip
+        assert len(pixels_x) == len(pixels_y)
+        self.npix = len(pixels_x)
+        self.pixels_x = pixels_x
+        self.pixels_y = pixels_y
+    def get_pixels_x(self):
+        return self.pixels_x
+    def get_pixels_y(self):
+        return self.pixels_y
+    def get_chip_num(self):
+        return self.chip
+    
+class pixelParser:
+    """ This class is used to parse pixels, pixel regions etc. to be used
+        to extract information of a given region on a frame. Used in script
+        to plot pixel hits per time vs time of occupancy data.
+        receives pixels (as tuples), regions [bottom, left, top, right], stores
+        internally and provides function to create a dictionary 
+     """
+
+    def __init__(self):
+        # on initialization two empty dictionaries are created,
+        # which will contain:
+        #     all pixels / pixel regions
+        #     hits for the corresopnding keys in pixels. 
+        #     hits itself contains a list of tuples for each key in pixels
+        #     where (batch_num, hits_per_time) is the syntax
+        self.pixels = {}
+        self.hits   = {}
+
+    def add_pixels(self, name, pixels, chip):
+        # add_pixels is a multi purpose function, which accepts either
+        # a single pixel tuple (x, y) as input, a list of tuples
+        # or a pixel region, given as a list [bottom, left, top, right]
+        
+        if type(pixels) is tuple:
+            # in this case simply add individual pixel
+            self.pixels[name] = Pixels(chip, [pixels[0]], [pixels[1]])
+        elif type(pixels) is list:
+            # in this case need to differentiate two cases:
+            if type(pixels[0]) is int:
+                # in this case the input is [bottom, left, top, right]
+                bottom, left, top, right = pixels
+                assert top > bottom
+                assert right > left
+                pixels_x = range(left, right)
+                pixels_y = range(bottom, top)
+                self.pixels[name] = Pixels(chip, pixels_x, pixels_y)
+            elif type(pixels[0]) is tuple:
+                # in this case we're handed a list of tuples
+                pixels_x, pixels_y = []
+                for pixel in pixels:
+                    pixels_x.append(pixel[0])
+                    pixels_y.append(pixel[1])
+                self.pixels[name] = Pixels(name, pixels_x, pixels_y)
+            else:
+                raise NotImplementedError("pixelParser: Non valid input type for list of pixels")
+        else:
+            raise NotImplementedError("pixelParser: Non valid input type for pixels.")
+
+        # now also add a corresponding key in hits containing an empty list
+        self.hits[name] = []
+        
+    def extract_hits(self, data, batch_num):
+        # given a data array, use the pixels dictionary to extract the hits for batch_num
+        for key in self.pixels:
+            key_batch = ("%s_%i" % (key, batch_num))
+            pixels_x = self.pixels[key].get_pixels_x()
+            pixels_y = self.pixels[key].get_pixels_y()
+            chip_num = self.pixels[key].get_chip_num()
+            pix_values = data[chip_num][pixels_x, pixels_y]
+            # calculate the effective hits per time based on the 
+            # mean value of the range of pixels, which we look at
+            pix_mean   = np.mean(pix_values)
+            tup = (batch_num, pix_mean)
+            self.hits[key].append( tup )
+            
+
+    def get_hits_per_time_for_name(self, key):
+        # given a name two lists are returned: all hits per time for a 
+        # pixel region and the corresponding time (that is batch_nums)
+        if key in self.pixels:
+            hits_tuples = self.hits[key]
+            # use splat operator to unzip list of tuples
+            times, hits = zip(*hits_tuples)
+            return times, hits
+        else:
+            print("Name %s not found in added pixels.")
+            return None, None
+                                
