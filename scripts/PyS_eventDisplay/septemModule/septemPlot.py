@@ -97,8 +97,14 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
             plots_to_hide.remove(chipNum - 1)
             im_list[chipNum - 1].set_visible(True)
 
+            
             if cb.flag == True:
-                im_list[chipNum - 1].set_clim(0, np.percentile(chip_data[:,2], cb.value))
+                # before we can set the colorscale, we need to get the array, which
+                # only contains nonzero elements
+                data_nonzero = chip_data[:,2][np.nonzero(chip_full_array)]
+                color_value  = np.percentile(data_nonzero, cb.value)
+
+                im_list[chipNum - 1].set_clim(0, color_value)
             else:
                 im_list[chipNum - 1].set_clim(0, cb.value)
 
@@ -268,7 +274,11 @@ def plot_occupancy(filename,
             im_list[i].set_visible(True)
 
             if cb.flag == True:
-                im_list[i].set_clim(0, np.percentile(chip_array, cb.value))
+                # before we can set the colorscale, we need to get the array, which
+                # only contains nonzero elements
+                data_nonzero = chip_data[:,2][np.nonzero(chip_array)]
+                color_value  = np.percentile(data_nonzero, cb.value)
+                im_list[i].set_clim(0, color_value)
             else:
                 im_list[i].set_clim(0, cb.value)
 
