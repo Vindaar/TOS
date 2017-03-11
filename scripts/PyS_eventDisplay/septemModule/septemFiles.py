@@ -197,7 +197,7 @@ def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcF
 def create_occupancy_filename(filepath, iBatch):
     # this function creates a correct filename for an occupancy plot
     folder_name = os.path.basename(os.path.dirname(filepath))
-    name = ("occupancy_batch_%s_" % str(iBatch).zfill(2)) + folder_name
+    name = ("occupancy_batch_%s_" % str(iBatch).zfill(3)) + folder_name
     out_path = os.path.join("out/", name)
     return out_path
 
