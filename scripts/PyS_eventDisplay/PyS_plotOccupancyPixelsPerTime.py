@@ -25,9 +25,14 @@ def main(args):
     # we need to parse these pixels
     pixel_parser = pixelParser()
     n1 = "fancy_pix"
-    n2 = "region_pix"
+    n2 = "list of pixs"
+    dy = "dyke3"
     pixel_parser.add_pixels(n1, (10, 100), chip = 1)
-    pixel_parser.add_pixels(n2, [0, 0, 255, 255], chip = 1)
+    pixel_parser.add_pixels(n2, [(10, 100), (32, 100), (13, 42)], chip = 1)
+    # add e.g. roughly top dyke region
+    pixel_parser.add_pixels(dy, [0, 0, 10, 255], chip = 3)
+    for i in xrange(5):
+        pixel_parser.add_pixels(i, [0, 0, 255, 255], chip = i)  
     
     for f in files:
         # first load dumped files
@@ -39,12 +44,20 @@ def main(args):
         
     
     times1, hits1 = pixel_parser.get_hits_per_time_for_name(n1)
-    times2, hits2 = pixel_parser.get_hits_per_time_for_name(n2)
+    times2, hits2 = pixel_parser.get_hits_per_time_for_name(dy)
+    times3, hits3 = pixel_parser.get_hits_per_time_for_name(n2)
 
-    plt.plot(times1, hits1, label=n1)
-    plt.plot(times2, hits2, label=n2)
+    for i in xrange(5):
+        t, h = pixel_parser.get_hits_per_time_for_name(i)
+        plt.plot(t, h, label=i, linestyle='', marker='.')
+
+    plt.plot(times1, hits1, 'r.', label=n1)
+    plt.plot(times3, hits3, 'midnightblue', marker='v', label=n2)
+    plt.plot(times2, hits2, color='sienna', marker='^', linestyle = '', label=dy)
+    plt.legend()
     
-    plt.savefig('test_pix_hits.pdf')
+    #plt.savefig('test_pix_hits.pdf')
+    plt.show()
     
 
 
