@@ -475,18 +475,25 @@ class Pixels:
         input is the chip number and a list of indices for the x 
         position of the pixels and a corresponding list of y 
         indices
+    int npix: number of pixels 
+    int chip: number of the chip these pixels are on
+    list pixels_x: list of coordinates for x
+    list pixels_y: list of coordinates for y
+    slices pixel_ind: numpy object containing fancy indexing
     """
 
-    def __init__(self, chip, pixels_x, pixels_y):
-        self.chip   = chip
-        assert len(pixels_x) == len(pixels_y)
-        self.npix = len(pixels_x)
-        self.pixels_x = pixels_x
-        self.pixels_y = pixels_y
+    def __init__(self, chip, pixels_x, pixels_y, pixel_ind):
+        self.chip      = chip
+        self.npix      = len(pixels_x)
+        self.pixels_x  = pixels_x
+        self.pixels_y  = pixels_y
+        self.pixel_ind = pixel_ind
     def get_pixels_x(self):
         return self.pixels_x
     def get_pixels_y(self):
         return self.pixels_y
+    def get_pixel_ind(self):
+        return self.pixel_ind
     def get_chip_num(self):
         return self.chip
     
@@ -515,7 +522,8 @@ class pixelParser:
         
         if type(pixels) is tuple:
             # in this case simply add individual pixel
-            self.pixels[name] = Pixels(chip, [pixels[0]], [pixels[1]])
+            pixel_ind = np.s_[pixels[1], pixels[0]]
+            self.pixels[name] = Pixels(chip, [pixels[0]], [pixels[1]], pixel_ind)
         elif type(pixels) is list:
             # in this case need to differentiate two cases:
             if type(pixels[0]) is int:
@@ -525,14 +533,19 @@ class pixelParser:
                 assert right > left
                 pixels_x = range(left, right)
                 pixels_y = range(bottom, top)
-                self.pixels[name] = Pixels(chip, pixels_x, pixels_y)
+                # here np.s_ is interesting, creating a tuple of slices to use
+                # to later access correct indices of chip data array
+                pixel_ind = np.s_[bottom:top, left:right]
+                self.pixels[name] = Pixels(chip, pixels_x, pixels_y, pixel_ind)
             elif type(pixels[0]) is tuple:
                 # in this case we're handed a list of tuples
-                pixels_x, pixels_y = []
+                pixels_x = []
+                pixels_y = []
                 for pixel in pixels:
                     pixels_x.append(pixel[0])
                     pixels_y.append(pixel[1])
-                self.pixels[name] = Pixels(name, pixels_x, pixels_y)
+                pixel_ind = np.s_[pixels_y, pixels_x]
+                self.pixels[name] = Pixels(chip, pixels_x, pixels_y, pixel_ind)
             else:
                 raise NotImplementedError("pixelParser: Non valid input type for list of pixels")
         else:
@@ -545,16 +558,14 @@ class pixelParser:
         # given a data array, use the pixels dictionary to extract the hits for batch_num
         for key in self.pixels:
             key_batch = ("%s_%i" % (key, batch_num))
-            pixels_x = self.pixels[key].get_pixels_x()
-            pixels_y = self.pixels[key].get_pixels_y()
-            chip_num = self.pixels[key].get_chip_num()
-            pix_values = data[chip_num][pixels_x, pixels_y]
+            pixel_ind = self.pixels[key].get_pixel_ind()
+            chip_num  = self.pixels[key].get_chip_num()
+            pix_values = data[chip_num][pixel_ind]
             # calculate the effective hits per time based on the 
             # mean value of the range of pixels, which we look at
             pix_mean   = np.mean(pix_values)
             tup = (batch_num, pix_mean)
             self.hits[key].append( tup )
-            
 
     def get_hits_per_time_for_name(self, key):
         # given a name two lists are returned: all hits per time for a 
