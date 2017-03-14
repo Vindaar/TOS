@@ -513,7 +513,11 @@ class pixelParser:
         #     hits itself contains a list of tuples for each key in pixels
         #     where (batch_num, hits_per_time) is the syntax
         self.pixels = {}
+        # hits stores the mean ToT of all pixels in the region (incl empty pixels
+        # per default, can be switched to exclude empty pixels)
         self.hits   = {}
+        # npix stores the number of active pixels in the region
+        self.npix   = {}
 
     def add_pixels(self, name, pixels, chip):
         # add_pixels is a multi purpose function, which accepts either
@@ -551,10 +555,11 @@ class pixelParser:
         else:
             raise NotImplementedError("pixelParser: Non valid input type for pixels.")
 
-        # now also add a corresponding key in hits containing an empty list
+        # now also add a corresponding key in hits and npix containing an empty list
         self.hits[name] = []
+        self.npix[name] = []
         
-    def extract_hits(self, data, batch_num):
+    def extract_hits(self, data, batch_num, mean_incl_empty = True):
         # given a data array, use the pixels dictionary to extract the hits for batch_num
         for key in self.pixels:
             key_batch = ("%s_%i" % (key, batch_num))
@@ -563,9 +568,20 @@ class pixelParser:
             pix_values = data[chip_num][pixel_ind]
             # calculate the effective hits per time based on the 
             # mean value of the range of pixels, which we look at
-            pix_mean   = np.mean(pix_values)
-            tup = (batch_num, pix_mean)
+            if mean_incl_empty == False:
+                # in this case drop empty pixels for calculation of mean
+                nonzero = pix_values[np.nonzero(pix_values)]
+                pix_mean   = np.mean(nonzero)
+            else:
+                # in this case include empty pixels for calc of mean
+                pix_mean   = np.mean(pix_values)
+
+            # now also calculate number of active pixels
+            nonzero = np.count_nonzero(pix_values)
+            tup      = (batch_num, pix_mean)
+            tup_npix = (batch_num, nonzero)
             self.hits[key].append( tup )
+            self.npix[key].append( tup_npix )
 
     def get_hits_per_time_for_name(self, key):
         # given a name two lists are returned: all hits per time for a 
@@ -579,3 +595,14 @@ class pixelParser:
             print("Name %s not found in added pixels.")
             return None, None
                                 
+    def get_npix_per_time_for_name(self, key):
+        # given a name two lists are returned: all npix per time for a 
+        # pixel region and the corresponding time (that is batch_nums)
+        if key in self.pixels:
+            npix_tuples = self.npix[key]
+            # use splat operator to unzip list of tuples
+            times, npix = zip(*npix_tuples)
+            return times, npix
+        else:
+            print("Name %s not found in added pixels.")
+            return None, None

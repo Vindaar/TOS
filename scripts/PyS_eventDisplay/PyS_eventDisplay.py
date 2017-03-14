@@ -783,6 +783,7 @@ def main(args):
                 args_dict["batches_flag"] = True
         else:
             args_dict["batches_flag"] = False
+            args_dict["nbatches"]     = None
 
                 
     else:

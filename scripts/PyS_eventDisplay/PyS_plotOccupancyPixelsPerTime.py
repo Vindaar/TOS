@@ -6,6 +6,8 @@
 import numpy as np
 import cPickle
 import os
+import matplotlib
+matplotlib.use('TKagg')
 from septemModule.septemClasses import pixelParser
 from septemModule.septemMisc import get_iter_batch_from_header_text
 from septemModule.septemFiles import load_occupancy_dump
@@ -18,6 +20,30 @@ def main(args):
     except IndexError:
         raise IndexError("Please give a folder containing cPickled occupancy batches as argument.")
 
+
+    args_dict = {}
+    if "--nchips" in args:
+        try:
+            ind = args.index("--nchips")
+            args_dict["nchips"] = int(args[ind + 1])
+        except IndexError:
+            print 'If you enter --nchips please enter a valid number of chips.'
+            args_dict["nchips"] = 1
+    else:
+        args_dict["nchips"] = 1
+    if "--log" in args:
+        args_dict["log"] = True
+    else:
+        args_dict["log"] = False
+    if "--npix" in args:
+        # if npix in args we simply get the total number of pixels,
+        # which were active in the given region and plot that, instead
+        # of the mean pixel values, which we do in the normal case
+        args_dict["npix"] = True
+    else:
+        args_dict["npix"] = False
+
+
     files = os.listdir(folder)
     files = [f for f in files if ".dat" in f]
 
@@ -27,12 +53,13 @@ def main(args):
     n1 = "fancy_pix"
     n2 = "list of pixs"
     dy = "dyke3"
-    pixel_parser.add_pixels(n1, (10, 100), chip = 1)
-    pixel_parser.add_pixels(n2, [(10, 100), (32, 100), (13, 42)], chip = 1)
+    #pixel_parser.add_pixels(n1, (10, 100), chip = 1)
+    #pixel_parser.add_pixels(n2, [(10, 100), (32, 100), (13, 42)], chip = 1)
     # add e.g. roughly top dyke region
-    pixel_parser.add_pixels(dy, [0, 0, 10, 255], chip = 3)
-    for i in xrange(5):
-        pixel_parser.add_pixels(i, [0, 0, 255, 255], chip = i)  
+    #pixel_parser.add_pixels(dy, [0, 0, 10, 255], chip = 3)
+    name_chips = 'Chip #%i'
+    for i in xrange(args_dict["nchips"]):
+        pixel_parser.add_pixels((name_chips % i), [0, 0, 255, 255], chip = i)  
     
     for f in files:
         # first load dumped files
@@ -43,20 +70,35 @@ def main(args):
         pixel_parser.extract_hits(data, batch_num)
         
     
-    times1, hits1 = pixel_parser.get_hits_per_time_for_name(n1)
-    times2, hits2 = pixel_parser.get_hits_per_time_for_name(dy)
-    times3, hits3 = pixel_parser.get_hits_per_time_for_name(n2)
+    # times1, hits1 = pixel_parser.get_hits_per_time_for_name(n1)
+    # times2, hits2 = pixel_parser.get_hits_per_time_for_name(dy)
+    # times3, hits3 = pixel_parser.get_hits_per_time_for_name(n2)
 
-    for i in xrange(5):
-        t, h = pixel_parser.get_hits_per_time_for_name(i)
-        plt.plot(t, h, label=i, linestyle='', marker='.')
+    for i in xrange(args_dict["nchips"]):
+        name = (name_chips % i)
+        if args_dict["npix"] is False:
+            t, h = pixel_parser.get_hits_per_time_for_name(name)
+            plt.plot(t, h, label=name, linestyle='', marker='x', markersize=4)
+        else:
+            t, np = pixel_parser.get_npix_per_time_for_name(name)
+            plt.plot(t, np, label=name, linestyle='', marker='x', markersize=4)
 
-    plt.plot(times1, hits1, 'r.', label=n1)
-    plt.plot(times3, hits3, 'midnightblue', marker='v', label=n2)
-    plt.plot(times2, hits2, color='sienna', marker='^', linestyle = '', label=dy)
+    # plt.plot(times1, hits1, 'r.', label=n1)
+    # plt.plot(times3, hits3, 'midnightblue', marker='v', label=n2)
+    # plt.plot(times2, hits2, color='sienna', marker='^', linestyle = '', label=dy)
     plt.legend()
-    
-    #plt.savefig('test_pix_hits.pdf')
+    plt.xlabel('Time / h')
+    if args_dict["log"]:
+        plt.yscale("log")
+    if args_dict["npix"] is False:
+        plt.ylabel('Mean hit rate / #')
+        plt.savefig('hitrate_per_time.pdf')
+    else:
+        plt.ylabel('Npix / #')
+        plt.savefig('npix_per_time.pdf')
+
+
+
     plt.show()
     
 
