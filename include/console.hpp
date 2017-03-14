@@ -124,6 +124,12 @@ private:
     // number of chips)
     void CommandSetChipIdOffset();
 
+
+    // functions to set and print the center chip variable, which decides for which chip
+    // to read out the FADC
+    void CommandSetCenterChip();
+    void CommandPrintCenterChip();
+
     /* ReadoutFpgaExtTriggerBit: Reads out the 16th(?) fpga bit - 1 if a trigger arrived at the 
      * extern-trigger-input as the shutter was open, 0 otherwise
      */

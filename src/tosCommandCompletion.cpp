@@ -136,7 +136,9 @@ const char *tosCommands[] = {"GeneralReset",
 			     "SetFadcPostLatencyPreTrig",
 			     "GetFadcPostLatencyPretrig()",
 			     "SetFadcSleepAcqTime",
-			     "SetFadcSleepTriggerTime"};
+			     "SetFadcSleepTriggerTime",
+			     "SetCenterChip",
+			     "PrintCenterChip"};
 
 
 char *TOS_Command_Generator(const char *text, int state){

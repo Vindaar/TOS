@@ -590,6 +590,12 @@ int Console::UserInterface(){
 	    input = getUserInputNumericalNoDefault(_prompt);
 	    _hvFadcManager->setSleepTriggerTime(std::stoi(input));
 	}
+	else if (ein.compare("SetCenterChip") == 0){
+	    CommandSetCenterChip();
+	}
+	else if (ein.compare("PrintCenterChip") == 0){
+	    CommandPrintCenterChip();
+	}
 
 	// ##################################################
 	// ################## HV_FADC related commands ######
@@ -3678,4 +3684,32 @@ void Console::CommandSetChannelValue(){
     if (inputValue == "quit") return;
     
     _hvFadcManager->SetChannelValue(inputKey, channelNumber, inputValue);
+}
+
+
+void Console::CommandSetCenterChip(){
+    // this function provides a user interface to set the center chip member
+    // variable of the PC object, which decides when the FADC is being read out
+    std::string input="";
+    const char *prompt = "Set the center chip (range: 1 to num_chips): ";
+    std::set<std::string> allowedChipNum;
+    // make sure only 1 to NumChips chips are typed in. More than 9 (due to illogical
+    // numbering of chips starting from 1 instead of 0) and we will get a
+    // segmentation fault in the timepix creator. Size of arrays for chips
+    // are hardcoded at the moment to allow for 9 chips.
+    for(int l = 1; l < _nbOfChips + 1; l++) allowedChipNum.insert(std::to_string(l));
+    
+    input = getUserInputNumericalNoDefault(prompt, &allowedChipNum);
+    if (input == "quit") return;
+    else{
+	// in this case set number to nChips
+	pc->SetCenterChip(std::stoi(input));
+    }
+}
+
+void Console::CommandPrintCenterChip(){
+    // this function can be used to print the center chip member variable of pc
+    int chip;
+    chip = pc->GetCenterChip();
+    std::cout << "Center chip variable is currently set to : " << chip << std::endl;
 }

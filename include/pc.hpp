@@ -135,7 +135,11 @@ public:
     std::string GetTOTCalibFileName(unsigned short chip);
     std::string GetTOACalibFileName(unsigned short chip);
     std::string GetMaskFileName(unsigned short chip);
-		
+
+    // function to change the center chip member variable
+    void SetCenterChip(int chip);
+    int GetCenterChip();
+    
 		
     void MakeBMP(int arr[256][256]);
     void MakeBMP(int **arr);

@@ -2964,3 +2964,15 @@ int PC::GetRunNumber(){
 
     return runNumber;
 }
+
+
+void PC::SetCenterChip(int chip){
+    // this function is used to set the center chip, the one which is connected
+    // to the FADC) and thus decides when the FADC is being read out
+    _center_chip = chip;
+}
+
+int PC::GetCenterChip(){
+    // this function returns the _center_chip member variable
+    return _center_chip;
+}
