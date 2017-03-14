@@ -101,7 +101,7 @@ def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
             if cb.flag == True:
                 # before we can set the colorscale, we need to get the array, which
                 # only contains nonzero elements
-                data_nonzero = chip_data[:,2][np.nonzero(chip_full_array)]
+                data_nonzero = chip_full_array[np.nonzero(chip_full_array)]
                 color_value  = np.percentile(data_nonzero, cb.value)
 
                 im_list[chipNum - 1].set_clim(0, color_value)
@@ -276,7 +276,7 @@ def plot_occupancy(filename,
             if cb.flag == True:
                 # before we can set the colorscale, we need to get the array, which
                 # only contains nonzero elements
-                data_nonzero = chip_data[:,2][np.nonzero(chip_array)]
+                data_nonzero = chip_array[np.nonzero(chip_array)]
                 color_value  = np.percentile(data_nonzero, cb.value)
                 im_list[i].set_clim(0, color_value)
             else:
