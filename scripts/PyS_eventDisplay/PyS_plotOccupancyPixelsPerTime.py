@@ -16,7 +16,8 @@ import matplotlib.pyplot as plt
 def main(args):
     # get all files in given folder
     try:
-        folder = args[0]
+        folders = [f for f in args if '-' not in f and '/' in f]
+        #folder = args[0]
     except IndexError:
         raise IndexError("Please give a folder containing cPickled occupancy batches as argument.")
 
@@ -44,9 +45,6 @@ def main(args):
         args_dict["npix"] = False
 
 
-    files = os.listdir(folder)
-    files = [f for f in files if ".dat" in f]
-
     # before we run over all files and extracat the correct pixel areas from each
     # we need to parse these pixels
     pixel_parser = pixelParser()
@@ -60,14 +58,28 @@ def main(args):
     name_chips = 'Chip #%i'
     for i in xrange(args_dict["nchips"]):
         pixel_parser.add_pixels((name_chips % i), [0, 0, 255, 255], chip = i)  
-    
-    for f in files:
-        # first load dumped files
-        path = os.path.join(folder, f)
-        data, header_text = load_occupancy_dump(path)
-        # from list of arrays (data) we need to extract hits
-        batch_num = get_iter_batch_from_header_text(header_text)
-        pixel_parser.extract_hits(data, batch_num)
+
+    # now we wish to run over all given folders (if we wish to append several folders to one
+    # batch)
+    batch_iter = 0
+    batch_lengths = []
+    for folder in folders:
+        batches = []
+        files = os.listdir(folder)
+        files = [f for f in files if ".dat" in f]
+        for f in files:
+            # first load dumped files
+            path = os.path.join(folder, f)
+            data, header_text = load_occupancy_dump(path)
+            # from list of arrays (data) we need to extract hits
+            batch_num = get_iter_batch_from_header_text(header_text)
+            # we add batch_iter to batch_num so that for several different runs,
+            # which came one after another, we can append these
+            pixel_parser.extract_hits(data, batch_num + batch_iter)
+            batches.append(int(batch_num + batch_iter))
+            if f == files[-1]:
+                batch_iter += max(batches)
+                batch_lengths.append(max(batches))
         
     
     # times1, hits1 = pixel_parser.get_hits_per_time_for_name(n1)
@@ -82,6 +94,13 @@ def main(args):
         else:
             t, np = pixel_parser.get_npix_per_time_for_name(name)
             plt.plot(t, np, label=name, linestyle='', marker='x', markersize=4)
+        if len(batch_lengths) > 1:
+            # in this case plot vertical lines, which show beginning and end of 
+            # different runs
+            tot_b = float(sorted(t)[-1])
+            for b in batch_lengths:
+                print('%i x pos to plot line %s %s %s' % (i, b, tot_b, b / tot_b))
+                plt.axvline(x = b, ymin = 0, ymax=1, linewidth = 2, color = 'k')
 
     # plt.plot(times1, hits1, 'r.', label=n1)
     # plt.plot(times3, hits3, 'midnightblue', marker='v', label=n2)
