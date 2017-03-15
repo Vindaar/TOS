@@ -23,7 +23,8 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     _loop_stop(false),
     _scint1_counter(0),
     _scint2_counter(0),
-    _hvModInitFlag(false)
+    _hvModInitFlag(false),
+    _hvFadcInitFlag(false)
 {
     // upon initialisation of hvFadcManager, we need to create the
     // vmemodule (HV) instance using the base Addresses
@@ -1455,6 +1456,8 @@ void hvFadcManager::SetFadcSettings(){
     // set the trigger threshold for all channels
     FADC_Functions->setTriggerThresholdRegisterAll( fadcTriggerThresholdRegisterAll );
     //F_PrintSettings();
+
+    _hvFadcInitFlag = true;
     
 }
 
@@ -1565,8 +1568,8 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
     // define flag which is used to return whether file was written
     bool good = false;
     
-    // only does anything, if hvFadcManager is active!
-    if (_hvModInitFlag == true){
+    // only does anything, if FADC is active!
+    if (_hvFadcInitFlag == true){
         
         // create output file stream
         std::ofstream outFile(filename);
@@ -1617,6 +1620,10 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
 
         //close output file
         outFile.close();
+    }
+    else{
+	std::cout << "FADC is not active. Call ActivateHFM and SetFadcSettings before starting readout."
+		  << std::endl;
     }
 
     return good;

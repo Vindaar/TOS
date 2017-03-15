@@ -526,7 +526,11 @@ private:
     // flags
     bool _createdFlag;
     bool _settingsReadFlag;
+    // Module Initialization flag is used to check whether whole HFM is up and running
+    // (FADC and HV)
     bool _hvModInitFlag;
+    // FADC Initialization flag is used to check whether only FADC is up and running
+    bool _hvFadcInitFlag;
     bool anodeGridGroupFlag;
     bool setKillEnable;
     bool monitorTripGroupFlag;
