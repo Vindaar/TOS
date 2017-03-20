@@ -53,6 +53,11 @@ The compile-time flags can be edited in `TOS.pro`.
 
 ## Documentation
 
+Install the dependencies required for the generation of th source documentation.
+```
+sudo apt-get install doxygen graphviz
+```
+
 You can generate the source documentation (doxygen) with
 ```
 make doc
