@@ -193,6 +193,16 @@ def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcF
     else:
         # if it's not in set, return None
         return None
+
+def get_event_number_from_filename(filename):
+    # this function is the inverse ov create_filename_from_event_number. It returns
+    # the event number, which is associated to the file filename
+    basename = os.path.basename(filename)
+    if '-fadc' not in basename:
+        num = basename.lstrip('data').rstrip('.txt')
+    else:
+        num = basename.lstrip('data').rstrip('.txt-fadc')
+    return int(num)
     
 def create_occupancy_filename(filepath, iBatch):
     # this function creates a correct filename for an occupancy plot
