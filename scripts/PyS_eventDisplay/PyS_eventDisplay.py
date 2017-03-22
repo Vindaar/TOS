@@ -12,7 +12,7 @@ import time
 from septemModule.septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
 from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump
 from septemModule.septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
-from septemModule.septemMisc import add_line_to_header, calc_length_of_run
+from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_run
 
 import multiprocessing as mp
 import collections
@@ -177,8 +177,9 @@ class WorkOnFile:
         if self.single_chip_flag == False:
             for i in xrange(8):
                 if i not in [6, 7]:
-                    # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the chips,
-                    # thus (0, 0) coordinate is at bottom left. default plots (0, 0) top left
+                    # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the 
+                    # chips, thus (0, 0) coordinate is at bottom left. default
+                    # plots (0, 0) top left
                     self.chip_subplots[i - 1].invert_yaxis()
                 else:
                     # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
@@ -191,6 +192,10 @@ class WorkOnFile:
             self.chip_subplots[6].invert_yaxis()
         else:
             self.chip_subplots[0].invert_yaxis()
+            
+
+        if args_dict["occupancy"] is True:
+            self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames, batches_dict = self.batches_dict)
     
     def connect(self):
         # before we connect the key press events, we check if refresh ran once
@@ -429,12 +434,18 @@ class WorkOnFile:
         # this function checks whether a dumped occupancy plot can be found, 
         # if so this one is plotted, else create_occupancy_data is called
 
+        # during the creation of the occupancy plots, we stop the refreshing
+        # of the file list, since it is unneccessary
+        lock.acquire()
+        self.ns.doRefresh = False
+        lock.release()
+
         batches_flag = batches_dict["batches_flag"]
         nbatches     = batches_dict["nbatches"]
 
         if batches_flag is True and nbatches is None:
             # in this case calculate nbatches to ~1 batch per hour
-            nbatches = calc_length_of_run(self.filepath, self.ns.eventSet) 
+            nbatches = get_batch_num_hours_for_run(self.filepath, self.ns.eventSet) 
             print('Calculated to use %i batches for occupancy plot.' % nbatches)
         elif batches_flag is False:
             # set batches to 1
@@ -463,6 +474,10 @@ class WorkOnFile:
                            self.im_list,
                            chip_arrays,
                            self.cb)            
+        # now we can activate the refreshing of the filelist again
+        lock.acquire()
+        self.ns.doRefresh = True
+        lock.release()
                 
                 
 
@@ -784,6 +799,10 @@ def main(args):
         else:
             args_dict["batches_flag"] = False
             args_dict["nbatches"]     = None
+        if "--occupancy" in args:
+            args_dict["occupancy"] = True
+        else:
+            args_dict["occupancy"] = False
 
                 
     else:
