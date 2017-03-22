@@ -16,11 +16,10 @@ def get_TOS_date_syntax():
     # strptime function
     return '%Y-%m-%d.%H:%M:%S'
 
-
-def calc_length_of_run(run_folder, eventSet):
-    """
-       This function calculates the total length of a run based on the
-       timestamps in the data files and returns the time rounded to hours.
+def get_batch_num_hours_for_run(run_folder, eventSet):
+    """ 
+       This function returns the number of batches of 1 hour length
+       for a given run. Calls calc_length_of_run internally
        string run_folder: a string containing the folder name
        set eventSet:      a set containing all events in the folder
     """
@@ -31,6 +30,17 @@ def calc_length_of_run(run_folder, eventSet):
     first = run_folder + create_filename_from_event_number(eventSet, eventsSorted[0], nfiles, False)
     last  = run_folder + create_filename_from_event_number(eventSet, eventsSorted[-1], nfiles, False)
     
+    nbatches = calc_length_of_run(first, last)
+
+    return nbatches
+
+def calc_length_of_run(first, last):
+    """
+       This function calculates the total length of a run based on the
+       timestamps in the data files and returns the time rounded to hours.
+       string first: filename of first event in run
+       string last:  filename of last event in run
+    """
     
     evHeaderFirst, chpHeadersFirst = read_zero_suppressed_data_file(first, True)
     evHeaderLast, chpHeadersLast   = read_zero_suppressed_data_file(last, True)
