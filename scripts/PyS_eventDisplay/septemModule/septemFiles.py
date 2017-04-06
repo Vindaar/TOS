@@ -8,14 +8,54 @@ from septemClasses import eventHeader, chipHeaderData
 import collections
 import cPickle
 
+def read_zsub_mp(co_ns, list_of_files, qRead):
+    """
+    this function is called from a worker process, which reads 
+    all files of the list of files and puts it into the queue qRead
+    """
+    # TODO: implement max cached batches 
+    
+    while co_ns.doRead is True:
+        for i, f in enumerate(list_of_files):
+            if i % 500 == 0:
+                print('Reader process: finished %i events.' % i)
+            if i % co_ns.batch_size == 0 and i == 0:
+                # start reading first batch, create empty data list
+                data = []
+            elif i % co_ns.batch_size == 0:
+                # in this case starting second batch
+                # put data into queue and create empty list
+                print('Reader process: finished %i events. Putting into queue.' % i)
+                qRead.put(data)
+                data = []
+            # append content of file to data list
+            data.append(open(f, 'r').readlines())
+
+        # after having finished reading all files of list_of_files
+        # put last data list into queue
+        qRead.put(data)
+        # set finishedReading to True
+        co_ns.finishedReading = True
+        co_ns.doRead = False
+        print('Reader process: finished reading all files')
+
+
+def read_multiple_zsup_data_files(list_of_files):
+    # function to be called by a worker thread, which simply reads
+    # a batch of files and returns a list of read data
+    # internally calls read_zero_suppressed_data_file
+    
+    data = []
+    for f in list_of_files:
+        data.append(read_zero_suppressed_data_file(f, False))
+
+    return data
+
 def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     # this function reads a single file, created by the septem board
     # with the zero suppressed readout
     # the optional flag header_only can be used to only read the header.
     # in this case the pix data array will be set to []
-    # the zero suppressed files are setup as follows:
-    # double hash ' ## ' indicates the file header (information about run and event)
-    # single hash ' # '  indicates the header for a single chip
     if header_only == True:
         # in case we only want the header, give the sizehint equal to 1
         # for very large files, not the whole file will be read, speeding up the
@@ -25,9 +65,18 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
         # else read whole file (until EOF)
         f = open(filepath, 'r').readlines()
 
+    data = work_on_read_data(f, filepath, header_only)
+    return data
+
+def work_on_read_data(data, filepath = None, header_only = False):
+    # the function which performs the splitting of the data
+    # read by read_zero_suppressed_data_file
+    # the zero suppressed files are setup as follows:
+    # double hash ' ## ' indicates the file header (information about run and event)
+    # single hash ' # '  indicates the header for a single chip
     evHeader  = eventHeader(filepath)
     chpHeaderList = []
-    for line in f:
+    for line in data:
         line = line.strip()
         if '##' in line:
             # in this case read the file header
@@ -253,3 +302,21 @@ def check_occupancy_dump_exist(filename):
     else:
         return False
 
+def create_list_of_files(nStart, nEnd, eventSet, filepath):
+    """
+    This function creates a list of files from start event nStart to end 
+    event nEnd using eventSet and prepending the filepath.
+    """
+    list_of_files = []
+    for event in eventSet:
+        if event < nStart:
+            continue
+        elif event >= nEnd:
+            break
+        filename = create_filename_from_event_number(eventSet,
+                                                     event,
+                                                     len(eventSet),
+                                                     fadcFlag = False)
+        list_of_files.append(os.path.join(filepath, filename))
+
+    return list_of_files

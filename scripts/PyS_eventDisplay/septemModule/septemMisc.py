@@ -1,7 +1,9 @@
 # functions not related to files, plotting or classes
-from septemFiles import read_zero_suppressed_data_file, create_filename_from_event_number
+from septemFiles import read_zero_suppressed_data_file, create_filename_from_event_number, work_on_read_data
+from septemClasses import eventHeader, chipHeaderData
 from datetime import datetime
 import numpy as np
+from time import sleep
 
 def add_line_to_header(header, str_to_add, value):
     # adds an additional line to a header of a plot
@@ -61,3 +63,81 @@ def get_iter_batch_from_header_text(header_text):
     batch_lst  = [b for b in header_els if "iter_batch" in b]
     batch_num  = int(batch_lst[0].split(':')[-1])
     return batch_num
+
+
+def get_occupancy_batch_header(eventSet, nfiles, filepath, ignore_full_frames, nbatches, iter_batch):
+    """
+    Function which returns a header for an occupancy batch. Prints arguments based on 
+    first file in 'filepath' folder
+    """
+    if len(eventSet) > 0:
+        # need to read one of the files to get the header. Choose first file, thus
+        filename     = create_filename_from_event_number(eventSet,
+                                                         0,
+                                                         nfiles,
+                                                         fadcFlag = False)
+        evHeader, chpHeaderList = read_zero_suppressed_data_file(filepath + filename)
+        header_text = evHeader.get_run_header_text()
+    else:
+        print 'filelist not filled yet or empty; returning.'
+        return
+    
+
+    header_text = add_line_to_header(header_text, 
+                                     "# events",
+                                     nfiles)
+    header_text = add_line_to_header(header_text, 
+                                     "ignore_full_frames",
+                                     ignore_full_frames)
+    header_text = add_line_to_header(header_text, 
+                                     "n_batches",
+                                     nbatches)
+    header_text = add_line_to_header(header_text, 
+                                     "iter_batch",
+                                     iter_batch)
+    
+    return header_text
+
+
+def fill_classes_from_file_data_mp(co_ns, qRead, qWork):
+    """
+    this multiprocessing function is used to create objects from septemClasses
+    and fill them with contents read from a separate thread using the
+    read_zsub_mp function
+
+    Namespace co_ns : a namespace containing the multiprocessing parameters
+    Queue qRead : the queue containing the data, which is read in separate thread
+    Queue qWork : the queue into which the output is put
+    """
+    
+    while co_ns.doWork is True:
+        if qRead.empty() is False:
+            print('Worker process: retrieving from queue...')
+            data  = qRead.get()
+            #ev_ch = [ work_on_read_data(el) for el in data ]
+            print('Worker process: data size %i' % len(data))
+            ev_ch = []
+            for i, el in enumerate(data):
+                if i % 100 == 0:
+                    print('Finshed working on %i files' % i)
+                ev_ch.append(work_on_read_data(el))
+            qWork.put(ev_ch)
+        elif qRead.empty() is True and co_ns.finishedReading is False:
+            # in this case sleep, because we're waiting for new elements in queue
+            print('Worker process: is sleeping... waiting for reader process')
+            sleep(co_ns.sleeping_time)
+        elif qRead.empty() is True and co_ns.finishedReading is True:
+            # perform a long sleep to make sure put was flushed into queue
+            # before stopping the thread.
+            print('Worker process: sleeping...')
+            sleep(co_ns.long_sleep)
+            if qRead.empty() is True:
+                print('Worker process: finished all work.')
+                co_ns.finishedWorking = True
+                co_ns.doWork = False
+            else:
+                # simply pass if Queue suddenly not empty again
+                print('Worker process: passing...')
+                a = 1
+                pass
+

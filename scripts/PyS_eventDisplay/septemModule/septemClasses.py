@@ -153,8 +153,18 @@ class eventHeader:
     def __init__(self, filepath):
         # initialize an empty dictionary for all our header elements
         self.attr = {}
-        self.runname  = filepath.split('/')[-2]
-        self.filename = filepath.split('/')[-1]
+        if filepath is not None:
+            try:
+                self.runname  = filepath.split('/')[-2]
+            except IndexError:
+                self.runname  = ''
+            self.filename = filepath.split('/')[-1]
+        else:
+            self.runname  = ''
+            self.filename = ''
+
+
+
     def set_attribute(self, el):
         # this function is called to set one of the attributes
         # input: el: string of complete line

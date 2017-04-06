@@ -9,15 +9,14 @@ import matplotlib.animation as animation
 from matplotlib.lines import Line2D
 import os
 import time
-from septemModule.septemClasses import chip, septem_row, septem, eventHeader, chipHeaderData, Fadc, customColorbar
-from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump
+from septemModule.septemClasses import chip, septem, customColorbar
+from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, read_zsub_mp, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump, create_list_of_files
 from septemModule.septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
-from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_run
+from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_run, get_occupancy_batch_header, fill_classes_from_file_data_mp
 
 import multiprocessing as mp
 import collections
 from multiprocessing.managers import BaseManager, Namespace, NamespaceProxy
-import time
     
 class myManager(BaseManager):
     pass
@@ -196,6 +195,9 @@ class WorkOnFile:
 
         if args_dict["occupancy"] is True:
             self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames, batches_dict = self.batches_dict)
+            import sys
+            sys.exit('Exiting after creation of occupancy plot.')
+        
     
     def connect(self):
         # before we connect the key press events, we check if refresh ran once
@@ -445,7 +447,8 @@ class WorkOnFile:
 
         if batches_flag is True and nbatches is None:
             # in this case calculate nbatches to ~1 batch per hour
-            nbatches = get_batch_num_hours_for_run(self.filepath, self.ns.eventSet) 
+            # NOTE: WARNING: HACK!!! Factor 6 to get 10 minute bins instead of 1h
+            nbatches = get_batch_num_hours_for_run(self.filepath, self.ns.eventSet)# * 6
             print('Calculated to use %i batches for occupancy plot.' % nbatches)
         elif batches_flag is False:
             # set batches to 1
@@ -463,9 +466,10 @@ class WorkOnFile:
                 chip_arrays, header_text = load_occupancy_dump(data_dump_filename)
             else:
                 print('No data dump found for file %s, reading data...' % data_dump_filename)
-                chip_arrays, header_text = self.create_occupancy_data_batch(ignore_full_frames,
-                                                                            i,
-                                                                            nbatches)
+                chip_arrays, header_text = self.create_occupancy_data_batch_mp(ignore_full_frames,
+                #chip_arrays, header_text = self.create_occupancy_data_batch(ignore_full_frames,
+                                                                               i,
+                                                                               nbatches)
             plot_occupancy(occupancy_filename, 
                            header_text,
                            self.septem, 
@@ -479,7 +483,139 @@ class WorkOnFile:
         self.ns.doRefresh = True
         lock.release()
                 
-                
+
+    def create_occupancy_data_batch_mp(self, ignore_full_frames, iter_batch, nbatches):
+        # multithreaded version of create_occupancy_data_batch
+        # see single threaded version for documentation
+
+        # first create the header text box for the occupancy plot
+        header_text = get_occupancy_batch_header(self.ns.eventSet, 
+                                                 self.ns.nfiles, 
+                                                 self.filepath, 
+                                                 ignore_full_frames,
+                                                 nbatches,
+                                                 iter_batch)
+
+        if nbatches > 1:
+            # in this case we save all plots
+            save_figures = True
+            # need sorted list for iteration
+            eventNumbers = sorted(list(self.ns.eventSet))
+            nEventsPerBatch = np.ceil(len(eventNumbers) / nbatches)
+        else:
+            # assign iterable object 'events' our normal eventSet
+            # in case of nbatches == 1, we don't care about the order in which
+            # we iterate over the batches
+            eventNumbers    = self.ns.eventSet
+            nEventsPerBatch = len(eventNumbers)
+
+        # calculate starting point
+        nStart = iter_batch * nEventsPerBatch
+        nEnd   = (iter_batch + 1) * nEventsPerBatch
+        # create list of files
+        list_of_files = create_list_of_files(nStart, nEnd, self.ns.eventSet, self.filepath)
+        print('List of files has entries: start: %i end: %i total: %i' % (nStart, nEnd, len(list_of_files)))
+        print('nEvents %i batches %i nEventsPerBatch %i' % (len(eventNumbers), nbatches, nEventsPerBatch))
+
+        # create a list of numpy arrays. one array for each occupancy plot of each chip
+        chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
+
+        # create namespace Create Occupancy_NameSpace
+        co_ns = mp.Manager().Namespace()
+
+        # doRead controls worker thread, which only reads files
+        co_ns.doRead = True
+        # finished reading will be set to True by the reader process, once it 
+        # has finished reading all files of list_of_files
+        co_ns.finishedReading = False
+        # do work controls worker thread, which creates septemClasses
+        # from doReads data
+        co_ns.doWork = True
+        # analogoue to finishedReading
+        co_ns.finishedWorking = False
+        # main thread will work on the data delivered by doWork
+        # batch size, which is read and put into queue
+        co_ns.batch_size  = 100
+        # max cached is the max number of cached batches, before a process will wait
+        co_ns.max_cached = 5
+        # sleeping time
+        co_ns.sleeping_time = 1
+        # long sleep time (before finishing threads, wait this long and check if queue
+        # still empty)
+        co_ns.long_sleep    = 5
+
+        qRead = mp.Queue()
+        qWork = mp.Queue()
+
+        pRead = mp.Process(target = read_zsub_mp, args = (co_ns, list_of_files, qRead) )
+        pWork = mp.Process(target = fill_classes_from_file_data_mp, args = (co_ns, qRead, qWork) )
+
+        pRead.start()
+        pWork.start()
+        
+        while co_ns.finishedReading is False or co_ns.finishedWorking is False or qWork.empty() is False:
+            # TODO: think about setting doRead and doWork from here based on finished bools?
+            # run over loop as long as there is still something to read and work on
+            # if co_ns.finishedReading is True:
+            #     # in this case stop reader process
+            #     co_ns.doRead = False
+            # if co_ns.finishedWorking is True:
+            #     # in this case stop worker process. 
+            #     # NOTE: in theory this should never happen before reader is
+            #     # finished! Due to while statement this should if statement
+            #     # should never be true
+            #     assert co_ns.finishedReading is False
+            #     co_ns.doWork = False
+
+            if qWork.empty() is False:
+                ev_ch_list = qWork.get()
+                for ev_ch in ev_ch_list:
+                    evHeader, chpHeaders = ev_ch
+                    # now go through each chip header and add data of frame
+                    # to chip_arrays
+                    for chpHeader in chpHeaders:
+                        # get the data of the frame for this chip
+                        chip_data = chpHeader.pixData
+                        chip_num  = int(chpHeader.attr["chipNumber"])
+                        # and now add chip data to chip_arrays if non empty
+                        npix = np.size(chip_data)
+                        if npix > 0 and ignore_full_frames is False:
+                            chip_arrays[chip_num - 1, chip_data[:,1], chip_data[:,0]] += 1
+                        elif npix > 0 and ignore_full_frames is True and npix < 4097:
+                            # if ignore_full_frames is True we drop all events with more 
+                            # than 4096 pixels
+                            chip_arrays[chip_num - 1, chip_data[:,1], chip_data[:,0]] += 1
+
+                            event_num = int(evHeader.attr["eventNumber"])
+                            if event_num % 1000 == 0:
+                                print event_num, ' events done.'
+            else:
+                print('Main process: is sleeping...')
+                time.sleep(co_ns.sleeping_time)
+
+        # assert both queues really are empty and we didn't skip data
+        assert qRead.empty() is True
+        assert qWork.empty() is True
+                                 
+        # after having finished reading and working, stop both threads
+        co_ns.doRead = False
+        co_ns.doWork = False
+        
+        print('Joining all processes.')
+        #pRead.join()
+        #pWork.join()
+
+        # set current file (to save the figure, if wanted)
+        self.current_filename = create_occupancy_filename(self.filepath, iter_batch)
+
+        # before the plot, dump the file to a cPickle
+        print('dumping data of batch %i' % (iter_batch))
+        dump_occupancy_data(self.current_filename, chip_arrays, header_text)
+
+        print('finished batch #%i at event #%i' % (iter_batch, nEnd))
+
+        return chip_arrays, header_text
+            
 
     def create_occupancy_data_batch(self, ignore_full_frames, iter_batch, nbatches):
         # create an occupancy plot. count number of times each pixel was hit during the 
@@ -500,31 +636,12 @@ class WorkOnFile:
         # int nbatches            : total number of batches for call of create_occupancy_plot
 
         # first create the header text box for the occupancy plot
-        if len(self.ns.eventSet) > 0:
-            # need to read one of the files to get the header. Choose first file, thus
-            filename     = create_filename_from_event_number(self.ns.eventSet,
-                                                             0,
-                                                             self.ns.nfiles,
-                                                             fadcFlag = False)
-            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
-            header_text = evHeader.get_run_header_text()
-        else:
-            print 'filelist not filled yet or empty; returning.'
-            return
-        
-
-        header_text = add_line_to_header(header_text, 
-                                         "# events",
-                                         len(self.ns.eventSet))
-        header_text = add_line_to_header(header_text, 
-                                         "ignore_full_frames",
-                                         ignore_full_frames)
-        header_text = add_line_to_header(header_text, 
-                                         "n_batches",
-                                         nbatches)
-        header_text = add_line_to_header(header_text, 
-                                         "iter_batch",
-                                         iter_batch)
+        header_text = get_occupancy_batch_header(self.ns.eventSet, 
+                                                 self.ns.nfiles, 
+                                                 self.filepath, 
+                                                 ignore_full_frames,
+                                                 nbatches,
+                                                 iter_batch)
 
         if nbatches > 1:
             # in this case we save all plots
@@ -577,7 +694,7 @@ class WorkOnFile:
             if event_num % 1000 == 0:
                 print event_num, ' events done.'
 
-            # now check whether we plot
+            # now check whether we dump data and return
             if (eventNumber == max(eventNumbers) or 
                 eventNumber == (iter_batch + 1) * nEventsPerBatch - 1 and 
                 eventNumber > 0):
@@ -848,8 +965,8 @@ def main(args):
 
     # create a new filelist manager, which allows the communication between the main thread and 
     # the file checking thread
-    filelistManager = myManager()
-    filelistManager.start()
+    #filelistManager = myManager()
+    #filelistManager.start()
     
     # and create the namespace, which will be given to both threads, so they can access
     # the same resources
@@ -857,7 +974,7 @@ def main(args):
     # define a flag for the refreshing thread, so it knows when to stop
     ns.doRefresh       = True
     # define the ordered dictionary, in which we store the filenames
-    ns.filelist        = filelistManager.OrderedDict()
+    # ns.filelist        = filelistManager.OrderedDict()
     # individual lists, which are generated from the dictionary
     # ns.filelistEvents  = []
     # ns.filelistFadc    = []
