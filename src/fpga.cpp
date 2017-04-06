@@ -1456,7 +1456,7 @@ bool FPGA::SetTimeout(int timeout){
     }
     else{
 	_timeout.tv_sec = 0;
-	_timeout.tv_usec = (int) timeout*DEFAULT_TIMEOUT_SCALING_FACTOR;
+	_timeout.tv_usec = (int) timeout*DEFAULT_TIMEOUT_SCALING_FACTOR + DEFAULT_TIMEOUT_OFFSET;
 	timeout_flag =  true;
     }
     return timeout_flag;
