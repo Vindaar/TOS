@@ -18,12 +18,39 @@ def get_TOS_date_syntax():
     # strptime function
     return '%Y-%m-%d.%H:%M:%S'
 
-def get_batch_num_hours_for_run(run_folder, eventSet):
+
+# DEPRECATED
+# def calc_scaling_factor(batches, i):
+#     # calculates the scaling factor for iteration i 
+#     # for batches
+#     val = batches - i
+#     if val < 0:
+#         # return inverse of 
+#         return 1 / (b - i + 1)
+#     else:
+#         return 1
+
+def get_scaling_factors(batches):
+    # creates a list for the scaling factors to be applied to each
+    # batch for the occupancy plots. In case of values smaller 0
+    floor = int(np.floor(batches))
+    rest  = batches - floor
+    
+    scaling = 1. / rest
+    factors = [1 for _ in xrange(floor)]
+    factors.append(scaling)
+
+    return factors
+
+def get_batch_num_hours_for_run(run_folder, eventSet, total_flag = False):
     """ 
        This function returns the number of batches of 1 hour length
        for a given run. Calls calc_length_of_run internally
        string run_folder: a string containing the folder name
        set eventSet:      a set containing all events in the folder
+       bool total_flag:   determines whether we use beginning and end of run
+                          (if True) or shutter opening time and number of events
+                          (if False) for the calculation
     """
 
     # get first and last file in set
@@ -32,11 +59,23 @@ def get_batch_num_hours_for_run(run_folder, eventSet):
     first = run_folder + create_filename_from_event_number(eventSet, eventsSorted[0], nfiles, False)
     last  = run_folder + create_filename_from_event_number(eventSet, eventsSorted[-1], nfiles, False)
     
-    nbatches = calc_length_of_run(first, last)
+    if total_flag is True:
+        nbatches = calc_total_length_of_run(first, last)
+        return nbatches
+    else:
+        nbatches = calc_active_length_of_run(first, nfiles)
+        # deal with the case of less than one hour of run time (needed in case
+        # of very short shutter times)
+        scaling_factors = get_scaling_factors(nbatches)
+        # and now take ceiling of batches (round up)
+        nbatches = int(np.ceil(nbatches))
 
-    return nbatches
+        return nbatches, scaling_factors
 
-def calc_length_of_run(first, last):
+    # should never happen
+    return None
+
+def calc_total_length_of_run(first, last):
     """
        This function calculates the total length of a run based on the
        timestamps in the data files and returns the time rounded to hours.
@@ -55,6 +94,29 @@ def calc_length_of_run(first, last):
     hours = np.round(diff.total_seconds() / 3600.)
 
     return int(hours)
+
+def calc_active_length_of_run(event_file, nfiles):
+    """ 
+       This function calculates the total time the detector was actively taking
+       data in a given run. In contrast to calc_total_length_of_run, which 
+       uses the timestamps in the first and last frame as a reference.
+       This function is especially useful in case of shutter times smaller
+       than 1 seconds, because the dead time increases significantly.
+       string event_file: filename of any event in a given run
+       int nfiles: the number of total events in the run
+    
+       returns: total hours of active time in run
+    """
+
+    evHeader, chpHeaders = read_zero_suppressed_data_file(event_file, True)
+
+    shutter_length = calc_shutter_length_from_event_header(evHeader)
+    active_length  = shutter_length * nfiles
+    
+    # convert active_length (given in microseconds) to hours
+    active_length = float(active_length / (1e6 * 3600))
+    
+    return active_length
     
 def get_iter_batch_from_header_text(header_text):
     # this function returns the iter_batch number from a given
@@ -141,3 +203,47 @@ def fill_classes_from_file_data_mp(co_ns, qRead, qWork):
                 a = 1
                 pass
 
+def get_shutter_mode_dict():
+    # this function returns the shutter mode dictionary, which 
+    # creates correspondence between shutter modes given as string
+    # and the mode given as an exponent for the calculation
+    
+    shutter_mode_dict = { "standard" : 0,
+                          "std"      : 0,
+                          "0"        : 0,
+                          "long"     : 1,
+                          "l"        : 1,
+                          "1"        : 1,
+                          "verylong" : 2,
+                          "vl"       : 2,
+                          "2"        : 2 }
+
+    return shutter_mode_dict
+
+
+def calc_shutter_length_from_event_header(evHeader):
+    # this function calculates the shutter opening time in microseconds
+    # calls calc_shutter_length internally
+    
+    shutterTime = int(evHeader.attr["shutterTime"])
+    shutterMode = evHeader.attr["shutterMode"]
+
+    shutterModeDict = get_shutter_mode_dict()
+    shutterMode = shutterModeDict[shutterMode]
+
+    length = calc_shutter_length(shutterTime, shutterMode)
+
+    return length
+    
+
+def calc_shutter_length(time, mode):
+    # this function calculates the shutter length based on the time
+    # and shutter mode
+    # return value given in microseconds
+    
+    length = 256 ** mode * 46 * time / 40.
+    
+    return length
+
+
+    

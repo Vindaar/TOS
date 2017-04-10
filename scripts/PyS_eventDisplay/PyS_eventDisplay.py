@@ -444,17 +444,23 @@ class WorkOnFile:
 
         batches_flag = batches_dict["batches_flag"]
         nbatches     = batches_dict["nbatches"]
-
+        
+        # to scale batches, which contain less than one hour up
+        scaling_factors = np.ones(nbatches, dtype=int)
+        
         if batches_flag is True and nbatches is None:
             # in this case calculate nbatches to ~1 batch per hour
-            # NOTE: WARNING: HACK!!! Factor 6 to get 10 minute bins instead of 1h
-            nbatches = get_batch_num_hours_for_run(self.filepath, self.ns.eventSet)# * 6
+            nbatches, scaling_factors = get_batch_num_hours_for_run(self.filepath, self.ns.eventSet)
             print('Calculated to use %i batches for occupancy plot.' % nbatches)
+            print('Last batch scaled by %f.' % scaling_factors[-1])
         elif batches_flag is False:
             # set batches to 1
             nbatches = 1
-        
+            
         for i in xrange(nbatches):
+            # get current scaling
+            scaling_f = scaling_factors[i]
+
             # get filename for batch
             occupancy_filename = create_occupancy_filename(self.filepath, i)
             data_dump_filename = create_pickle_filename(occupancy_filename)
@@ -470,6 +476,14 @@ class WorkOnFile:
                 #chip_arrays, header_text = self.create_occupancy_data_batch(ignore_full_frames,
                                                                                i,
                                                                                nbatches)
+                # apply scaling factor and add line to header text
+                chip_arrays *= scaling_factor
+                header_text = add_line_to_header(header_text, 
+                                                 "scaling_factor",
+                                                 scaling_f)
+
+                
+
             plot_occupancy(occupancy_filename, 
                            header_text,
                            self.septem, 
@@ -618,22 +632,24 @@ class WorkOnFile:
             
 
     def create_occupancy_data_batch(self, ignore_full_frames, iter_batch, nbatches):
-        # create an occupancy plot. count number of times each pixel was hit during the 
-        # whole run
+        """
+        create an occupancy plot. count number of times each pixel was hit during the 
+        whole run
 
-        # TODO: think about another way to run over all files. NOT SURE, but it seems
-        # that creating all filenames from scratch (via the function from the event number)
-        # is (in this case) a waste of resources.
-        # Idea: create function, which does what create_filename_from_event_number does
-        # but returns list of filenames from eventSet
+        TODO: think about another way to run over all files. NOT SURE, but it seems
+        that creating all filenames from scratch (via the function from the event number)
+        is (in this case) a waste of resources.
+        Idea: create function, which does what create_filename_from_event_number does
+        but returns list of filenames from eventSet
 
-        # bool ignore_full_frames : this flag controls whether we drop all events from 
-        #                           the occupancy creation, which have more than 4096 
-        #                           active pixels. In that case data is lost (only 4096)
-        #                           pixels fit in zero suppressed readout.
-        # int iter_batch          : this integer determines the batch we're going to calculate
-        #                           in this function call
-        # int nbatches            : total number of batches for call of create_occupancy_plot
+        bool ignore_full_frames : this flag controls whether we drop all events from 
+                                  the occupancy creation, which have more than 4096 
+                                  active pixels. In that case data is lost (only 4096)
+                                  pixels fit in zero suppressed readout.
+        int iter_batch          : this integer determines the batch we're going to calculate
+                                  in this function call
+        int nbatches            : total number of batches for call of create_occupancy_plot
+        """
 
         # first create the header text box for the occupancy plot
         header_text = get_occupancy_batch_header(self.ns.eventSet, 
