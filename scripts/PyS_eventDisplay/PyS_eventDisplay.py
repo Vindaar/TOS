@@ -239,7 +239,7 @@ class WorkOnFile:
             self.nfiles = self.ns.nfiles
             lock.release()
             if self.i < self.nfiles:
-                self.work_on_file()
+                self.work_on_existing_file(self.i)
             else:
                 plt.close()
                 print 'reached last file in folder'
@@ -251,7 +251,7 @@ class WorkOnFile:
             #if self.i > 0:
             self.i -= 1
             print self.i
-            self.work_on_file()
+            self.work_on_existing_file()
             #else:
             #    self.work_on_file()
         elif c == 'e':
@@ -352,6 +352,31 @@ class WorkOnFile:
 
         # return the wait_flag
         return wait_flag
+
+    def work_on_existing_file(self, i = None):
+        # this function only works on existing files, not trying to run over
+        # all files
+        if i is None:
+            # if no i as argument given, use self.i
+            i = self.i
+        elif i == -1:
+            # in case we have called work_on_file_end(), we supply -1 to work_on_file.
+            # this can be problematic, if we stop the function and want to go back
+            # from this event, because -1 is relative to the number of current events. so
+            # in case we have an ongoing run, this will change all the time, making it
+            # impossible to go back (because more and more events are created)
+            lock.acquire()
+            self.i = self.ns.nfiles
+            lock.release()
+        else:
+            # else, we just set self.i to i
+            self.i = i
+        lock.acquire()
+        lst_of_files = sorted(list(self.ns.eventSet))
+        lock.release()
+        eventNumber = lst_of_files[i]
+        self.work_on_file(eventNumber)
+        
         
     def work_on_file(self, i = None):
         # input i: i is the index for which we plot the file. if none is given, we simply use
@@ -373,7 +398,9 @@ class WorkOnFile:
             lock.release()
         else:
             # else, we just set self.i to i
-            self.i = i
+            # TODO: fix this!!!
+            pass
+            # self.i = i
 
         # set the filenames to None, to easier check whether files dictionary was already
         # populated
@@ -476,11 +503,11 @@ class WorkOnFile:
                 #chip_arrays, header_text = self.create_occupancy_data_batch(ignore_full_frames,
                                                                                i,
                                                                                nbatches)
-                # apply scaling factor and add line to header text
-                chip_arrays *= scaling_factor
-                header_text = add_line_to_header(header_text, 
-                                                 "scaling_factor",
-                                                 scaling_f)
+            # apply scaling factor and add line to header text
+            chip_arrays *= scaling_f
+            header_text  = add_line_to_header(header_text, 
+                                              "scaling_factor",
+                                              scaling_f)
 
                 
 
