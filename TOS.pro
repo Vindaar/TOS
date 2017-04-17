@@ -7,7 +7,7 @@ TEMPLATE = app
 TARGET = TOS
 DEPENDPATH += . src
 INCLUDEPATH += . include
-QMAKE_CXXFLAGS += -std=c++11 -o0 -g -Wall -W -pedantic -Wl,--no-as-needed
+QMAKE_CXXFLAGS += -std=c++14 -o0 -g -Wall -W -pedantic -Wl,--no-as-needed
 OBJECTS_DIR = tmp
 MOC_DIR = tmp
 DESTDIR = bin
@@ -38,7 +38,14 @@ HEADERS += include/caseHeader.h \
            include/hvInterface/hvSetGroup.hpp \
            include/hvInterface/hvMonitorGroup.hpp \
            include/hvInterface/hvStatusGroup.hpp \
-           include/frame.hpp
+           include/frame.hpp \
+           include/mcp2210/hidapi.h \
+           include/mcp2210/mcp2210.h \
+           include/mcp2210/temp_auslese.hpp \
+           include/mcp2210/temp_defaults.hpp \
+           include/mcp2210/temp_helpers.hpp \
+           include/helper_functions.hpp 
+           
 
 SOURCES += src/caseFunctions.cc \
            src/console.cpp \
@@ -62,13 +69,21 @@ SOURCES += src/caseFunctions.cc \
            src/hvInterface/hvSetGroup.cpp \
            src/hvInterface/hvMonitorGroup.cpp \
            src/hvInterface/hvStatusGroup.cpp \
-           src/frame.cpp
+           src/frame.cpp \
+           src/mcp2210/mcp2210.cpp \
+           src/mcp2210/hid.c \
+           src/mcp2210/temp_auslese.cpp \
+           src/mcp2210/temp_defaults.cpp \
+           src/mcp2210/temp_helpers.cpp \
+           src/helper_functions.cpp
+           
 
 LIBS += -Wl,--no-as-needed \
         -Wl,--rpath=/usr/local/lib \
         -Wl,--rpath=/usr/lib \
         -lboost_system -lboost_filesystem \
-        -lreadline
+        -lreadline \
+        -ludev
 
 
 # external QT headers

@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "header.hpp"
+#include <thread>
+#include "helper_functions.hpp"
 
 
 class PC;

@@ -23,6 +23,7 @@
 #include "hvInterface/hvSetGroup.hpp"
 #include "hvInterface/hvStatusGroup.hpp"
 #include "hvInterface/hvMonitorGroup.hpp"
+
 #include "const.h"
 
 // C++
@@ -40,6 +41,9 @@
 #include <boost/property_tree/ini_parser.hpp>
 // convenience BOOST_FOREACH to iterate over STL containers
 #include <boost/foreach.hpp>
+
+// TOS headers
+#include "helper_functions.hpp"
 
 
 
@@ -288,10 +292,6 @@ public:
 				 unsigned short scint2_counter);
     // function to read back scintillator counters
     std::pair<unsigned short, unsigned short> GetScintillatorCounters();
-
-    // function to get the current date and time (only implemented for now...)
-    const std::string currentDateTime();
-
 
     //**************************************************
     /*************** HV functions   *******************/

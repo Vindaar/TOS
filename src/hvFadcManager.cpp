@@ -825,24 +825,6 @@ void hvFadcManager::printModuleEventStatus(){
     HV_module->printEventStatus();
 }
 
-
-// the following function is only implemented here, because
-// std::put_time is is only supported from gcc 5.2 onwards
-// once gcc 5.2 is part of ubuntu repository, remove this function
-// and use the commented code in H_DumpErrorLogToFile instead
-// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
-const std::string hvFadcManager::currentDateTime() {
-    time_t     now = time(0);
-    struct tm  tstruct;
-    char       buf[80];
-    tstruct = *localtime(&now);
-    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-    // for more information about date/time format
-    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
-
-    return buf;
-}
-
 void hvFadcManager::H_DumpErrorLogToFile(int event){
     // int event: if function is called from a run, we
     //            include the event after which error log is 

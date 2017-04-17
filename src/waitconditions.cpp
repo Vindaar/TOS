@@ -1,10 +1,6 @@
 #include "waitconditions.hpp"
 #include "pc.hpp"
 
-#include <chrono>
-#include <thread>
-
-
 /* Here the Consumer and Producer Threads for the multi-threaded readout are implemented
  *
  */
@@ -29,7 +25,18 @@ void Producer::run()
     //up to now: it doesen't - see the "To FIX.." comments
     bool fadcReadoutNextEvent = false;
 
-    //parent->_fadcParams = 
+
+    // ##################################################
+    // MCP2210 related
+    // ##################################################
+
+    // start a second thread, which calls init_and_log_temp 
+    // to print and log the temperatures during the run
+    std::atomic_bool loop_stop;
+    loop_stop = false;
+    std::string path_name(parent->PathName);
+    std::thread loop_thread(init_and_log_temp, &loop_stop, path_name);
+    std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
 
     // check whether we're running with the FADC, if so, enable the closing of
     // the shutter based on a trigger by the FADC
@@ -273,6 +280,9 @@ void Producer::run()
 
     }//end of while(parent->IsRunning())
 
+    // MCP2210 related: stop logging thread and join
+    loop_stop = true;
+    loop_thread.join();
 
     // check whether we're running with the FADC, if so, disable the closing of
     // the shutter based on a trigger by the FADC
@@ -355,7 +365,7 @@ void Consumer::run()
 
 	// get current date and time to output that into event file
 	std::string curDateAndTime;
-	curDateAndTime = parent->_hvFadcManager->currentDateTime();
+	curDateAndTime = currentDateTime();
 	
 
 	// before we write actual data to the file, we write a header for the file

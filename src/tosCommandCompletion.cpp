@@ -138,7 +138,9 @@ const char *tosCommands[] = {"GeneralReset",
 			     "SetFadcSleepAcqTime",
 			     "SetFadcSleepTriggerTime",
 			     "SetCenterChip",
-			     "PrintCenterChip"};
+			     "PrintCenterChip",
+// MCP2210 temperature readaout commands
+			     "TempLoopReadout"};
 
 
 char *TOS_Command_Generator(const char *text, int state){

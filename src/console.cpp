@@ -781,6 +781,14 @@ int Console::UserInterface(){
 			  << std::endl;
 	    }
 	}
+
+	// ##################################################
+	// ################## MCP2210 related commands ######
+	// ##################################################	
+
+	else if (ein.compare("TempLoopReadout") == 0){
+	    CommandTempLoopReadout();
+	}	
 	    
 	
 	// if no other if was true, command not found
@@ -3712,4 +3720,29 @@ void Console::CommandPrintCenterChip(){
     int chip;
     chip = pc->GetCenterChip();
     std::cout << "Center chip variable is currently set to : " << chip << std::endl;
+}
+
+
+// ######################################################################
+// ################## MCP2210 related commands ##########################
+// ######################################################################
+
+void Console::CommandTempLoopReadout(){
+    // function calls temp_auslese_main and simply loops over the
+    // temperature readout function in a separate thread
+
+    // now loop over fpga->tpulse to pulse..
+    // create seperate thread, which loops and will be stopped, if we type stop in terminal
+    _loop_stop = false;
+
+    std::thread loop_thread(temp_auslese_main, &_loop_stop);
+    const char *waitingPrompt = "temp readout running. type 'stop' to quit> ";
+    std::string input;
+    std::set<std::string> allowedStrings = {"stop"};
+    input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
+    if (input == "stop"){
+    	_loop_stop = true;
+    }
+    loop_thread.join();
+
 }

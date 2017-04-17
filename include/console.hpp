@@ -35,6 +35,9 @@
 // HV FADC manager
 #include "hvFadcManager.hpp"
 
+// MCP2210
+#include "mcp2210/temp_auslese.hpp"
+
 // include readline history library to achieve command completion etc
 #include <readline/history.h>
 #include "tosCommandCompletion.hpp"
@@ -190,6 +193,10 @@ private:
     // function which makes sure user disconnects devices from FADC before starting
     // pedestal calibration run
     void CommandFadcPedestalRun();
+
+    // MCP2210 related functions
+    // function to loop over temperature readout (for now just calls temp_loop_main())
+    void CommandTempLoopReadout();
 
 
     //

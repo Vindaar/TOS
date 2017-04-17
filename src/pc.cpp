@@ -228,6 +228,10 @@ int PC::DoReadOut2(std::string filename, unsigned short chip){
         delete data;
         return hits;
     }
+
+    // this should never happen
+    std::cout << "WARNING: DoReadout2 found bad exit, problems may arise." << std::endl;
+    return -1;
 }
 
 int PC::DoReadOutFadc(std::string filename, unsigned short chip){
