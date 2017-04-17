@@ -337,15 +337,13 @@ void loop_and_log(hid_device *handle,
 		  int ref_resistor,
 		  std::string path_name){
     // besides printing, this function also logs the data to file
-    std::string date;
-    date = currentDateTime();
-
+    std::string date = "";
     std::string filepath = get_temp_log_file_path(path_name);
 
     std::fstream outfile;
     outfile.open(filepath, std::fstream::out);
     outfile << "# Temperature log file" << "\n"
-	    << "# Temp_IMB \t Temp_Septem" << std::endl;
+	    << "# Temp_IMB \t Temp_Septem \t DateTime" << std::endl;
 
     byte lsb_rtd = read_register(handle, READ_LSB);
     byte fault_test = lsb_rtd & 0x01;
@@ -378,8 +376,13 @@ void loop_and_log(hid_device *handle,
 	    temp_septem /= num_measurements;
 	    temp_IMB    /= num_measurements;
 
+	    // get current date and time
+	    date = currentDateTime();
+
 	    // now output temps to file
-	    outfile << temp_IMB << "\t" << temp_septem << std::endl;
+	    outfile << temp_IMB << "\t"
+		    << temp_septem << "\t"
+		    << date << std::endl;
 	    std::cout << "Temperature measured from RTD for " << "\n"
 		      << "    slave "
 		      << "IMB"  << " is: " << temp_IMB << std::flush;
