@@ -25,19 +25,6 @@ void Producer::run()
     //up to now: it doesen't - see the "To FIX.." comments
     bool fadcReadoutNextEvent = false;
 
-
-    // ##################################################
-    // MCP2210 related
-    // ##################################################
-
-    // start a second thread, which calls init_and_log_temp 
-    // to print and log the temperatures during the run
-    std::atomic_bool loop_stop;
-    loop_stop = false;
-    std::string path_name(parent->PathName);
-    std::thread loop_thread(init_and_log_temp, &loop_stop, path_name);
-    std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
-
     // check whether we're running with the FADC, if so, enable the closing of
     // the shutter based on a trigger by the FADC
     if(parent->_useHvFadc == true){
@@ -279,10 +266,6 @@ void Producer::run()
 	}
 
     }//end of while(parent->IsRunning())
-
-    // MCP2210 related: stop logging thread and join
-    loop_stop = true;
-    loop_thread.join();
 
     // check whether we're running with the FADC, if so, disable the closing of
     // the shutter based on a trigger by the FADC

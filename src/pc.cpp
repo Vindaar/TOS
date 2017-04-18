@@ -2322,6 +2322,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
     //start run  
     mutexRun.lock();
     RunIsRunning = true;
+    _loop_continue = true;
     mutexRun.unlock();
     start(QThread::NormalPriority);
 
@@ -2363,6 +2364,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
 void PC::StopRun(){
     mutexRun.lock();
     RunIsRunning=false;
+    _loop_continue=false;
     mutexRun.unlock();
 }
 
@@ -2410,6 +2412,17 @@ void PC::runFADC()
     //zero surpressed readout
     if (run_mode == 0)
     {
+
+    	// ##################################################
+    	// MCP2210 related
+    	// ##################################################
+
+    	// start a second thread, which calls init_and_log_temp 
+    	// to print and log the temperatures during the run
+    	std::string path_name(PathName);
+    	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name);
+    	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
+	
         Producer producer(this);
         DataAcqRunning = true;
         Consumer consumer(this);
@@ -2418,11 +2431,18 @@ void PC::runFADC()
         std::cout << "runFADC: Producer start" << std::endl;
         #endif
         consumer.start();
-        //producer.wait();
+
+        producer.wait();
         //consumer.wait();
         consumer.wait();
+
         std::cout << "runFADC: consumer ended"<< std::endl;
         std::cout<<"Press ENTER to close run "<<std::flush;
+
+	// MCP2210 related: stop logging thread and join
+	//loop_stop = false;
+	loop_thread.join();
+
     }
     else{
         std::cout << "only zero surpressed readout implemeted, while using the FADC!" << std::endl;
@@ -2449,6 +2469,18 @@ void PC::runOTPX()
     //zero surpressed readout
     if (run_mode == 0)
     {
+
+	// ##################################################
+    	// MCP2210 related
+    	// ##################################################
+
+    	// start a second thread, which calls init_and_log_temp 
+    	// to print and log the temperatures during the run
+    	std::string path_name(PathName);
+    	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name);
+    	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
+
+	
         Producer producer(this);
         DataAcqRunning = true;
         Consumer consumer(this);
@@ -2457,13 +2489,21 @@ void PC::runOTPX()
         std::cout << "runOTPX: Producer start" << std::endl;
         #endif
         consumer.start();
-        //producer.wait();
+        producer.wait();
+	
         //consumer.wait();
         consumer.wait();
+
+	
         #if DEBUG==2
         std::cout << "runOTPX: consumer ended"<< std::endl;
         #endif
         std::cout<<"Press ENTER to close run "<<std::flush;
+	
+	// MCP2210 related: stop logging thread and join
+	//loop_stop = false;
+	loop_thread.join();
+
     }
     //complete matrix readout
     else 

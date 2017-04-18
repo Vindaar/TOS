@@ -285,7 +285,7 @@ void debug_spi_via_config(hid_device *handle){
 }
 
 void loop(hid_device *handle,
-	  std::atomic_bool *loop_stop,
+	  std::atomic_bool *loop_continue,
 	  int sleep_time,
 	  int rtd_resistance,
 	  int ref_resistor){
@@ -299,7 +299,7 @@ void loop(hid_device *handle,
 
 
     while( (fault_test == 0) &&
-	   (*loop_stop == false) )
+	   (*loop_continue == true) )
     {
 	std::cout << std::endl;
 	temp1 = get_temp(handle, rtd_resistance, ref_resistor);
@@ -331,7 +331,7 @@ void loop(hid_device *handle,
 }
 
 void loop_and_log(hid_device *handle,
-		  std::atomic_bool *loop_stop,
+		  std::atomic_bool *loop_continue,
 		  int sleep_time,
 		  int rtd_resistance,
 		  int ref_resistor,
@@ -366,7 +366,7 @@ void loop_and_log(hid_device *handle,
 	      << "num meas " << num_measurements << std::endl;
 
     while( (fault_test == 0) &&
-	   (*loop_stop == false) )
+	   (*loop_continue == true) )
     {
 	if( ((counter % num_measurements) == 0) &&
 	    (temp_IMB != 0) &&
@@ -432,11 +432,11 @@ void loop_and_log(hid_device *handle,
 
 
 void loop_temp(hid_device *handle,
-	       std::atomic_bool *loop_stop,
+	       std::atomic_bool *loop_continue,
 	       int sleep_time,
 	       bool log_flag,
 	       std::string path_name){
-    /* loops until being stopped by parent thread (settings loop_stop to true)
+    /* loops until being stopped by parent thread (settings loop_continue to true)
        and prints current temperatures to console
        Additionally updates the temperatures
     */
@@ -454,16 +454,16 @@ void loop_temp(hid_device *handle,
 	int ref_resistor = 3900;
 
 	if(log_flag == true){
-	    loop_and_log(handle, loop_stop, sleep_time, rtd_resistance, ref_resistor, path_name);
+	    loop_and_log(handle, loop_continue, sleep_time, rtd_resistance, ref_resistor, path_name);
 	}
 	else{
-	    loop(handle, loop_stop, sleep_time, rtd_resistance, ref_resistor);
+	    loop(handle, loop_continue, sleep_time, rtd_resistance, ref_resistor);
 	}
     }
     return;
 }
 
-int init_and_log_temp(std::atomic_bool *loop_stop, std::string path_name){
+int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name){
     // initializes a MCP2210 device and reads out the temperatures
     hid_device *handle;
 
@@ -491,7 +491,7 @@ int init_and_log_temp(std::atomic_bool *loop_stop, std::string path_name){
 	    get_current_active_slave(true);
 	}
 	bool log_flag = true;
-	loop_temp(handle, loop_stop, 5000, log_flag, path_name);
+	loop_temp(handle, loop_continue, 5000, log_flag, path_name);
     }
     else{
 	check_fault_register(Fault_Error);
@@ -501,7 +501,7 @@ int init_and_log_temp(std::atomic_bool *loop_stop, std::string path_name){
     return 0;
 }
 
-int temp_auslese_main(std::atomic_bool *loop_stop){
+int temp_auslese_main(std::atomic_bool *loop_continue){
     // argument is a pointer to a bool variable from the calling function
 
     bool use_usb_handle = false;
@@ -549,7 +549,7 @@ int temp_auslese_main(std::atomic_bool *loop_stop){
 		get_current_active_slave(true);
 	    }
 	    bool log_flag = false;
-	    loop_temp(handle, loop_stop, 250, false, "");
+	    loop_temp(handle, loop_continue, 250, false, "");
 	}
 	else{
 	    check_fault_register(Fault_Error);

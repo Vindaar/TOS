@@ -22,6 +22,7 @@
 #include <string>
 #include <sstream>
 #include <regex>
+#include <atomic>
 
 //qt
 #include <qthread.h>
@@ -184,6 +185,7 @@ private:
     int ok;
 
     volatile bool RunIsRunning; //< True if one records data, false otherwise (maybe also true if one wants to...)
+    std::atomic_bool _loop_continue;
     QMutex mutexRun;            //< Var to ensure no other var is accesed by two threads at the same time
   
     //IsRunning: Checks the RunIsRunning var, while locking and releasing the mutex before and after

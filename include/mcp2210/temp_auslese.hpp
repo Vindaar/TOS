@@ -50,23 +50,23 @@ void debug_spi_via_config(hid_device *handle);
 static struct usb_device *init_mcp2210(void);
 
 void loop(hid_device *handle,
-	  std::atomic_bool *loop_stop,
+	  std::atomic_bool *loop_continue,
 	  int sleep_time,
 	  int rtd_resistance,
 	  int ref_resistor);
 
 void loop_and_log(hid_device *handle,
-		  std::atomic_bool *loop_stop,
+		  std::atomic_bool *loop_continue,
 		  int sleep_time,
 		  int rtd_resistance,
 		  int ref_resistor,
 		  std::string path_name);
 
 void loop_Temp(hid_device *handle,
-	       std::atomic_bool *loop_stop,
+	       std::atomic_bool *loop_continue,
 	       int sleep_time,
 	       std::string path_name);
 
-int init_and_log_temp(std::atomic_bool *loop_stop, std::string path_name);
-int temp_auslese_main(std::atomic_bool *loop_stop);
+int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name);
+int temp_auslese_main(std::atomic_bool *loop_continue);
 
