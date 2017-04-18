@@ -417,6 +417,9 @@ void loop_and_log(hid_device *handle,
 	counter++;
     }
 
+    // close the outfile again
+    outfile.close();
+
     if(fault_test != 0){
 	std::cout << "Error was detected. The RTD resistance measured is not within the range specified in nthe Threshold Registers." << std::endl;
     }
@@ -425,8 +428,6 @@ void loop_and_log(hid_device *handle,
     }
 
     return;
-    
-    
 }
 
 
@@ -458,7 +459,8 @@ void loop_temp(hid_device *handle,
 	else{
 	    loop(handle, loop_stop, sleep_time, rtd_resistance, ref_resistor);
 	}
-    } 
+    }
+    return;
 }
 
 int init_and_log_temp(std::atomic_bool *loop_stop, std::string path_name){
@@ -495,9 +497,8 @@ int init_and_log_temp(std::atomic_bool *loop_stop, std::string path_name){
 	check_fault_register(Fault_Error);
     }
 
-    CancelSPITransfer(handle);
-    
-
+    // CancelSPITransfer(handle);
+    return 0;
 }
 
 int temp_auslese_main(std::atomic_bool *loop_stop){
