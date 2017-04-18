@@ -9,55 +9,25 @@ import matplotlib.animation as animation
 from matplotlib.lines import Line2D
 import os
 import time
-from septemModule.septemClasses import chip, septem, customColorbar
-from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, read_zsub_mp, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump, create_list_of_files
+from septemModule.septemClasses import chip, septem, customColorbar, MyFuncAnimation
+from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, read_zsub_mp, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump, create_list_of_files, create_list_of_files_dumb
 from septemModule.septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
 from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_run, get_occupancy_batch_header, fill_classes_from_file_data_mp
+
+import pyinotify
 
 import multiprocessing as mp
 import collections
 from multiprocessing.managers import BaseManager, Namespace, NamespaceProxy
-    
-class myManager(BaseManager):
-    pass
 
-myManager.register('OrderedDict', collections.OrderedDict)
 
+# create global lock on the multiprocessing
 lock = mp.Lock()
-
-from matplotlib import animation
-class MyFuncAnimation(animation.FuncAnimation):
-    """
-    Unfortunately, it seems that the _blit_clear method of the Animation
-    class contains an error in several matplotlib verions
-    That's why, I fork it here and insert the latest git version of
-    the function.
-    """
-    def _blit_clear(self, artists, bg_cache):
-        # Get a list of the axes that need clearing from the artists that
-        # have been drawn. Grab the appropriate saved background from the
-        # cache and restore.
-        axes = set(a.axes for a in artists)
-        for a in axes:
-            if a in bg_cache: # this is the previously missing line
-                a.figure.canvas.restore_region(bg_cache[a])
-
-
 
 def refresh(ns, filepath):
     while ns.doRefresh == True:
         lock.acquire()
-        #print 'updating filelist'
-        # NOTE: the following commented lines are used, if one reads the data into
-        # and OrderedDict. However, sorting this dictionary is exceptionally slow
-        # as I only realized now. Thus, we go back to the old version of simply
-        # creating two seperate lists for events and FADC events. This is much faster
-        # (about a factor of 2! on 50000 files: 150ms for creating the list and
-        #  another 220ms for sorting of the OrderedDict)
-        # ns.filelist       = create_files_from_path_combined(filepath, True)
-        # ns.filelistEvents = ns.filelist.keys()
-        # ns.filelistFadc   = ns.filelist.values()
-        #ns.filelistEvents, ns.filelistFadc = create_files_from_path_combined(filepath, False)
+        # on first call we read the files, which are already in the folder
         ns.eventSet, ns.fadcSet = create_files_from_path_combined(filepath,
                                                                   ns.eventSet,
                                                                   ns.fadcSet,
@@ -65,6 +35,22 @@ def refresh(ns, filepath):
         ns.nfiles         = len(ns.eventSet)
         refreshInterval   = ns.refreshInterval
         lock.release()
+
+        # # then start watcher daemon, which watches over filepath and checks
+        # # whether files change / are added
+        # wm   = pyinotify.WatchManager()
+        # mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY
+
+        # temp_log_file = os.path.join(filepath, get_temp_filename())
+
+        # notifier = pyinotify.ThreadedNotifier(wm, EventHandler())
+        # notifier.start()
+        # wdd_run   = wm.add_watch(filepath, mask, rec=False)
+        # wdd_temps = wm.add_watch(filepath, mask, rec=False)
+        
+        
+        
+        
         time.sleep(refreshInterval)
         #print 'done updating filelist'
 
@@ -125,7 +111,6 @@ class WorkOnFile:
 
         # assign the colorbar object to a member variable
         self.cb = cb
-
 
         # animation related:
         self.ani_end_event_source  = None
@@ -378,7 +363,7 @@ class WorkOnFile:
         self.work_on_file(eventNumber)
         
         
-    def work_on_file(self, i = None):
+    def work_on_file(self, i = None, online_flag = False):
         # input i: i is the index for which we plot the file. if none is given, we simply use
         #          the member variable self.i
         #          allows one to use the animation functions in order to automatically run over all
@@ -401,6 +386,13 @@ class WorkOnFile:
             # TODO: fix this!!!
             pass
             # self.i = i
+
+        if online_flag is True:
+            # in this case we're doing online viewing, i.e. jumping to last file in
+            # folder. Need to obtain temps from yielder thread
+            temps = self.ns.currentTemps
+        else:
+            temps = self.temps_dict
 
         # set the filenames to None, to easier check whether files dictionary was already
         # populated
@@ -428,13 +420,14 @@ class WorkOnFile:
             # current file (to save the figure, if wanted)
             self.current_filename = self.filepath.split('/')[-1] + "_" + filename
             
-            plot_file(self.filepath, 
-                      filename, 
-                      self.septem,
-                      self.fig,
-                      self.chip_subplots,
-                      self.im_list,
-                      self.cb)
+            plot_file_general(self.filepath, 
+                              filename, 
+                              self.septem,
+                              self.fig,
+                              self.chip_subplots,
+                              self.im_list,
+                              self.cb,
+                              temps)
             #if filenameFadc is not "":
             if filenameFadc is not None:
                 # only call fadc plotting function, if there is a corresponding FADC event
@@ -528,6 +521,7 @@ class WorkOnFile:
     def create_occupancy_data_batch_mp(self, ignore_full_frames, iter_batch, nbatches):
         # multithreaded version of create_occupancy_data_batch
         # see single threaded version for documentation
+        benchmarking_flag = False
 
         # first create the header text box for the occupancy plot
         header_text = get_occupancy_batch_header(self.ns.eventSet, 
@@ -553,8 +547,14 @@ class WorkOnFile:
         # calculate starting point
         nStart = iter_batch * nEventsPerBatch
         nEnd   = (iter_batch + 1) * nEventsPerBatch
-        # create list of files
-        list_of_files = create_list_of_files(nStart, nEnd, self.ns.eventSet, self.filepath)
+        if benchmarking_flag is True:
+            list_of_files = create_list_of_files_dumb(self.filepath)
+        else:
+            # create list of files
+            list_of_files = create_list_of_files(nStart, nEnd, self.ns.eventSet, self.filepath)
+
+
+        
         print('List of files has entries: start: %i end: %i total: %i' % (nStart, nEnd, len(list_of_files)))
         print('nEvents %i batches %i nEventsPerBatch %i' % (len(eventNumbers), nbatches, nEventsPerBatch))
 
@@ -580,10 +580,10 @@ class WorkOnFile:
         # max cached is the max number of cached batches, before a process will wait
         co_ns.max_cached = 5
         # sleeping time
-        co_ns.sleeping_time = 1
+        co_ns.sleeping_time = 0.1
         # long sleep time (before finishing threads, wait this long and check if queue
         # still empty)
-        co_ns.long_sleep    = 5
+        co_ns.long_sleep    = 1
 
         qRead = mp.Queue()
         qWork = mp.Queue()
@@ -1006,11 +1006,6 @@ def main(args):
     chip_subplots = create_chip_axes(sep, fig, args_dict["single_chip_flag"])
 
 
-    # create a new filelist manager, which allows the communication between the main thread and 
-    # the file checking thread
-    #filelistManager = myManager()
-    #filelistManager.start()
-    
     # and create the namespace, which will be given to both threads, so they can access
     # the same resources
     ns                 = mp.Manager().Namespace()
@@ -1030,6 +1025,10 @@ def main(args):
     # and the interval, in which the thread refreshes the filelist
     ns.refreshInterval = 0.0001
     print ns
+
+    # temparature readout related
+    ns.currentTemps = None
+    ns.temps_dict   = None
 
     # we start the file refreshing (second) thread first, because we only
     # want to accept key inputs, after the files have been read a single

@@ -1,5 +1,7 @@
 # this file implements all the classes used for the septem event display
 import numpy as np
+from matplotlib import animation
+import pyinotify
 
 
 class chip:
@@ -616,3 +618,47 @@ class pixelParser:
         else:
             print("Name %s not found in added pixels.")
             return None, None
+
+
+class MyFuncAnimation(animation.FuncAnimation):
+    """
+    Unfortunately, it seems that the _blit_clear method of the Animation
+    class contains an error in several matplotlib verions
+    That's why, I fork it here and insert the latest git version of
+    the function.
+    """
+    def _blit_clear(self, artists, bg_cache):
+        # Get a list of the axes that need clearing from the artists that
+        # have been drawn. Grab the appropriate saved background from the
+        # cache and restore.
+        axes = set(a.axes for a in artists)
+        for a in axes:
+            if a in bg_cache: # this is the previously missing line
+                a.figure.canvas.restore_region(bg_cache[a])
+
+
+class EventHandler(pyinotify.ProcessEvent):
+    """
+    This class deals with watching the run folder for changes, as
+    well as watching changes to the temp_log file
+    """
+
+    def yield_file(self, pathname, descr):
+        # yields the file, which was added (an event)
+        # or changed (the temp log)
+        # descr: descriptor, depending on which function called
+        #        this function
+        yield (pathname, descr)
+    
+    def process_IN_CREATE(self, event):
+        # print "Creating:", event.pathname
+        # print pyinotify.ProcessEvent
+        yield_file(event.pathname, "create")
+        
+    def process_IN_DELETE(self, event):
+        #print "Removing:", event.pathname
+        yield_file(event.pathname, "delete")
+        
+    def process_IN_MODIFY(self, event):
+        #print "Modifying:", event.pathname
+        yield_file(event.pathname, "modify")

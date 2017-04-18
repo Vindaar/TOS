@@ -9,6 +9,7 @@ from septemClasses import Fadc
 from profilehooks import profile
 
 
+
 def make_ticklabels_invisible(subplots):
     
     for i, ax in enumerate(subplots):
@@ -16,39 +17,62 @@ def make_ticklabels_invisible(subplots):
         for tl in ax.get_xticklabels() + ax.get_yticklabels():
             tl.set_visible(False)
 
+
+def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps = None):
+    """
+    function which decides between offline and online viewing based on type 
+    of temps. Depending on case read either from dictionary (offline) or 
+    use floats from tuple as temps in header (online). Or nothing in terms 
+    of None.
+    It reads the file given by filename and extracts the correct temperature 
+    data for the datetime from the list of temps (if existing)
+    """
+
+    # create full path to file
+    filepathName = filepath + filename
+    # and read that file
+    evHeader, chpHeaderList = read_zero_suppressed_data_file(filepathName)
+    
+    # now add the header for this event. We add it to the last axes in the list
+    # (for no special reason)
+    header_text = evHeader.get_event_header_text()
+    if header_text == "":
+        return None
+
+    if type(temps) is dict:
+        # case: offline viewing. temps is a dictionary containing all temps
+        # with datetime object as key
+        dtime = convert_datetime_str_to_datetime(evHeader.attr["dateTime"])
+        date = nearest_date(temp_dict, dtime)
+        IMB_temp, septem_temp = temp_dict[date]
+    elif type(temps) is int:
+        # case: online viewing, temps is a tuple of both temparatures
+        IMB_temp, septem_temp = temps
+
+    if temps is not None:
+        # add to header in case we obtained temps
+        header_text.adds_line_to_header(header_text,
+                                        "IMB temp (C)",
+                                        IMB_temp)
+        header_text.adds_line_to_header(header_text,
+                                        "septem temp (C)",
+                                        septem_temp)
+
+    plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list, cb)
+    
+            
 #@profile
-def plot_file(filepath, filename, sep, fig, chip_subplots, im_list, cb):
+def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list, cb):
 
     # using im_list we now define a variable for the number of chips we have
     # (single or septem). That way, we can distinguish in the loop in which
     # we set the data
     nChips = len(im_list)
 
-    # create full path to file
-    filepathName = filepath + filename
-    # and read that file
-    evHeader, chpHeaderList = read_zero_suppressed_data_file(filepathName)
-
-    # clear all axes
-    # not necessary anymore, since we use image.set_data
-    #for ax in chip_subplots:
-    #    ax.cla()
-
     # and remove the text symbol from before
     texts = fig.texts
     for i in range(len(texts)):
         texts[-1].remove()
-    # now add the header for this event. We add it to the last axes in the list
-    # (for no special reason)
-    # call function to get the header text
-    header_text = evHeader.get_event_header_text()
-    if header_text == "":
-        # in the (buggy) case, in which we read a file, which is empty, besides
-        # an event header, we don't plot (well... nothing to plot anyways), and
-        # return a None object.
-        # TODO: fix problem in TOS, which causes these files to be created in the
-        # first place
-        return None
 
     # and put it at the top
     header_box = fig.text(0.5, 0.9, header_text,

@@ -75,6 +75,15 @@ def get_batch_num_hours_for_run(run_folder, eventSet, total_flag = False):
     # should never happen
     return None
 
+
+def convert_datetime_str_to_datetime(datetime_str):
+    # convert datetime string to datetime object
+
+    syntax = get_TOS_date_syntax()
+    date = datetime.strptime(datetime_str, syntax)
+
+    return date
+
 def calc_total_length_of_run(first, last):
     """
        This function calculates the total length of a run based on the

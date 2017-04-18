@@ -5,8 +5,14 @@ import os
 import scandir
 import numpy as np
 from septemClasses import eventHeader, chipHeaderData
+#from septemMisc import convert_datetime_str_to_datetime
 import collections
 import cPickle
+
+
+################################################################################
+############################## Reading files ###################################
+################################################################################
 
 def read_zsub_mp(co_ns, list_of_files, qRead):
     """
@@ -67,6 +73,35 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
 
     data = work_on_read_data(f, filepath, header_only)
     return data
+
+def get_temp_filename():
+    return "temp_log.txt"
+
+def read_temparature_log(filepath):
+    """ 
+    reads a temparature log file created during a run from the MCP2210 
+    returns a dictionary of
+    {datetime object : (IMB_temp, septem_temp)}
+    """
+    filename = get_temp_filename()
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
+
+    temp_dict = {}
+    for line in lines:
+        if "#" not in line:
+            line = line.split()
+            imb, septem, date = line
+            dtime = convert_datetime_str_to_datetime(date)
+            temp_dict[dtime] = (float(imb), float(septem))
+
+    return temp_dict
+
+
+################################################################################
+############################## reading helper functions ########################
+################################################################################
+
 
 def work_on_read_data(data, filepath = None, header_only = False):
     # the function which performs the splitting of the data
@@ -158,7 +193,6 @@ def create_files_from_path_combined(folder, eventSet, fadcSet, test = False):
     # we store the files for events and FADC events in a dictionary, where
     # the key is the filename of the event, and the value is the FADC filename
     filesDict = {}
-
     for path, folder, files in scandir.walk(folder):#files:
         for el in files:
             if "data" in el and "fadc" not in el:
@@ -170,29 +204,6 @@ def create_files_from_path_combined(folder, eventSet, fadcSet, test = False):
                 if el not in fadcSet:
                     fadcSet.add(el)
         
-        # for el in files:
-        #     if "data" in el and "fadc" not in el:
-        #         #n += 1
-        #         if test == True:
-        #             filesDict[el] = ""
-        #         else:
-        #             eventFiles.append(el)
-        #     elif "fadc" in el:
-        #         #n += 1
-        #         # in case there is an FADC file, strip the FADC flag off it
-        #         # and assign the value to the dictionary
-        #         eventName = el.rstrip("-fadc")
-        #         if test == True:
-        #             filesDict[eventName] = el
-        #         #print 'happens!\n\n\n', el, eventName
-        #         else:
-        #             files_fadc.append(el)
-
-    # print eventFiles
-    # print files_fadc
-    #if test == False:
-        # eventFiles.sort()
-        # files_fadc.sort()
     if test == True:
         filesDict = collections.OrderedDict( sorted( filesDict.items() ) )
 
@@ -302,12 +313,25 @@ def check_occupancy_dump_exist(filename):
     else:
         return False
 
+
+def create_list_of_inodes(filepath):
+
+    inodes = []
+    for el in scandir.scandir(path=filepath):
+        name = el.name
+        if "data" in name and "fadc" not in name:
+            inode = el.inode()
+            inodes.append(inode)
+    return inodes
+
 def create_list_of_files(nStart, nEnd, eventSet, filepath):
     """
     This function creates a list of files from start event nStart to end 
     event nEnd using eventSet and prepending the filepath.
     """
     list_of_files = []
+    print('start creating files')
+    print(type(eventSet))
     for event in eventSet:
         if event < nStart:
             continue
@@ -319,4 +343,27 @@ def create_list_of_files(nStart, nEnd, eventSet, filepath):
                                                      fadcFlag = False)
         list_of_files.append(os.path.join(filepath, filename))
 
-    return list_of_files
+    print('done creating files')
+    # given list of files get inodes and sort by them
+    # TODO: write support for nStart and nEnd using inodes function!
+    inodes_2 = create_list_of_inodes(filepath)
+    #inodes = [os.stat(el).st_ino for el in list_of_files]
+    # TODO FINIISNFINDISNDIANSDIX
+    print('done getting inode'))
+    fi = [x for (y, x) in sorted(zip(inodes_2, list_of_files))]
+
+    return fi
+
+def create_list_of_files_dumb(filepath):
+    """
+    The function returns the list of files returned by os.listdir
+    """
+
+    files = os.listdir(filepath)
+    files = [os.path.join(filepath, el) for el in files if "data" in el and ".txt" in el]
+
+    inodes = [os.stat(el).st_ino for el in files]
+    fi = [x for (y, x) in sorted(zip(inodes, files))]
+    
+    return fi
+    
