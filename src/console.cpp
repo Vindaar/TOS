@@ -3733,15 +3733,16 @@ void Console::CommandTempLoopReadout(){
 
     // now loop over fpga->tpulse to pulse..
     // create seperate thread, which loops and will be stopped, if we type stop in terminal
-    _loop_stop = false;
+    std::atomic_bool loop_continue;
+    loop_continue = true;
 
-    std::thread loop_thread(temp_auslese_main, &_loop_stop);
+    std::thread loop_thread(temp_auslese_main, &loop_continue);
     const char *waitingPrompt = "temp readout running. type 'stop' to quit> ";
     std::string input;
     std::set<std::string> allowedStrings = {"stop"};
     input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
     if (input == "stop"){
-    	_loop_stop = true;
+    	loop_continue = false;
     }
     loop_thread.join();
 
