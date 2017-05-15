@@ -15,7 +15,8 @@ A not yet complete list of dependencies includes:
 libusb-dev \
 libreadline6 \
 libreadline6-dev \
-libboost-dev
+libboost-dev \
+libudev-dev
 ```
 and the 'libxxusb.h', which needs to be installed manually.
 Visit <https://wiki.physik.uni-bonn.de/ilc/private/index.php/Wiener_VM-USB> for more information.
