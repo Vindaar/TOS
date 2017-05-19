@@ -34,24 +34,24 @@ PC::PC(Timepix *tp):
     _center_chip(DEFAULT_CENTER_CHIP)
 {
 #if DEBUG == 2
-    std::cout << "Enter PC::PC()" << std::endl;     
+    std::cout << "Enter PC::PC()" << std::endl;
 #endif
-    
-    // the PC constructor will now create an fpga object, and will hand the 
+
+    // the PC constructor will now create an fpga object, and will hand the
     // timepix object pointer to it
     fpga = new FPGA(tp);
 
     ok=fpga->okay();
     int i,loop;
     int lfsr, linear;
-    
+
     for(i=0;i<16384;++i){LFSR_LookUpTable[i]=0;}
     lfsr=0x3FFF;
 
     for(loop=0; loop<11811; loop++)
     {
         LFSR_LookUpTable[lfsr]=loop;
-        linear=0; 
+        linear=0;
         if((lfsr & 1)!=((lfsr>>13)&1)){linear=1;}
         lfsr= ((lfsr<<1) + linear) & 0x3FFF;
     }
@@ -63,9 +63,9 @@ PC::PC(Timepix *tp):
     if(ok){std::cout<<"Current working directory is: "<<puffer<<std::endl;}
     else{std::cout<<"getcwd funktioniert nicht"<<std::endl;}
 #endif
-  
+
     TOSPathName=puffer;
-  
+
     DataPathName = "data/singleFrames/";
     DataFileName = "data";
 
@@ -87,13 +87,13 @@ PC::PC(Timepix *tp):
 
     MaskPathName = "data/mask/";
     MaskFileName = "mask";
-  
+
     DACScanFileName   = "DACScan.txt";
 
     TOTCalibPathName  = "data/TOTCalib/";
     TOTCalibFileName = "TOTCalib";
 
-    TOACalibPathName  = "data/TOACalib/"; 
+    TOACalibPathName  = "data/TOACalib/";
     TOACalibFileName = "TOACalib";
 
     MeasuringCounter=0;
@@ -101,20 +101,20 @@ PC::PC(Timepix *tp):
     DataInBuffer = 0;
 
 
-    // now we make sure we're using a septemboard. If not, we have to set the 
+    // now we make sure we're using a septemboard. If not, we have to set the
     // main chip back to the first chip (to read out the FADC!)
     int nChips = fpga->tp->GetNumChips();
     if (nChips == 1){
 	// thus we set the single chip as the main chip
 	_center_chip = nChips;
     }
-    
-    
+
+
 }
 
 PC::~PC(){
     // delete fpga pointer
-    delete fpga;    
+    delete fpga;
 }
 
 
@@ -136,7 +136,7 @@ PC::~PC(){
 //      _fadc = NULL;
 //      _fadcFunctions = NULL;
 //     }
-  
+
 //     return;
 // }
 
@@ -163,20 +163,20 @@ void PC::initHV_FADC(hvFadcManager* hvFadcManager, bool useHvFadc)
     {
 	_hvFadcManager = NULL;
     }
-  
+
     return;
 }
 
 int PC::okay(){
 #if DEBUG==2
-        std::cout<<"Enter PC::okay()"<<std::endl;       
+        std::cout<<"Enter PC::okay()"<<std::endl;
 #endif
         return ok;
 }
 
 int PC::DoReadOut(std::string filename[9]){
 #if DEBUG==2
-        std::cout<<"Enter PC::DoReadOut()"<<std::endl;  
+        std::cout<<"Enter PC::DoReadOut()"<<std::endl;
 #endif
         int result;
         //int data[256][256];
@@ -218,9 +218,9 @@ int PC::DoReadOut2(std::string filename, unsigned short chip){
     std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
     hits=fpga->DataFPGAPC(data,chip);
     if(hits>1){//need more than 2 hits (specified for Christophs setup with 1 noise pixel)
-	FILE* f=fopen(filename.c_str(),"w"); 
+	FILE* f=fopen(filename.c_str(),"w");
 	if(f==NULL) {
-	    std::cout << "(PC::DoReadOut2) Dateifehler" << std::endl; 
+	    std::cout << "(PC::DoReadOut2) Dateifehler" << std::endl;
 	    return -1;
 	}
 #if PERFORMANCE==1
@@ -253,16 +253,16 @@ int PC::DoReadOutFadc(std::string filename, unsigned short chip){
     std::vector<int> *dataVec = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
     // and use zero suppressed readout to get chip data
     hits=fpga->DataFPGAPC(dataVec, chip);
-    
-    // before we can call the readoutFadc function to write the data to file, 
-    // we need to create the FADC parameter vector 
+
+    // before we can call the readoutFadc function to write the data to file,
+    // we need to create the FADC parameter vector
     std::map<std::string, int> fadcParams;
     fadcParams = _hvFadcManager->GetFadcParameterMap();
-    
+
     // determine number of channels of FADC (in use ?)
     // get nb of channels
     int channels = 4;
-    
+
     if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2) ){
 	if( !(fadcParams["ChannelMask"] & 8) ) channels--;
 	if( !(fadcParams["ChannelMask"] & 4) ) channels--;
@@ -275,9 +275,9 @@ int PC::DoReadOutFadc(std::string filename, unsigned short chip){
     //TODO/FIXME one wants to use channels instead of 4 as parameter of the next function?
     // TODO: fix this!!!
     std::vector<int> fadcData = _hvFadcManager->F_GetAllData(4);
-    
+
     // now call readoutFadc to write the data to file (to the singleFrames folder)
-    readoutFadc(DataPathName, fadcParams, dataVec, fadcData); 
+    readoutFadc(DataPathName, fadcParams, dataVec, fadcData);
 
     return hits;
 }
@@ -285,7 +285,7 @@ int PC::DoReadOutFadc(std::string filename, unsigned short chip){
 
 int PC::DoDACScan(int DACstoScan,unsigned short chip) {
 #if DEBUG==2
-        std::cout<<"Enter PC::DACScan()"<<std::endl;    
+        std::cout<<"Enter PC::DACScan()"<<std::endl;
 #endif
         int value = 0;
         int Bits = 0;
@@ -365,7 +365,7 @@ int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short c
 
 	std::fstream thlStream;
 	thlStream.open("data/THLScan.txt", std::fstream::app);
-	
+
         for(unsigned int coarse=coarselow;coarse<=coarsehigh;coarse++){
                 fpga->GeneralReset();
                 usleep(10000);
@@ -400,144 +400,145 @@ int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short c
                         delete data;
                 }
         }
-	thlStream.close();	
-	
+	thlStream.close();
+
         return 0;
 }
 
 
 int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset){
-        for (unsigned short chip = 1;chip<= fpga->tp->GetNumChips() ;chip++){
-                fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
-                unsigned short pix_per_row = 8;
-                unsigned short int i = 0;
-                if (voltage == 0) { i= 8;}
-                for (unsigned int volt=0; volt<=i;volt++){
-                        int meancounts[1024] = {0};
-                        int meanstepsum[1024] = {0};
-                        if (voltage == 0) {
-                                int myint = 0;
-                                if (volt == 0) { myint = 350;}
-                                else if (volt == 1) { myint = 370;}
-                                else if (volt == 2) { myint = 375;}
-                                else if (volt == 3) { myint = 380;}
-                                else if (volt == 4) { myint = 385;}
-                                else if (volt == 5) { myint = 390;}
-                                else if (volt == 6) { myint = 400;}
-                                else if (volt == 7) { myint = 410;}
-                                else if (volt == 8) { myint = 450;}
-                                else {myint = 350;}
-                                fpga->i2cDAC(myint,2);
-                                fpga->i2cDAC(350,3);
-                                fpga->tpulse(1000,10);
-                        }
-                        for (unsigned int step=0; step<(256/pix_per_row);step=step+8){ //must go from 0 to <(256/pix_per_row), put 1 for just 1 run
-                                std::cout<<"first step"<<std::endl;
-                                fpga->GeneralReset();
-                                usleep(1000);
-                                for (unsigned short c = 1;c<= fpga->tp->GetNumChips() ;c++){
-                                        fpga->tp->LoadFSRFromFile(GetFSRFileName(c),c);
-                                        fpga->tp->UniformMatrix(0,0,0,0,0,c); //0,0: Medipix modus
-                                        fpga->tp->LoadThresholdFromFile(GetThresholdFileName(c),c);
-                                        fpga->tp->SetDAC(14,c,0);
-                                }
-                                unsigned int CTPR = 1<<offset;
-                                fpga->tp->SetDAC(14,chip,CTPR);
-                                fpga->tp->Spacing_row(step,pix_per_row,chip);
-                                fpga->tp->Spacing_row_TPulse(step,pix_per_row,chip);
-                                fpga->SetMatrix();
-                                usleep(2000);
-                                int data[9][256][256];
-                                fpga->SerialReadOut(data);
-                                fpga->EnableTPulse(1);
-                                fpga->tp->SetDAC(13,chip,7);
-                                int meancounts_per_step[1024] = {0};
-                                for(unsigned int thl=startTHL[chip];thl<=stopTHL[chip];thl++){
-                                        fpga->tp->SetDAC(6,chip,thl);
-                                        fpga->WriteReadFSR();
-                                        usleep(400);
-                                        // calling CountingTime with second argument == 1
-                                        // corresponds to n = 1, power of 256
-                                        fpga->CountingTime(time, 1);
-                                        int result=0;
-                                        std::vector<std::vector<std::vector<int> > > *VecData = new std::vector<std::vector<std::vector<int> > >(9, std::vector < std::vector<int> >(256, std::vector<int>(256,0)));
-                                        int x,y;
-                                        result=fpga->SerialReadOut(VecData);
-                                        if(result==300){
-                                                int hit_counter = 0;
-                                                int hitsum = 0;
-                                                for(y=0;y<256;y++){
-                                                        for(x=0+offset;x<256;x=x+32){
-                                                                if (LFSR_LookUpTable[(*VecData)[chip][y][x]] >= 0 and LFSR_LookUpTable[(*VecData)[chip][y][x]]!=11810 and (fpga->tp->GetMask(y,x,chip))==1){
-                                                                        hit_counter += 1;
-                                                                        hitsum +=LFSR_LookUpTable[(*VecData)[chip][y][x]];
-                                                                }
-                                                        }
-                                                }
-                                                if (hit_counter != 0){
-                                                        meancounts_per_step[thl] = hitsum/hit_counter;
-                                                }
-                                                else {
-                                                        meancounts_per_step[thl] = 0;
-                                                }
-                                                //std::cout<<"hit_counter "<<hit_counter<<std::endl;
-                                                //std::cout<<"hitsum "<<hitsum<<std::endl;
-                                        }
-                                        delete VecData;
-                                        std::cout<<"Chip "<<chip<<" of "<<fpga->tp->GetNumChips()<<" step "<<step/8+1<<" of "<<(256/pix_per_row)/8<<" THL: "<< thl <<" meancounts "<<meancounts_per_step[thl]<<std::endl;
+    for (unsigned short chip = 1;chip<= fpga->tp->GetNumChips() ;chip++){
+	fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
+	unsigned short pix_per_row = 8;
+	unsigned short int i = 0;
+	if (voltage == 0) { i= 8;}
+	for (unsigned int volt=0; volt<=i;volt++){
+	    int meancounts[1024] = {0};
+	    int meanstepsum[1024] = {0};
+	    if (voltage == 0) {
+		int myint = 0;
+		if (volt == 0) { myint = 350;}
+		else if (volt == 1) { myint = 370;}
+		else if (volt == 2) { myint = 375;}
+		else if (volt == 3) { myint = 380;}
+		else if (volt == 4) { myint = 385;}
+		else if (volt == 5) { myint = 390;}
+		else if (volt == 6) { myint = 400;}
+		else if (volt == 7) { myint = 410;}
+		else if (volt == 8) { myint = 450;}
+		else {myint = 350;}
+		fpga->i2cDAC(myint,2);
+		fpga->i2cDAC(350,3);
+		fpga->tpulse(1000,10);
+	    }
+	    for (unsigned int step=0; step<(256/pix_per_row);step=step+8){ //must go from 0 to <(256/pix_per_row), put 1 for just 1 run
+		std::cout<<"first step"<<std::endl;
+		fpga->GeneralReset();
+		usleep(1000);
+		for (unsigned short c = 1;c<= fpga->tp->GetNumChips() ;c++){
+		    fpga->tp->LoadFSRFromFile(GetFSRFileName(c),c);
+		    fpga->tp->UniformMatrix(0,0,0,0,0,c); //0,0: Medipix modus
+		    fpga->tp->LoadThresholdFromFile(GetThresholdFileName(c),c);
+		    fpga->tp->SetDAC(14,c,0);
+		}
+		unsigned int CTPR = 1<<offset;
+		fpga->tp->SetDAC(14,chip,CTPR);
+		fpga->tp->Spacing_row(step,pix_per_row,chip);
+		fpga->tp->Spacing_row_TPulse(step,pix_per_row,chip);
+		fpga->SetMatrix();
+		usleep(2000);
+		int data[9][256][256];
+		fpga->SerialReadOut(data);
+		fpga->EnableTPulse(1);
+		fpga->tp->SetDAC(13,chip,7);
+		int meancounts_per_step[1024] = {0};
+		for(unsigned int thl=startTHL[chip];thl<=stopTHL[chip];thl++){
+		    std::this_thread::sleep_for(std::chrono::seconds(2));
+		    fpga->tp->SetDAC(6,chip,thl);
+		    fpga->WriteReadFSR();
+		    usleep(400);
+		    // calling CountingTime with second argument == 1
+		    // corresponds to n = 1, power of 256
+		    fpga->CountingTime(time, 1);
+		    int result=0;
+		    std::vector<std::vector<std::vector<int> > > *VecData = new std::vector<std::vector<std::vector<int> > >(9, std::vector < std::vector<int> >(256, std::vector<int>(256,0)));
+		    int x,y;
+		    result=fpga->SerialReadOut(VecData);
+		    if(result==300){
+			int hit_counter = 0;
+			int hitsum = 0;
+			for(y=0;y<256;y++){
+			    for(x=0+offset;x<256;x=x+32){
+				if (LFSR_LookUpTable[(*VecData)[chip][y][x]] >= 0 and LFSR_LookUpTable[(*VecData)[chip][y][x]]!=11810 and (fpga->tp->GetMask(y,x,chip))==1){
+				    hit_counter += 1;
+				    hitsum +=LFSR_LookUpTable[(*VecData)[chip][y][x]];
+				}
+			    }
+			}
+			if (hit_counter != 0){
+			    meancounts_per_step[thl] = hitsum/hit_counter;
+			}
+			else {
+			    meancounts_per_step[thl] = 0;
+			}
+			//std::cout<<"hit_counter "<<hit_counter<<std::endl;
+			//std::cout<<"hitsum "<<hitsum<<std::endl;
+		    }
+		    delete VecData;
+		    std::cout<<"Chip "<<chip<<" of "<<fpga->tp->GetNumChips()<<" step "<<step/8+1<<" of "<<(256/pix_per_row)/8<<" THL: "<< thl <<" meancounts "<<meancounts_per_step[thl]<<std::endl;
 
-                                } //end thl loop
-                                for(unsigned int thl=startTHL[chip];thl<=stopTHL[chip];thl++){
-                                        meanstepsum[thl]+=meancounts_per_step[thl];
-                                        //std::cout<<"meanstepsum[thl] "<<meanstepsum[thl]<<" for thl " <<thl<<std::endl;
-                                }
-                                fpga->EnableTPulse(0);
-                        } //end step loop
-                        for(unsigned int thl=startTHL[chip];thl<=stopTHL[chip];thl++){
-                                meancounts[thl] = meanstepsum[thl]/(256/pix_per_row)*8; //put 1 for just 1 run
-                        }
-                        std::ostringstream sstream1;
-                        sstream1<<"chip_"<<chip;
-                        PathName=DataPathName+"/"; PathName+=sstream1.str();
+		} //end thl loop
+		for(unsigned int thl=startTHL[chip];thl<=stopTHL[chip];thl++){
+		    meanstepsum[thl]+=meancounts_per_step[thl];
+		    //std::cout<<"meanstepsum[thl] "<<meanstepsum[thl]<<" for thl " <<thl<<std::endl;
+		}
+		fpga->EnableTPulse(0);
+	    } //end step loop
+	    for(unsigned int thl=startTHL[chip];thl<=stopTHL[chip];thl++){
+		meancounts[thl] = meanstepsum[thl]/(256/pix_per_row)*8; //put 1 for just 1 run
+	    }
+	    std::ostringstream sstream1;
+	    sstream1<<"chip_"<<chip;
+	    PathName=DataPathName+"/"; PathName+=sstream1.str();
 #ifdef __WIN32__
-                        mkdir(PathName.c_str());
+	    mkdir(PathName.c_str());
 #else
-                        mkdir(PathName.c_str(),0755);
+	    mkdir(PathName.c_str(),0755);
 #endif
-                        std::string filename;
-                        std::ostringstream sstream;
-                        if (voltage == 0) {
-                                if (volt == 0) {sstream<<"voltage_0.txt";}
-                                else if (volt == 1) {sstream<<"voltage_20.txt";}
-                                else if (volt == 2) {sstream<<"voltage_25.txt";}
-                                else if (volt == 3) {sstream<<"voltage_30.txt";}
-                                else if (volt == 4) {sstream<<"voltage_35.txt";}
-                                else if (volt == 5) {sstream<<"voltage_40.txt";}
-                                else if (volt == 6) {sstream<<"voltage_50.txt";}
-                                else if (volt == 7) {sstream<<"voltage_60.txt";}
-                                else if (volt == 8) {sstream<<"voltage_100.txt";}
-                                else {sstream<<"voltage_0.txt";}
-                        }
-                        else sstream<<"voltage_"<<voltage<<".txt";
-                        filename=PathName+"/"; filename+=sstream.str();
-			std::string filename_= filename;
-                        std::fstream f;
+	    std::string filename;
+	    std::ostringstream sstream;
+	    if (voltage == 0) {
+		if (volt == 0) {sstream<<"voltage_0.txt";}
+		else if (volt == 1) {sstream<<"voltage_20.txt";}
+		else if (volt == 2) {sstream<<"voltage_25.txt";}
+		else if (volt == 3) {sstream<<"voltage_30.txt";}
+		else if (volt == 4) {sstream<<"voltage_35.txt";}
+		else if (volt == 5) {sstream<<"voltage_40.txt";}
+		else if (volt == 6) {sstream<<"voltage_50.txt";}
+		else if (volt == 7) {sstream<<"voltage_60.txt";}
+		else if (volt == 8) {sstream<<"voltage_100.txt";}
+		else {sstream<<"voltage_0.txt";}
+	    }
+	    else sstream<<"voltage_"<<voltage<<".txt";
+	    filename=PathName+"/"; filename+=sstream.str();
+	    std::string filename_= filename;
+	    std::fstream f;
 
-                        f.open(filename_,std::fstream::out);
-                        if(f.is_open()){
-                                for(int thl=stopTHL[chip];thl>=startTHL[chip];thl-=1){
-                                        f<<thl<<"\t"<<meancounts[thl]<<std::endl;
-                                }
-                                f.close();
-                        }
-                }
-        }
-        return 0;
+	    f.open(filename_,std::fstream::out);
+	    if(f.is_open()){
+		for(int thl=stopTHL[chip];thl>=startTHL[chip];thl-=1){
+		    f<<thl<<"\t"<<meancounts[thl]<<std::endl;
+		}
+		f.close();
+	    }
+	}
+    }
+    return 0;
 }
 
 void PC::DACScanHistogram(void* PointerToObject, char dac, int bit, int val){
 #if DEBUG==2
-        std::cout<<"Enter PC::DACScanHistogram()"<<std::endl;   
+        std::cout<<"Enter PC::DACScanHistogram()"<<std::endl;
 #endif
         if(bit>0)dac=-1;
         // TODO: Alex code has the next line not commented
@@ -1364,7 +1365,7 @@ int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, shor
 
 void PC::TOCalibAllChipsSetUniformMatrix(std::set<int> chip_set,
 					 std::map<std::string, boost::any> parameter_map,
-                                         const int nChips, 
+                                         const int nChips,
                                          const int npix_per_dim){
     // inputs:
     // 	 std::string TOmode:    a string defining whether we do TOT or TOA calibration
@@ -1414,7 +1415,7 @@ void PC::TOCalibAllChipsSetUniformMatrix(std::set<int> chip_set,
     // create a zero initialized array into which the matrices are read back
     // into. Note: {} automatically initializes to 0!
     // TODO: find nicer way than this to create array
-    //int *matrices_read_back_buffer;//[pixels_all_chips] = {}; 
+    //int *matrices_read_back_buffer;//[pixels_all_chips] = {};
     //auto matrices_read_back_buffer = new int[nChips][npix_per_dim][npix_per_dim];//[pixels_all_chips];
     int matrices_read_back_buffer[9][256][256] = {};
     fpga->SetMatrix();
@@ -1446,12 +1447,12 @@ void PC::TOCalibSingleChipReadoutCalc(int chip,
 				      std::map<int, Frame> *frame_map){
     // inputs:
     //   int chip: chip number for which to do the calculation
-    //   std::map<std::string, boost::any> parameter_map: heterogeneous map, storing 
+    //   std::map<std::string, boost::any> parameter_map: heterogeneous map, storing
     //       parameters of current step, ctpr, etc...
     //   std::map<int, Frame> *frame_map: pointer to a map storing a whole frame
     //       (furhter built with each call), one for each chip
-    // this function calculates the variables needed for TOCalib based on the 
-    // zero suppressed readout of a single chip with spacing in x and y direction 
+    // this function calculates the variables needed for TOCalib based on the
+    // zero suppressed readout of a single chip with spacing in x and y direction
     int sum  = 0;
     int hits = 0;
     double mean = 0.0;
@@ -1507,7 +1508,7 @@ void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
 				       int nChips){
     // inputs:
     //   std::set<int> chip_set: set storing which chips we are working on
-    //   std::map<std::string, boost::any> parameter_map: heterogeneous map storing 
+    //   std::map<std::string, boost::any> parameter_map: heterogeneous map storing
     //       the needed parameters, e.g. step, ctpr, etc...
     //   std::map<int, Frame> pointer to a map storing whole frames (to be built with
     //       each call), one for each chip
@@ -1521,7 +1522,7 @@ void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
     int pixels_per_column     = boost::any_cast<int>(parameter_map["pixels_per_column"]);
     std::string shutter_range = boost::any_cast<std::string>(parameter_map["shutter_range"]);
     std::string shutter_time  = boost::any_cast<std::string>(parameter_map["shutter_time"]);
-    
+
     // we only want to set the CTPR DAC for the chips we want to calibrate, hence
     // only run over chip_set
     // TODO: understand if we need to load the FSR for all chips, or only for the ones
@@ -1532,7 +1533,7 @@ void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
         // now we need to load the FSR for each of the connected chips
         fpga->tp->LoadFSRFromFile(GetFSRFileName(current_chip), current_chip);
         // we use a bitshift to set the correct bit of the CTPR DAC
-        // CTPR runs from 0 to 31, shift a 1 from 0th bit CTPR times 
+        // CTPR runs from 0 to 31, shift a 1 from 0th bit CTPR times
         // to the left
         unsigned int CTPRval = 1 << CTPR;
         // and set the CTPR DAC to that value
@@ -1546,7 +1547,7 @@ void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
     // call counting function to open shutter and apply test pulses
     fpga->CountingTime(shutter_time, shutter_range);
 
-    // and activate zero suppressed readout 
+    // and activate zero suppressed readout
     int temp_result;
     fpga->DataChipFPGA(temp_result);
 
@@ -1554,7 +1555,7 @@ void PC::TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
     // we use a map to map mean_std_pairs to the chips
     for (it_chip_set = chip_set.begin(); it_chip_set != chip_set.end(); it_chip_set++){
         int current_chip = *it_chip_set;
-        
+
 	// call the function which performs the calculation for all chips and finally
 	// starts to built the whole frames
         TOCalibSingleChipReadoutCalc(current_chip, parameter_map, frame_map);
@@ -1571,7 +1572,7 @@ void PC::TOCalibSingleIteration(std::set<int> chip_set,
     //       all parameters, which are needed, e.g. step, pulse, etc..
     //   std::map<int, std::pair<int, double>> *chip_mean_std_map: a map containing
     //       a single pair of mean and std values for each chip, which are calculated
-    //       from the full frames, which are built over one whole iteration. 
+    //       from the full frames, which are built over one whole iteration.
     //       after every iteration we simply add the mean and std values of this
     //       iteration to the map. After all iterations are done, we divide by the
     //       number of iterations
@@ -1582,35 +1583,35 @@ void PC::TOCalibSingleIteration(std::set<int> chip_set,
     //   - CTPR
     //     - chips
     // chips will be done in seperate function too
-    
+
     // number of pixels in one dimension and number of chips
     int npix_per_dim = fpga->tp->GetPixelsPerDimension();
     // define a variable for number of chips for convenience
     int nChips = fpga->tp->GetNumChips();
 
     int pixels_per_column = boost::any_cast<int>(parameter_map["pixels_per_column"]);
-    
+
 
     // we create a map of chips and frames, which is used to built the full frames
     // from the partial frames (read by step and CTPR)
     std::map<int, Frame> frame_map;
     // fill the map with empty frames, one for each chip we use
     std::for_each( chip_set.begin(), chip_set.end(), [&frame_map](int chip){
-	    // we create one empty frame for each chip, by creating a 
+	    // we create one empty frame for each chip, by creating a
 	    // Frame object. Frame creator initializes to zero
 	    Frame chip_frame;
 	    frame_map.insert( std::pair<int, Frame>(chip, chip_frame) );
 	} );
 
     for (int step = 0; step < (npix_per_dim / pixels_per_column); step++){
-        // per single step (meaning we use test pulses on pixels_per_column rows 
+        // per single step (meaning we use test pulses on pixels_per_column rows
         // of the whole chip), we further separate each row into several batches
         // of columns (using the CTPR DAC)
-        
+
 	// first store the current step in our heterogeneous map
 	parameter_map["step"] = step;
 
-        // the first thing to do within one step is to set the matrices for the 
+        // the first thing to do within one step is to set the matrices for the
         // chips appropriately.
 	TOCalibAllChipsSetUniformMatrix(chip_set, parameter_map, nChips, npix_per_dim);
 
@@ -1620,22 +1621,22 @@ void PC::TOCalibSingleIteration(std::set<int> chip_set,
 	    parameter_map["CTPR"] = CTPR;
 
             // now we run over all chips
-	    // SingleStepCtpr will perform a single shutter opening and closing of 
+	    // SingleStepCtpr will perform a single shutter opening and closing of
 	    // the parameters given in parameter_map, results saved to frames in frame_map
 	    TOCalibAllChipsSingleStepCtpr(chip_set, parameter_map, &frame_map, nChips);
-	    
+
         }
 	// disable test pulses again
 	fpga->EnableTPulse(0);
     }
 
-    // now we basically have to calculate the important variables for the whole frame, which was 
+    // now we basically have to calculate the important variables for the whole frame, which was
     // created in the iteration
     std::for_each( frame_map.begin(), frame_map.end(), [&chip_mean_std_map, &parameter_map](std::pair<int, Frame> chip_pair){
 	    // get the chip and frame from the frame map
 	    int chip = chip_pair.first;
 	    Frame chip_frame = chip_pair.second;
-	    
+
 	    double mean;
 	    double variance;
 	    double std;
@@ -1659,32 +1660,32 @@ void PC::TOCalibSingleIteration(std::set<int> chip_set,
 	    // and print the values for this iteration and this chip
 	    int iter  = boost::any_cast<int>(parameter_map["iteration"]);
 	    int pulse = boost::any_cast<int>(parameter_map["pulse"]);
-	    
+
 	    std::cout << "\n \n"
 		      << "iteration "  << iter
 		      << " for pulse " << pulse << " done.\n"
-		      << " chip "      << chip 
-		      << " mean "      << mean 
+		      << " chip "      << chip
+		      << " mean "      << mean
 		      << " variance "  << variance
 		      << " std "       << std
 		      << std::endl;
-	       
+
 	} );
 
 }
 
-void PC::TOCalib(std::set<int> chip_set, 
-                 std::string TOmode, 
-                 std::string pulser, 
+void PC::TOCalib(std::set<int> chip_set,
+                 std::string TOmode,
+                 std::string pulser,
                  std::list<int> pulseList,
-                 int pixels_per_column, 
+                 int pixels_per_column,
                  std::string shutter_range,
                  std::string shutter_time){
     // input:
     //     std::set<int> chip_set:    a set containing all chips for which we will do a
     //                                TO calibration
     //     std::string TOmode:        a string defining whether we do TOT or TOA calibration
-    //     std::string pulser:        a string defining whether we use an internal or 
+    //     std::string pulser:        a string defining whether we use an internal or
     //                                external pulser
     //     std::list<int> pulseList:  a list containing the integers of the desired pulse
     //                                values
@@ -1699,12 +1700,12 @@ void PC::TOCalib(std::set<int> chip_set,
     //     - steps
     //       - CTPR
     //         - chips
-    
+
     // start by looping over all voltages, need iterator over list
     std::list<int>::iterator it_pulseList;
     for(it_pulseList = pulseList.begin(); it_pulseList != pulseList.end(); it_pulseList++){
         // this is the main outer loop over all voltages
-        
+
         // check if we're using an internal pulser. in this case we need to set the
         // correct DAC to the value we want (i.e. the current pulseList iterator + 350)
         if (pulser == "internal"){
@@ -1714,13 +1715,13 @@ void PC::TOCalib(std::set<int> chip_set,
             voltage = *it_pulseList + threshold_voltage;
             // the upper bound for the DAC
             fpga->i2cDAC(voltage, 3);
-            // the lower bound 
+            // the lower bound
             fpga->i2cDAC(threshold_voltage, 2);
             // and activate the test pulses (I assume?!)
             fpga->tpulse(1,50);
         }
 
-	// create a map of chip numbers and a pair of (mean, std) values, which will be 
+	// create a map of chip numbers and a pair of (mean, std) values, which will be
 	// handed to the function performing a single iteration
 	std::map<int, std::pair<double, double>> chip_mean_std_map;
 	// we will zero initialize the map, since we want to add mean and std
@@ -1736,7 +1737,7 @@ void PC::TOCalib(std::set<int> chip_set,
 		// and insert element into map
 		chip_mean_std_map[chip] = pair;
 	    } );
-	
+
         // loop over iterations (typically we want to do 4 iterations)
 	int nIterations = 4;
         for(int iter = 0; iter < nIterations; iter++){
@@ -1750,7 +1751,7 @@ void PC::TOCalib(std::set<int> chip_set,
 	    parameter_map["shutter_time"]      = shutter_time;
 	    parameter_map["pixels_per_column"] = pixels_per_column;
 	    parameter_map["pulse"]             = *it_pulseList;
-            
+
 	    // and call the function, which performs a single iteration
             TOCalibSingleIteration(chip_set, parameter_map, &chip_mean_std_map);
         }
@@ -1770,7 +1771,7 @@ void PC::TOCalib(std::set<int> chip_set,
 	    double std;
 	    mean = pair.first  / nIterations;
 	    std  = pair.second / nIterations;
-	    
+
 	    // and write to file
 	    std::fstream f;
 	    std::string filename;
@@ -1780,9 +1781,9 @@ void PC::TOCalib(std::set<int> chip_set,
 	    else{
 		filename = GetTOACalibFileName(chip);
 	    }
-	    
+
 	    f.open(filename, std::fstream::out | std::fstream::app);
-	    
+
 	    f << "pulse " << *it_pulseList << "\t"
 	      << "chip "  << chip          << "\t"
 	      << "mean "  << mean          << "\t"
@@ -1794,7 +1795,7 @@ void PC::TOCalib(std::set<int> chip_set,
 
         if (pulser == "external"){
             std::cout << "external pulser voltage finished." << std::endl;
-            // we will return to the CommandTOCalib function to ask for user input 
+            // we will return to the CommandTOCalib function to ask for user input
             // regarding additional voltages on the external pulser
             // thus, we return here and ask for more input
             return;
@@ -1816,7 +1817,7 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
     std::vector<int> meanTOT6; std::vector<double> stddevTOT6;
     std::vector<int> meanTOT7; std::vector<double> stddevTOT7;
     std::vector<int> meanTOT8; std::vector<double> stddevTOT8;
-	
+
     int i = 0;
 
     while(next_voltage)
@@ -1982,7 +1983,7 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 			meanTOT_iteration[chip] += meanTOT_iteration_spacing[chip];
 		    }
 		} // spacingCTPR
-		double sumstd_iteration[9][4] = {0};				
+		double sumstd_iteration[9][4] = {0};
 		for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
 		    for (unsigned int ctpr=0; ctpr<32;ctpr++){
 			sumstd_iteration[chip][iteration]+=(stddevTOT_iteration_spacing[chip][ctpr]*stddevTOT_iteration_spacing[chip][ctpr])/(32-1);
@@ -2121,20 +2122,20 @@ unsigned short PC::CheckOffset(){
 void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a){
         int x,y;
         int l,r;
-        
+
         //Histogramm
         for(y=0;y<256;++y){
                 for(x=0;x<256;++x){
                         if((pix[y][x]>=0)&&(pix[y][x]<16384)){hist[pix[y][x]]++;}
                 }
         }
-        
+
         //Mittelwert
         *m=0; *a=0;
         for(y=16383;y>=0;--y){
                 if(hist[y]>*a){*a=hist[y]; *m=y;}
         }
-        
+
         //Breite
         l=-1; r=-1;
         for(y=1;y<16384;++y){
@@ -2150,21 +2151,21 @@ void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a){
 void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup ){
         int x,y;
         int l,r;
-        
+
         //Histogramm
         for(y=0;y<256;++y){
                 for(x=0;x<256;++x){
                         if((pix[y][x]>=0)&&(pix[y][x]<16384)){hist[pix[y][x]]++;}
                 }
         }
-        
+
         //Mittelwert
         *m=0; *a=0; *sup=-1;
         for(y=16383;y>=0;--y){
                 if((*sup<0)&&(hist[y]>2)) {*sup=y;}
                 if(hist[y]>*a){*a=hist[y]; *m=y;}
         }
-        
+
         //Breite
         l=-1; r=-1;
         for(y=1;y<16384;++y){
@@ -2181,14 +2182,14 @@ void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, 
 void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup, int* inf ){
         int x,y;
         int l,r;
-        
+
         //Histogramm
         for(y=0;y<256;++y){
                 for(x=0;x<256;++x){
                         if((pix[y][x]>=0)&&(pix[y][x]<16384)){hist[pix[y][x]]++;}
                 }
         }
-        
+
         //Mittelwert
         *m=0; *a=0; *sup=-1; *inf=-1;
         for(y=1;y<16384;y++){
@@ -2199,7 +2200,7 @@ void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, 
                 if((*inf<0)&&(hist[y]>0)) {*inf=y;}
                 if(hist[y]>*a){*a=hist[y]; *m=y;}
         }
-        
+
         //Breite
         l=-1; r=-1;
         for(y=1;y<16384;++y){
@@ -2213,31 +2214,31 @@ void PC::Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, 
 }
 
 
-int PC::DoRun(unsigned short runtimeFrames_, 
-              int runtime_, 
-              int shutterTime_, 
-              int filter_, 
+int PC::DoRun(unsigned short runtimeFrames_,
+              int runtime_,
+              int shutterTime_,
+              int filter_,
               std::string shutter_mode_,
-              unsigned short run_mode_, 
+              unsigned short run_mode_,
               bool useFastClock,
               bool useExternalTrigger,
               bool useHvFadc)
 {
 #if DEBUG == 2
     std::cout << "Enter: PC::DoRun()" << std::endl;
-#endif 
+#endif
 
     //check if the fadc readout is not wanted although the fadc was initilised...
     bool tmpFADC = _useHvFadc;
     //... if this happens, set the FADC flag to false and change it after the run to true again
-    if(useHvFadc != _useHvFadc) _useHvFadc = false; 
-  
+    if(useHvFadc != _useHvFadc) _useHvFadc = false;
+
     //build local vars
     int result;
     int data[9][256][256];
     char TimeName[20]={0};
     std::ostringstream sstream;
-  
+
     //set global vars
     runtime = runtime_;
     runtimeFrames = runtimeFrames_;
@@ -2247,7 +2248,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
     run_mode = run_mode_;
     _useFastClock = useFastClock;
     _useExternalTrigger = useExternalTrigger;
-  
+
     //create run directory
     time_t Time_SecondsPassed;
     struct tm * TimeStruct;
@@ -2268,18 +2269,18 @@ int PC::DoRun(unsigned short runtimeFrames_,
 #else
     mkdir(RunPathName.c_str(),0755);
 #endif
-    
+
     PathName  = RunPathName;
     PathName += "Run_" + std::to_string(runNumber) + "_" + TimeName;
     std::cout << PathName << "\n\n" << std::endl;
 
-    
+
 #ifdef __WIN32__
     mkdir(PathName.c_str());
 #else
     mkdir(PathName.c_str(),0755);
 #endif
-    
+
 
     // add information to _runMap to write them to headers
     _runMap["runTime"]         = runtime;
@@ -2292,7 +2293,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
     _runMap["externalTrigger"] = _useExternalTrigger;
     _runMap["pathName"]        = PathName;
     _runMap["numChips"]        = fpga->tp->GetNumChips();
-  
+
     //WriteRunFile();
     for (unsigned short chip = 1; chip <= fpga->tp->GetNumChips(); chip++)
     {
@@ -2304,7 +2305,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
         sstream.str("");
     }
 
-    
+
     MeasuringCounter = 0;
 
     // in case we use an external trigger, we call CountingTrigger()
@@ -2323,13 +2324,13 @@ int PC::DoRun(unsigned short runtimeFrames_,
         result = fpga->CountingTime(shutterTime, shutter_mode);
         // after counting, deactivate fast clock variable again
         fpga->UseFastClock(false);
-        if(result!=20){(RunIsRunning)=false;}       
+        if(result!=20){(RunIsRunning)=false;}
     }
 
     result=fpga->DataChipFPGA(result);
 
 
-    //start run  
+    //start run
     mutexRun.lock();
     RunIsRunning = true;
     _loop_continue = true;
@@ -2395,15 +2396,15 @@ void PC::run()
 {
  #if DEBUG == 2
     std::cout << "Enter: PC::run()" << std::endl;
- #endif 
-  
+ #endif
+
     if(_useHvFadc){
         runFADC();
     }
     else {
         runOTPX();
     }
-  
+
     return;
 }
 
@@ -2413,7 +2414,7 @@ void PC::runFADC()
 {
 #if DEBUG == 2
     std::cout << "Enter: PC::runFADC()" << std::endl;
-#endif 
+#endif
 
     time_t start = time(NULL);
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
@@ -2427,12 +2428,12 @@ void PC::runFADC()
     	// MCP2210 related
     	// ##################################################
 
-    	// start a second thread, which calls init_and_log_temp 
+    	// start a second thread, which calls init_and_log_temp
     	// to print and log the temperatures during the run
     	std::string path_name(PathName);
     	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name);
     	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
-	
+
         Producer producer(this);
         DataAcqRunning = true;
         Consumer consumer(this);
@@ -2469,7 +2470,7 @@ void PC::runOTPX()
 {
 #if DEBUG == 2
     std::cout << "Enter: PC::runOTPX()" << std::endl;
-#endif 
+#endif
 
     time_t start = time(NULL);
 
@@ -2484,13 +2485,13 @@ void PC::runOTPX()
     	// MCP2210 related
     	// ##################################################
 
-    	// start a second thread, which calls init_and_log_temp 
+    	// start a second thread, which calls init_and_log_temp
     	// to print and log the temperatures during the run
     	std::string path_name(PathName);
     	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name);
     	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
 
-	
+
         Producer producer(this);
         DataAcqRunning = true;
         Consumer consumer(this);
@@ -2500,23 +2501,23 @@ void PC::runOTPX()
         #endif
         consumer.start();
         producer.wait();
-	
+
         //consumer.wait();
         consumer.wait();
 
-	
+
         #if DEBUG==2
         std::cout << "runOTPX: consumer ended"<< std::endl;
         #endif
         std::cout<<"Press ENTER to close run "<<std::flush;
-	
+
 	// MCP2210 related: stop logging thread and join
 	//loop_stop = false;
 	loop_thread.join();
 
     }
     //complete matrix readout
-    else 
+    else
     {
         while(IsRunning())
         {
@@ -2539,7 +2540,7 @@ void PC::runOTPX()
                 result = fpga->CountingTime(shutterTime, shutter_mode);
                 // after counting, deactivate fast clock variable again
                 fpga->UseFastClock(false);
-                if(result!=20){(RunIsRunning)=false;}       
+                if(result!=20){(RunIsRunning)=false;}
             }
 
             //vars used to build the filenames
@@ -2584,21 +2585,21 @@ void PC::runOTPX()
             result=DoReadOut(f);
             if(result<0)
             {
-                RunIsRunning=false; 
+                RunIsRunning=false;
                 pthread_exit(0);
             }  //return;}
             //std::cout<<MeasuringCounter<<": "<<result<< " answering Pixel"<<std::endl;
-      
+
             if((filter)&&(result==0)){remove(FileName.c_str());}
-      
+
             ++MeasuringCounter;
-      
+
             if (runtimeFrames == 1)
             {
                 //std::cout << "MeasuringCounter "<<MeasuringCounter<<" runtime "<<runtime<< std::endl;
                 if (MeasuringCounter == runtime)
-                { 
-                    StopRun(); 
+                {
+                    StopRun();
                 }
             }
             if (runtimeFrames == 0)
@@ -2606,8 +2607,8 @@ void PC::runOTPX()
                 if ((difftime(time(NULL),start)) >= runtime) StopRun();
             }
         }//end of: while(IsRunning)
-    
-        
+
+
         std::cout << "runOTPX: Run finshed: " << MeasuringCounter << "\n> "<<std::endl;
         std::cout<<"Press ENTER to close run "<<std::flush;
     }//end of else{ ... (Full Matrix readout)
@@ -2625,14 +2626,14 @@ void PC::writeChipData(std::string filePathName, std::vector<int> *chipData, int
     f.open(filePathName, std::fstream::app);
 
     //int NumHits = chipData->at(0);
-    //std::cout << "Chip Readout Numhits: " << NumHits << " on chip " << chip+1 << std::endl; 
+    //std::cout << "Chip Readout Numhits: " << NumHits << " on chip " << chip+1 << std::endl;
     //hits[chip+1] = (((chipData)->size()) - 1)/3;
 
     //if there is a problem with the output file: ...
     if( !f.is_open() )
     {
 	//... stop Run
-	std::cout << "Readout: File error" << std::endl; 
+	std::cout << "Readout: File error" << std::endl;
 	RunIsRunning = false;
     }
     else{
@@ -2661,7 +2662,7 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
 {
 #if DEBUG == 2
     std::cout << "Enter: PC::readoutFADC()" << std::endl;
-#endif 
+#endif
 
     // check if HFM is active
     if (_useHvFadc == true){
@@ -2670,7 +2671,7 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
 
         int eventNumber = 0;
         eventNumber = fadcParams["eventNumber"];
-        
+
         FileName = _hvFadcManager->buildFileName(filePath, false, eventNumber);
         std::cout << "calling writeChip from fadc readout function" << std::endl;
 
@@ -2681,12 +2682,12 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
         }
         //TODO:: This should not be possible!!
         else
-        { 
+        {
 	    std::cout << "full matrix readout not implemented" << std::endl;
 	    std::cout << "if this error message appears on your screen, something went really wrong!!" << std::endl;
         }
 
-        //readout FADC 
+        //readout FADC
         //get nb of channels
         int channels = 4;
 
@@ -2708,7 +2709,7 @@ void PC::readoutFadc(std::string filePath, std::map<std::string, int> fadcParams
     else{
 	std::cout << "HFM not active. readoutFADC should never have been called." << std::endl;
     }
-    
+
     return;
 }
 
@@ -2753,7 +2754,7 @@ std::string PC::GetDataPathName(){
         return DataPathName;
 }
 std::string PC::GetDataFileName(unsigned short chip){
-    // this function builds the data file name from the 
+    // this function builds the data file name from the
     // DataFileNamePrototype and the chip
     std::string filename;
     filename = DataPathName + DataFileName + std::to_string(chip) + ".txt";
@@ -2763,14 +2764,14 @@ std::string PC::GetRunFileName(){
         return RunFileName;
 }
 std::string PC::GetFSRFileName(unsigned short chip){
-    // this function builds the FSR file name from the 
+    // this function builds the FSR file name from the
     // FSRFileNamePrototype and the chip
     std::string filename;
     filename = FSRPathName + FSRFileName + std::to_string(chip) + ".txt";
     return filename;
 }
 std::string PC::GetMatrixFileName(unsigned short chip){
-    // this function builds the matrix file name from the 
+    // this function builds the matrix file name from the
     // MatrixFileNamePrototype and the chip
     std::string filename;
     filename = MatrixPathName + MatrixFileName + std::to_string(chip) + ".txt";
@@ -2780,21 +2781,21 @@ std::string PC::GetDACScanFileName(){
         return DACScanFileName;
 }
 std::string PC::GetThresholdFileName(unsigned short chip){
-    // this function builds the treshold file name from the 
+    // this function builds the treshold file name from the
     // ThresholdFileNamePrototype and the chip
     std::string filename;
     filename = ThresholdPathName + ThresholdFileName + std::to_string(chip) + ".txt";
     return filename;
 }
 std::string PC::GetThresholdMeansFileName(unsigned short chip){
-    // this function builds the thresholdMeans file name from the 
+    // this function builds the thresholdMeans file name from the
     // ThresholdMeansFileNamePrototype and the chip
     std::string filename;
     filename = ThresholdMeansPathName + ThresholdMeansFileName + std::to_string(chip) + ".txt";
     return filename;
 }
 std::string PC::GetTOTCalibFileName(unsigned short chip){
-    // this function builds the TOTcalib file name from the 
+    // this function builds the TOTcalib file name from the
     // TOTCalibFileNamePrototype and the chip
     std::string filename;
     filename = TOTCalibPathName + TOTCalibFileName + std::to_string(chip) + ".txt";
@@ -2802,7 +2803,7 @@ std::string PC::GetTOTCalibFileName(unsigned short chip){
 }
 
 std::string PC::GetTOACalibFileName(unsigned short chip){
-    // this function builds the TOAcalib file name from the 
+    // this function builds the TOAcalib file name from the
     // TOACalibFileNamePrototype and the chip
     std::string filename;
     filename = TOACalibPathName + TOACalibFileName + std::to_string(chip) + ".txt";
@@ -2810,7 +2811,7 @@ std::string PC::GetTOACalibFileName(unsigned short chip){
 }
 
 std::string PC::GetMaskFileName(unsigned short chip){
-    // this function builds the mask file name from the 
+    // this function builds the mask file name from the
     // MaskFileNamePrototype and the chip
     std::string filename;
     filename = MaskPathName + MaskFileName + std::to_string(chip) + ".txt";
@@ -2825,20 +2826,20 @@ void PC::MakeBMP(int arr[256][256]){
   int i,x,y;
   FILE* f;
   //std::fstream fs;
-  
+
   /*fs.open("korr.txt",std::fstream::in); if(!fs.is_open()){std::cout<<"Dateifehler"<<std::endl; return;}
   for(y=0;y<256;++y){for(x=0;x<256;++x){
         fs>>korr[y][x];
   }}
   fs.close();*/
-  
+
   for(i=0;i<196662;++i){buffer[i]=0xff;}
-  
+
   buffer[0]=0x42;       buffer[1]=0x4d;
   buffer[2]=0x36;       buffer[3]=0x00;         buffer[4]=0x03;         buffer[5]=0x00;
   buffer[6]=0x00;       buffer[7]=0x00;         buffer[8]=0x00;         buffer[9]=0x00;
   buffer[10]=0x36;      buffer[11]=0x00;        buffer[12]=0x00;        buffer[13]=0x00;
-  
+
   buffer[14]=0x28;      buffer[15]=0x00;        buffer[16]=0x00;        buffer[17]=0x00;
   buffer[18]=0x00;      buffer[19]=0x01;        buffer[20]=0x00;        buffer[21]=0x00;
   buffer[22]=0x00;      buffer[23]=0xff;        buffer[24]=0xff;        buffer[25]=0xff;
@@ -2850,17 +2851,17 @@ void PC::MakeBMP(int arr[256][256]){
   buffer[42]=0x00;      buffer[43]=0x00;        buffer[44]=0x00;        buffer[45]=0x00;
   buffer[46]=0x00;      buffer[47]=0x00;        buffer[48]=0x00;        buffer[49]=0x00;
   buffer[50]=0x00;      buffer[51]=0x00;        buffer[52]=0x00;        buffer[53]=0x00;
-  
+
   f=fopen("pix.bmp","w");
   fwrite(buffer,1,54,f);
-  
+
   g=0x0; b=0x0; r=0;
   for(y=0;y<256;++y){for(x=0;x<256;++x){
         if( (arr[y][x]>=7480)  ){r=0xff; g=0x0; b=0x0;}
         else{g=0xff; b=0xff; r=0xff;}
         fwrite(&b,1,1,f); fwrite(&g,1,1,f); fwrite(&r,1,1,f);
   }}
-  
+
   fclose(f);
 }
 
@@ -2873,20 +2874,20 @@ void PC::MakeBMP(int **arr){
   int i,x,y;
   FILE* f;
   //std::fstream fs;
-  
+
   /*fs.open("korr.txt",std::fstream::in); if(!fs.is_open()){std::cout<<"Dateifehler"<<std::endl; return;}
   for(y=0;y<256;++y){for(x=0;x<256;++x){
         fs>>korr[y][x];
   }}
   fs.close();*/
-  
+
   for(i=0;i<196662;++i){buffer[i]=0xff;}
-  
+
   buffer[0]=0x42;       buffer[1]=0x4d;
   buffer[2]=0x36;       buffer[3]=0x00;         buffer[4]=0x03;         buffer[5]=0x00;
   buffer[6]=0x00;       buffer[7]=0x00;         buffer[8]=0x00;         buffer[9]=0x00;
   buffer[10]=0x36;      buffer[11]=0x00;        buffer[12]=0x00;        buffer[13]=0x00;
-  
+
   buffer[14]=0x28;      buffer[15]=0x00;        buffer[16]=0x00;        buffer[17]=0x00;
   buffer[18]=0x00;      buffer[19]=0x01;        buffer[20]=0x00;        buffer[21]=0x00;
   buffer[22]=0x00;      buffer[23]=0xff;        buffer[24]=0xff;        buffer[25]=0xff;
@@ -2898,17 +2899,17 @@ void PC::MakeBMP(int **arr){
   buffer[42]=0x00;      buffer[43]=0x00;        buffer[44]=0x00;        buffer[45]=0x00;
   buffer[46]=0x00;      buffer[47]=0x00;        buffer[48]=0x00;        buffer[49]=0x00;
   buffer[50]=0x00;      buffer[51]=0x00;        buffer[52]=0x00;        buffer[53]=0x00;
-  
+
   f=fopen("pix.bmp","w");
   fwrite(buffer,1,54,f);
-  
+
   g=0x0; b=0x0; r=0;
   for(y=0;y<256;++y){for(x=0;x<256;++x){
         if( (arr[y][x]>=7480)  ){r=0xff; g=0x0; b=0x0;}
         else{g=0xff; b=0xff; r=0xff;}
         fwrite(&b,1,1,f); fwrite(&g,1,1,f); fwrite(&r,1,1,f);
   }}
-  
+
   fclose(f);
 }
 
@@ -2924,21 +2925,21 @@ void PC::SpeedTest(int wdh, int freq){ //outdated, not used any more
     std::fstream f;
     std::stringstream sstr;
     int ChipID;
-  
+
     fpga->GeneralReset(); fpga->GeneralReset(); fpga->GeneralReset();
     fpga->tp->LoadFSRFromFile(GetFSRFileName(1),1);
     fpga->WriteReadFSR(); fpga->WriteReadFSR(); fpga->WriteReadFSR();
     ChipID=fpga->tp->GetChipID(1);
-  
+
     fpga->tp->UniformMatrix(0,0,1,1,7,1);
     fpga->SetMatrix(); fpga->SerialReadOut(temp); fpga->SetMatrix(); fpga->SerialReadOut(temp); fpga->SetMatrix(); fpga->SerialReadOut(temp);
-  
+
     gettimeofday(&start,0);
-  
+
     for(i=0;i<wdh;++i){
         fpga->SerialReadOut(temp);
     }
-  
+
     gettimeofday(&end,0);
     usec= end.tv_usec - start.tv_usec;
     sec= end.tv_sec - start.tv_sec;
@@ -2948,16 +2949,16 @@ void PC::SpeedTest(int wdh, int freq){ //outdated, not used any more
     std::cout<<sec<<":"<<msec<<":"<<usec<<std::endl;
     hertz=double(wdh)/(double(sec)+(usec/1000000.));
     std::cout<<hertz<<" Hz"<<std::endl;
-  
+
     sstr.str(""); sstr.clear(); sstr<<"results/"<<freq<<"MHz.txt";
-    f.open(sstr.str(),std::fstream::out); 
+    f.open(sstr.str(),std::fstream::out);
     if(!f.is_open()){std::cout<<"Dateifehler"<<std::endl;}
     else{
 	f<<"Wiederholungen:\t"<<wdh<<"\nZeit:\t"<<sec<<"."<<msec<<"."<<usec<<"\nFrequenz:\t"<<hertz<<"\nChipID=\t"<<ChipID<<std::endl;
 	f.close();
     }
-  
-  
+
+
     fpga->GeneralReset(); fpga->GeneralReset(); fpga->GeneralReset();
 
 }
@@ -2993,7 +2994,7 @@ int PC::GetRunNumber(){
 	    std::smatch match;
 	    // define variable for path
 	    std::string path = itr->path().filename().string();
-	  
+
 	    // check whether the current directory matches our filter
 	    if( std::regex_match( path, match, filter ) ){
 		std::cout << "a match " << itr->path().filename().string() << std::endl;

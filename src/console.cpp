@@ -2564,10 +2564,35 @@ void Console::runTestPulses(){
     // this function is ran in a second thread (called in CommandTestTPulse) and simply
     // calls the tpulse function over and over again, as to have a tpulses being send
     // all the time, until the user types stop on the terminal
+
+    /*
+      to create test pulses do one of the following:
+      - set i2c DACs (2, upper and 3, lower) to some appropriate value
+      --> loop over this
+          - call fpga::tpulses function 
+          - call fpga::EnableTPulse and set to true
+          --> test pulses will be created
+          - call fpga::EnableTPulse and set to false
+
+
+      or do the following:
+      - set i2c DACs (2, upper and 3, lower) to some appropriate value
+      - call fpga::tpulses function 
+      - call fpga::EnableTPulse and set to true
+      -- loop over this:
+          - call fpga::CountingTime function
+	  --> test pulses will be created
+     */
+    std::cout << "producing test pulses, now!" << std::endl;
+    std::cout << "loop stop is " << _loop_stop << std::endl;
     while(_loop_stop == false){
 	pc->fpga->tpulse(1000, 10);
-	//std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }    
+	pc->fpga->EnableTPulse(1);
+	//pc->fpga->CountingTime(100, 1);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	pc->fpga->EnableTPulse(0);
+    }
+
 }
 
 int Console::CommandTestTPulse(){
@@ -2590,17 +2615,17 @@ int Console::CommandTestTPulse(){
     pc->fpga->i2cDAC(std::stoi(input), 2);
     pc->fpga->i2cDAC(350, 3);
     
-    pc->fpga->EnableTPulse(1);
+    //pc->fpga->EnableTPulse(1);
     // now loop over fpga->tpulse to pulse..
     // create seperate thread, which loops and will be stopped, if we type stop in terminal
     std::thread loop_thread(&Console::runTestPulses, this);
-    _loop_stop = true;
+    _loop_stop = false;
     //loop_thread.start();
     const char *waitingPrompt = "test pulses running. type 'stop' to quit> ";
     std::set<std::string> allowedStrings = {"stop"};
     input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
     if (input == "stop"){
-	_loop_stop = false;
+	_loop_stop = true;
     }
     loop_thread.join();
     pc->fpga->EnableTPulse(0);

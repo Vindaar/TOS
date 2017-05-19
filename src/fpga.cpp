@@ -527,8 +527,12 @@ int FPGA::i2cADC(unsigned short channel)
 }
 
 
-int FPGA::tpulse(unsigned short Npulses, unsigned short div500kHz)
-{
+int FPGA::tpulse(unsigned short Npulses, unsigned short div500kHz){
+    /* 
+       unsigned short Npulses: number of pulses to be created
+       unsigned short div500kHz: input is divided by 500 and used as frequency
+                                 in kHz
+     */
     int err_code;
     unsigned int i2c_val = (Npulses<<8) | div500kHz;
     tp->SetI2C(i2c_val);
