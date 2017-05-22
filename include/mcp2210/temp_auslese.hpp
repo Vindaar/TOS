@@ -68,5 +68,5 @@ void loop_Temp(hid_device *handle,
 	       std::string path_name);
 
 int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name);
-int temp_auslese_main(std::atomic_bool *loop_continue);
+int temp_auslese_main(std::atomic_bool *loop_continue, bool log_flag);
 
