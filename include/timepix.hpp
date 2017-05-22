@@ -54,8 +54,14 @@ public:
     int MaskPixel(int x, int y, int m, unsigned short chip);
     int GetMask(int y, int x, unsigned short chip);
     int Spacing (unsigned int space, unsigned int step, unsigned short chip);
+
     int Spacing_row (unsigned int step, unsigned int pix_per_row, unsigned short chip);
     int Spacing_row_TPulse (unsigned int step, unsigned int pix_per_row, unsigned short chip);
+    
+    int Spacing_row (unsigned int step, unsigned int pix_per_row, unsigned short chip, unsigned int spacing_offset );
+    int Spacing_row_TPulse (unsigned int step, unsigned int pix_per_row, unsigned short chip, unsigned spacing_offset );
+
+    
     int SpacingCalib (unsigned int stepCTPR, unsigned int stepRow, unsigned int pix_per_row, unsigned short chip);
 		
     void SetFSRBit(int bit, bool b);

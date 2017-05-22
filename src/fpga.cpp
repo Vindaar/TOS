@@ -440,8 +440,9 @@ int FPGA::WriteReadFSR(){
     int err_code;
     tp->GetFSR(PacketBuffer);
 #if DEBUG>0
-    int i;
-    for(i=18;i<18+(32*tp->GetNumChips())+2;i++)printf("%i ",PacketBuffer[i]);printf("\n");
+    for(int i = 18; i < 18 + (32*tp->GetNumChips()) + 2; i++){
+	printf("%i ",PacketBuffer[i]);printf("\n");
+    }
 #endif
     //M0=1; M1=0; Enable_IN=0; Shutter=1; Reset=1; 	//ModL= 25 = 0x19
     // Set DAC write fsr
@@ -454,10 +455,16 @@ int FPGA::WriteReadFSR(){
     IncomingLength=18+(34*tp->GetNumChips()) + 2; 
     PacketQueueSize=1;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
-    if(err_code>0)return 50+err_code;
+    if(err_code>0){
+	return 50+err_code;
+    }
     for (unsigned short chip = 1;chip <= tp->GetNumChips() ;chip++){
-	if (err_code>0) {err_code = err_code;}
-	else err_code=tp->ChipID(PacketQueue[0],chip);
+	if (err_code>0) {
+	    err_code = err_code;
+	}
+	else {
+	    err_code = tp->ChipID(PacketQueue[0],chip);
+	}
 	//std::cout<<"WriteReadFSR:"<<err_code<<std::endl;
     }
     if(err_code>0){

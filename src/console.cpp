@@ -2120,14 +2120,20 @@ int Console::CommandSetDAC(){
 		  << pc->fpga->tp->GetNumChips() 
 		  << " chips, please provide correct chip number." 
 		  << std::endl;
-	err=-3;
+	err = 64;
     }
-    else err=pc->fpga->tp->SetDAC(dac, chip, i);
-    if(err!=1) ErrorMessages(61-err);
-    else std::cout << "DAC " << dac 
-		   << " (" << pc->fpga->tp->GetDACName(dac) << ") of chip " << chip 
-		   << " set to " << i 
-		   << std::endl;
+    else{
+	err = pc->SetDACandWrite(dac, chip, i);
+	std::cout << "NOTE: DAC set (and written to chip!). Take this message out "
+		  << "later, once this is common knowledge." << std::endl;
+    }
+    if(err != 1) ErrorMessages(err);
+    else{
+	std::cout << "DAC " << dac 
+		  << " (" << pc->fpga->tp->GetDACName(dac) << ") of chip " << chip 
+		  << " set to " << i 
+		  << std::endl;
+    }
     return 1;
 }
 
@@ -2624,7 +2630,7 @@ int Console::CommandTestTPulse(){
     const char *waitingPrompt = "test pulses running. type 'stop' to quit> ";
     std::set<std::string> allowedStrings = {"stop"};
     input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
-    if (input == "stop"){
+    if (input == "stop" || input == "quit"){
 	_loop_stop = true;
     }
     loop_thread.join();

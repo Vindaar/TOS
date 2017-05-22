@@ -195,16 +195,26 @@ int Timepix::SetDAC(unsigned int dac, unsigned short chip, unsigned int value){
 #if DEBUG==2
     std::cout<<"Enter Timepix::SetDAC()"<<std::endl;	
 #endif
-    int err;
+    int err = 1;
 	
-    if(dac>17) {return -1;}
-    if(dac==6) {if( (err=(value<1024)) ){DACValue[chip][6]=value;}}
-    else if(dac==13) {if( (err=(value<16)) ){DACValue[chip][13]=value;}}
-    else if(dac==14) {err=1; DACValue[chip][14]=value;}
-    else if( (dac==15)||(dac==16) ) {if((err=(value<2))) {DACValue[chip][dac]=value;} }
-    else if(dac==17){if((err=(value<16))){DACValue[chip][17]=value;}}
-    else {if( (err=(value<256)) ){DACValue[chip][dac]=value;}}
-	
+    if(dac > 17){
+	// only 17 DACs. If DAC larger than 17 return error code 63 (illegal DAC number)
+	err = 63;
+    }
+    else if( ((dac == 6) && (value < 1024)) ||
+	     ((dac == 13) && (value < 16))  ||
+	     (dac == 14) ||
+	     (((dac == 15) || (dac == 16)) && (value < 2)) ||
+	     ((dac == 17) && (value < 16)) ||
+	     (value < 256) )
+	{
+	DACValue[chip][dac] = value;
+    }
+    else{
+	// invalid value for this DAC. return error code 60
+	err = 60;
+    }
+    
     return err;
 }
 
@@ -253,14 +263,28 @@ int Timepix::SpacingCalib (unsigned int stepCTPR, unsigned int stepRow, unsigned
     return true;
 }
 
-int Timepix::Spacing_row (unsigned int step, unsigned int pix_per_row, unsigned short chip){ //step from 0 to <(256/pix_per_col), y are the row
+
+int Timepix::Spacing_row (unsigned int step,
+			  unsigned int pix_per_row,
+			  unsigned short chip){
+    int val = 0;
+    val = Spacing_row(step, pix_per_row, chip, 0);
+    return val;
+}
+			  
+int Timepix::Spacing_row (unsigned int step,
+			  unsigned int pix_per_row,
+			  unsigned short chip,
+			  unsigned int spacing_offset){ //step from 0 to <(256/pix_per_col), y are the row
     int y,x = 0;
     unsigned int delta_pix = 256/pix_per_row;
-    for(y=0;y<256;++y){
-	for(x=0;x<256;++x){
-	    if (y%delta_pix==step){
+    for(y = 0; y < 256; ++y){
+	for(x=0 + spacing_offset; x < 256 ;++x){
+	    if (y % delta_pix == step){
 		Mask[chip][y][x] = 1;
-		//std::cout<<"pixel y: "<<y<<" x: "<<x<<" not masked"<<std::endl;
+		std::cout<<"pixel y: "<<y<<" x: "<<x<<" not masked \t "
+			 << spacing_offset
+			 << "\t" << x << std::endl;
 	    }
 	    else {
 		Mask[chip][y][x] = 0;
@@ -269,11 +293,25 @@ int Timepix::Spacing_row (unsigned int step, unsigned int pix_per_row, unsigned 
     }
     return true;
 }
-int Timepix::Spacing_row_TPulse (unsigned int step, unsigned int pix_per_row, unsigned short chip){ //step from 0 to <(256/pix_per_col), y are the row
+
+int Timepix::Spacing_row_TPulse (unsigned int step,
+				 unsigned int pix_per_row,
+				 unsigned short chip){
+
+    int val;
+    val = Spacing_row_TPulse(step, pix_per_row, chip, 0);
+    return val;
+}
+
+
+int Timepix::Spacing_row_TPulse (unsigned int step,
+				 unsigned int pix_per_row,
+				 unsigned short chip,
+				 unsigned int spacing_offset){ //step from 0 to <(256/pix_per_col), y are the row
     int y,x = 0;
     unsigned int delta_pix = 256/pix_per_row;
     for(y=0;y<256;++y){
-	for(x=0;x<256;++x){
+	for(x = 0 + spacing_offset; x < 256; ++x){
 	    if (y%delta_pix==step){
 		Test[chip][y][x] = 1; // one seems to be on. not 0 as explained in Timepix manual
 		//std::cout<<"pixel y: "<<y<<" x: "<<x<<" test pulse on"<<std::endl;

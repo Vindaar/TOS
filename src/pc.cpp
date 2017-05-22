@@ -411,40 +411,45 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
 	fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 	unsigned short pix_per_row = 8;
 	unsigned short int i = 0;
-	if (voltage == 0) { i= 8;}
+	if (voltage == 0) { i = 2;}
 	for (unsigned int volt=0; volt<=i;volt++){
 	    int meancounts[1024] = {0};
 	    int meanstepsum[1024] = {0};
 	    if (voltage == 0) {
 		int myint = 0;
-		if (volt == 0) { myint = 350;}
-		else if (volt == 1) { myint = 370;}
-		else if (volt == 2) { myint = 375;}
-		else if (volt == 3) { myint = 380;}
-		else if (volt == 4) { myint = 385;}
-		else if (volt == 5) { myint = 390;}
-		else if (volt == 6) { myint = 400;}
-		else if (volt == 7) { myint = 410;}
-		else if (volt == 8) { myint = 450;}
+		if (volt == 0) { myint = 400;}//350;}
+		else if (volt == 1) { myint = 450;}//370;}
+		// else if (volt == 2) { myint = 375;}
+		// else if (volt == 3) { myint = 380;}
+		// else if (volt == 4) { myint = 385;}
+		// else if (volt == 5) { myint = 390;}
+		// else if (volt == 6) { myint = 400;}
+		// else if (volt == 7) { myint = 410;}
+		// else if (volt == 8) { myint = 450;}
 		else {myint = 350;}
 		fpga->i2cDAC(myint,2);
 		fpga->i2cDAC(350,3);
 		fpga->tpulse(1000,10);
 	    }
-	    for (unsigned int step=0; step<(256/pix_per_row);step=step+8){ //must go from 0 to <(256/pix_per_row), put 1 for just 1 run
+	    for (unsigned int step=0; step < (256/pix_per_row); step = step+8){ //must go from 0 to <(256/pix_per_row), put 1 for just 1 run
 		std::cout<<"first step"<<std::endl;
 		fpga->GeneralReset();
 		usleep(1000);
-		for (unsigned short c = 1;c<= fpga->tp->GetNumChips() ;c++){
+		for (unsigned short c = 1; c <= fpga->tp->GetNumChips(); c++){
 		    fpga->tp->LoadFSRFromFile(GetFSRFileName(c),c);
 		    fpga->tp->UniformMatrix(0,0,0,0,0,c); //0,0: Medipix modus
 		    fpga->tp->LoadThresholdFromFile(GetThresholdFileName(c),c);
 		    fpga->tp->SetDAC(14,c,0);
 		}
-		unsigned int CTPR = 1<<offset;
+		unsigned int CTPR = 1 << offset;
+
+		unsigned int spacing_offset;
+		spacing_offset = 0;
 		fpga->tp->SetDAC(14,chip,CTPR);
-		fpga->tp->Spacing_row(step,pix_per_row,chip);
-		fpga->tp->Spacing_row_TPulse(step,pix_per_row,chip);
+		//fpga->tp->Spacing_row(step, pix_per_row, chip, spacing_offset);
+		fpga->tp->Spacing_row(1, 256, chip);
+		fpga->tp->Spacing_row_TPulse(1, 256, chip);//step,pix_per_row,chip);
+		//fpga->tp->Spacing_row_TPulse(step, pix_per_row, chip, spacing_offset);
 		fpga->SetMatrix();
 		usleep(2000);
 		int data[9][256][256];
@@ -453,7 +458,7 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
 		fpga->tp->SetDAC(13,chip,7);
 		int meancounts_per_step[1024] = {0};
 		for(unsigned int thl=startTHL[chip];thl<=stopTHL[chip];thl++){
-		    std::this_thread::sleep_for(std::chrono::seconds(2));
+
 		    fpga->tp->SetDAC(6,chip,thl);
 		    fpga->WriteReadFSR();
 		    usleep(400);
@@ -483,6 +488,7 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
 			}
 			//std::cout<<"hit_counter "<<hit_counter<<std::endl;
 			//std::cout<<"hitsum "<<hitsum<<std::endl;
+
 		    }
 		    delete VecData;
 		    std::cout<<"Chip "<<chip<<" of "<<fpga->tp->GetNumChips()<<" step "<<step/8+1<<" of "<<(256/pix_per_row)/8<<" THL: "<< thl <<" meancounts "<<meancounts_per_step[thl]<<std::endl;
@@ -3030,4 +3036,30 @@ void PC::SetCenterChip(int chip){
 int PC::GetCenterChip(){
     // this function returns the _center_chip member variable
     return _center_chip;
+}
+
+
+int PC::SetDACandWrite(unsigned int dac, unsigned short chip, unsigned int value){
+    /* this function works as a wrapper around setting a DAC in software (in the
+       Timepix class) and writing it to the chip via ReadWriteFSR()
+       To be used for convenience in case one wishes to set a single DAC.
+       Returns the error codes of WriteReadFSR. If setting DAC fails (due to 
+       invalid input), return error code of SetDAC.
+    */
+
+    // first set the DAC in software
+    int result = 1;
+    result = fpga->tp->SetDAC(dac, chip, value);
+    if(result != 1){
+	std::cout << "Error (SetDACandWrite): Either DAC invalid or invalid value for "
+		  << "chosen DAC." << std::endl;
+	// in this case return the error code for SetDAC
+	return result;
+    }
+    else{
+	// WriteReadFSR returns one of several potential error codes
+	result = fpga->WriteReadFSR();
+    }
+    
+    return result;
 }

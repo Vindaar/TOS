@@ -145,6 +145,9 @@ public:
     // function to change the center chip member variable
     void SetCenterChip(int chip);
     int GetCenterChip();
+
+    // function to conveniently set a DAC in software and write to chip
+    int SetDACandWrite(unsigned int dac, unsigned short chip, unsigned int value);
     
 		
     void MakeBMP(int arr[256][256]);
