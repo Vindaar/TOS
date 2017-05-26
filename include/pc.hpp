@@ -64,7 +64,11 @@ public:
     int DoReadOutFadc(std::string filename, unsigned short chip);
     // TODO: HV_FADC_Obj
     int DoDACScan(int DACstoScan, unsigned short chip);
-    int DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh);
+    int DoTHLScan(unsigned short chip,
+		  unsigned short coarselow,
+		  unsigned short coarsehigh,
+		  std::pair<int, int> threshold_boundaries,
+		  std::atomic_bool *loop_stop);
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
     int DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl);
     int DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl);

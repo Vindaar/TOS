@@ -79,6 +79,9 @@ private:
     std::string PulserSelection();
     std::list<int> PulseListCreator(std::string pulser);
     int PixPerColumnSelection();
+    int THLAnyBoundary(std::string boundary);
+    std::pair<int, int> THLBoundarySelection();
+
 
     // Some function one can use to print error messages according to the error parameter given
     void ErrorMessages(int err);
@@ -145,6 +148,13 @@ private:
     int CommandFADCshutter();
     int CommandDACScan();
     int CommandTHLScan();
+    // the actual THL function, which is run in a separate thread
+    int RunTHLScan(std::string inputChips,
+		   unsigned short coarselow,
+		   unsigned short coarsehigh,
+		   std::pair<int, int> threshold_boundaries,
+		   std::atomic_bool *loop_stop);
+
     int CommandSCurve();
     int Commandi2creset();
     int Commandi2cDAC();

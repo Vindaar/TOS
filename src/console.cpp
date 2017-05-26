@@ -1862,6 +1862,46 @@ int Console::PixPerColumnSelection(){
 }
 
 
+int Console::THLAnyBoundary(std::string boundary){
+    // handles the user interface of a selection of an upper / lower THL boundary
+    std::string input;
+
+    std::cout << "Choose an " << boundary << " THL bound\n"
+	      << "range: 0 - 1023"
+	      << std::endl;
+
+    std::set<std::string> allowedValues;
+    for(int i = 0; i < 1024; i++) allowedValues.insert(std::to_string(i));
+
+    input = getUserInputNumericalNoDefault(_prompt, allowedValues);
+    if(input == "quit") return -1;
+
+    return std::stoi(input);
+}
+
+std::pair<int, int> Console::THLBoundarySelection(){
+    // this function handles user input in regards to the selection of
+    // upper and lower THL thresholds
+    // call THLUpperBoundarySelection()
+    // call THLLowerBoundarySelection()
+    // and combine both to a pair, which is returned
+
+    int lower_bound;
+    int upper_bound;
+
+    lower_bound = THLAnyBoundary("lower");
+    if (lower_bound == -1) return std::make_pair(0, 0);
+    upper_bound = THLAnyBoundary("upper");
+    if (upper_bound == -1) return std::make_pair(0, 0);
+
+    //std::pair<std::string, std::string> threshold_boundary_pair;
+    auto threshold_boundary_pair = std::make_pair(lower_bound, upper_bound);
+
+    return threshold_boundary_pair;
+}
+
+
+
 int Console::CommandCountingTrigger(){
     // default CommandCountingTrigger function
     // this function is used to set the time the shutter opens after 
@@ -2415,6 +2455,26 @@ int Console::CommandDACScan(){
 
 }
 
+int Console::RunTHLScan(std::string inputChips,
+			unsigned short coarselow,
+			unsigned short coarsehigh,
+			std::pair<int, int> threshold_boundaries,
+			std::atomic_bool *loop_stop){
+
+    if (inputChips == "0"){
+	// in this case perform for all chips
+	for( unsigned short chip = 0; chip < pc->fpga->tp->GetNumChips(); chip++){
+	    pc->DoTHLScan(chip + 1, coarselow, coarsehigh, threshold_boundaries, loop_stop);	    
+	}
+    }
+    else{
+	unsigned short chip;
+	chip = std::stoi(inputChips);
+	pc->DoTHLScan(chip, coarselow, coarsehigh, threshold_boundaries, loop_stop);
+    }
+
+    
+}
 
 int Console::CommandTHLScan(){
     // variables for getUserInput
@@ -2439,21 +2499,35 @@ int Console::CommandTHLScan(){
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     coarsehigh = std::stoi(input);
+    // threshold boundary seleection
+    std::pair<int, int> threshold_boundaries;
+    threshold_boundaries = THLBoundarySelection();
+    if(threshold_boundaries.first  == 0 &&
+       threshold_boundaries.second == 0) return -1;
 
-    
-    if (inputChips == "0"){
-	// in this case perform for all chips
-	for( int chip = 0; chip < pc->fpga->tp->GetNumChips(); chip++){
-	    
-	    pc->DoTHLScan(chip + 1, coarselow, coarsehigh);	    
-	}
+
+
+
+    // now loop over fpga->tpulse to pulse..
+    // create seperate thread, which loops and will be stopped, if we type stop in terminal
+        
+    std::atomic_bool loop_stop;
+    loop_stop = false;
+    std::thread loop_thread(&Console::RunTHLScan,
+			    this,
+			    inputChips,
+			    coarselow,
+			    coarsehigh,
+			    threshold_boundaries,
+			    &loop_stop);
+    //loop_thread.start();
+    const char *waitingPrompt = "THL scan is running. type 'q' to quit> ";
+    std::set<std::string> allowedStrings = {"q"};
+    input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
+    if (input == "stop" || input == "q" || input == "quit"){
+	loop_stop = true;
     }
-    else{
-	unsigned short chip;
-	chip = std::stoi(inputChips);
-	pc->DoTHLScan(chip, coarselow, coarsehigh);
-    }
-    
+    loop_thread.join();
 
     return 0;
 }

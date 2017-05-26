@@ -12,6 +12,10 @@ Backup/*
 bin/data/runs/*
 bin/data/singleFrames/*
 bin/data/matrix/*
+data/runs/*
+data/singleFrames/*
+data/matrix/*
+data/THLScan.txt
 
 # editors
 *~

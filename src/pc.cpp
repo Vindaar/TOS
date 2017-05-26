@@ -240,7 +240,7 @@ int PC::DoReadOut2(std::string filename, unsigned short chip){
         return hits;
     }
     else if(hits == 0){
-	delte data;
+	delete data;
 	return hits;
     }
     
@@ -365,7 +365,11 @@ int PC::DoDACScan(int DACstoScan,unsigned short chip) {
 }
 
 
-int PC::DoTHLScan(unsigned short chip, unsigned short coarselow, unsigned short coarsehigh){
+int PC::DoTHLScan(unsigned short chip,
+		  unsigned short coarselow,
+		  unsigned short coarsehigh,
+		  std::pair<int, int> threshold_boundaries,
+		  std::atomic_bool *loop_stop){
         fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 
 	std::fstream thlStream;
@@ -379,31 +383,40 @@ int PC::DoTHLScan(unsigned short chip, unsigned short coarselow, unsigned short 
                 int data[9][256][256];
                 fpga->SerialReadOut(data);
                 fpga->tp->SetDAC(13,chip,coarse);
-		// TODO: - add custom threshold values
+
+		int lower_thl_bound = threshold_boundaries.first;
+		int upper_thl_bound = threshold_boundaries.second;
+		int thl = lower_thl_bound;
+
+		// TODO: 
 		//       - custom shutter length
-                for(unsigned int thl=300;thl<501;thl++){
-                        fpga->tp->SetDAC(6,chip,thl);
-                        fpga->WriteReadFSR();
-                        usleep(10000 );
-			// was 255, 0 before
-                        //fpga->CountingTime(4, 1);
-			fpga->CountingTime(13, 2);
-                        std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
-                        int hits = 0;
-                        int result=0;
-                        fpga->DataChipFPGA(result);
-                        hits = fpga->DataFPGAPC(data,chip);
-                        usleep(20000);
-                        std::cout << "Hits:\t" << hits
-				  << "\tCoarse:\t" << coarse
-				  << "\tTHL: " << thl
-				  << std::endl;
-			thlStream << "Hits:\t" << hits
-				  << "\tCoarse:\t" << coarse
-				  << "\tTHL: " << thl
-				  << std::endl;
-                        delete data;
-                }
+		do{
+		    fpga->tp->SetDAC(6,chip,thl);
+		    fpga->WriteReadFSR();
+		    usleep(10000 );
+		    // was 255, 0 before
+		    //fpga->CountingTime(4, 1);
+		    fpga->CountingTime(13, 2);
+		    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
+		    int hits = 0;
+		    int result=0;
+		    fpga->DataChipFPGA(result);
+		    hits = fpga->DataFPGAPC(data,chip);
+		    usleep(20000);
+		    std::cout << "Hits:\t" << hits
+			      << "\tCoarse:\t" << coarse
+			      << "\tTHL: " << thl
+			      << std::endl;
+		    thlStream << "Hits:\t" << hits
+			      << "\tCoarse:\t" << coarse
+			      << "\tTHL: " << thl
+			      << std::endl;
+		    delete data;
+
+		    thl++;
+                } while ( (thl < upper_thl_bound) && (*loop_stop == false) );
+		    
+		
         }
 	thlStream.close();
 
