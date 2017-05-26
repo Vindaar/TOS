@@ -217,7 +217,8 @@ int PC::DoReadOut2(std::string filename, unsigned short chip){
     int hits;
     std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
     hits=fpga->DataFPGAPC(data,chip);
-    if(hits>1){//need more than 2 hits (specified for Christophs setup with 1 noise pixel)
+    // only write to file, if there is at least one hit
+    if(hits>0){ 
 	FILE* f=fopen(filename.c_str(),"w");
 	if(f==NULL) {
 	    std::cout << "(PC::DoReadOut2) Dateifehler" << std::endl;
@@ -238,7 +239,11 @@ int PC::DoReadOut2(std::string filename, unsigned short chip){
         delete data;
         return hits;
     }
-
+    else if(hits == 0){
+	delte data;
+	return hits;
+    }
+    
     // this should never happen
     std::cout << "WARNING: DoReadout2 found bad exit, problems may arise." << std::endl;
     return -1;
@@ -360,7 +365,7 @@ int PC::DoDACScan(int DACstoScan,unsigned short chip) {
 }
 
 
-int PC::DoTHLScan(unsigned short chip,unsigned short coarselow, unsigned short coarsehigh){
+int PC::DoTHLScan(unsigned short chip, unsigned short coarselow, unsigned short coarsehigh){
         fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 
 	std::fstream thlStream;

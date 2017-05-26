@@ -11,6 +11,7 @@ Backup/*
 # data files
 bin/data/runs/*
 bin/data/singleFrames/*
+bin/data/matrix/*
 
 # editors
 *~

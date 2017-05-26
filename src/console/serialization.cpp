@@ -125,45 +125,45 @@ int Console::CommandLoadThreshold() {
 }
 
 int Console::CommandSaveMatrix() {
-    bool numericalInput = false;
-    bool allowDefaultOnEmptyInput = false;
 
-    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-        std::string ein;
-        std::string f=pc->GetMatrixFileName(chip);
+    for (unsigned short chip = 1; chip <= pc->fpga->tp->GetNumChips(); chip++){
+        std::string input;
+        std::string default_path=pc->GetMatrixFileName(chip);
+	std::string filename;
+
         std::cout << "Matrix filename for chip "
             << chip
             << ": (press ENTER to save in "
-            << pc->GetMatrixFileName(chip)
+            << default_path
             << "): "
             << std::endl;
-        ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-        if (ein == "quit") return -1;
-        f=ein.c_str();
-        pc->fpga->tp->SaveMatrixToFile(f,chip);
-        std::cout<<"Matrix saved to "<<f<<"\n"<<std::flush;
+	if (!getUserInputOrDefaultFile(_prompt, default_path, filename)){
+	    return -1;
+	}
+        pc->fpga->tp->SaveMatrixToFile(filename,chip);
+        std::cout << "Matrix saved to " << filename << "\n" << std::flush;
     }
     return 0;
 }
 
 int Console::CommandSaveFSR() {
-    bool numericalInput = false;
-    bool allowDefaultOnEmptyInput = false;
 
-    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-        std::string ein;
-        std::string f=pc->GetFSRFileName(chip);
+    for (unsigned short chip = 1; chip <= pc->fpga->tp->GetNumChips(); chip++){
+        std::string input;
+        std::string default_path=pc->GetFSRFileName(chip);
+	std::string filename;
         std::cout << "FSR filename for chip "
             << chip
             << ": (press ENTER to save in "
-            << pc->GetFSRFileName(chip)
+            << default_path
             << "): "
             << std::endl;
-        ein = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-        if (ein == "quit") return -1;
-        f=ein.c_str();
-        pc->fpga->tp->SaveFSRToFile(f,chip);
-        std::cout<<"FSR saved in "<<f<<"\n"<<std::flush;
+
+	if (!getUserInputOrDefaultFile(_prompt, default_path, filename)){
+	    return -1;
+	}
+        pc->fpga->tp->SaveFSRToFile(filename, chip);
+        std::cout << "FSR saved in " << filename << "\n" << std::flush;
     }
     return 0;
 }

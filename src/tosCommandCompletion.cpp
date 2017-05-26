@@ -351,7 +351,7 @@ bool getUserInputOrDefaultFile(const char *prompt, const std::string& default_pa
     } else if (input == "")
 	    // Choose the default file
         filename = default_path;
-    else
+    else 
 	    // Choose the user-defined file
         filename = input;
 
