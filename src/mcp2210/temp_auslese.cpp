@@ -338,12 +338,20 @@ void loop_and_log(hid_device *handle,
 		  std::string path_name){
     // besides printing, this function also logs the data to file
     std::string date = "";
+    if(path_name == ""){
+	/* in case path_name is empty, we are running from the standalone
+	 log temperature command in TOS. In this case save the log file
+	 to the TOS/log folder
+	*/
+	path_name = "./log";
+    }
     std::string filepath = get_temp_log_file_path(path_name);
 
     std::fstream outfile;
     outfile.open(filepath, std::fstream::out);
     outfile << "# Temperature log file" << "\n"
 	    << "# Temp_IMB \t Temp_Septem \t DateTime" << std::endl;
+    outfile.close();
 
     byte lsb_rtd = read_register(handle, READ_LSB);
     byte fault_test = lsb_rtd & 0x01;
@@ -372,6 +380,10 @@ void loop_and_log(hid_device *handle,
 	    (temp_IMB != 0) &&
 	    (temp_septem != 0) ){
 
+
+	    // re-open the output file and append data
+	    outfile.open(filepath, std::fstream::app);
+
 	    // calculate average of temps
 	    temp_septem /= num_measurements;
 	    temp_IMB    /= num_measurements;
@@ -383,6 +395,9 @@ void loop_and_log(hid_device *handle,
 	    outfile << temp_IMB << "\t"
 		    << temp_septem << "\t"
 		    << date << std::endl;
+	    // close outfile
+	    outfile.close();
+	    
 	    std::cout << "Temperature measured from RTD for " << "\n"
 		      << "    slave "
 		      << "IMB"  << " is: " << temp_IMB << std::flush;
@@ -501,7 +516,7 @@ int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name){
     return 0;
 }
 
-int temp_auslese_main(std::atomic_bool *loop_continue){
+int temp_auslese_main(std::atomic_bool *loop_continue, bool log_flag){
     // argument is a pointer to a bool variable from the calling function
 
     bool use_usb_handle = false;
@@ -548,8 +563,7 @@ int temp_auslese_main(std::atomic_bool *loop_continue){
 		write_byte_to_register(handle, CONFIGURATION, 0b11000001);
 		get_current_active_slave(true);
 	    }
-	    bool log_flag = false;
-	    loop_temp(handle, loop_continue, 250, false, "");
+	    loop_temp(handle, loop_continue, 250, log_flag, "");
 	}
 	else{
 	    check_fault_register(Fault_Error);

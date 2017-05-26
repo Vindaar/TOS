@@ -3625,7 +3625,9 @@ void Console::CommandTempLoopReadout(){
     std::atomic_bool loop_continue;
     loop_continue = true;
 
-    std::thread loop_thread(temp_auslese_main, &loop_continue);
+    bool log_flag = true;
+
+    std::thread loop_thread(temp_auslese_main, &loop_continue, log_flag);
     const char *waitingPrompt = "temp readout running. type 'stop' to quit> ";
     std::string input;
     std::set<std::string> allowedStrings = {"stop"};
