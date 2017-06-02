@@ -1,13 +1,4 @@
 #include "console.hpp"
-#include "tosCommandCompletion.hpp"
-
-#include "timepix.hpp"
-#include "fpga.hpp"
-#include "pc.hpp"
-
-#include <stdio.h>
-#include "string"
-
 
 int Console::CommandLoadMatrix() {
     for (unsigned short chip_id = 1; chip_id <= pc->fpga->tp->GetNumChips(); chip_id++){

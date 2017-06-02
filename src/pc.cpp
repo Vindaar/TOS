@@ -10,21 +10,6 @@
 /**********************************************************************/
 
 #include "pc.hpp"
-#include "hvFadcManager.hpp"
-#include "fpga.hpp"
-#include "timepix.hpp"
-#include "waitconditions.hpp"
-
-#include <boost/filesystem.hpp>
-
-#include <regex>
-
-#ifdef __WIN32__
-    #include <io.h>
-#else
-    #include <sys/stat.h>
-#endif
-
 
 PC::PC(Timepix *tp):
     _useHvFadc(false),

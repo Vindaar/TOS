@@ -1,7 +1,7 @@
 #include "waitconditions.hpp"
-#include "pc.hpp"
-#include "hvFadcManager.hpp"
-#include "fpga.hpp"
+// #include "pc.hpp"
+// #include "hvFadcManager.hpp"
+// #include "fpga.hpp"
 
 #include <QWaitCondition>
 

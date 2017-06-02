@@ -24,10 +24,31 @@
 #include <readline/history.h>
 #include "tosCommandCompletion.hpp"
 
-class V1729a;
-class PC;
-class hvFadcManager;
-class Timepix;
+
+// TOS headers
+#include "V1729a.h"
+#include "pc.hpp"
+#include "hvFadcManager.hpp"
+#include "timepix.hpp"
+#include "fpga.hpp"
+#include "caseHeader.h"
+#include "pc.hpp"
+#include "tosCommandCompletion.hpp"
+
+
+
+//class V1729a;
+//class PC;
+//class hvFadcManager;
+//class Timepix;
+
+
+// define the DEBUG flag to be used in all files
+// DEBUG == 4 means dumping frames to temp files
+#ifdef DEBUG
+#undef DEBUG
+#define DEBUG 4
+#endif
 
 
 #define DEFAULT_USER_INPUT_PROMPT                   "> " 

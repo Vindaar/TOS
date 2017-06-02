@@ -140,8 +140,6 @@ float get_temp(hid_device *handle, int RTD_Resistance, int Reference_Resistor){
     return temp;
 }
 
-
-
 static struct usb_device *init_mcp2210(void){
     // DEPRECATED: function to manually initialize the MCP2210 as a USB device
     

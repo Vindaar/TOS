@@ -12,17 +12,37 @@
 #ifndef _PC_HPP
 #define _PC_HPP 1 
 
+// QT headers
 #include <QWaitCondition>
 #include <QMutex>
 #include <QThread>
 
+// BOOST headers
 #include <boost/any.hpp>
+#include <boost/filesystem.hpp>
 
+// C++ headers
 #include <map>
 #include <set>
 #include <string>
 #include <atomic>
 #include <vector>
+#include <stdio.h>
+#include <regex>
+
+#ifdef __WIN32__
+    #include <io.h>
+#else
+    #include <sys/stat.h>
+#endif
+
+// TOS headers
+#include "helper_functions.hpp"
+// #include "timepix.hpp"
+#include "frame.hpp"
+#include "hvFadcManager.hpp"
+#include "timepix.hpp"
+#include "waitconditions.hpp"
 
 class Timepix;
 class hvFadcManager;

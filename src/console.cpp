@@ -16,13 +16,6 @@
 /**********************************************************************/
 
 #include "console.hpp"
-#include "V1729a.h"
-#include "pc.hpp"
-#include "hvFadcManager.hpp"
-#include "timepix.hpp"
-#include "fpga.hpp"
-#include "caseHeader.h"
-
 
 //C~tor
 Console::Console():

@@ -68,10 +68,10 @@ Timepix::Timepix(int nbOfChips){
     DACCodes[6]=6;	DACNames[6]="THL";
     DACCodes[7]=12;	DACNames[7]="Vcas";
     DACCodes[8]=10;	DACNames[8]="FBK";
-    DACCodes[9]=13; DACNames[9]="GND";
+    DACCodes[9]=13;     DACNames[9]="GND";
     DACCodes[10]=1;	DACNames[10]="THS";
     DACCodes[11]=2;	DACNames[11]="BiasLVDS";
-    DACCodes[12]=14;DACNames[12]="RefLVDS";
+    DACCodes[12]=14;    DACNames[12]="RefLVDS";
     DACNames[13]="Coarse";
     DACNames[14]="CTPR";
     DACNames[15]="SenseDAC";
