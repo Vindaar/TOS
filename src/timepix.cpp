@@ -271,26 +271,39 @@ int Timepix::Spacing_row (unsigned int step,
     val = Spacing_row(step, pix_per_row, chip, 0);
     return val;
 }
-			  
+
 int Timepix::Spacing_row (unsigned int step,
 			  unsigned int pix_per_row,
 			  unsigned short chip,
 			  unsigned int spacing_offset){ //step from 0 to <(256/pix_per_col), y are the row
     int y,x = 0;
+
     unsigned int delta_pix = 256/pix_per_row;
+
+    //Mask[chip][32][32] = 1;
+    
     for(y = 0; y < 256; ++y){
+	//for(x=0 + spacing_offset; x < 252 ;++x){n
 	for(x=0 + spacing_offset; x < 256 ;++x){
-	    if (y % delta_pix == step){
+	    // std::cout << "printing y, delta_pix, step, mod "
+	    // 	      << y << ", " << delta_pix << ", " << step << ", "
+	    // 	      << y % delta_pix << std::endl;
+	    if ((y % delta_pix == step) ){//&&
+		//(x % delta_pix == step)){
+		//Mask[chip][y][x+4] = 1;
 		Mask[chip][y][x] = 1;
-		std::cout<<"pixel y: "<<y<<" x: "<<x<<" not masked \t "
-			 << spacing_offset
-			 << "\t" << x << std::endl;
+		// std::cout << "pixel y: " << y << " x: " << x << " not masked \t "
+		// 	  << spacing_offset
+		// 	  << "\t" << x << std::endl;
 	    }
 	    else {
+		//Mask[chip][y][x+4] = 0;
 		Mask[chip][y][x] = 0;
 	    }
 	}
     }
+    //std::cout << "printing step, delta_pix " << step << ", " << delta_pix << std::endl;
+
     return true;
 }
 
@@ -307,12 +320,16 @@ int Timepix::Spacing_row_TPulse (unsigned int step,
 int Timepix::Spacing_row_TPulse (unsigned int step,
 				 unsigned int pix_per_row,
 				 unsigned short chip,
-				 unsigned int spacing_offset){ //step from 0 to <(256/pix_per_col), y are the row
+				 unsigned int spacing_offset){
+    //step from 0 to <(256/pix_per_col), y are the row
     int y,x = 0;
     unsigned int delta_pix = 256/pix_per_row;
+
+    //Test[chip][32][32] = 1;
     for(y=0;y<256;++y){
 	for(x = 0 + spacing_offset; x < 256; ++x){
-	    if (y%delta_pix==step){
+	    if (y % delta_pix == step){// &&
+		//(x % delta_pix == step){//){
 		Test[chip][y][x] = 1; // one seems to be on. not 0 as explained in Timepix manual
 		//std::cout<<"pixel y: "<<y<<" x: "<<x<<" test pulse on"<<std::endl;
 	    }

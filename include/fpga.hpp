@@ -197,7 +197,8 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
 	err_code=Communication(PacketBuffer,&((*PackQueueReceive)[p][0]));
 	if(err_code>0) return 300+err_code;
     }
-    if(aus!=NULL){err_code=SaveData(aus);}
+    //if(aus!=NULL){err_code=SaveData(aus);}
+    err_code=SaveData(aus);
     return 300+10*err_code;
 }
 

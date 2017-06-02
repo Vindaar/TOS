@@ -54,6 +54,7 @@ SOURCES += src/caseFunctions.cc \
            src/console/selection.cpp \
            src/fpga.cpp \ 
            src/pc.cpp \
+           src/pc/TOCalib.cpp \
            src/timepix.cpp \
            src/tos.cpp \
            src/waitconditions.cpp \

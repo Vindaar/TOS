@@ -308,6 +308,10 @@ int Console::UserInterface(){
 	{
 	    CommandSCurve();
 	}
+	else if( ein.compare("SCurveOld")==0 )
+	{
+	    CommandSCurveOld();
+	}
 	else if( ein.compare("i2creset")==0 )
 	{
 	    Commandi2creset();
@@ -2101,7 +2105,124 @@ int Console::CommandTHLScan(){
     return 0;
 }
 
-int Console::CommandSCurve(){
+void Console::CommandSCurve(){
+    // This function does an SCurve scan. Scans THL values in a range
+    // and outputs the mean number of active pixels due to test pulses
+    // of a given height. Results in a bell shaped curve with a plateau
+    // on either side
+    // Based on previous SCurveFast function
+    // rewritten in a cleaner way
+    // TODO: describe what the function does exactly
+    // - choose which chips to do SCurve scan for
+    // - choose internal or external pulser
+    // - choose pulse heights if internal pulser
+    
+    // variable which stores pulser (internal or external)
+    std::string pulser;
+    // variable which stores CTPR value
+    std::string CTPR_str;
+    int CTPR;
+    // shutter range (set to 1 for SCurve scan)
+    std::string shutter_range = "long";
+    // shutter time
+    std::string shutter_time;
+    std::pair<int, int> threshold_boundaries;
+    std::string input;
+    // for SCurve we use 8 pixels per column
+    int pixels_per_column = 8;
+
+    // first we're going to let the user decide which chips to calibrate
+    // define a set of ints, which will contain the number of the chips we're
+    // going to use
+    std::set<int> chip_set;
+    chip_set = ChipSelection();
+
+    // ask user for CTPR value to choose
+    CTPR_str = CTPRSelection();
+    if (CTPR_str == "quit") return;
+    std::cout << "using " << CTPR_str << std::endl;
+    CTPR = std::stoi(CTPR_str);
+    
+    
+    // now we're asking if the user wants to use an internal or external pulser
+    pulser = PulserSelection();
+    if (pulser == "quit") return;
+    std::cout << "using " << pulser << std::endl;
+
+    // TODO: IN case of internal pulser, use default values for shutter range and time
+    //       standard and 100
+
+    // now we need to create a list of pulses, which is going to 
+    // be used
+    // if we use an external pulser, this list will only contain a single value
+    // for the internal pulser, we create a list
+    std::list<int> pulseList;
+    std::string callerFunction = "SCurve";
+    pulseList = PulseListCreator(pulser, callerFunction);
+    if (pulseList.front() == -1) return;
+
+    // shutter time selection
+    std::cout << "Shutter range is set to 'long'." << std::endl;
+    shutter_time  = ShutterTimeSelection(shutter_range);
+    if (shutter_time == "quit") return;
+
+    // threshold boundary seleection
+    threshold_boundaries = THLBoundarySelection();
+    if(threshold_boundaries.first  == 0 &&
+       threshold_boundaries.second == 0) return;
+    
+    // in case of an external pulser, we will allow the user to add another voltages
+    // to the list after the first voltage has finished
+
+    if (pulser == "internal"){
+	// in case we use the internal pulser, we only allow to use the pulse list 
+	// created before
+	pc->SCurve("SCurve",
+		   chip_set,
+		   pulser,
+		   pulseList,
+		   shutter_range,
+		   shutter_time,
+		   CTPR,
+		   threshold_boundaries);
+    }
+    else if (pulser == "external"){
+	// in case of an external trigger, we ask whether the user wants to add 
+	// another voltage after the first one has finished
+	do{
+	    pc->SCurve("SCurve",
+		       chip_set,
+		       pulser,
+		       pulseList,
+		       shutter_range,
+		       shutter_time,
+		       CTPR,
+		       threshold_boundaries);
+	    
+	    // ask for more input
+	    std::cout << "Do you wish to use another external pulse voltage? (y / n)" 
+		      << std::endl;
+	    input = getUserInputNonNumericalNoDefault(_prompt, {"y", "n", "Y", "N"});
+	    if (input == "quit") return;
+	    else if( (input == "y") ||
+		     (input == "Y") ){
+		// in this case ask for another value
+		pulseList = PulseListCreator(pulser, callerFunction);
+	    }
+	    else{
+		// in this case we just finish
+		std::cout << callerFunction << " calibration finished." << std::endl;
+		
+	    }
+	} while ( (input != "n") || (input != "N") );
+    }
+
+}
+    // :)
+
+
+
+int Console::CommandSCurveOld(){    
     // variables for getUserInput
     bool numericalInput = true;
     bool allowDefaultOnEmptyInput = false;
@@ -2113,38 +2234,38 @@ int Console::CommandSCurve(){
     unsigned short StartTHL[9] = {0};
     unsigned short StopTHL[9] = {1023};
     std::cout << "Hello, this is fast S-Curve scan. I will do a THL scan and "
-	      << "count how many counts there are in average on the chips. "
-	      << "Scan will be done for one chip after the other from chip 1 to " 
-	      <<  pc->fpga->tp->GetNumChips() 
-	      << ") " 
-	      << std::flush;
+    	      << "count how many counts there are in average on the chips. "
+    	      << "Scan will be done for one chip after the other from chip 1 to " 
+    	      <<  pc->fpga->tp->GetNumChips() 
+    	      << ") " 
+    	      << std::flush;
     std::cout << "Warning: Only CTPR = 1 will be used. Hence only column x = 0, "
-	      << "x= 32, ... Make sure that NONE of these columns are dead. "
-	      << "Otherwise put a column offset ( 0(no offset) to 31)" 
-	      << std::flush;
+    	      << "x= 32, ... Make sure that NONE of these columns are dead. "
+    	      << "Otherwise put a column offset ( 0(no offset) to 31)" 
+    	      << std::flush;
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     offset     = std::stoi(input);
     std::cout << "What voltage did you set on pulser, put 0 for internal pulser?" 
-	      << std::flush;
+    	      << std::flush;
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     voltage    = std::stoi(input);
     std::cout << "Shutter time in clock cycles (0-255), LONG mode used "
-	      << "(100 is ok for internal pulser) " 
-	      << std::flush;
+    	      << "(100 is ok for internal pulser) " 
+    	      << std::flush;
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     time       = std::stoi(input);
     for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-	std::cout << "Start (lower) THL for chip " << chip << " " << std::flush;
-	input          = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	StartTHL[chip] = std::stoi(input);
-	std::cout << "End (upper) THL for chip " << chip << " " << std::flush;
-	input          = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	StopTHL[chip]  = std::stoi(input);
+    	std::cout << "Start (lower) THL for chip " << chip << " " << std::flush;
+    	input          = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    	if (input == "quit") return -1;
+    	StartTHL[chip] = std::stoi(input);
+    	std::cout << "End (upper) THL for chip " << chip << " " << std::flush;
+    	input          = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
+    	if (input == "quit") return -1;
+    	StopTHL[chip]  = std::stoi(input);
     }
     pc->DoSCurveScan(voltage,time,StartTHL,StopTHL,offset);
     return 0;
@@ -2522,13 +2643,27 @@ void Console::CommandTOCalib(){
     if (pulser == "internal"){
 	// in case we use the internal pulser, we only allow to use the pulse list 
 	// created before
-	pc->TOCalib(chip_set, TOmode, pulser, pulseList, pixels_per_column, shutter_range, shutter_time);
+	pc->TOCalib(callerFunction,
+		    chip_set,
+		    TOmode,
+		    pulser,
+		    pulseList,
+		    pixels_per_column,
+		    shutter_range,
+		    shutter_time);
     }
     else if (pulser == "external"){
 	// in case of an external trigger, we ask whether the user wants to add 
 	// another voltage after the first one has finished
 	do{
-	    pc->TOCalib(chip_set, TOmode, pulser, pulseList, pixels_per_column, shutter_range, shutter_time);
+	    pc->TOCalib(callerFunction,
+			chip_set,
+			TOmode,
+			pulser,
+			pulseList,
+			pixels_per_column,
+			shutter_range,
+			shutter_time);
 	    
 	    // ask for more input
 	    std::cout << "Do you wish to use another external pulse voltage? (y / n)" 

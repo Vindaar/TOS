@@ -99,33 +99,62 @@ public:
 		  unsigned short coarsehigh,
 		  std::pair<int, int> threshold_boundaries,
 		  std::atomic_bool *loop_stop);
+    int SCurveSingleTHL(unsigned short thl, unsigned short chip, int time, unsigned short offset, int step, int pulse);
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
+
+    
     int DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl);
     int DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl);
     // NOTE: TOCalibFast is deprecated! not to be used anymore. Use TOCalib instead. Will be removed, once made sure that TOCalib()
     // works as expected
     int TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsigned short time, unsigned short TOT, unsigned short internalPulser);
-    void TOCalibAllChipsSetUniformMatrix(std::set<int> chip_set,
-					 std::map<std::string, boost::any> parameter_map,
-					 const int nChips,
-					 const int npix_per_dim);
-    void TOCalibSingleChipReadoutCalc(int chip,
-				      std::map<std::string, boost::any> parameter_map,
-				      std::map<int, Frame> *frame_map);
-    void TOCalibAllChipsSingleStepCtpr(std::set<int> chip_set,
-				       std::map<std::string, boost::any> parameter_map,
-				       std::map<int, Frame> *frame_map,
-				       int nChips);
-    void TOCalibSingleIteration(std::set<int> chip_set,
+    void AllChipsSetUniformMatrix(std::set<int> chip_set,
+				  std::map<std::string, boost::any> parameter_map,
+				  const int nChips);
+    void SingleChipReadoutCalc(int chip,
+			       std::map<std::string, boost::any> parameter_map,
+			       std::map<int, Frame> *frame_map,
+			       FrameArray<int> &pixel_data);
+    void AllChipsSingleStepCtpr(std::set<int> chip_set,
 				std::map<std::string, boost::any> parameter_map,
-				std::map<int, std::pair<double, double>> *chip_mean_std_map);
-    void TOCalib(std::set<int> chip_set, 
+				std::map<int, Frame> *frame_map,
+				int nChips);
+    void SingleIteration(std::set<int> chip_set,
+			 std::map<std::string, boost::any> parameter_map,
+			 std::map<int, std::pair<double, double>> *chip_mean_std_map);
+    void TOCalib(std::string callerFunction,
+		 std::set<int> chip_set, 
 		 std::string TOmode, 
 		 std::string pulser, 
 		 std::list<int> pulseList,
 		 int pixels_per_column, 
 		 std::string shutter_range,
 		 std::string shutter_time);
+
+    void SCurve(std::string callerFunction,
+		std::set<int> chip_set,
+		std::string pulser,
+		std::list<int> pulseList,
+		std::string shutter_range,
+		std::string shutter_time,
+		int CTPR,
+		std::pair<int, int> threshold_boundaries);
+    // void CalibrationMeta(std::string callerFunction,
+    // 			 std::set<int> chip_set,
+    // 			 std::map<std::string, boost::any> parameter_map,
+    // 			 std::string pulser,
+    // 			 std::list<int> pulseList);
+    void WriteTOCalibToFile(std::set<int> chip_set,
+			    std::map<std::string, boost::any> parameter_map,
+			    std::map<int, std::pair<double, double>> chip_mean_std_map);
+    void WriteSCurveToFile(std::set<int> chip_set,
+			   std::map<int, std::map<int, double>> thl_mean_map,
+			   int pulse);
+
+    std::map<int, std::pair<double, double>> GetZeroInitMeanStdMap(std::set<int> chip_set);
+
+
+    
     unsigned short CheckOffset();
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a);
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup);
@@ -174,6 +203,7 @@ public:
     std::string GetThresholdMeansFileName(unsigned short chip);
     std::string GetTOTCalibFileName(unsigned short chip);
     std::string GetTOACalibFileName(unsigned short chip);
+    std::string GetSCurveFileName(unsigned short chip, unsigned int pulse);
     std::string GetMaskFileName(unsigned short chip);
 
     // function to change the center chip member variable
@@ -182,6 +212,9 @@ public:
 
     // function to conveniently set a DAC in software and write to chip
     int SetDACandWrite(unsigned int dac, unsigned short chip, unsigned int value);
+    int SetDACallChips(unsigned short dac, unsigned int value, std::set<int> chip_set);
+    void SetTestpulseThresholds(int pulse, std::string callerFunction);
+
     
 		
     void MakeBMP(int arr[256][256]);

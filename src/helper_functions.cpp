@@ -35,3 +35,39 @@ std::string GetFrameDumpFilename(int thl, int step, int pulse){
 }
 
 
+int CreateFolderIfNotExists(std::string pathname){
+    // overloaded function to call this function with a string, instead
+    // of a boost path object
+    boost::filesystem::path p(pathname);
+    int result;
+    result = CreateFolderIfNotExists(p);
+    return result;
+}
+
+int CreateFolderIfNotExists(boost::filesystem::path pathname){
+    int result = 0;
+    
+    if(!boost::filesystem::exists(pathname)){
+	// directory doesn't exist yet, create
+	bool good;
+	good = boost::filesystem::create_directory(pathname);
+	if(good == false){
+	    result = -1;
+	}
+	else{
+	    result = 0;
+	}
+    }
+    else{
+	result = 0;
+    }
+    return result;
+}
+
+boost::filesystem::path GetPathFromFilename(std::string filename){
+    // given a full filename to a file, return the folder in which
+    // the file is
+    boost::filesystem::path fname(filename);
+    boost::filesystem::path parent = fname.parent_path();
+    return parent;
+}

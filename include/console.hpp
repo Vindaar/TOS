@@ -186,8 +186,8 @@ private:
 		   unsigned short coarsehigh,
 		   std::pair<int, int> threshold_boundaries,
 		   std::atomic_bool *loop_stop);
-
-    int CommandSCurve();
+    void CommandSCurve();
+    int CommandSCurveOld();
     int Commandi2creset();
     int Commandi2cDAC();
     int Commandi2cADC();
