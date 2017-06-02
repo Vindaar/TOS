@@ -98,10 +98,14 @@ private:
     std::string TriggerSelection();
     std::string CalibrationSelection();
     std::string PulserSelection();
-    std::list<int> PulseListCreator(std::string pulser);
+    std::string CTPRSelection();
+    std::list<int> PulseListCreator(std::string pulser, std::string callerFunction);
+    std::list<int> GetTOCalibDefaultPulseList();
+    std::list<int> GetSCurveDefaultPulseList();
     int PixPerColumnSelection();
     int THLAnyBoundary(std::string boundary);
     std::pair<int, int> THLBoundarySelection();
+    std::map<std::string, int> ChessMatrixSelection(int chip);
 
 
     // Some function one can use to print error messages according to the error parameter given
