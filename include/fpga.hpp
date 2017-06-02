@@ -139,13 +139,21 @@ private:
     int Communication( unsigned char* Bsend, unsigned char* Brecv, int timeout = 2e5); 	                                 //err_code=x
     int Communication2(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip, int timeout = 2e5);        //err_code=x
     int CommunicationReadSend(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip, int timeout = 2e5); //err_code=x
+    // the SaveData function without argument is a default to call, if one does not
+    // care about the return values
+    // TODO: think about whether to rather change SerialReadOut function to
+    // not call a SaveData function in case of an empty argument
+    // int SaveData();
     int SaveData(std::string filename);						//err_code=x
     int SaveData(int pix[9][256][256]);
     int SaveData(std::vector<std::vector<std::vector<int> > > *VecData);
     int SaveData(FrameArray<int> *pixel_data, int NumHits);
     int SaveData(int pix[256][256], int NumHits);
     int SaveData(std::vector<int> *pHitArray ,int NumHits);
-    int SaveData(FrameArray<int> *pixel_data);
+    // SaveData functions for a map of Frames and single FrameArrays
+    int SaveData(std::map<int, Frame> *frame_map);
+    // called from function above
+    int SaveData(FrameArray<int> *pixel_data, unsigned short chip = 0);
     int SaveData(int **pix);
     int SaveData(int hit_x_y_val[12288], int NumHits );
     bool _usefastclock;		

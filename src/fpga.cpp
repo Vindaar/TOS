@@ -12,6 +12,7 @@
 #include "fpga.hpp"
 #include "networkWrapper.hpp"
 #include "hvFadcManager.hpp"
+#include <functional>
 
 #include <iostream>
 #include <cmath>
@@ -539,6 +540,11 @@ int FPGA::tpulse(unsigned short Npulses, unsigned short div500kHz){
        unsigned short Npulses: number of pulses to be created
        unsigned short div500kHz: input is divided by 500 and used as frequency
                                  in kHz
+				 NOTE: explanation probably wrong! INSTEAD:
+				 div500kHz * 500kHz is resulting frequency
+				 NOTE2: Oscilloscope:
+				     div500kHz = 10 results in: 1 period of 20us
+				     -> f = div500kHz * 5e3 Hz
      */
     int err_code;
     unsigned int i2c_val = (Npulses<<8) | div500kHz;
@@ -1169,7 +1175,7 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
 		    // you apply on program start since if statement included 
 		    // different values for adding than actual preload value 
 		    // before
-		    aktBit=y*256*14+b*256+(255-x)+8*tp->GetNumChips()+((256*256*14)+256)*(chip-1) + preload;
+		    aktBit = y*256*14 + b*256 + (255-x) + 8*tp->GetNumChips() + ((256*256*14) + 256)*(chip-1) + preload;
 		    // +8*tp->GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
 		    if ((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			(*VecData)[chip][y][x]+=1<<(13-b);
@@ -1381,7 +1387,36 @@ int FPGA::SaveData(int hit_x_y_val[12288], int NumHits){
     return 0;
 }
 
-int FPGA::SaveData(FrameArray<int> *pixel_data){
+// int FPGA::SaveData(){
+//     // the empty SaveData function is being called, if we want to read out the chips
+//     // (e.g. after setting a matrix in a function) without caring about the contents,
+//     // which we read back. We will create a temporary object to store the data in
+//     // and then simply call another function
+//     int nChips = tp->GetNumChips();
+//     std::map<int, Frame> frame_map;
+//     for (int i = 1; i <= nChips; i++){
+// 	Frame frame;
+// 	frame_map.insert(std::pair<int, Frame>(i, frame));
+//     }
+//     int result = 0;
+//     result = SaveData(&frame_map);
+//     return result;
+// }
+
+int FPGA::SaveData(std::map<int, Frame> *frame_map){
+    int nChips = tp->GetNumChips();
+
+    for (auto &frame_pair : *frame_map){
+    	FrameArray<int> pixel_data;
+	unsigned short chip = frame_pair.first;
+    	SaveData(&pixel_data, chip);
+    	frame_pair.second.SetFrame(std::ref(pixel_data));
+    }
+
+    return 0;
+}
+
+int FPGA::SaveData(FrameArray<int> *pixel_data, unsigned short chip){
     // this function receives a pixel_data data array of type FrameArray (defined in
     // frame.hpp), initializes it to 0 and reads the data from the PackQueueReceive
     // array. The result is saved in the pixel_data array
@@ -1393,30 +1428,94 @@ int FPGA::SaveData(FrameArray<int> *pixel_data){
     //
     int b;
     int aktBit;
-
+    // now simply add preload to aktBit
+    int preload = tp->GetPreload();
+    unsigned short nChips = tp->GetNumChips();
 
     // initialize the whole array to zero to be sure
-    //for(std::size_t x = 0; x < pixel_data->size(); ++x){
-    //    for(std::size_t y = 0; y < (*pixel_data)[x].size(); ++y){
+    // NOTE: this is done to make sure, even if the user hands a FrameArray, which
+    //       was used before that the data makes sense. Important, because data will
+    //       be set in pixel_data by ADDING individual bits!
     for(std::size_t y = 0; y < pixel_data->size(); ++y){
 	for(std::size_t x = 0; x < (*pixel_data)[x].size(); ++x){
-	    (*pixel_data)[y][x] = 0;
+	    (*pixel_data)[x][y] = 0;
 	}
     }
 
+    // some helper variables for access and determining whether to add bit or not
+    unsigned short current_byte = 0;
+    unsigned short check_bit = 0;
+    bool bit_is_nonzero = false;
+    unsigned short bit_value = 0;
+    int package = 0;
+    int pos_in_package = 0;
+    
     for(std::size_t y = 0; y < pixel_data->size(); ++y){
+	// the main thing to know to read this data:
+	//     the data is read column wise from x = 255 down to
+	//     x = 0. However, each single bit for each x = .. value
+	//     is done one after another, meaning we need to iterate over
+	//     every x = 255 -> 0 value for each bit of the 14 bit register,
+	//     which is contained in a single pixel.
+	//     The individual rows are done one after the other in this manner.
 	for(b = 0; b < 14; ++b){
-	    for(std::size_t x = 0; x < (*pixel_data)[y].size(); ++x){
-		// some calculation... regarding data that is read from chip and
-		// converted to values... :/ 
-		aktBit = y*256*14 + b*256 + (255 - x) + 8;
-		if( ( (*PackQueueReceive)[(aktBit / 8) / PLen][18 + ((aktBit / 8) % PLen)] & 1 << (7 - (aktBit % 8) ) ) > 0){
-		    (*pixel_data)[y][x] += 1 << (13 - b);
-		}
+	    for(std::size_t x = 0; x < (*pixel_data)[x].size(); ++x){
+		// aktBit stands for current bit. It is the total counter for bits of the
+		// WHOLE data stream for all chips and all pixels simply counting 'up'
+		// Calculated as follows:
+		//     y * 256 * 14   == the offset for each row
+		//     b * 256        == the offset for how many bits we're in
+		//                       the creation of the values for a single row
+		//                       (x = 256 -> 0 one bit at a time!)
+		//     (255 - x)      == go over columns from 255 to 0
+		//     8 * nChips     == a preload offset (not the preload in the TOS)
+		//                       where we get one single byte for each chip
+		//                       in the data stream
+		//     ((256*256*14) + 256) * (chip - 1) == the offset we need to skip whole chips
+		//     preload        == the preload which is added to move the data column wise
+		//                       (for synchronization). each value of preload shifts
+		//                       the whole frame from x -> x + 1
+		//                       does not change final result, due to postload of 256 bit
+		aktBit = y*256*14 + b*256 + (255-x) +	\
+		    8 * nChips +	\
+		    ((256*256*14) + 256) * (chip - 1) +	\
+		    preload;
+		// use current bit to calculate which package the data should be in
+		//     aktBit / 8      == the byte which our current bit should be in
+		//     / PLen (PLen == 1400, size of network data package - 18 bytes of header)
+		//                     == determine the network package to look in
+		package = (aktBit / 8) / PLen;
+		// use current bit to calculate the correct byte in the current network package
+		//     18              == the header of each network package, skipped
+		//     aktBit / 8      == the byte which our current bit should be in
+		//     % PLen          == modulo to take into account that there are many
+		//                        network packages (need byte in single package and
+		//                        current bit counts number of bits in ALL packages)
+		pos_in_package = 18 + ((aktBit / 8) % PLen);
+
+		// get the current byte
+		current_byte   = (*PackQueueReceive)[package][pos_in_package];
+		// now check whether current bit in package queue (current byte) is 0 or 1
+		check_bit = 1 << (7 - (aktBit % 8));
+		// get current bit in byte by doing bitwise AND operation
+		// and if the bit is non zero, turn bit_value into 1, 0 otherwise
+		bit_value = (current_byte & check_bit) > 0;
+		// add this value bitshifted by b bits to left
+		(*pixel_data)[x][y] += bit_value << (13 - b);
+		// bit_is_nonzero = bit_value > 0;
+		// if (bit_is_nonzero){
+		//     // if this byte is non zero, add the bit we're currently considering
+		//     // (remember: b == bit we're currently on for current row and
+		//     //            specific column x)
+		//     (*pixel_data)[x][y] += 1 << (13 - b);
+		//     std::cout << "bit is nonzero " << bit_is_nonzero
+		// 	      << "\t bit_value " << bit_value
+		// 	      << "\t shift " << (7 - (aktBit % 8))
+		// 	      << std::endl;
+		// }
 	    }
 	}
     }
-
     return 0;
 }
 

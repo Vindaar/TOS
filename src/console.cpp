@@ -1592,16 +1592,10 @@ int Console::CommandReadOut(){
     std::cout << "Enter Console::CommandReadOut()"  <<  std::endl;	
 #endif
     int result;
-    std::string filename[9]= {""};
+    std::string filename[9] = {""};
     std::string f[9];
 
-    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-	// filename[chip]=pc->GetDataPathName();
-	// filename[chip]+="/";
-	filename[chip] = pc->GetDataFileName(chip);
-	f[chip] = filename[chip].c_str();
-    }
-    result = pc->DoReadOut(f);
+    result = pc->DoReadOut();
     std::cout << "CommandReadOut:" << result << std::endl;
     if(result<0){ErrorMessages(-result);}
     else{std::cout << "\tReadOut accomplished\n" << std::flush;}

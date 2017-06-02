@@ -79,11 +79,21 @@ public:
     void initHV_FADC(hvFadcManager* hvFadcManager, bool useHvFadc = true);
   
     FPGA *fpga;
-    int DoReadOut(std::string filename[9]);
+
+    // Read out functions
+    // DoReadOut is template function to support any kind of filename argument
+    // (fixed array of strings, vector of strings, etc, which supports indexing
+    template<typename T> int DoReadOut(T filenames);
+    // still overload DoReadOut() to call function without argument and create
+    // list of default filenames from GetDataFilename()
+    int DoReadOut();
     int DoReadOut2(std::string filename, unsigned short chip);
     int DoReadOutFadc(std::string filename, unsigned short chip);
+
+    
     // TODO: HV_FADC_Obj
     int DoDACScan(int DACstoScan, unsigned short chip);
+
     int DoTHLScan(unsigned short chip,
 		  unsigned short coarselow,
 		  unsigned short coarsehigh,
