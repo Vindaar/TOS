@@ -15,6 +15,7 @@ bin/data/matrix/*
 data/runs/*
 data/singleFrames/*
 data/matrix/*
+data/*
 data/THLScan.txt
 
 # editors
