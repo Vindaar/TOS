@@ -19,3 +19,19 @@ const std::string currentDateTime() {
 
     return buf;
 }
+
+std::string GetFrameDumpFilename(int thl, int step, int pulse){
+
+    std::stringstream filename_stream;
+    filename_stream << "tmp/framedumps/" << std::flush;
+
+    filename_stream << "frame_" << std::to_string(thl)
+		    <<	"_" << std::to_string(step)
+		    << "_" << std::to_string(pulse)
+		    <<".txt";
+
+    std::string filename = filename_stream.str();
+    return filename;
+}
+
+

@@ -2,37 +2,45 @@
 //   - by Sebastian Schmidt
 
 #include "frame.hpp"
+#include "helper_functions.hpp"
 
 Frame::Frame(): 
-    _pix_per_dimension(PIXPD)
+    _pix_per_dimension(PIXPD),
+    _LFSR_set(false)
 {
     // in case of the empty creator, we simply create an empty frame, 
     // which is 0 initialized
     // note: in this case the size of the timepix chip defined by a macro
     // in the timepix.hpp header is used as dimension
 
-    // initialize member variables to zero (except dimension)
+    // initialize member variables to zero (except dimension and LFSR_lookup table)
     ResetMemberVariables();
-    
 }
 
-Frame::Frame(FrameArray<int> pixel_data):
-    _pix_per_dimension(PIXPD)
+Frame::Frame(FrameArray<int>& pixel_data):
+    _pix_per_dimension(PIXPD),
+    _LFSR_set(false)
 {
     // in this case we create an empty frame first and then put in
     // the data from the pixel_data array
 
-    // initialize member variables to zero (except dimension)
+    // initialize member variables to zero (except dimension and LFSR_lookup table)
     ResetMemberVariables();
 
     // use the stack frame function to create the initialized frame
-    StackFrame(pixel_data);
+    // StackFrame(pixel_data);
+    // set the given frame as the frame of this object
+    SetFrame(pixel_data);
 
     // now our _pixel_data member variable contains the 2D array
 }
 
 Frame::~Frame(){
     // nothing to do here
+}
+
+FrameArray<int> Frame::GetPixelData(){
+    return _pixel_data;
 }
 
 void Frame::ResetMemberVariables(){
@@ -71,6 +79,22 @@ void Frame::ResetFullFrameVariables(){
     _fullFrameVariance = 0.0;
 }
 
+void Frame::SetFrame(FrameArray<int>& pixel_data){
+    // set the pixel_data of this Frame object to the pixel data given to
+    // it by copying it
+
+    // for(int x = 0; x < _pix_per_dimension; x++){
+    // 	for(int y = 0; y < _pix_per_dimension; y++){
+    // 	    // note: IT MIGHT BE that due to the stupidity that is TOS
+    // 	    // one might need to reverse the ordering of x and y for the 
+    // 	    // pixel_data array (since Michael used them the other way round :/)
+    // 	    _pixel_data[x][y] = pixel_data[x][y];
+    // 	}
+    // }
+
+    // assign pixel_data given to member variable (copy the content)
+    _pixel_data = pixel_data;
+}
 
 void Frame::StackFrame(FrameArray<int> pixel_data){
     // stack the 2d array on top of the current frame
@@ -86,12 +110,21 @@ void Frame::StackFrame(FrameArray<int> pixel_data){
     }
 }
 
+void Frame::SetMask(FrameArray<bool> mask_array){
+    for(int x = 0; x < _pix_per_dimension; x++){
+	for(int y = 0; y < _pix_per_dimension; y++){
+	    _mask_data[x][y] = mask_array[x][y];
+	}
+    }
+}
+
 void Frame::SetPartialFrame(FrameArray<int> pixel_data, 
 			    int x_start, 
 			    int x_step_size,
 			    int y_start,
 			    int y_step_size, 
-			    bool ignore_max_flag){
+			    bool ignore_max_flag,
+			    bool convert_from_LFSR){
     // this function sets the data of pixel_data to this frame
     // by starting at x_start, y_start and going in steps of x_step_size and
     // y_step_size
@@ -106,7 +139,13 @@ void Frame::SetPartialFrame(FrameArray<int> pixel_data,
     ResetLastPFrameVariables();
 
     std::map<std::string, double> var_map;
-    var_map = CalcSumHitsMeanVar(pixel_data, true, x_start, x_step_size, y_start, y_step_size);
+    var_map = CalcSumHitsMeanVar(pixel_data,
+				 true,
+				 x_start,
+				 x_step_size,
+				 y_start,
+				 y_step_size,
+				 convert_from_LFSR);
     
     _lastPFrameHits     = var_map["hits"];
     _lastPFrameSum      = var_map["sum"];
@@ -120,7 +159,106 @@ void Frame::SetPartialFrame(FrameArray<int> pixel_data,
     // 	      << std::endl;
 }
 
-void Frame::CalcFullFrameVars(){
+
+void Frame::ConvertFullFrameFromLFSR(){
+    // convert the whole frame from LFSR values to
+    // normal pixel values
+    // done by calling ConvertFrameFromLFSR with 0 values
+    ConvertFrameFromLFSR(0, 1, 0, 1);    
+}
+
+
+void Frame::ConvertFrameFromLFSR(int x_start,
+				 int x_step_size,
+				 int y_start,
+				 int y_step_size){
+    // NOTE: in case this function is supposed to be used for partial frames,
+    //       which were added previously, instead of calling this function
+    //       the supposed way is to set the convert_from_LFSR flag in the SetPartialFrame()
+    //       call, which will do the conversion while setting the frame
+    // using the LFSR look up table, we convert the pixel data to normal
+    // pixel data
+    // x_offset can be used to use the same offset in x direction as is done
+    // for the CTPR (if we're using test pulses as in case of SCurves)
+    int pix = 0;
+    int pix_value = 0;
+
+    if (_LFSR_set == false){
+	// create the LFSR lookup table, if it wasn't calculated yet
+	CreateLFSRLookUpTable();
+    }
+
+    for(int x = x_start; x < _pix_per_dimension; x += x_step_size){
+	for(int y = y_start; y < _pix_per_dimension; y += y_step_size){
+	    pix       = _pixel_data[x][y];
+	    pix_value = _LFSR_LookUpTable[pix];
+	    if(pix_value >= 0 &&
+	       pix_value != 11810){
+		_pixel_data[x][y] = pix_value;
+	    }
+	    else{
+		_pixel_data[x][y] = 0;
+	    }
+	}
+    }
+}
+
+void Frame::CreateLFSRLookUpTable(){
+    // this private function is used to create this objects' own LFSR lookup table
+
+    int i = 0;
+    int loop = 0;
+    int lfsr = 0;
+    int linear = 0;
+
+    for(i = 0; i < 16384; ++i){
+	// initialize look up table to 0
+	_LFSR_LookUpTable[i]=0;
+    }
+
+    // set lfsr to start value of 3FFF (why this value?)
+    lfsr=0x3FFF;
+
+    for(loop = 0; loop < 11811; loop++)
+    {
+	// now we run over all possible values for the pixels (counting from 0 to 11810)
+	// and assign each value (loop) for the correct element in the look up table
+        _LFSR_LookUpTable[lfsr] = loop;
+        linear = 0;
+        if( (lfsr & 1) != ((lfsr >> 13) & 1)){
+	    linear = 1;
+	}
+        lfsr = ((lfsr << 1) + linear) & 0x3FFF;
+    }
+
+    std::fstream outfile;
+    outfile.open("/home/schmidt/lfsr.txt", std::fstream::out);
+
+    outfile << "# i \t LFSR value" << std::endl;
+    for(i = 0; i < 16384; ++i){
+	// initialize look up table to 0
+	outfile << i << "\t" << _LFSR_LookUpTable[i] << std::endl;
+    }
+
+    // now _LFSR_set flag to true (have calculated values)
+    _LFSR_set = true;
+}
+
+int Frame::ConvertPixelFromLFSR(int pseudo_pix_value){
+    // function which converts a single pixel from LFSR values to real pixel values
+    // using own member variable for LFSR lookup table 
+    // provides check for whether _LFSR_LookUpTable was set yet
+    int pix_value = 0;
+    if(_LFSR_set == false){
+	CreateLFSRLookUpTable();
+    }
+    
+    pix_value = _LFSR_LookUpTable[pseudo_pix_value];
+    return pix_value;
+}
+
+
+void Frame::CalcFullFrameVars(int x_offset){
     // this function simply calculates the _fullFrame variables, based on the
     // current _pixel_data array
 
@@ -130,7 +268,7 @@ void Frame::CalcFullFrameVars(){
     std::map<std::string, double> var_map;
     // in case of calculating the full frame variables, we simply hand the member variable
     // to the helper function
-    var_map = CalcSumHitsMeanVar(_pixel_data, false);
+    var_map = CalcSumHitsMeanVar(_pixel_data, false, x_offset);
     
     _fullFrameHits     = var_map["hits"];
     _fullFrameSum      = var_map["sum"];
@@ -143,7 +281,8 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
 							int x_start,
 							int x_step_size,
 							int y_start,
-							int y_step_size){
+							int y_step_size,
+							bool convert_from_LFSR){
     // inputs:
     //   FrameArray<int> pixel_data: the frame array for which the values are to be calculated
     //   bool pFrameFlag: a flag, which decides whether we need to set the _pixel_data array
@@ -153,6 +292,7 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
     // of (parts) of a frame array
     int sum  = 0;
     int hits = 0;
+    int pix_value = 0;
     double mean = 0.0;
     double var  = 0.0;
     double M2   = 0.0;
@@ -164,19 +304,34 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
 	    //       if mask was set on chip, why would I need to use a software
 	    //       mask too?
 	    // if we check for the max values and ignore it
-	    if( (pixel_data[x][y] != 0) &&
-		(pixel_data[x][y] != ignore_max_value ) ){
+	    if (convert_from_LFSR == false){
+		pix_value = pixel_data[x][y];
+	    }
+	    else{
+		// in this case convert the current value from pseudo random
+		// value to real pixel value
+		pix_value = ConvertPixelFromLFSR(pixel_data[x][y]);
+	    }
+
+	    // NOTE: left in here for now to debug CTPR stupidity with shifts etc
+	    // if (pix_value > 900){
+	    // 	std::cout << "pix value is over 900 " << x << "\t" << y << std::endl;
+	    // }
+
+	    if( (pix_value != 0) &&
+		(pix_value != ignore_max_value) &&
+		(_mask_data[x][y] == false) ){
 		double delta = 0;
 		hits++;
-		delta  = pixel_data[x][y] - mean;
+		delta  = pix_value - mean;
 		mean  += delta / hits;
-		M2 += delta * (pixel_data[x][y] - mean);
+		M2    += delta * (pix_value - mean);
 
-		sum += pixel_data[x][y];
+		sum += pix_value;
 		if (pFrameFlag == true){
 		    // in case we run over a partial frame, we want to set the 
 		    // pixels of the pixel_data array in the _pixel_data array
-		    _pixel_data[x][y] = pixel_data[x][y];
+		    _pixel_data[x][y] = pix_value;
 		}
 	    }
 	}
@@ -202,6 +357,37 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
 
     return var_map;
 }
+
+int Frame::DumpFrameToFile(std::string filename){
+    // this function simply dumps the current frame to a file
+    // to be plotted
+
+    //int ignore_max_value = 11810;
+    int pix_value;
+    std::fstream outfile;
+    outfile.open(filename, std::fstream::out);
+    if (!outfile.fail()){
+        for(std::size_t y = 0; y < _pix_per_dimension; y++){
+	    for(std::size_t x = 0; x < _pix_per_dimension; x++){
+		pix_value = _pixel_data[x][y];
+		outfile << pix_value << "\t" << std::flush;
+		// if (pix_value != ignore_max_value) {
+		//     outfile << pix_value << "\t" << std::flush;
+		// }
+		// else{
+		//     outfile << 0 << "\t" << std::flush;
+		// }
+	    }
+	    outfile << std::endl;
+        }
+        outfile.close();
+	return 0;
+    }
+    else{
+	return -1;
+    }
+}
+
 
 int Frame::GetLastPFrameHits(){
     // returns the hits of the last partial frame, which was set

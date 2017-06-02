@@ -9,6 +9,8 @@
 #include <array>
 #include <vector>
 #include <map>
+#include <iostream>
+#include <fstream>
 
 
 // define a short hand for the data type in which frames are stored
@@ -25,11 +27,13 @@ public:
     // either we create an empty frame (0 initialized)
     Frame();
     // or we create a frame by using an existing 2D array
-    Frame(FrameArray<int> pixel_data);
+    Frame(FrameArray<int>& pixel_data);
     
     
     // destructor
     ~Frame();
+
+    FrameArray<int> GetPixelData();
 
     // --------------------------------------------------
     // functions dealing with frames
@@ -40,6 +44,9 @@ public:
     // note: <int> parameter, since we use an int typed FrameArray for our pixel
     // data
     void StackFrame(FrameArray<int> pixel_data);
+    // set frame (in constrast to stack frame, which adds the pixel values, this
+    // function replaces the previous _pixel_data array
+    void SetFrame(FrameArray<int>& pixel_data);
     // function to add a partial frame to the object
     // i.e. to build a full frame from many partial frames
     // also calculates sum, hits, mean, variance of this partial frame
@@ -48,8 +55,22 @@ public:
 			 int x_step_size,
 			 int y_start,
 			 int y_step_size,
-			 bool ignore_max_flag = true);
-    
+			 bool ignore_max_flag = true,
+			 bool convert_from_LFSR = false);
+
+
+    // function to set the _mask_data array from the mask array of the timepix class
+    void SetMask(FrameArray<bool> mask_array);
+
+    // this function converts the frame data from LFSR to normal pixel data
+    // using the look up table
+    void ConvertFrameFromLFSR(int x_start, int x_step_size, int y_start, int y_step_size);
+    // wrapper around convert frame from lfsr to convert whole frame
+    void ConvertFullFrameFromLFSR();
+    // function to convert a single value from pseudo to real pixel value
+    int ConvertPixelFromLFSR(int pseudo_pix_value);
+
+    int DumpFrameToFile(std::string filename);
     
 
     // --------------------------------------------------
@@ -70,7 +91,7 @@ public:
     // --------------------------------------------------
 
     // function to calculate sum, hits, mean and variance for current frame
-    void CalcFullFrameVars();
+    void CalcFullFrameVars(int x_offset = 0);
 
     
     // FUNCTION DEPRECATED
@@ -103,15 +124,23 @@ public:
     int GetFullFrameMean();
     int GetFullFrameVariance();
 
+
+    // NOTE: THIS IS SUPPOSED TO BE IN PRIVATE. HERE FOR DEBUGGING. IF YOU
+    // READ THIS, PUT IT BACK THERE!!!
+    
+    void ResetMemberVariables();
+    
 private:
 
     // --------------------------------------------------
     // general functions
     // --------------------------------------------------
 
-    void ResetMemberVariables();
+
     void ResetLastPFrameVariables();
     void ResetFullFrameVariables();
+    // function to create own lfsr lookup table
+    void CreateLFSRLookUpTable();
 
     // function for internal calculation of frame variables
     std::map<std::string, double> CalcSumHitsMeanVar(FrameArray<int> pixel_data,
@@ -119,7 +148,8 @@ private:
 						     int x_start = 0, 
 						     int x_step_size = 1,
 						     int y_start = 0,
-						     int y_step_size = 1);
+						     int y_step_size = 1,
+						     bool convert_from_LFSR = false);
 
 
     // size of the frame per dimension
@@ -131,6 +161,10 @@ private:
     FrameArray<int>  _pixel_data{};
     // 2D mask array
     FrameArray<bool> _mask_data{};
+    // LFSR look up table for full frame readout (pseudo random number counting)
+    // initialized to 0
+    int _LFSR_LookUpTable[16384] = {};
+    bool _LFSR_set;
     
     // total frame variables
     int _fullFrameSum;

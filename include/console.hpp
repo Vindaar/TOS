@@ -221,6 +221,9 @@ private:
     // function to loop over temperature readout (for now just calls temp_loop_main())
     void CommandTempLoopReadout();
 
+    // template function to get matrix parameters
+    template <typename Ausgabe> int MatrixParameters(Ausgabe &aus);
+
 
     //
     //vars to cope with the use of the fadc
