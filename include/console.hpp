@@ -16,6 +16,9 @@
 #include <set>
 #include <string>
 #include <list>
+#include <map>
+#include <stdio.h>
+
 
 // MCP2210
 #include "mcp2210/temp_auslese.hpp"
@@ -133,6 +136,7 @@ private:
     int CommandSetMatrix();
     int CommandSaveMatrix();
     int CommandLoadMatrix();
+    int CommandGetMatrixAsIntAndDump();
     int CommandWriteReadFSR();
   
     //write files containing the values of the DAC control panel
@@ -166,13 +170,16 @@ private:
     int CommandLoadThreshold();
     int CommandSetDAC();
     int CommandShowFSR();
-    int CommandVarChessMatrix();
+    // create default chess matrix of 5x5 pixels
+    void CommandVarChessMatrixDefault();
+    int CommandVarChessMatrix(bool all_chips = false);
     int CommandUniformMatrix();
     // quick implementation to set same uniform matrix for all chips
     int CommandUniformMatrixAllChips();
     int CommandFADCshutter();
     int CommandDACScan();
     int CommandTHLScan();
+
     // the actual THL function, which is run in a separate thread
     int RunTHLScan(std::string inputChips,
 		   unsigned short coarselow,

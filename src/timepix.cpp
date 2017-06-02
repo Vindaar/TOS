@@ -593,6 +593,54 @@ int Timepix::UniformMatrix(unsigned char P0_, unsigned char P1_, unsigned char M
     return 0;
 }
 
+int Timepix::VarChessMatrix(int chip, std::map<std::string, int> parameter_map){
+    // this function overloads the VarChessMatrix() function by enabling the use
+    // of a map, which stores all parameters to be used for a chess matrix
+    
+    int length;
+    int width;
+    int black_p0;
+    int black_p1;
+    int black_mask;
+    int black_test;
+    int black_thr;
+    int white_p0;
+    int white_p1;
+    int white_mask;
+    int white_test;
+    int white_thr;
+    int err;
+
+    length     = parameter_map["length"];
+    width      = parameter_map["width"];
+    black_p0   = parameter_map["black_p0"];
+    black_p1   = parameter_map["black_p1"];
+    black_mask = parameter_map["black_mask"];
+    black_test = parameter_map["black_test"];
+    black_thr  = parameter_map["black_thr"];
+    white_p0   = parameter_map["white_p0"];
+    white_p1   = parameter_map["white_p1"];
+    white_mask = parameter_map["white_mask"];
+    white_test = parameter_map["white_test"];
+    white_thr  = parameter_map["white_thr"];
+
+    err = VarChessMatrix(length,
+			 width,
+			 black_p0,
+			 black_p1,
+			 black_mask,
+			 black_test,
+			 black_thr,
+			 white_p0,
+			 white_p1,
+			 white_mask,
+			 white_test,
+			 white_thr,
+			 chip);
+
+    return err;
+}
+
 int Timepix::VarChessMatrix(int sl,int wl,int sp0,int sp1,int smask,int stest,int sth,int wp0,int wp1,int wmask,int wtest,int wth, unsigned short Chip){
     int x,y;
     int xnor1, xnor2;
@@ -622,6 +670,77 @@ int Timepix::VarChessMatrix(int sl,int wl,int sp0,int sp1,int smask,int stest,in
     return 0;
 }
 
+FrameArray<int> Timepix::GetMatrixAsInts(int chip){
+    // this function returns a FrameArray for the matrix currently set
+    // such that the values correspond to the integer values, which will be
+    // written to the pixels based on their 14bit register
+    // inputs:
+    //     int chip: the chip for which to return the frame array
+    FrameArray<int> matrix;
+
+    int p0   = 0;
+    int p1   = 0;
+    int mask = 0;
+    int test = 0;
+    int thr  = 0;
+    int pix_value = 0;
+    for(int x = 0; x < PIXPD; x++){
+	for(int y = 0; y < PIXPD; y++){
+	    // careful, all internal arrays are addressed as
+	    // [y][x] instead of [x][y] as FrameArray!
+	    p0 	 = P0[chip][y][x];
+	    p1 	 = P1[chip][y][x];
+	    mask = Mask[chip][y][x];
+	    test = Test[chip][y][x];
+	    thr  = ThrH[chip][y][x];
+	    // using the current values get the corresponding integer
+	    // value and assign to matrix
+	    pix_value = CalcPixelValueFrom14Bit(p0, p1, mask, test, thr);
+	    matrix[x][y] = pix_value;
+	}
+    }
+    // and return the matrix
+    return matrix;
+}
+
+int Timepix::CalcPixelValueFrom14Bit(int p0, int p1, int mask, int test, int thr){
+    // this function calculates the value a pixel should have after writing
+    // the 14 bit register with certain P0, P1, Mask, Test, Threshold values
+    // inputs:
+    //     the properties to be set for individual pixels
+
+    // the 14 bit register on the chip looks as follows:
+    // bits:   0   1   2   3   4   5   6    7      8      9    10     11     12     13 
+    //         x   x   x   x   x   x   p1   mask   thr0   p0   thr2   thr3   thr1   test
+    int value = 0;
+
+    // first separate the threshold int into 4 bits (use bool to represent bit)
+    // (bool == false <--> bit == 0)
+    bool thr0 = false;
+    bool thr1 = false;
+    bool thr2 = false;
+    bool thr3 = false;
+    // bitwise AND between threshold int and specific bits
+    // done by 1 << n, where n results in bit being compared
+    // if both 1, result is true, else false
+    thr0 = thr & (1 << 0);
+    thr1 = thr & (1 << 1);
+    thr2 = thr & (1 << 2);
+    thr3 = thr & (1 << 3);
+    
+    // now add each bit to the return value
+    value += p1   << 6;
+    value += mask << 7;
+    value += thr0 << 8;
+    value += p0   << 9;
+    value += thr2 << 10;
+    value += thr3 << 11;
+    value += thr1 << 12;
+    value += test << 13;
+    
+    return value;
+}
+
 int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){
 #if DEBUG==2
     std::cout<<"Enter Timepix::PackMatrix()"<<std::endl;
@@ -633,45 +752,47 @@ int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){
     //std::cout << "Set Matrix to 0"<< std::endl;
     for(y=0;y<PQueue*GetNumChips();++y)for(x=0;x<PLen+18;++x){(*PackQueue)[y][x]=0;}
     //std::cout << "Matrix set to 0"<< std::endl;
-    for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
+    for (unsigned short chip = 1; chip <= GetNumChips(); chip++){
 	aktBit=0;//(917768*(chip-1)); preload scheint nicht da zu sein fuer chip 2... daher auch nur 917760 fuer die aktBit
 	(*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]=0xFF; // 0xff = 255 preload
     }
 
-    for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
+    for (unsigned short chip = 1; chip <= GetNumChips(); chip++){
         for(y=0;y<256;++y) {
 	    for(x=0;x<256;++x){
+		int aktBit_base = y*256*14 + 8 + (255 - x) + (917760*(chip - 1));
 		if(Test[chip][y][x])	{
-		    aktBit=y*256*14+8+(255-x)+(917760*(chip-1)); 	     // yZeilen * 256Pixel/Zeile * 14Bit/Pixel + 8Bit Preload + aktuelles Bit in Zeile
-		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]+=1<<(7-(aktBit%8)); // [aktBit/(8*PLen)]=Paket des aktuellen Bits, [18+PacketBit/8]=PaketHeader+BytePosition im Paket, (1<<(7-PacketBit%8))=Wertigkeit des aktuellen Bits in seinem Byte (1<<x = 2^x)
+		    // yZeilen * 256Pixel/Zeile * 14Bit/Pixel + 8Bit Preload + aktuelles Bit in Zeile
+		    aktBit=aktBit_base;
+		    SetPackageByte(aktBit, PackQueue);
 		}
 		if(2&ThrH[chip][y][x]) {
-		    aktBit=256+y*256*14+8+(255-x)+(917760*(chip-1));
-		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		    aktBit=256+aktBit_base;
+		    SetPackageByte(aktBit, PackQueue);
 		}
 		if(8&ThrH[chip][y][x]) {
-		    aktBit=2*256+y*256*14+8+(255-x)+(917760*(chip-1));
-		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		    aktBit=2*256+aktBit_base;
+		    SetPackageByte(aktBit, PackQueue);
 		}
 		if(4&ThrH[chip][y][x]) {
-		    aktBit=3*256+y*256*14+8+(255-x)+(917760*(chip-1));
-		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		    aktBit=3*256+aktBit_base;
+		    SetPackageByte(aktBit, PackQueue);
 		}
 		if(P0[chip][y][x])     {
-		    aktBit=4*256+y*256*14+8+(255-x)+(917760*(chip-1));
-		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		    aktBit=4*256+aktBit_base;
+		    SetPackageByte(aktBit, PackQueue);
 		}
 		if(1&ThrH[chip][y][x]) {
-		    aktBit=5*256+y*256*14+8+(255-x)+(917760*(chip-1));
-		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		    aktBit=5*256+aktBit_base;
+		    SetPackageByte(aktBit, PackQueue);
 		}
 		if(Mask[chip][y][x])   {
-		    aktBit=6*256+y*256*14+8+(255-x)+(917760*(chip-1));
-		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		    aktBit=6*256+aktBit_base;
+		    SetPackageByte(aktBit, PackQueue);
 		}
 		if(P1[chip][y][x])     {
-		    aktBit=7*256+y*256*14+8+(255-x)+(917760*(chip-1));
-		    (*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)] += 1<<(7-(aktBit%8));
+		    aktBit=7*256+aktBit_base;
+		    SetPackageByte(aktBit, PackQueue);
 		}
 	    }
 	}
@@ -681,6 +802,22 @@ int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){
     }
     return 0;
 }
+
+void Timepix::SetPackageByte(int aktBit, std::vector<std::vector<unsigned char> > *PackQueue){
+    // this function sets an individual byte in the package queue
+    // inputs:
+    //     int aktBit: the current bit (byte?!) we're currently setting
+    //     std::vector... *PackQueue: the pointer to the vector object, which stores the
+    //                 package. We change this in place!
+    
+    // [aktBit/(8*PLen)]=Paket des aktuellen Bits,
+    // [18+PacketBit/8]=PaketHeader+BytePosition im Paket,
+    // (1<<(7-PacketBit%8))=Wertigkeit des aktuellen Bits in seinem Byte (1<<x = 2^x)
+    int package = (aktBit/8)/PLen;
+    int pos_in_package = 18+((aktBit/8)%PLen);
+    (*PackQueue)[package][pos_in_package] += 1<<(7-(aktBit%8));
+}
+
 
 int Timepix::SetNumChips(unsigned short Chips,unsigned short preload){
     NumChips=Chips;
@@ -695,6 +832,28 @@ int Timepix::SetOption(unsigned short option){
 
 unsigned short Timepix::GetNumChips(){
     return NumChips;
+}
+
+FrameArray<bool> Timepix::GetMaskArray(int chip){
+    // returns a FrameArray<bool> based on the Mask member array
+    FrameArray<bool> mask_array;
+    for(std::size_t x = 0; x < PIXPD; x++){
+	for(std::size_t y = 0; y < PIXPD; y++){
+	    // compare Mask with 0. If Mask == 0, in TOS terms the pixel
+	    // will NOT be considered. In our case this means we want
+	    // mask_data == True, since we do NOT consider masked data
+	    mask_array[x][y]  = Mask[chip][y][x] == 0;
+	    if(mask_array[x][y] == true){
+		//std::cout << "Pixel x,y " << x << "," << y << "is true" << std::endl;
+	    }
+	    else{
+		// std::cout << "Pixel x,y " << x << "," << y << "is false\n"
+		// 	  << "mask x,y "  << static_cast<int>(Mask[chip][y][x])
+		// 	  << std::endl;
+	    }
+	}
+    }
+    return mask_array;
 }
 
 unsigned short Timepix::GetPreload(){

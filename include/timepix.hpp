@@ -12,6 +12,7 @@
 #define TOS_TIMEPIX_HPP
 
 #include "protocol_constants.hpp"
+#include "frame.hpp"
 
 #include <vector>
 #include <string>
@@ -37,6 +38,7 @@ public:
     int GetFSR(unsigned char* FSR_);
     int ChipID(unsigned char* ReplyPacket,unsigned short chip);
     int PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue);
+    void SetPackageByte(int aktBit, std::vector<std::vector<unsigned char> > *PackQueue);
     int SaveFSRToFile(std::string filename, unsigned short chip);
     int LoadFSRFromFile(std::string filename, unsigned short chip);
     int SaveThresholdToFile(std::string filename, unsigned short chip);
@@ -44,6 +46,7 @@ public:
     int SaveMatrixToFile(std::string filename, unsigned short Chip);
     int LoadMatrixFromFile(std::string filename, unsigned short Chip);
     int UniformMatrix(unsigned char P0, unsigned char P1, unsigned char Mask, unsigned char Test, unsigned char ThrH, unsigned short Chip);
+    int VarChessMatrix(int chip, std::map<std::string, int> parameter_map);
     int VarChessMatrix(int sl,int wl,int sp0,int sp1,int smask,int stest,int sth,int wp0,int wp1,int wmask,int wtest,int wth, unsigned short Chip);
 		
     bool SetChipID(int id, std::string IDLetter,int IDNumber, int IDWaver, int chipType, unsigned short chip);
@@ -53,6 +56,8 @@ public:
     unsigned int GetDAC(unsigned int dac, unsigned short chip);
     int MaskPixel(int x, int y, int m, unsigned short chip);
     int GetMask(int y, int x, unsigned short chip);
+    FrameArray<bool> GetMaskArray(int chip);
+
     int Spacing (unsigned int space, unsigned int step, unsigned short chip);
 
     int Spacing_row (unsigned int step, unsigned int pix_per_row, unsigned short chip);
@@ -100,7 +105,12 @@ public:
 
     // function corresponding to _chipIDOffset to set array ChipIDBitPos
     // with a new offset
-    void SetChipIDOffset(int ChipIdOffset);    
+    void SetChipIDOffset(int ChipIdOffset);
+
+    // function to calculate pixel values based on the 14 bit registers in each pixel
+    int CalcPixelValueFrom14Bit(int p0, int p1, int mask, int test, int thr);
+    // function to return whole matrix as FrameArray in integers
+    FrameArray<int> GetMatrixAsInts(int chip);
 
 private:
     void UpdateFSR();
@@ -132,7 +142,7 @@ private:
     // Setup der einzelnen Pixel
     unsigned char P0[DEFAULT_MAX_NUM_CHIPS][256][256];
     unsigned char P1[DEFAULT_MAX_NUM_CHIPS][256][256]; 
-    unsigned char Mask[DEFAULT_MAX_NUM_CHIPS][256][256]; 
+    unsigned char Mask[DEFAULT_MAX_NUM_CHIPS][256][256];
     unsigned char Test[DEFAULT_MAX_NUM_CHIPS][256][256]; 
     unsigned char ThrH[DEFAULT_MAX_NUM_CHIPS][256][256];
     unsigned short NumChips;

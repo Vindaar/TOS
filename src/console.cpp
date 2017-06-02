@@ -374,9 +374,17 @@ int Console::UserInterface(){
 	{
 	    CommandShowFSR();
 	}
+	else if( ein.compare("DefaultChessMatrix")==0 )
+	{
+	    CommandVarChessMatrixDefault();
+	}
+	else if( ein.compare("ChessMatrixAll")==0 )
+	{
+	    CommandVarChessMatrix(true);
+	}
 	else if( ein.compare("ChessMatrix")==0 )
 	{
-	    CommandVarChessMatrix();
+	    CommandVarChessMatrix(false);
 	}
 	else if( (ein.compare("UniformMatrix")==0) ||
 		 (ein.compare("um")==0) ) 
@@ -387,6 +395,10 @@ int Console::UserInterface(){
 		 (ein.compare("uma")==0) ) 
 	{
 	    CommandUniformMatrixAllChips();
+	}
+	else if( ein.compare("GetMatrixAndDump")==0 )
+	{
+	    CommandGetMatrixAsIntAndDump();
 	}
 	else if( ein.compare("SaveMatrix")==0 )
 	{
@@ -1717,75 +1729,107 @@ int Console::CommandShowFSR(){
     return 0;
 }
 
+void Console::CommandVarChessMatrixDefault(){
+    // this function creates a default chess matrix of 5 by 5 pixels
+    unsigned short chip;
+    unsigned short nChips = _nbOfChips;
 
-int Console::CommandVarChessMatrix(){
+    int length 	   = 5;
+    int width  	   = 5;
+    int black_p0   = 1;
+    int black_p1   = 0;
+    int black_mask = 1;
+    int black_test = 0;
+    int black_thr  = 5;
+    int white_p0   = 1;
+    int white_p1   = 0;
+    int white_mask = 1;
+    int white_test = 1;
+    int white_thr  = 5;
+    int err        = 0;
+
+    for(chip = 0; chip < nChips; chip++){
+	err = pc->fpga->tp->VarChessMatrix(length,
+					   width,
+					   black_p0,
+					   black_p1,
+					   black_mask,
+					   black_test,
+					   black_thr,
+					   white_p0,
+					   white_p1,
+					   white_mask,
+					   white_test,
+					   white_thr,
+					   chip + 1);
+	if(err == 0){
+	    std::cout << "Default Matrix created\n" << std::flush;
+	}
+	else{
+	    ErrorMessages(80);
+	}
+    }
+
+    return;
+}
+
+int Console::CommandVarChessMatrix(bool all_chips){
+    // command to create a chess matrix to be written to each chip
+    // inputs:
+    //     bool all_chips: if this flag is true, we set a single chess matrix
+    //                     for all chips
 #if DEBUG==2
     std::cout<<"Enter Console::CommandSenseDAC()"<<std::endl;	
 #endif
-    int sl,wl;
     int err = 0;
-    int sp0,sp1,stest,smask,sth;
-    int wp0,wp1,wtest,wmask,wth;
 
-    // variables for getUserInput
-    bool numericalInput = true;
-    bool allowDefaultOnEmptyInput = false;
-    std::string input;
-    for (unsigned short chip = 1;chip <= pc->fpga->tp->GetNumChips() ;chip++){
-	std::cout<<"Chip Number "<<chip<<std::endl;
-	std::cout<<"\t Number cols per field="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	sl = std::stoi(input);
-	std::cout<<"\t Number row per field="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	wl = std::stoi(input);
-	std::cout<<"\t Black P0="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	sp0 = std::stoi(input);
-	std::cout<<"\t Black P1="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	sp1 = std::stoi(input);
-	std::cout<<"\t Black Mask="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	smask = std::stoi(input);
-	std::cout<<"\t Black Test="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	stest = std::stoi(input);
-	std::cout<<"\t Black Threshold="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	sth = std::stoi(input);
-	std::cout<<"\t White P0="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	wp0 = std::stoi(input);
-	std::cout<<"\t White P1="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	wp1 = std::stoi(input);
-	std::cout<<"\t White Mask="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	wmask = std::stoi(input);
-	std::cout<<"\t White Test="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	wtest = std::stoi(input);
-	std::cout<<"\t White Threshold="<<std::flush;
-	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-	if (input == "quit") return -1;
-	wth = std::stoi(input);
-	err=pc->fpga->tp->VarChessMatrix(sl,wl,sp0,sp1,smask,stest,sth,wp0,wp1,wmask,wtest,wth,chip);
-	if(err==0){std::cout<<"Matrix created\n"<<std::flush;}
-	else{ErrorMessages(80);}
-    }// end for loop
+    // first we're going to let the user decide which chips to calibrate
+    // define a set of ints, which will contain the number of the chips we're
+    // going to use
+    std::set<int> chip_set;
+    chip_set = ChipSelection();
+
+    std::map<std::string, int> chess_matrix_map;
+    if (all_chips == true){
+	chess_matrix_map = ChessMatrixSelection(0);
+	if (chess_matrix_map.empty()){
+	    return -1;
+	}
+    }
+    
+    for (auto chip : chip_set){
+	// for the selected chips we now either set the same chess matrix (all_chips == true)
+	// or individual matrices (all_chips == false)
+	if (all_chips == false){
+	    // in this case ask for each chip for a matrix
+	    chess_matrix_map = ChessMatrixSelection(chip);
+	    if (chess_matrix_map.empty()){
+		return -1;
+	    }	    
+	}
+	err = pc->fpga->tp->VarChessMatrix(chip, chess_matrix_map);
+	if (err == 0){
+	    std::cout << "Matrix created" << std::endl;
+	}
+	else{
+	    ErrorMessages(80);
+	}
+    }
+
     return err;
+}
+
+int Console::CommandGetMatrixAsIntAndDump(){
+
+    FrameArray<int> matrix;
+    matrix = pc->fpga->tp->GetMatrixAsInts(1);
+    std::string filename;
+    Frame frame;
+    frame.SetFrame(matrix);
+    frame.ConvertFullFrameFromLFSR();
+    filename = GetFrameDumpFilename(0, 0, 0);
+    frame.DumpFrameToFile(filename);
+    return 0;    
 }
 
 int Console::CommandUniformMatrix(){
