@@ -1,7 +1,7 @@
 #include "console.hpp"
 
 int Console::CommandLoadMatrix() {
-    for (unsigned short chip_id = 1; chip_id <= pc->fpga->tp->GetNumChips(); chip_id++){
+    for (unsigned short chip_id = 1; chip_id <= _nbOfChips; chip_id++){
         std::string default_path = pc->GetMatrixFileName(chip_id);
 
         std::cout << "Matrix filename for chip "
@@ -27,7 +27,7 @@ int Console::CommandLoadMatrix() {
 int Console::CommandLoadFSR() {
     int err = 0;
 
-    for (unsigned short chip_id = 1;chip_id <= pc->fpga->tp->GetNumChips(); chip_id++){
+    for (unsigned short chip_id = 1;chip_id <= _nbOfChips; chip_id++){
         std::string default_path = pc->GetFSRFileName(chip_id);
         std::cout << "FSR filename for chip "
             << chip_id
@@ -69,7 +69,7 @@ int Console::CommandLoadFSRAll() {
     if (!getUserInputOrDefaultFile(_prompt, default_path_chip1, filename))
         return -1;
 
-    for (unsigned short chip_id = 1; chip_id <= pc->fpga->tp->GetNumChips(); chip_id++) {
+    for (unsigned short chip_id = 1; chip_id <= _nbOfChips; chip_id++) {
         err = pc->fpga->tp->LoadFSRFromFile(filename, chip_id);
 
         if(err == 1) {
@@ -88,7 +88,7 @@ int Console::CommandLoadFSRAll() {
 int Console::CommandLoadThreshold() {
     int err = 0;
 
-    for (unsigned short chip_id = 1; chip_id <= pc->fpga->tp->GetNumChips(); chip_id++){
+    for (unsigned short chip_id = 1; chip_id <= _nbOfChips; chip_id++){
         std::string default_path = pc->GetThresholdFileName(chip_id);
 
         std::cout << "Threshold filename for chip "
@@ -117,7 +117,7 @@ int Console::CommandLoadThreshold() {
 
 int Console::CommandSaveMatrix() {
 
-    for (unsigned short chip = 1; chip <= pc->fpga->tp->GetNumChips(); chip++){
+    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
         std::string input;
         std::string default_path=pc->GetMatrixFileName(chip);
 	std::string filename;
@@ -139,7 +139,7 @@ int Console::CommandSaveMatrix() {
 
 int Console::CommandSaveFSR() {
 
-    for (unsigned short chip = 1; chip <= pc->fpga->tp->GetNumChips(); chip++){
+    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
         std::string input;
         std::string default_path=pc->GetFSRFileName(chip);
 	std::string filename;

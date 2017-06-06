@@ -21,7 +21,7 @@ Timepix::Timepix(int nbOfChips){
 #endif
 
     // use constructor argument to set the number of chips
-    NumChips = nbOfChips;
+    _nbOfChips = nbOfChips;
     
     // set the variables for pixel properties
     _pix_per_dimension = PIXPD;
@@ -101,7 +101,7 @@ Timepix::Timepix(int nbOfChips){
     }
     /*IKrumBitPos[0]=   255-(   4)+12; // D2 in FPGA firmware such that clock is slower when setting Ikrum. still not perfect. Ikrum 10 = 5 somehow. DACScan: jump from 3 to 4.
       IKrumBitPos[1]=	   255-(   5)+11;
-      IKrumBitPos[2]=	   255-(   6)+10;
+ IKrumBitPos[2]=	   255-(   6)+10;
       IKrumBitPos[3]=	   255-(   7)+9;
       IKrumBitPos[4]=	   255-(   8)+8;
       IKrumBitPos[5]=	   255-(   9)+7;
@@ -117,28 +117,38 @@ Timepix::Timepix(int nbOfChips){
       DiscBitPos[6]=	   255-(  12+6) -0;
       DiscBitPos[7]=	   255-(  12+7) -0;*/
 
-    DACCodePos[0]=		255- 38  -0;
-    DACCodePos[1]=		255- 39  -0;
-    DACCodePos[2]=		255- 41  -0;
-    DACCodePos[3]=		255- 42  -0;
+    DACCodePos[0] = 255	- 38 - 0;
+    DACCodePos[1] = 255	- 39 - 0;
+    DACCodePos[2] = 255	- 41 - 0;
+    DACCodePos[3] = 255	- 42 - 0;
 	
-    for(x=0;x<32;x++){CTPRBitPos[x]= 255-(144 +x) -0;}
-    for(x=0;x<10;x++){THLBitPos[x]= 255-( 100 +x) -0;}
-    for(x=0;x<24;x++){ChipIDBitPos[x]= 255-( _chipIdOffset + x);} 
+    for(x=0;x<32;x++){CTPRBitPos[x]  = 255 - ( 144 + x) - 0;}
+    for(x=0;x<10;x++){THLBitPos[x]   = 255 - ( 100 + x) - 0;}
+    for(x=0;x<24;x++){ChipIDBitPos[x]= 255 - ( _chipIdOffset + x);} 
 	
     for (int i = 1; i <= 8; i++){ChipID_[i]=0;}
     NumberDefPixel=0;
     IsCounting_=0;	
-    for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){for(x=0;x<18;x++){DACValue[chip][x]=0;}}
-    for (int i = 1; i <= 8; i++){for(x=0;x<52;x++){FSR[i][x]=0;}}
-    for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
-	for(y=0;y<256;y++){for(x=0;x<256;x++){
-		Mask[chip][y][x]=0;
-		Test[chip][y][x]=0;
-		P0[chip][y][x]=0;
-		P1[chip][y][x]=0;
-		ThrH[chip][y][x]=0;
-	    }}
+    for (unsigned short chip = 1; chip <= tempNumChips; chip++){
+	for(x = 0; x < 18; x++){
+	    DACValue[chip][x]=0;
+	}
+    }
+    for (int i = 1; i <= 8; i++){
+	for(x = 0; x < 52; x++){
+	    FSR[i][x]=0;
+	}
+    }
+    for (unsigned short chip = 1; chip <= tempNumChips; chip++){
+	for(y = 0; y < 256; y++){
+	    for(x = 0; x < 256; x++){
+		Mask[chip][y][x] = 0;
+		Test[chip][y][x] = 0;
+		P0[chip][y][x]   = 0;
+		P1[chip][y][x]   = 0;
+		ThrH[chip][y][x] = 0;
+	    }
+	}
     }
 	
 }
@@ -148,7 +158,7 @@ int Timepix::GetFSR(unsigned char* FSR_){
 #endif
     int i;
     UpdateFSR();
-    for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
         if (chip==1){
 	    for(i=18;i<18+34;i++)FSR_[i]=FSR[chip][i];
         }
@@ -201,13 +211,12 @@ int Timepix::SetDAC(unsigned int dac, unsigned short chip, unsigned int value){
 	// only 17 DACs. If DAC larger than 17 return error code 63 (illegal DAC number)
 	err = 63;
     }
-    else if( ((dac == 6) && (value < 1024)) ||
-	     ((dac == 13) && (value < 16))  ||
-	     (dac == 14) ||
+    else if( ((	dac ==  6) && (value < 1024)) ||
+	     ((	dac == 13) && (value < 16))   ||
+	     ( 	dac == 14) ||
 	     (((dac == 15) || (dac == 16)) && (value < 2)) ||
-	     ((dac == 17) && (value < 16)) ||
-	     (value < 256) )
-	{
+	     (( dac == 17) && (value < 16))   ||
+	     ( value < 256) ){
 	DACValue[chip][dac] = value;
     }
     else{
@@ -381,7 +390,7 @@ void Timepix::UpdateFSR(){
 #endif
     //for(i=0;i<18;++i){std::cout<<DACNames[i]<<DACValue[i]<<std::endl;}
     for (int i = 1; i <= 8; i++){for(int j=0;j<18+34;++j)FSR[i][j]=0;}
-    for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
 	FSR[chip][18]=0xff;
 	//FSR[chip][19]=0x80;
 	for(int i=0;i<8;++i){
@@ -416,7 +425,7 @@ void Timepix::UpdateFSR(){
 
 void Timepix::SetFSRBit(int bit, bool b){
     //int i,j;
-    for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
 	if( (FSR[chip][18+1+bit/8] & (1<<(7-bit%8))) && b==false ){FSR[chip][18+1+bit/8]-=(1<<(7-bit%8));}
 	if( ((FSR[chip][18+1+bit/8] & (1<<(7-bit%8)))==0) && b==true ){FSR[chip][18+1+bit/8]+=(1<<(7-bit%8));}
 	std::cout<<"this has been done for all chips!"<<std::endl;
@@ -440,17 +449,17 @@ int Timepix::ChipID(unsigned char* ReplyPacket, unsigned short chip){
     chipId+=ReplyPacket[26];
 
     for(i=0;i<24;i++){
-        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[i]+9*(GetNumChips()-1))/8] & (1<<(7-(ChipIDBitPos[i]+9*(GetNumChips()-1))%8)))>0) ID+=1<<i;
+        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[i]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[i]+9*(_nbOfChips-1))%8)))>0) ID+=1<<i;
     }
-    if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[0]+9*(GetNumChips()-1))/8] & (1<<(7-(ChipIDBitPos[0]+9*(GetNumChips()-1))%8)))>0) chipType+=1<<0;
+    if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[0]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[0]+9*(_nbOfChips-1))%8)))>0) chipType+=1<<0;
     for(i=1;i<12;i++){
-        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[12-i]+9*(GetNumChips()-1))/8] & (1<<(7-(ChipIDBitPos[12-i]+9*(GetNumChips()-1))%8)))>0) IDWaver+=1<<(i-1);
+        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[12-i]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[12-i]+9*(_nbOfChips-1))%8)))>0) IDWaver+=1<<(i-1);
     }
     for(i=12;i<16;i++){
-        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[27-i]+9*(GetNumChips()-1))/8] & (1<<(7-(ChipIDBitPos[27-i]+9*(GetNumChips()-1))%8)))>0) IDNumber+=1<<(i-12);
+        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[27-i]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[27-i]+9*(_nbOfChips-1))%8)))>0) IDNumber+=1<<(i-12);
     }
     for(i=16;i<21;i++){
-        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[36-i]+9*(GetNumChips()-1))/8] & (1<<(7-(ChipIDBitPos[36-i]+9*(GetNumChips()-1))%8)))>0) IDLetterNum+=1<<(i-17);
+        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[36-i]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[36-i]+9*(_nbOfChips-1))%8)))>0) IDLetterNum+=1<<(i-17);
     }
 
     if (IDLetterNum == 0) IDLetter = "0";
@@ -767,14 +776,14 @@ int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){
     int aktBit; //aktuelles Bit von Matrix 256Spalten * 256Zeilen *14Bit + 8BitPreload
 
     //std::cout << "Set Matrix to 0"<< std::endl;
-    for(y=0;y<PQueue*GetNumChips();++y)for(x=0;x<PLen+18;++x){(*PackQueue)[y][x]=0;}
+    for(y=0;y<PQueue*_nbOfChips;++y)for(x=0;x<PLen+18;++x){(*PackQueue)[y][x]=0;}
     //std::cout << "Matrix set to 0"<< std::endl;
-    for (unsigned short chip = 1; chip <= GetNumChips(); chip++){
+    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
 	aktBit=0;//(917768*(chip-1)); preload scheint nicht da zu sein fuer chip 2... daher auch nur 917760 fuer die aktBit
 	(*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]=0xFF; // 0xff = 255 preload
     }
 
-    for (unsigned short chip = 1; chip <= GetNumChips(); chip++){
+    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
         for(y=0;y<256;++y) {
 	    for(x=0;x<256;++x){
 		int aktBit_base = y*256*14 + 8 + (255 - x) + (917760*(chip - 1));
@@ -814,7 +823,7 @@ int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){
 	    }
 	}
     }
-    for (unsigned short chip = 1;chip <= GetNumChips() ;chip++){
+    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
 	for(x=0;x<32;x++){(*PackQueue)[PQueue*chip-1][18+1+(32*(chip-1))+((((256*256*14)*(chip))/8)%PLen)+x] = 0xff;}//postload
     }
     return 0;
@@ -837,7 +846,7 @@ void Timepix::SetPackageByte(int aktBit, std::vector<std::vector<unsigned char> 
 
 
 int Timepix::SetNumChips(unsigned short Chips,unsigned short preload){
-    NumChips=Chips;
+    _nbOfChips=Chips;
     Preload_global=preload;
     return true;
 }
@@ -848,7 +857,7 @@ int Timepix::SetOption(unsigned short option){
 }
 
 unsigned short Timepix::GetNumChips(){
-    return NumChips;
+    return _nbOfChips;
 }
 
 FrameArray<bool> Timepix::GetMaskArray(int chip){

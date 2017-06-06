@@ -61,10 +61,10 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
 //     FD_SET(0,&readfd); //0=stdin -> Lesen von der Konsole
 // #endif
 
-    _timeout.tv_sec =5; 
-    _timeout.tv_usec =10000;
+    _timeout.tv_sec   = 5; 
+    _timeout.tv_usec  = 10000;
     sckadd.sin_family = AF_INET; 
-    sckadd.sin_port = htons(Port);
+    sckadd.sin_port   = htons(Port);
 
     sckadd.sin_addr.s_addr = INADDR_ANY;
     err_code=bind(sock, (struct sockaddr*)&sckadd, sizeof(sckadd));
@@ -113,7 +113,7 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
 	// if sock buffer size is not the wanted value, set value we want
 	sock_recv_buf_size = DEFAULT_SOCKET_BUFFER_SIZE;
 	sock_send_buf_size = DEFAULT_SOCKET_BUFFER_SIZE;
-	setsockoptWrapper(sock, 
+	setsockoptWrapper(sock,
 			  SOL_SOCKET, 
 			  SO_RCVBUF, 
 			  &sock_recv_buf_size,
@@ -440,7 +440,7 @@ int FPGA::WriteReadFSR(){
 #endif
     int err_code;
     tp->GetFSR(PacketBuffer);
-#if DEBUG>0
+#if DEBUG==3
     for(int i = 18; i < 18 + (32*tp->GetNumChips()) + 2; i++){
 	printf("%i ",PacketBuffer[i]);printf("\n");
     }

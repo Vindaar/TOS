@@ -45,15 +45,6 @@
 //class hvFadcManager;
 //class Timepix;
 
-
-// define the DEBUG flag to be used in all files
-// DEBUG == 4 means dumping frames to temp files
-#ifdef DEBUG
-#undef DEBUG
-#define DEBUG 4
-#endif
-
-
 #define DEFAULT_USER_INPUT_PROMPT                   "> " 
 
 class Console{
@@ -116,7 +107,7 @@ private:
 
     int CommandHelp();
     int CommandSpacing();
-    int CommandSetNumChips();
+    int CommandSetNumChips(bool callSetNumChips = true);
     // SetNumChips is the actual function, which changes the number of chips internally
     // CommandSetNumChips() calls this function after getting user input
     void SetNumChips(int nChips);
@@ -234,10 +225,6 @@ private:
 
     //
     //vars to cope with the use of the fadc
-    // TODO: Change to usage of HV_FADC_Obj
-    
-  
-    //V1729a* _fadc;                           //< fadc pointer
     //bool _fadcActive;                        //< check var. true if a fadc is used, false otherwise
     
     hvFadcManager* _hvFadcManager;

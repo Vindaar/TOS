@@ -1,4 +1,5 @@
-/* This file contains all functions, which are related to the TO calibration.
+/* This file contains all calibration functions, which are already rewritten using
+   FrameArrays. Currently TO calibration and SCurve
    Part of the PC class.
  */
 
@@ -233,8 +234,6 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
     // only run over chip_set
     // TODO: understand if we need to load the FSR for all chips, or only for the ones
     // we read out!!!
-    //std::set<int>::iterator it_chip_set;
-    //for (it_chip_set = chip_set.begin(); it_chip_set != chip_set.end(); it_chip_set++){
     for (auto chip : chip_set){
         //int current_chip = *it_chip_set;
         // now we need to load the FSR for each of the connected chips
@@ -297,7 +296,6 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
 
 	// now we loop over all chips in the chip_set to read them out
 	// we use a map to map mean_std_pairs to the chips
-	//for (it_chip_set = chip_set.begin(); it_chip_set != chip_set.end(); it_chip_set++){
 	for (auto chip : chip_set){
 	    // first readout a single chip
 	    FrameArray<int> pixel_data;
@@ -310,7 +308,6 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
     else if (callerFunction == "SCurve"){
 	// now we loop over all chips in the chip_set to read them out
 	// we use a map to map mean_std_pairs to the chips
-	//for (it_chip_set = chip_set.begin(); it_chip_set != chip_set.end(); it_chip_set++){
 
 	std::map<int, Frame> readout_frame_map;
 	// fill the readout_frame_map with frames for each chip, which we would
@@ -329,7 +326,6 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
 	//int result  = fpga->SerialReadOut(&pixel_data);
 	for (auto chip : chip_set){
 	    //int temp_result;
-	    //fpga->DataChipFPGA(temp_result);
 	    // get the correct pixel data from the temp. readout map
 	    FrameArray<int> pixel_data;
 	    pixel_data = readout_frame_map[chip].GetPixelData();
@@ -373,9 +369,6 @@ void PC::SingleIteration(std::set<int> chip_set,
     int pixels_per_column      = boost::any_cast<int>(parameter_map["pixels_per_column"]);
     int CTPR_start             = boost::any_cast<int>(parameter_map["CTPR_start"]);
     int CTPR_stop              = boost::any_cast<int>(parameter_map["CTPR_stop"]);
-    
-    // int CTPR_start             = 0;//boost::any_cast<int>(parameter_map["CTPR_start"]);
-    // int CTPR_stop              = 32;//boost::any_cast<int>(parameter_map["CTPR_stop"]);
 
     std::string callerFunction = boost::any_cast<std::string>(parameter_map["callerFunction"]);
 
@@ -384,14 +377,12 @@ void PC::SingleIteration(std::set<int> chip_set,
     // from the partial frames (read by step and CTPR)
     std::map<int, Frame> frame_map;
     // fill the map with empty frames, one for each chip we use
-    //std::for_each( chip_set.begin(), chip_set.end(), [&frame_map](int chip){
     for(auto chip : chip_set){
 	// we create one empty frame for each chip, by creating a
 	// Frame object. Frame creator initializes to zero
 	Frame chip_frame;
 	frame_map.insert( std::pair<int, Frame>(chip, chip_frame) );
-    }// );
-
+    }
     
     if (callerFunction == "TOCalib"){
 	step_size = 1;
@@ -400,7 +391,6 @@ void PC::SingleIteration(std::set<int> chip_set,
 	step_size = 8;
     }
 
-    // TODO: change step back from += 8 to step++
     for (int step = 0; step < (npix_per_dim / pixels_per_column); step += step_size){
         // per single step (meaning we use test pulses on pixels_per_column rows
         // of the whole chip), we further separate each row into several batches
@@ -523,8 +513,6 @@ void PC::TOCalib(std::string callerFunction,
     //         - chips
 
     // start by looping over all voltages, need iterator over list
-    //std::list<int>::iterator it_pulseList;
-    //for(it_pulseList = pulseList.begin(); it_pulseList != pulseList.end(); it_pulseList++){
     for(auto pulse : pulseList){
         // this is the main outer loop over all voltages
 
@@ -629,9 +617,6 @@ void PC::SCurve(std::string callerFunction,
 
 	// get the THL boundaries and create the map to store
 	// the mean counts for each chip during this pulse
-	// std::pair<int, int> threshold_boundaries;
-	// threshold_boundaries = boost::any_cast<std::pair<int, int>>(parameter_map["threshold_boundaries"]);
-	    
 	int lower_THLbound = threshold_boundaries.first;
 	int upper_THLbound = threshold_boundaries.second;
 
@@ -673,10 +658,6 @@ void PC::SCurve(std::string callerFunction,
 	    for(auto chip : chip_set){
 		// iterate over chip set and push mean values back into vector
 		double mean = chip_mean_std_map[chip].first;
-		// std::map<int, double> pair;
-		// pair.first  = thl;
-		// pair.second = mean;
-		// thl_mean_map[chip] = pair;
 		thl_mean_map[chip][thl] = mean;
 	    }
 	    std::cout << "THL value " << thl << " done." << std::endl;
@@ -717,10 +698,7 @@ void PC::WriteTOCalibToFile(std::set<int> chip_set,
 
     // after all iterations we can now caluclate the final mean values of mean and std
     // and print them to a file
-    //std::set<int>::iterator it_chip_set;
-    //for( it_chip_set = chip_set.begin(); it_chip_set != chip_set.end(); it_chip_set++){
     for(auto chip : chip_set){
-	//int chip = *it_chip_set;
 	// get pair of current chip
 	std::pair<double, double> pair;
 	pair = chip_mean_std_map[chip];
@@ -814,7 +792,6 @@ void PC::SetTestpulseThresholds(int pulse, std::string callerFunction){
     int voltage;
     int threshold_voltage;
     threshold_voltage = 350;
-    //voltage = *it_pulseList + threshold_voltage;
     voltage = pulse + threshold_voltage;
     // the upper bound for the DAC
     // fpga->i2cDAC(voltage, 3);
@@ -871,7 +848,7 @@ int PC::SCurveSingleTHL(unsigned short thl,
     // sleep shortly before we open shutter
     usleep(400);
     // calling CountingTime with second argument == 1
-    //     // corresponds to n = 1, power of 256
+    // corresponds to n = 1, power of 256
     fpga->CountingTime(time, 1);
 
     int nChips = fpga->tp->GetNumChips();
@@ -952,168 +929,3 @@ int PC::SCurveSingleTHL(unsigned short thl,
 
  */
 
-
-
-// void PC::CalibrationMeta(std::set<int> chip_set,
-// 			 std::string TOmode,
-// 			 std::string pulser,
-// 			 std::list<int> pulseList,
-// 			 int pixels_per_column,
-// 			 std::string shutter_range,
-// 			 std::string shutter_time){
-//     // function which serves as a wrapper in case this function
-//     // is called from TOCalib without a threshold boundary pair
-//     // calls the correct function with default arguments
-//     std::string callerFunction = "TOCalib";
-//     std::pair<int, int> empty_boundaries;
-//     empty_boundaries = std::make_pair(0, 0);
-
-//     CalibrationMeta(callerFunction,
-// 		    chip_set,
-// 		    TOmode,
-// 		    pulser,
-// 		    pulseList,
-// 		    pixels_per_column,
-// 		    shutter_range,
-// 		    shutter_time,
-// 		    empty_boundaries);
-// }
-
-// void PC::CalibrationMeta(std::string callerFunction,
-// 			 std::set<int> chip_set,
-// 			 std::map<std::string, boost::any> parameter_map,
-// 			 std::string pulser,
-// 			 std::list<int> pulseList){
-// 			 // std::string TOmode,
-// 			 // int pixels_per_column,
-// 			 // std::string shutter_range,
-// 			 // std::string shutter_time,p
-// 			 // std::pair<int, int> threshold_boundaries){
-//     // function which is the main part of (currently) both the TOCalib and SCurve
-//     // functions.
-//     // inputs:
-//     //     - std::string callerFunction: the type of function, which called this fn.
-//     //                                   either TOCalib or SCurve (currently impl.)
-//     //     - std::map<<std::string, boost::any> parameter_map: a map similar to a
-//     //                                   python dictionary storing all relevant parameters.
-//     //                                   For explanation see TOCalib() and SCurve()
-
-//     // in case of the TOCalib:
-//     // this function follows the operation logic of the TOCalibFast function
-//     // logic tree of loops of TOCalibFast:
-//     // - voltages
-//     //   - iterations
-//     //     - steps
-//     //       - CTPR
-//     //         - chips
-//     // in case of SCurve:
-//     // the function deviates slightly from the SCurveFast logic:
-//     // - voltages
-//     //   - one iteration
-//     //     - steps
-//     //       - one CTPR value
-//     //         - scan THL values for all chips
-
-//     // start by looping over all voltages, need iterator over list
-//     //std::list<int>::iterator it_pulseList;
-//     //for(it_pulseList = pulseList.begin(); it_pulseList != pulseList.end(); it_pulseList++){
-//     for(auto pulse : pulseList){
-//         // this is the main outer loop over all voltages
-
-// 	if (callerFunction == "SCurve"){
-// 	    // get the THL boundaries and create the map to store
-// 	    // the mean counts for each chip during this pulse
-// 	    std::pair<int, int> threshold_boundaries;
-// 	    threshold_boundaries = boost::any_cast<std::pair<int, int>>(parameter_map["threshold_boundaries"]);
-	    
-// 	    int lower_THLbound = threshold_boundaries.first;
-// 	    int upper_THLbound = threshold_boundaries.second;
-
-// 	    int num_thls = upper_THLbound - lower_THLbound;
-// 	    // create a map, which stores the thl mean values for all chips
-// 	    // first index: chip number, contains:
-// 	    //     map of: <thl values, mean values>
-// 	    // note: can access specific thl value via second index to map
-// 	    std::map<int, std::map<int, double>> thl_mean_map;
-// 	}
-
-//         // check if we're using an internal pulser. in this case we need to set the
-//         // correct DAC to the value we want (i.e. the current pulseList iterator + 350)
-//         if (pulser == "internal"){
-// 	    SetTestpulseThresholds(pulse);
-//         }
-
-// 	// create a map of chip numbers and a pair of (mean, std) values, which will be
-// 	// handed to the function performing a single iteration
-// 	std::map<int, std::pair<double, double>> chip_mean_std_map;
-// 	// we will zero initialize the map, since we want to add mean and std
-// 	// values after every iteration on the current value and calculate the mean
-// 	// of this after all iterations are done
-// 	std::for_each( chip_set.begin(), chip_set.end(), [&chip_mean_std_map](int chip){
-// 		// create a zero initialized pair for current chip
-// 		double mean = 0;
-// 		double std = 0;
-// 		std::pair<double, double> pair;
-// 		pair = std::make_pair(mean, std);
-
-// 		// and insert element into map
-// 		chip_mean_std_map[chip] = pair;
-// 	    } );
-
-// 	// add current pulse height to parameter_map
-// 	parameter_map["pulse"] = pulse;//*it_pulseList;
-
-// 	int nIterations;
-// 	if (callerFunction == "TOCalib"){
-// 	    // loop over iterations (typically we want to do 4 iterations)
-// 	    // we do 4 iterations to average over statistical fluctuations
-// 	    nIterations = 4;
-// 	    for(int iter = 0; iter < nIterations; iter++){
-// 		// add current iteration to parameter_map
-// 		parameter_map["iteration"]  = iter;
-// 		// and call the function, which performs a single iteration
-// 		SingleIteration(chip_set, parameter_map, &chip_mean_std_map);
-// 	    }
-// 	}
-// 	else if (callerFunction == "SCurve"){
-// 	    for(int thl = lower_THLbound; thl < upper_THLbound; thl++){
-// 		// now iterate over all THL values for all steps and all chips
-// 		// set THL values for all chips and then call single iteration
-// 		// afterwards take frame map from this iteration and perform calcs
-// 		// necessary to get mean (corrected for LFSR lookup)
-// 		// then in here add that to vector of means etc. to store later
-// 		unsigned short thl_dac = 6;
-// 		SetDACallChips(thl_dac, thl, chip_set);
-// 		SingleIteration(chip_set, parameter_map, &chip_mean_std_map);
-// 		for(auto chip : chip_set){
-// 		    // iterate over chip set and push mean values back into vector
-// 		    double mean = chip_mean_std_map[chip].first;
-// 		    // std::map<int, double> pair;
-// 		    // pair.first  = thl;
-// 		    // pair.second = mean;
-// 		    // thl_mean_map[chip] = pair;
-// 		    thl_mean_map[chip][thl] = mean;
-// 		}
-// 	    }
-// 	    // now have all necessary information in thl_mean_map
-// 	}
-
-
-// 	if (callerFunction == "TOCalib"){
-// 	    // call function to print TOCalib data to file
-// 	    WriteTOCalibToFile(chip_set, chip_mean_std_map, pulse);
-// 	}
-// 	else if (callerFunction == "SCurve"){
-// 	    // call function to print SCurve data to file
-// 	    WriteSCurveToFile(chip_set, thl_mean_map, pulse);
-// 	}
-	
-//         if (pulser == "external"){
-//             std::cout << "external pulser voltage finished." << std::endl;
-//             // we will return to the CommandTOCalib function to ask for user input
-//             // regarding additional voltages on the external pulser
-//             // thus, we return here and ask for more input
-//             return;
-//         }
-//     }
-// }

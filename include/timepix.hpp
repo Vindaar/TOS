@@ -145,7 +145,7 @@ private:
     unsigned char Mask[DEFAULT_MAX_NUM_CHIPS][256][256];
     unsigned char Test[DEFAULT_MAX_NUM_CHIPS][256][256]; 
     unsigned char ThrH[DEFAULT_MAX_NUM_CHIPS][256][256];
-    unsigned short NumChips;
+    unsigned short _nbOfChips;
     unsigned short Preload_global;
     unsigned short Option_global;
     unsigned int I2C_global;
