@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <string>
+#include <set>
 
 class hvFadcManager;
 
@@ -99,6 +100,11 @@ public:
 
     int ShutterRangeToMode(std::string shutter_range);
 
+    // function to hand a const reference to the _chip_set member variable of the
+    // console class, such that always an up-to-date chip set is available to
+    // the sub classes
+    void SetChipSet(const std::set<unsigned short> &chip_set);
+
 private:
 
     // pointer to hvFadcManager object
@@ -145,7 +151,7 @@ private:
     // not call a SaveData function in case of an empty argument
     // int SaveData();
     int SaveData(std::string filename);						//err_code=x
-    int SaveData(int pix[9][256][256]);
+    int SaveData(int pix[8][256][256]);
     int SaveData(std::vector<std::vector<std::vector<int> > > *VecData);
     int SaveData(FrameArray<int> *pixel_data, int NumHits);
     int SaveData(int pix[256][256], int NumHits);
@@ -158,6 +164,8 @@ private:
     int SaveData(int hit_x_y_val[12288], int NumHits );
     bool _usefastclock;		
 
+    // reference to the chip_set of the console object
+    std::set<unsigned short> _chip_set;
 };
 
 template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
@@ -293,7 +301,7 @@ template <typename Ausgabe> int FPGA::DataChipFPGA(Ausgabe aus){
     IncomingLength=18; 
     PacketQueueSize=PQueue; //changed: IncomingLength=18+PLen -> 18, no data in new Mode 4, only data Chip -> FPGA
 
-    aus = Communication2(PacketBuffer,&((*PackQueueReceive)[0][0]),2,1);// command to read data from chip to FPGA
+    aus = Communication2(PacketBuffer,&((*PackQueueReceive)[0][0]),2,0);// command to read data from chip to FPGA
     return aus;
 }
 
@@ -309,7 +317,7 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 #if DEBUG==1
     std::cout << "transmitting data from FPGA" << std::endl;
 #endif
-    IncomingLength=18+PLen; //added as changed above 
+    IncomingLength=18+PLen; //added as changed above
     int NumHits=Communication2(PacketBuffer,&((*PackQueueReceive)[0][0]),1,chip); // first packet
     //std::cout << "Chip: "<<chip <<" Hits: "<< NumHits <<std::endl;
     int Hits;

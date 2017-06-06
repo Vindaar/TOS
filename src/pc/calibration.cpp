@@ -5,14 +5,12 @@
 
 #include "pc.hpp"
 
-void PC::AllChipsSetUniformMatrix(std::set<int> chip_set,
-				  std::map<std::string, boost::any> parameter_map,
-				  const int nChips){
+void PC::AllChipsSetUniformMatrix(std::set<unsigned short> chip_set,
+				  std::map<std::string, boost::any> parameter_map){
     // inputs:
     // 	 std::string TOmode:    a string defining whether we do TOT or TOA calibration
     // 	 int step:              the current step we're in
     // 	 int pixels_per_column: the number of active rows per single step
-    // 	 int nChips:            the number of chips currently connected
     // this function simply runs over all chips until nChips and creates the matrices
     // necessary for TO calibration and saves them to file
 
@@ -20,39 +18,40 @@ void PC::AllChipsSetUniformMatrix(std::set<int> chip_set,
     int pixels_per_column = boost::any_cast<int>(parameter_map["pixels_per_column"]);
     std::string TOmode    = boost::any_cast<std::string>(parameter_map["TOmode"]);
 
-    for (unsigned short chip = 0; chip < nChips; chip++){
+    // now run over all chips (note _ in front of chip_set!)
+    for (auto chip : _chip_set){
         // first create a uniform matrix for either TOT or TOA
         if (TOmode == "TOT"){
-            fpga->tp->UniformMatrix(1,0,0,0,0,chip + 1);
+            fpga->tp->UniformMatrix(1,0,0,0,0,chip);
         }
         else if (TOmode == "TOA"){
-            fpga->tp->UniformMatrix(1,1,0,0,0,chip + 1);
+            fpga->tp->UniformMatrix(1,1,0,0,0,chip);
         }
 	else if (TOmode == "Medipix"){
-            fpga->tp->UniformMatrix(0,0,0,0,0,chip + 1);
+            fpga->tp->UniformMatrix(0,0,0,0,0,chip);
 	}
 
         // on top of this now also set the masking and test pulses for all
         // pixels which are considered in the current step
         // only done for chips we actually want to calibrate (!), i.e. part of chip_set
-        std::set<int>::iterator it_chip_in_set;
+        std::set<unsigned short>::iterator it_chip_in_set;
         // try to find chip in the chip_set, if found we set the mask and test pulse
-        it_chip_in_set = chip_set.find(chip + 1);
+        it_chip_in_set = chip_set.find(chip);
         if (it_chip_in_set != chip_set.end()){
             // set mask and test pulse
-            fpga->tp->Spacing_row(       step, pixels_per_column, chip + 1);
-            fpga->tp->Spacing_row_TPulse(step, pixels_per_column, chip + 1);
-	    //fpga->tp->Spacing_row(       0, 256, chip + 1);
-            //fpga->tp->Spacing_row_TPulse(0, 256, chip + 1);
+            fpga->tp->Spacing_row(       step, pixels_per_column, chip);
+            fpga->tp->Spacing_row_TPulse(step, pixels_per_column, chip);
+	    //fpga->tp->Spacing_row(       0, 256, chip);
+            //fpga->tp->Spacing_row_TPulse(0, 256, chip);
         }
         // now load the correct threshold.txt for each chip
-        fpga->tp->LoadThresholdFromFile(GetThresholdFileName(chip + 1), chip + 1);
+        fpga->tp->LoadThresholdFromFile(GetThresholdFileName(chip), chip);
         // and save the current matrix to the correct files
-        fpga->tp->SaveMatrixToFile(GetMatrixFileName(chip + 1), chip + 1);
+        fpga->tp->SaveMatrixToFile(GetMatrixFileName(chip), chip);
 
 	// set DAC 14 (CTPR) for each chip to 0
-        // chip + 1 since we start at 0, and not 1....
-        fpga->tp->SetDAC(14, chip + 1, 0);
+        // chip since we start at 0, and not 1....
+        fpga->tp->SetDAC(14, chip, 0);
     }
 
     // now we have set the matrices, but we still have not written them to the
@@ -63,9 +62,9 @@ void PC::AllChipsSetUniformMatrix(std::set<int> chip_set,
     // create temporary object to store readout data after setting matrix, which
     // we do not care about (need to empty all pixels again)
     std::map<int, Frame> temp_map;
-    for (int i = 1; i <= nChips; i++){
+    for (auto chip : _chip_set){
 	Frame frame;
-	temp_map.insert(std::pair<int, Frame>(i, frame));
+	temp_map.insert(std::pair<int, Frame>(chip, frame));
     }    
     fpga->SetMatrix();
     usleep(2000);
@@ -207,11 +206,11 @@ void PC::SingleChipReadoutCalc(int chip,
 
 }
 
-void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
+void PC::AllChipsSingleStepCtpr(std::set<unsigned short> chip_set,
 				std::map<std::string, boost::any> parameter_map,
 				std::map<int, Frame> *frame_map){
     // inputs:
-    //   std::set<int> chip_set: set storing which chips we are working on
+    //   std::set<unsigned short> chip_set: set storing which chips we are working on
     //   std::map<std::string, boost::any> parameter_map: heterogeneous map storing
     //       the needed parameters, e.g. step, ctpr, etc...
     //   std::map<int, Frame> pointer to a map storing whole frames (to be built with
@@ -322,9 +321,11 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
 	// now read out all chips of the chip_set into the temporary
 	// readout_frame_map
 	int result  = fpga->SerialReadOut(&readout_frame_map);
-	if (result != 310){
+	if (result != 300){
 	    std::cout << "AllChipsSingleStepCtpr Error: call to SerialReadout failed.\n"
-		      << "    unexpected behaviour may occur." << std::endl;
+		      << "    unexpected behaviour may occur.\n"
+		      << "    error code: " << result
+		      << std::endl;
 	}
 	//int result  = fpga->SerialReadOut(&pixel_data);
 	for (auto chip : chip_set){
@@ -342,11 +343,11 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
 }
 
 
-void PC::SingleIteration(std::set<int> chip_set,
+void PC::SingleIteration(std::set<unsigned short> chip_set,
 			 std::map<std::string, boost::any> parameter_map,
 			 std::map<int, std::pair<double, double>> *chip_mean_std_map){
     // inputs:
-    //   std::set<int> chip_set: set storing all chips we work on
+    //   std::set<unsigned short> chip_set: set storing all chips we work on
     //   std::map<std::string, boost::any> parameter_map: heterogeneous map storing
     //       all parameters, which are needed, e.g. step, pulse, etc..
     //   std::map<int, std::pair<int, double>> *chip_mean_std_map: a map containing
@@ -366,7 +367,6 @@ void PC::SingleIteration(std::set<int> chip_set,
     // number of pixels in one dimension and number of chips
     int npix_per_dim = fpga->tp->GetPixelsPerDimension();
     // define a variable for number of chips for convenience
-    int nChips = fpga->tp->GetNumChips();
     int step_size = 0;
 
     int pixels_per_column      = boost::any_cast<int>(parameter_map["pixels_per_column"]);
@@ -405,7 +405,7 @@ void PC::SingleIteration(std::set<int> chip_set,
 
         // the first thing to do within one step is to set the matrices for the
         // chips appropriately.
-	AllChipsSetUniformMatrix(chip_set, parameter_map, nChips);
+	AllChipsSetUniformMatrix(chip_set, parameter_map);
 
         for (int CTPR = CTPR_start; CTPR < CTPR_stop; CTPR++){
             // thus we divide each row into 32 batches
@@ -469,7 +469,7 @@ void PC::SingleIteration(std::set<int> chip_set,
 
 
 void PC::TOCalib(std::string callerFunction,
-		 std::set<int> chip_set,
+		 std::set<unsigned short> chip_set,
 		 std::string TOmode,
 		 std::string pulser,
 		 std::list<int> pulseList,
@@ -481,7 +481,7 @@ void PC::TOCalib(std::string callerFunction,
     // input:
     //     std::string callerFunction: a string to distinguish whether TOCalib or SCurve called
     //                                 this function
-    //     std::set<int> chip_set:     a set containing all chips for which we will do a
+    //     std::set<unsigned short> chip_set:     a set containing all chips for which we will do a
     //                                 TO calibration
     //     std::string TOmode:         a string defining whether we use TOT, TOA or
     //                                 Medipix mode
@@ -561,7 +561,7 @@ void PC::TOCalib(std::string callerFunction,
 }
 
 void PC::SCurve(std::string callerFunction,
-		std::set<int> chip_set,
+		std::set<unsigned short> chip_set,
 		std::string pulser,
 		std::list<int> pulseList,
 		std::string shutter_range,
@@ -573,7 +573,7 @@ void PC::SCurve(std::string callerFunction,
     // input:
     //     std::string callerFunction: a string to distinguish whether TOCalib or SCurve called
     //                                 this function
-    //     std::set<int> chip_set:     a set containing all chips for which we will do a
+    //     std::set<unsigned short> chip_set:     a set containing all chips for which we will do a
     //                                 TO calibration
     //     std::string pulser:         a string defining whether we use an internal or
     //                                 external pulser
@@ -682,12 +682,12 @@ void PC::SCurve(std::string callerFunction,
 }
 
 
-void PC::WriteTOCalibToFile(std::set<int> chip_set,
+void PC::WriteTOCalibToFile(std::set<unsigned short> chip_set,
 			    std::map<std::string, boost::any> parameter_map,
 			    std::map<int, std::pair<double, double>> chip_mean_std_map){
     // function which writes the data taken during TO calibration to a file
     // inputs:
-    //     - std::set<int> chip_set: set of integers corresponding to chips, for
+    //     - std::set<unsigned short> chip_set: set of integers corresponding to chips, for
     //                               which TOCalib ran
     //     - std::map<int, std::pair<double, double>> chip_mean_std_map: map which
     //                               contains one pair of values for each chip of
@@ -734,12 +734,12 @@ void PC::WriteTOCalibToFile(std::set<int> chip_set,
     }
 }
 
-void PC::WriteSCurveToFile(std::set<int> chip_set,
+void PC::WriteSCurveToFile(std::set<unsigned short> chip_set,
 			   std::map<int, std::map<int, double>> thl_mean_map,
 			   int pulse){
     // function which writes the data taken during SCurve to a file
     // inputs:
-    //     - std::set<int> chip_set: set of integers corresponding to chips, for
+    //     - std::set<unsigned short> chip_set: set of integers corresponding to chips, for
     //                               which TOCalib ran
     //     - std::map<int, std::map<int, double>> thl_mean_map: map which
     //                               contains one map of values for each chip of
@@ -811,7 +811,7 @@ void PC::SetTestpulseThresholds(int pulse, std::string callerFunction){
     }
 }
 
-std::map<int, std::pair<double, double>> PC::GetZeroInitMeanStdMap(std::set<int> chip_set){
+std::map<int, std::pair<double, double>> PC::GetZeroInitMeanStdMap(std::set<unsigned short> chip_set){
     // we will zero initialize the map, since we want to add mean and std
     // values after every iteration on the current value and calculate the mean
     // of this after all iterations are done
@@ -898,7 +898,7 @@ int PC::SCurveSingleTHL(unsigned short thl,
 //     std::map<int, Frame> frame_map;
 //     // fill the map with empty frames, one for each chip we use
 //     int nChips = tp->GetNumChips();
-//     std::set<int> chip_set;
+//     std::set<unsigned short> chip_set;
 //     for(int i = 1; i < nChips; i++){
 // 	chip_set.insert(i);
 // 	// we create one empty frame for each chip, by creating a

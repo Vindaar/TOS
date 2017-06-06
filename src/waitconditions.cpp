@@ -119,7 +119,7 @@ void Producer::run()
 		      << " adding bufferentry: " 
 		      << (i % parent->BufferSize) 
 		      << " chip: " 
-		      << chip+1 
+		      << chip 
 		      << std::endl;
 	    #endif
 
@@ -127,7 +127,7 @@ void Producer::run()
 	    //To FIX the readout problem
 	    // TODO: understand this
 	    //if(parent->_useHvFadc){
-	    parent->fpga->DataFPGAPC(dataVec, chip + 1);
+	    parent->fpga->DataFPGAPC(dataVec, chip);
 
 	    // NOTE: The following was from the time, when one was still using a single Chip
 	    // the SerialReadOutReadSend function is not properly implemented in the Virtex Firmware for 
@@ -137,7 +137,7 @@ void Producer::run()
 	    // 	parent->fpga->SerialReadOutReadSend(dataVec, chip + 1);
 	    // }
 	    #if DEBUG==2
-	    std::cout << "Producer NumHits chip: " << chip+1 
+	    std::cout << "Producer NumHits chip: " << chip
 		      << " " << dataVec->at(0) 
 		      << std::endl;
 	    #endif
@@ -156,7 +156,7 @@ void Producer::run()
 
 	    if ( (parent->_useHvFadc == true) &&
 		 (fadcReadout == true) &&
-		 ((chip + 1) == parent->_center_chip) ){
+		 (chip == parent->_center_chip) ){
 		// in case we're using the FADC and we're currently on the center chip,
 		// we're going to read out the FADC
         
@@ -404,24 +404,24 @@ void Consumer::run()
 	    int NumHits = ((parent->Vbuffer)[(i % parent->BufferSize)][chip])->at(0);
 	    std::cout << "Consumer run " << i 
 		      << " Numhits: " << NumHits 
-		      << " on chip " << chip+1 
+		      << " on chip " << chip 
 		#if DEBUG==1
 		      << " buffer entry: " << i % parent->BufferSize 
 		#endif
 		      << std::endl;
 
-	    hits[chip+1] = ((((parent->Vbuffer[(i % parent->BufferSize)][chip]))->size()) - 1)/3;
+	    hits[chip] = ((((parent->Vbuffer[(i % parent->BufferSize)][chip]))->size()) - 1)/3;
 
 	    #if DEBUG==1
 	    if (parent->IsRunning()){
 	    	std::cout << "IsRunning is true, Consumer run " 
 	    		  << i << " hits: " 
-	    		  << hits[chip+1] << std::endl;
+	    		  << hits[chip] << std::endl;
 	    }
 	    else{
 	    	std::cout << "IsRunning is false, Consumer run " 
 	    		  << i << " hits: " 
-	    		  << hits[chip+1] << std::endl;
+	    		  << hits[chip] << std::endl;
 	    }
 	    #endif
 
@@ -430,7 +430,7 @@ void Consumer::run()
 
 	    if ( (parent->_useHvFadc == true) &&
 		 (fadcReadoutM == true) &&
-		 ((chip + 1) == parent->_center_chip) ){
+		 (chip == parent->_center_chip) ){
 		// if we're at the center chip, call the readoutFadc function, which internally
 		// calls writeChipData and also writes the FADC data to file
 		parent->readoutFadc(parent->PathName, parent->_fadcParams, parent->Vbuffer[i % parent->BufferSize][chip], parent->_fadcData);
@@ -438,7 +438,7 @@ void Consumer::run()
 	    else{
 		// in case we're currently not at the center chip, just call writeChipData
 		// or the HFM is not initialized
-		parent->writeChipData(filePathName, parent->Vbuffer[i % parent->BufferSize][chip], chip + 1);
+		parent->writeChipData(filePathName, parent->Vbuffer[i % parent->BufferSize][chip], chip);
 	    }
 
 	    // now call readoutFADC to print the FADC 
@@ -473,7 +473,7 @@ void Consumer::run()
 
 	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
 	{
-	    if(hits[chip+1]<0){(parent->RunIsRunning)=false;}
+	    if(hits[chip]<0){(parent->RunIsRunning)=false;}
 	}
 
 	i++;

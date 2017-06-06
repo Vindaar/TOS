@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <boost/filesystem.hpp>
+#include <set>
 
 const std::string currentDateTime();
 
@@ -15,3 +16,8 @@ int CreateFolderIfNotExists(boost::filesystem::path pathname);
 int CreateFolderIfNotExists(std::string pathname);
 // function to extract the folder from a full filename
 boost::filesystem::path GetPathFromFilename(std::string filename);
+
+
+// function to create a chip set
+std::set<unsigned short> CreateChipSet(unsigned short Chips);
+

@@ -51,7 +51,7 @@ class Frame;
 
 
 // center chip on a septem board
-#define DEFAULT_CENTER_CHIP                       4
+#define DEFAULT_CENTER_CHIP                       3
 
 /** Talkativness
  * TALKATIVNESS=0: almost now std::cout
@@ -116,21 +116,20 @@ public:
     //########### Rewritten calibration related functions ############################
     //################################################################################
     
-    void AllChipsSetUniformMatrix(std::set<int> chip_set,
-				  std::map<std::string, boost::any> parameter_map,
-				  const int nChips);
+    void AllChipsSetUniformMatrix(std::set<unsigned short> chip_set,
+				  std::map<std::string, boost::any> parameter_map);
     void SingleChipReadoutCalc(int chip,
 			       std::map<std::string, boost::any> parameter_map,
 			       std::map<int, Frame> *frame_map,
 			       FrameArray<int> &pixel_data);
-    void AllChipsSingleStepCtpr(std::set<int> chip_set,
+    void AllChipsSingleStepCtpr(std::set<unsigned short> chip_set,
 				std::map<std::string, boost::any> parameter_map,
 				std::map<int, Frame> *frame_map);
-    void SingleIteration(std::set<int> chip_set,
+    void SingleIteration(std::set<unsigned short> chip_set,
 			 std::map<std::string, boost::any> parameter_map,
 			 std::map<int, std::pair<double, double>> *chip_mean_std_map);
     void TOCalib(std::string callerFunction,
-		 std::set<int> chip_set, 
+		 std::set<unsigned short> chip_set, 
 		 std::string TOmode, 
 		 std::string pulser, 
 		 std::list<int> pulseList,
@@ -139,7 +138,7 @@ public:
 		 std::string shutter_time);
 
     void SCurve(std::string callerFunction,
-		std::set<int> chip_set,
+		std::set<unsigned short> chip_set,
 		std::string pulser,
 		std::list<int> pulseList,
 		std::string shutter_range,
@@ -147,18 +146,18 @@ public:
 		int CTPR,
 		std::pair<int, int> threshold_boundaries);
     // void CalibrationMeta(std::string callerFunction,
-    // 			 std::set<int> chip_set,
+    // 			 std::set<unsigned short> chip_set,
     // 			 std::map<std::string, boost::any> parameter_map,
     // 			 std::string pulser,
     // 			 std::list<int> pulseList);
-    void WriteTOCalibToFile(std::set<int> chip_set,
+    void WriteTOCalibToFile(std::set<unsigned short> chip_set,
 			    std::map<std::string, boost::any> parameter_map,
 			    std::map<int, std::pair<double, double>> chip_mean_std_map);
-    void WriteSCurveToFile(std::set<int> chip_set,
+    void WriteSCurveToFile(std::set<unsigned short> chip_set,
 			   std::map<int, std::map<int, double>> thl_mean_map,
 			   int pulse);
 
-    std::map<int, std::pair<double, double>> GetZeroInitMeanStdMap(std::set<int> chip_set);
+    std::map<int, std::pair<double, double>> GetZeroInitMeanStdMap(std::set<unsigned short> chip_set);
 
 
     
@@ -222,9 +221,13 @@ public:
 
     // function to conveniently set a DAC in software and write to chip
     int SetDACandWrite(unsigned int dac, unsigned short chip, unsigned int value);
-    int SetDACallChips(unsigned short dac, unsigned int value, std::set<int> chip_set);
+    int SetDACallChips(unsigned short dac, unsigned int value, std::set<unsigned short> chip_set);
     void SetTestpulseThresholds(int pulse, std::string callerFunction);
 
+    // function to hand a const reference to the _chip_set member variable of the
+    // console class, such that always an up-to-date chip set is available to
+    // the sub classes
+    void SetChipSet(const std::set<unsigned short> &chip_set);
     
 		
     void MakeBMP(int arr[256][256]);
@@ -294,7 +297,10 @@ private:
 
     // variable, which stores the center chip for a septem board
     int _center_chip;
-		 
+
+    // reference to the chip_set of the console object
+    std::set<unsigned short> _chip_set;
+    
     // for buffer to receive and write data QThread
 
     int BufferSize;

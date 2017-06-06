@@ -74,7 +74,7 @@ private:
     Timepix *_tp;
     
     int ok;              //< some check var to work with pc 
-    int _nbOfChips;      //< the number of chips one wants to use
+    unsigned short _nbOfChips;      //< the number of chips one wants to use
     int _preload;        //< nb of preload bits - used to fix some bugs
   
     unsigned short getPreload();                 //< used to get a number of preload bits
@@ -82,7 +82,7 @@ private:
     //The main userinterface  
     int UserInterface();                         //< classical version
     // user input interface to select chips
-    std::set<int> ChipSelection();
+    std::set<unsigned short> ChipSelection();
     // user input interface function for fastclock, shutter range and time selection
     std::string FastClockSelection();
     std::string ShutterRangeSelection();
@@ -110,7 +110,7 @@ private:
     int CommandSetNumChips(bool callSetNumChips = true);
     // SetNumChips is the actual function, which changes the number of chips internally
     // CommandSetNumChips() calls this function after getting user input
-    void SetNumChips(int nChips);
+    void SetNumChips(unsigned short nChips);
 
     int CommandSetOption();
     int CommandRun(bool useHvFadc = false);
@@ -222,8 +222,9 @@ private:
     // template function to get matrix parameters
     template <typename Ausgabe> int MatrixParameters(Ausgabe &aus);
 
+    // function to update the chip set references of the PC, FPGA and timepix object
+    void UpdateChipSetReference();
 
-    //
     //vars to cope with the use of the fadc
     //bool _fadcActive;                        //< check var. true if a fadc is used, false otherwise
     
@@ -233,6 +234,9 @@ private:
     // member variable for general command prompt for input methods
     const char *_prompt;
     std::atomic_bool _loop_stop;
+
+    // a set of active chips, which we are currently working with
+    std::set<unsigned short> _chip_set;
 
     //HighLevelFunction_VME* _fadcFunctions;   //< some additional functions for the use of the fadc
 

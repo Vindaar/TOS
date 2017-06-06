@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <string>
+#include <set>
 
 
 // some macros for the default chip ID offsets (simply 'what works usually')
@@ -29,12 +30,12 @@
 #define DEFAULT_FSR_SIZE                            52
 #define DEFAULT_NUM_DACS                            18
 #define DEFAULT_NUM_DAC_CODES                       13
-#define DEFAULT_MAX_NUM_CHIPS                       9
+#define DEFAULT_MAX_NUM_CHIPS                       8
 
 
 class Timepix{
 public:
-    Timepix(int nbOfChips);
+    Timepix(unsigned short nbOfChips);
     int GetFSR(unsigned char* FSR_);
     int ChipID(unsigned char* ReplyPacket,unsigned short chip);
     int PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue);
@@ -112,6 +113,11 @@ public:
     // function to return whole matrix as FrameArray in integers
     FrameArray<int> GetMatrixAsInts(int chip);
 
+    // function to hand a const reference to the _chip_set member variable of the
+    // console class, such that always an up-to-date chip set is available to
+    // the sub classes
+    void SetChipSet(const std::set<unsigned short> &chip_set);
+
 private:
     void UpdateFSR();
 		
@@ -160,6 +166,9 @@ private:
     // helpful member variables
     int _pix_per_dimension;
     int _pix_total_num;
+
+    // reference to the chip_set of the console object
+    std::set<unsigned short> _chip_set;
 
 };
 

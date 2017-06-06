@@ -2,30 +2,31 @@
 
 #include "console.hpp"
 
-std::set<int> Console::ChipSelection(){
+std::set<unsigned short> Console::ChipSelection(){
     // this function provides the user input interface to select a 
     // set of chips based on all current active chips
-    std::set<int> chip_set;
+    std::set<unsigned short> chip_set;
     std::string input;
     std::set<std::string> allowedStrings;
 
     std::cout << "Select which chips to use.\n"
 	      << "the following chips are currently connected:" << std::endl;
-    for(int i = 0; i < pc->fpga->tp->GetNumChips(); i++){
+    for (auto chip : _chip_set){
 	std::cout << "#" 
-		  << i+1 
+		  << chip 
 		  << " : " 
-		  << pc->fpga->tp->GetChipName(i+1) 
+		  << pc->fpga->tp->GetChipName(chip) 
 		  << std::endl;
     }
     std::cout << "type # of chip from above to select.\n"
 	      << "select one after another\n"
-	      << "type : { 0, all } to select all chips" << std::endl;
+	      << "type : { all } to select all chips" << std::endl;
     
     // now create the allowed strings for the input based on the number of chips
-    // the loop goes from 0 to <= num chips, because we also allow 0 as an input value 
-    // to select all chips
-    for(int i = 0; i <= pc->fpga->tp->GetNumChips(); i++) allowedStrings.insert(std::to_string(i));
+    // the loop goes from 0 to < num chips
+    for (auto chip : _chip_set){
+	allowedStrings.insert(std::to_string(chip));
+    }
     // and also add the string 'all' as well
     allowedStrings.insert("all");
     // and the string 'done' to indicate that the selection is complete
@@ -51,17 +52,14 @@ std::set<int> Console::ChipSelection(){
 	}
 
 	input = getUserInputNonNumericalNoDefault(_prompt, &allowedStrings);
-	if(input == "quit") return {-1};
-	else if( (input == "0") ||
-		 (input == "all") ){
-	    // in case the user wants to use all chips, we create a temporary
-	    // set, fill that with all chip ints, set input to "done" and 
+	if(input == "quit") return std::set<unsigned short>();
+	else if( input == "all" ){
+	    // in case the user wants to use all chips, we set chip_set to
+	    // console member _chip_set, set input to "done" and 
 	    // set chip_set to the temp set (temp set used to prevent problems, if 
 	    // user first selects some chips individually and then all)
-	    std::set<int> tempSet;
-	    for(int i = 0; i < pc->fpga->tp->GetNumChips(); i++) tempSet.insert(i+1);
 	    input = "done";
-	    chip_set = tempSet;
+	    chip_set = _chip_set;
 	}
 	else if (input != "done"){
 	    chip_set.insert(std::stoi(input));

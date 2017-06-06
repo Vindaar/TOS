@@ -15,7 +15,7 @@
 #include <fstream>
 
 
-Timepix::Timepix(int nbOfChips){
+Timepix::Timepix(unsigned short nbOfChips){
 #if DEBUG == 2
     std::cout<<"Enter Timepix::Timepix()"<<std::endl;	
 #endif
@@ -29,9 +29,7 @@ Timepix::Timepix(int nbOfChips){
 
     // temporary integer variable for number of chips to set chip ID to a
     // sensible value, if the current number is 'standard'
-    int tempNumChips;
-    tempNumChips = GetNumChips();
-    switch(tempNumChips)
+    switch(_nbOfChips)
     {
 	case 1:
 	    _chipIdOffset = DEFAULT_CHIP_ID_OFFSET_1_CHIP;
@@ -79,8 +77,8 @@ Timepix::Timepix(int nbOfChips){
     DACNames[17]="DACCode";
 	
     // LSB: x=0
-    SenseDACPos=255-43 -0;
-    ExtDACPos=255-44  -0;	
+    SenseDACPos = 255 - 43 - 0;
+    ExtDACPos   = 255 - 44 - 0;	
     for(x=0;x<8;x++){
 	IKrumBitPos[x]=	   255-(   4+x) +2 ;
 	DiscBitPos[x]=	   255-(  12+x) -0;
@@ -126,20 +124,22 @@ Timepix::Timepix(int nbOfChips){
     for(x=0;x<10;x++){THLBitPos[x]   = 255 - ( 100 + x) - 0;}
     for(x=0;x<24;x++){ChipIDBitPos[x]= 255 - ( _chipIdOffset + x);} 
 	
-    for (int i = 1; i <= 8; i++){ChipID_[i]=0;}
+    for (unsigned short i = 0; i < 8; i++){
+	ChipID_[i]=0;
+    }
     NumberDefPixel=0;
     IsCounting_=0;	
-    for (unsigned short chip = 1; chip <= tempNumChips; chip++){
+    for (unsigned short chip = 0; chip < 8; chip++){
 	for(x = 0; x < 18; x++){
 	    DACValue[chip][x]=0;
 	}
     }
-    for (int i = 1; i <= 8; i++){
+    for (int i = 0; i < 8; i++){
 	for(x = 0; x < 52; x++){
 	    FSR[i][x]=0;
 	}
     }
-    for (unsigned short chip = 1; chip <= tempNumChips; chip++){
+    for (unsigned short chip = 0; chip < 8; chip++){
 	for(y = 0; y < 256; y++){
 	    for(x = 0; x < 256; x++){
 		Mask[chip][y][x] = 0;
@@ -158,12 +158,12 @@ int Timepix::GetFSR(unsigned char* FSR_){
 #endif
     int i;
     UpdateFSR();
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
-        if (chip==1){
+    for (auto chip : _chip_set){
+        if (chip==0){
 	    for(i=18;i<18+34;i++)FSR_[i]=FSR[chip][i];
         }
         else {
-	    for(i=19;i<18+34;i++)FSR_[i+(32*(chip-1))]=FSR[chip][i];
+	    for(i=19;i<18+34;i++)FSR_[i+(32 * chip)]=FSR[chip][i];
         }
     }
     return 0;
@@ -389,11 +389,15 @@ void Timepix::UpdateFSR(){
     std::cout<<"Enter Timepix::UpdateFSR()"<<std::endl;	
 #endif
     //for(i=0;i<18;++i){std::cout<<DACNames[i]<<DACValue[i]<<std::endl;}
-    for (int i = 1; i <= 8; i++){for(int j=0;j<18+34;++j)FSR[i][j]=0;}
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+    for (int i = 0; i < 8; i++){
+	for(int j = 0; j < 18 + 34; ++j){
+	    FSR[i][j]=0;
+	}
+    }
+    for (auto chip : _chip_set){
 	FSR[chip][18]=0xff;
 	//FSR[chip][19]=0x80;
-	for(int i=0;i<8;++i){
+	for(int i = 0; i < 8; ++i){
 	    if( DACValue[chip][0] & ( 1 << i ) ) //pr�fe ob (2^x)-te Bit gesetzt ist durch Bitweises-Und mit einer "bin�ren 1 mit i angeh�ngten Nullen"
 		FSR[chip][18+1+IKrumBitPos[i]/8] += ( 1<<(7-IKrumBitPos[i]%8) ); // addiere zum Byte die Wertigkeit des aktuellen FSR-Bits
 	    if( DACValue[chip][1] & (1<<i) ) FSR[chip][18+1+ DiscBitPos[i]/8]	 += 1<< (7-DiscBitPos[i]%8);
@@ -410,22 +414,25 @@ void Timepix::UpdateFSR(){
 	}
 	if( DACValue[chip][15] ) FSR[chip][18+1+ SenseDACPos/8] += 1<< (7-SenseDACPos%8);
 	if( DACValue[chip][16] ) FSR[chip][18+1+ ExtDACPos/8] 	+= 1<< (7-ExtDACPos%8);
-	for(int i=0;i<10;++i){if( DACValue[chip][6] & (1 << i) ) FSR[chip][18+1+THLBitPos[i]/8] += 1<<(7-THLBitPos[i]%8);}
+	for(int i = 0; i < 10; ++i){
+	    if( DACValue[chip][6] & (1 << i) ) FSR[chip][18+1+THLBitPos[i]/8] += 1<<(7-THLBitPos[i]%8);
+	}
 	//FSR[18+1+ DACCodePos[3] /8] = 3 ;
-	for(int i=0;i<4;++i){
+	for(int i = 0; i < 4; ++i){
 	    if( DACValue[chip][13] & (1 << i) ) FSR[chip][18+1+CoarseBitPos[i]/8] += 1<<(7-CoarseBitPos[i]%8);
 	    if( DACValue[chip][17] & (1 << i) ) FSR[chip][18+1+ DACCodePos[i]/8]  += 1<<(7-DACCodePos[i]%8);
-
 	}
 			
 	//FSR[18-2+ DACCodePos[1] /8] = 1 ;
-	for(int i=0;i<32;++i){if(DACValue[chip][14] & (1<<i) ) FSR[chip][18+1+CTPRBitPos[i]/8] += 1<<(7-CTPRBitPos[i]%8); }
+	for(int i = 0; i < 32; ++i){
+	    if(DACValue[chip][14] & (1<<i) ) FSR[chip][18+1+CTPRBitPos[i]/8] += 1<<(7-CTPRBitPos[i]%8);
+	}
     }
 }
 
 void Timepix::SetFSRBit(int bit, bool b){
     //int i,j;
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+    for (auto chip : _chip_set){
 	if( (FSR[chip][18+1+bit/8] & (1<<(7-bit%8))) && b==false ){FSR[chip][18+1+bit/8]-=(1<<(7-bit%8));}
 	if( ((FSR[chip][18+1+bit/8] & (1<<(7-bit%8)))==0) && b==true ){FSR[chip][18+1+bit/8]+=(1<<(7-bit%8));}
 	std::cout<<"this has been done for all chips!"<<std::endl;
@@ -448,18 +455,18 @@ int Timepix::ChipID(unsigned char* ReplyPacket, unsigned short chip){
     chipId+=ReplyPacket[25] << 8;
     chipId+=ReplyPacket[26];
 
-    for(i=0;i<24;i++){
-        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[i]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[i]+9*(_nbOfChips-1))%8)))>0) ID+=1<<i;
+    for(i = 0; i < 24; i++){
+        if((ReplyPacket[18+(32*(chip))+ (ChipIDBitPos[i]+9*(_nbOfChips - 1))/8] & (1<<(7-(ChipIDBitPos[i]+9*(_nbOfChips - 1))%8)))>0) ID+=1<<i;
     }
-    if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[0]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[0]+9*(_nbOfChips-1))%8)))>0) chipType+=1<<0;
-    for(i=1;i<12;i++){
-        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[12-i]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[12-i]+9*(_nbOfChips-1))%8)))>0) IDWaver+=1<<(i-1);
+    if((ReplyPacket[18+(32*(chip))+ (ChipIDBitPos[0]+9*(_nbOfChips - 1))/8] & (1<<(7-(ChipIDBitPos[0]+9*(_nbOfChips - 1))%8)))>0) chipType+=1<<0;
+    for(i = 1; i < 12; i++){
+        if((ReplyPacket[18+(32*(chip))+ (ChipIDBitPos[12-i]+9*(_nbOfChips - 1))/8] & (1<<(7-(ChipIDBitPos[12-i]+9*(_nbOfChips - 1))%8)))>0) IDWaver+=1<<(i-1);
     }
-    for(i=12;i<16;i++){
-        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[27-i]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[27-i]+9*(_nbOfChips-1))%8)))>0) IDNumber+=1<<(i-12);
+    for(i = 12; i < 16; i++){
+        if((ReplyPacket[18+(32*(chip))+ (ChipIDBitPos[27-i]+9*(_nbOfChips - 1))/8] & (1<<(7-(ChipIDBitPos[27-i]+9*(_nbOfChips - 1))%8)))>0) IDNumber+=1<<(i-12);
     }
-    for(i=16;i<21;i++){
-        if((ReplyPacket[18+(32*(chip-1))+ (ChipIDBitPos[36-i]+9*(_nbOfChips-1))/8] & (1<<(7-(ChipIDBitPos[36-i]+9*(_nbOfChips-1))%8)))>0) IDLetterNum+=1<<(i-17);
+    for(i = 16; i < 21; i++){
+        if((ReplyPacket[18+(32*(chip))+ (ChipIDBitPos[36-i]+9*(_nbOfChips - 1))/8] & (1<<(7-(ChipIDBitPos[36-i]+9*(_nbOfChips - 1))%8)))>0) IDLetterNum+=1<<(i-17);
     }
 
     if (IDLetterNum == 0) IDLetter = "0";
@@ -490,13 +497,29 @@ int Timepix::ChipID(unsigned char* ReplyPacket, unsigned short chip){
     }
 }
 
-bool Timepix::SetChipID(int id, std::string IDLetter,int IDNumber, int IDWaver, int chipType, unsigned short chip){
-    if(id<16777216){ChipID_[chip]=id; ChipLetter[chip]=IDLetter; ChipNumber[chip] = IDNumber; ChipWaver[chip] = IDWaver; ChipType_[chip] = chipType;return true;}
-    else{return false;}
+bool Timepix::SetChipID(int id, std::string IDLetter, int IDNumber, int IDWaver, int chipType, unsigned short chip){
+    if(id<16777216){
+	ChipID_[chip]    = id;
+	ChipLetter[chip] = IDLetter;
+	ChipNumber[chip] = IDNumber;
+	ChipWaver[chip]  = IDWaver;
+	ChipType_[chip]  = chipType;
+	return true;
+    }
+    else{
+	return false;
+    }
 }
 
 int Timepix::GetChipID(unsigned short chip){
-    std::cout<<"ChipID of chip "<< chip<<" is "<<ChipID_[chip]<<". This is "<<ChipLetter[chip]<<" "<< ChipNumber[chip]<<" W" <<ChipWaver[chip]<<", Chip type (1 = Timepix):"<<ChipType_[chip]<<std::endl;
+    std::cout << "ChipID of chip " << chip
+	      << " is "            << ChipID_[chip]
+	      << ". This is "      << ChipLetter[chip]
+	      << " "               << ChipNumber[chip]
+	      << " W"              << ChipWaver[chip]
+	      << ", Chip type (1 = Timepix):"
+	      << ChipType_[chip]
+	      << std::endl;
     return ChipID_[chip];
 }
 
@@ -562,7 +585,7 @@ int Timepix::LoadThresholdFromFile(std::string filename, unsigned short chip){
     return -2;
 }
 
-int Timepix::SaveMatrixToFile(std::string filename,unsigned short Chip){
+int Timepix::SaveMatrixToFile(std::string filename, unsigned short Chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::SaveMatrixToFile()"<<std::endl;	
 #endif
@@ -776,17 +799,22 @@ int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){
     int aktBit; //aktuelles Bit von Matrix 256Spalten * 256Zeilen *14Bit + 8BitPreload
 
     //std::cout << "Set Matrix to 0"<< std::endl;
-    for(y=0;y<PQueue*_nbOfChips;++y)for(x=0;x<PLen+18;++x){(*PackQueue)[y][x]=0;}
+    for(y = 0; y < PQueue * _nbOfChips; ++y){
+	for(x = 0; x < PLen + 18; ++x){
+	    (*PackQueue)[y][x]=0;
+	}
+    }
     //std::cout << "Matrix set to 0"<< std::endl;
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
-	aktBit=0;//(917768*(chip-1)); preload scheint nicht da zu sein fuer chip 2... daher auch nur 917760 fuer die aktBit
+    //for (auto chip : _chip_set){
+    for (size_t i = 0; i < _nbOfChips; i++){
+	aktBit=0;//(917768*(chip)); preload scheint nicht da zu sein fuer chip 2... daher auch nur 917760 fuer die aktBit
 	(*PackQueue)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]=0xFF; // 0xff = 255 preload
     }
 
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+    for (auto chip : _chip_set){
         for(y=0;y<256;++y) {
 	    for(x=0;x<256;++x){
-		int aktBit_base = y*256*14 + 8 + (255 - x) + (917760*(chip - 1));
+		int aktBit_base = y*256*14 + 8 + (255 - x) + (917760 * chip);
 		if(Test[chip][y][x])	{
 		    // yZeilen * 256Pixel/Zeile * 14Bit/Pixel + 8Bit Preload + aktuelles Bit in Zeile
 		    aktBit=aktBit_base;
@@ -823,8 +851,16 @@ int Timepix::PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue){
 	    }
 	}
     }
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
-	for(x=0;x<32;x++){(*PackQueue)[PQueue*chip-1][18+1+(32*(chip-1))+((((256*256*14)*(chip))/8)%PLen)+x] = 0xff;}//postload
+    for (auto chip : _chip_set){
+	for(x = 0; x < 32; x++){
+	    // NOTE: the following line is completely broken. 
+	    (*PackQueue)[PQueue*(chip+1) - 1][18+1+(32 * chip)+((((256*256*14)*(chip + 1))/8)%PLen)+x] = 0xff;
+	    // shouldn't it be:
+	    // (*PackQueue)[PQueue * chip][18+1+(32 * chip)+((((256*256*14)*chip)/8)%PLen)+x] = 0xff;
+	    // based on previous (when chip 0 was still chip 1):
+	    // (*PackQueue)[PQueue*chip-1][18+1+(32*(chip-1))+((((256*256*14)*(chip))/8)%PLen)+x] = 0xff;}
+	
+	}//postload
     }
     return 0;
 }
@@ -846,8 +882,8 @@ void Timepix::SetPackageByte(int aktBit, std::vector<std::vector<unsigned char> 
 
 
 int Timepix::SetNumChips(unsigned short Chips,unsigned short preload){
-    _nbOfChips=Chips;
-    Preload_global=preload;
+    _nbOfChips     = Chips;
+    Preload_global = preload;
     return true;
 }
 
@@ -943,7 +979,16 @@ void Timepix::SetChipIDOffset(int ChipIdOffset){
     _chipIdOffset = ChipIdOffset;
     
     for(int x = 0; x < 24; x++){
-	ChipIDBitPos[x]= 255-(_chipIdOffset +x );
+	ChipIDBitPos[x]= 255-(_chipIdOffset + x);
     } 
     // now the array should be set to a new value
+}
+
+
+void Timepix::SetChipSet(const std::set<unsigned short> &chip_set){
+    // function to hand a const reference to the _chip_set member variable of the
+    // console class, such that always an up-to-date chip set is available to
+    // the sub classes
+
+    _chip_set = chip_set;
 }

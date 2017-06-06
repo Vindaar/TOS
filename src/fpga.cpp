@@ -464,7 +464,7 @@ int FPGA::WriteReadFSR(){
     if(err_code>0){
 	return 50+err_code;
     }
-    for (unsigned short chip = 1;chip <= tp->GetNumChips() ;chip++){
+    for (auto chip : _chip_set){
 	if (err_code>0) {
 	    err_code = err_code;
 	}
@@ -837,7 +837,8 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     SendBuffer[3]=IncomingLength%256;
     SendBuffer[4]=Mode;
     SendBuffer[7]=tp->GetNumChips();
-    SendBuffer[8]=chip;
+    // need to hand chip + 1, because firmware seems to expect numbering starting from 1
+    SendBuffer[8]= chip + 1;
     SendBuffer[9]=tp->GetPreload();
     SendBuffer[10]=tp->GetOption();
     SendBuffer[14]=tp->GetI2C()/65536;
@@ -978,7 +979,8 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     SendBuffer[3]=IncomingLength%256;
     SendBuffer[4]=Mode;
     SendBuffer[7]=tp->GetNumChips();
-    SendBuffer[8]=chip;
+    // need to hand chip + 1, because firmware seems to expect numbering starting from 1
+    SendBuffer[8]=chip + 1;
     SendBuffer[9]=tp->GetPreload();
     SendBuffer[10]=tp->GetOption();
     SendBuffer[14]=tp->GetI2C()/65536;
@@ -1041,7 +1043,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     // no need to set timeout here again
     //_timeout.tv_sec = 0;
     //_timeout.tv_usec = 50000;
-    if (chip == tp->GetNumChips()){
+    if (chip == tp->GetNumChips() - 1){
 	if (HitsMode==2 or Hits*4 <PLen) {
 	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, &_timeout);//&timeout);
 #if DEBUG==1
@@ -1138,7 +1140,7 @@ int FPGA::SaveData(std::string filename){
 }
 
 
-int FPGA::SaveData(int pix[9][256][256]){
+int FPGA::SaveData(int pix[8][256][256]){
 #if DEBUG==2
     std::cout<<"Enter FPGA::SaveData(array)"<<std::endl;	
 #endif
@@ -1150,14 +1152,14 @@ int FPGA::SaveData(int pix[9][256][256]){
     // now simply add preload to aktBit
     int preload = tp->GetPreload();
 
-    for (unsigned short chip = 1;chip <= 8;chip++){
+    for (auto chip : _chip_set){
 	for(y=0;y<256;++y){
 	    for(x=0;x<256;++x){
 		pix[chip][y][x]=0;
 	    }
 	}
     }
-    for (unsigned short chip = 1;chip <= tp->GetNumChips() ;chip++){
+    for (auto chip : _chip_set){
 	for(y=0;y<256;++y){
 	    for(b=0;b<14;++b){
 		for(x=0;x<256;++x)
@@ -1166,7 +1168,7 @@ int FPGA::SaveData(int pix[9][256][256]){
 		    // you apply on program start since if statement included 
 		    // different values for adding than actual preload value 
 		    // before
-		    aktBit=y*256*14+b*256+(255-x)+8*tp->GetNumChips()+((256*256*14)+256)*(chip-1) + preload;
+		    aktBit=y*256*14+b*256+(255-x)+8*tp->GetNumChips()+((256*256*14)+256)*chip + preload;
 		    // +8*tp->GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
 		    if((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			pix[chip][y][x]+=1<<(13-b);
@@ -1191,8 +1193,7 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
     // now simply add preload to aktBit
     int preload = tp->GetPreload();
 
-    //for(y=0;y<256;++y)for(x=0;x<256;++x)pix[y][x]=0;
-    for (unsigned short chip = 1;chip <= tp->GetNumChips() ;chip++){
+    for (auto chip : _chip_set){
 	for(y=0;y<256;++y){
 	    for(b=0;b<14;++b){
 		for(x=0;x<256;++x)
@@ -1201,7 +1202,7 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
 		    // you apply on program start since if statement included 
 		    // different values for adding than actual preload value 
 		    // before
-		    aktBit = y*256*14 + b*256 + (255-x) + 8*tp->GetNumChips() + ((256*256*14) + 256)*(chip-1) + preload;
+		    aktBit = y*256*14 + b*256 + (255-x) + 8*tp->GetNumChips() + ((256*256*14) + 256)*chip + preload;
 		    // +8*tp->GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
 		    if ((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			(*VecData)[chip][y][x]+=1<<(13-b);
@@ -1495,14 +1496,14 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, unsigned short chip){
 		//     8 * nChips     == a preload offset (not the preload in the TOS)
 		//                       where we get one single byte for each chip
 		//                       in the data stream
-		//     ((256*256*14) + 256) * (chip - 1) == the offset we need to skip whole chips
+		//     ((256*256*14) + 256) * chip == the offset we need to skip whole chips
 		//     preload        == the preload which is added to move the data column wise
 		//                       (for synchronization). each value of preload shifts
 		//                       the whole frame from x -> x + 1
 		//                       does not change final result, due to postload of 256 bit
 		aktBit = y*256*14 + b*256 + (255-x) +	\
 		    8 * nChips +	\
-		    ((256*256*14) + 256) * (chip - 1) +	\
+		    ((256*256*14) + 256) * chip +	\
 		    preload;
 		// use current bit to calculate which package the data should be in
 		//     aktBit / 8      == the byte which our current bit should be in
@@ -1606,4 +1607,14 @@ int FPGA::ShutterRangeToMode(std::string shutter_range){
     }
 
     return n;
+}
+
+void FPGA::SetChipSet(const std::set<unsigned short> &chip_set){
+    // function to hand a const reference to the _chip_set member variable of the
+    // console class, such that always an up-to-date chip set is available to
+    // the sub classes
+
+    _chip_set = chip_set;
+    // and hand chip set reference further to Timepix
+    tp->SetChipSet(chip_set);
 }

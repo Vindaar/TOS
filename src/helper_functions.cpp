@@ -71,3 +71,16 @@ boost::filesystem::path GetPathFromFilename(std::string filename){
     boost::filesystem::path parent = fname.parent_path();
     return parent;
 }
+
+
+std::set<unsigned short> CreateChipSet(unsigned short nChips){
+    // this function creates a set of nChips, starting
+    // from 0 to nChips - 1
+
+    std::set<unsigned short> chip_set;
+    for(size_t i = 0; i < nChips; i++){
+	chip_set.insert(i);
+    }
+
+    return chip_set;
+}

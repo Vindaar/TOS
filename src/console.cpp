@@ -42,6 +42,12 @@ Console::Console():
     // call SetNumChips to write that number to _nbOfChips and determine preload
     SetNumChips(nChips);
 
+    // now using the number of chips, create the _chip_set
+    _chip_set = CreateChipSet(_nbOfChips);
+    // now given this chip set, we hand a reference to this chip set to
+    // the PC, FPGA and Timepix class
+    UpdateChipSetReference();
+
     ok = pc->okay();
 }
 
@@ -74,9 +80,12 @@ Console::Console(std::string iniFilePath):
     //get preoload
     _preload = getPreload();
     pc->fpga->tp->SetNumChips(_nbOfChips,_preload);
+    // now using the number of chips, create the _chip_set
+    _chip_set = CreateChipSet(_nbOfChips);
+    // now given this chip set, we hand a reference to this chip set to
+    // the PC, FPGA and Timepix class
+    UpdateChipSetReference();
 }
-
-
 
 Console::~Console()
 {
@@ -86,7 +95,6 @@ Console::~Console()
     delete pc;
     delete _tp;
 }
-
 
 unsigned short Console::getPreload()
 {
@@ -947,7 +955,7 @@ void Console::ErrorMessages(int err){
 		      << ": In Timepix::ChipID (called by WriteReadFSR) - wrong ChipID -  received for one of the chips: "
 		      << pc->fpga->ErrInfo<<", expected: "
 		      << std::flush;
-	    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+	    for(auto chip : _chip_set){
 		std::cout << "chip " << chip << ": " 
 			  << pc->fpga->tp->GetChipID(chip) << "\n>" 
 			  << std::flush;
@@ -1128,7 +1136,7 @@ int Console::CommandSpacing(){
     input = getUserInputNumericalNoDefault(promptSpacing);
     if (input == "quit") return -1;
     space = std::stoi(input);
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+    for (auto chip : _chip_set){
         pc->fpga->tp->Spacing(space,0,chip);
     }
     return 0;
@@ -1176,7 +1184,7 @@ int Console::CommandSetNumChips(bool callSetNumChips){
     }
 }
 
-void Console::SetNumChips(int nChips){
+void Console::SetNumChips(unsigned short nChips){
     // this function sets the number of chips to nChips
     // it is not called Command*, because it is not callable
     // by the user from ther user interface, but rather is the internal
@@ -1184,16 +1192,27 @@ void Console::SetNumChips(int nChips){
     // CommandSetNumChips and at other points in the code (e.g. setting
     // number of chips to 1, in order to use the HV_FADC object)
     _nbOfChips = nChips;
+    // using new nChips value, create new chip_set
+    _chip_set = CreateChipSet(nChips);
 
     _preload = getPreload();
     pc->fpga->tp->SetNumChips(_nbOfChips,_preload);
     pc->fpga->WriteReadFSR();
     pc->fpga->WriteReadFSR();
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+    for (auto chip : _chip_set){
 	pc->fpga->tp->GetChipID(chip);
     }
+
+    // after we have set the number of chips again, pass down the new chip set
+    UpdateChipSetReference();
 }
 
+void Console::UpdateChipSetReference(){
+    // this function updates the reference to the chip set member
+    // variable of the console object, such that PC, FPGA and Timepix
+    // always have a (const!) reference to the chip set
+    pc->SetChipSet(_chip_set);
+}
 
 int Console::CommandSetOption(){
     unsigned short option = 0;
@@ -1208,7 +1227,7 @@ int Console::CommandSetOption(){
     pc->fpga->tp->SetOption(option);
     pc->fpga->WriteReadFSR();
     pc->fpga->WriteReadFSR();
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+    for (auto chip : _chip_set){
 	pc->fpga->tp->GetChipID(chip);
     }
     return 0;
@@ -1634,7 +1653,7 @@ int Console::CommandReadOut2(){
     int result = 0;
     pc->fpga->DataChipFPGA(result);
 
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+    for (auto chip : _chip_set){
 	std::string filename;//=pc->GetDataPathName();
 //	filename+="/";
 	filename = pc->GetDataFileName(chip);
@@ -1676,7 +1695,7 @@ int Console::CommandWriteReadFSR(){
 #endif
     int result;
     result=pc->fpga->WriteReadFSR();
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+    for (auto chip : _chip_set){
 	pc->fpga->tp->GetChipID(chip);
     }
     std::cout<<"\tWriteReadFSR accomplished\n"<<std::flush;
@@ -1728,7 +1747,7 @@ int Console::CommandSetDAC(){
 
 
 int Console::CommandShowFSR(){
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+    for (auto chip : _chip_set){
 	std::string chip_name;
 	chip_name = pc->fpga->tp->GetChipName(chip);
 	std::cout << "current FSR for chip #" << chip 
@@ -1743,8 +1762,6 @@ int Console::CommandShowFSR(){
 
 void Console::CommandVarChessMatrixDefault(){
     // this function creates a default chess matrix of 5 by 5 pixels
-    unsigned short chip;
-    unsigned short nChips = _nbOfChips;
 
     int length 	   = 5;
     int width  	   = 5;
@@ -1760,7 +1777,7 @@ void Console::CommandVarChessMatrixDefault(){
     int white_thr  = 5;
     int err        = 0;
 
-    for(chip = 0; chip < nChips; chip++){
+    for (auto chip : _chip_set){
 	err = pc->fpga->tp->VarChessMatrix(length,
 					   width,
 					   black_p0,
@@ -1773,7 +1790,7 @@ void Console::CommandVarChessMatrixDefault(){
 					   white_mask,
 					   white_test,
 					   white_thr,
-					   chip + 1);
+					   chip);
 	if(err == 0){
 	    std::cout << "Default Matrix created\n" << std::flush;
 	}
@@ -1798,7 +1815,7 @@ int Console::CommandVarChessMatrix(bool all_chips){
     // first we're going to let the user decide which chips to calibrate
     // define a set of ints, which will contain the number of the chips we're
     // going to use
-    std::set<int> chip_set;
+    std::set<unsigned short> chip_set;
     chip_set = ChipSelection();
 
     std::map<std::string, int> chess_matrix_map;
@@ -1853,7 +1870,7 @@ int Console::CommandUniformMatrix(){
     bool allowDefaultOnEmptyInput = false;
     std::string input;
 
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+    for (auto chip : _chip_set){
 	std::cout<<"Chip Number "<<chip<<std::endl;
 	std::cout<<"\t P0="<<std::flush;
 	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
@@ -1917,7 +1934,7 @@ int Console::CommandUniformMatrixAllChips(){
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     th = std::stoi(input);
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+    for (auto chip : _chip_set){
 	err += pc->fpga->tp->UniformMatrix(p0,p1,mask,test,th,chip);
     }
     if(err==0){std::cout<<"Matrix created\n"<<std::flush;}
@@ -1958,7 +1975,7 @@ int Console::CommandDACScan(){
 
     int DacsOn[14]={1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     unsigned short chip;
-    std::cout << "Which chip do you want to DAC scan? (1-" << _nbOfChips << ") " << std::flush;
+    std::cout << "Which chip do you want to DAC scan? (0-" << _nbOfChips << ") " << std::flush;
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     chip = std::stoi(input);
@@ -2044,8 +2061,8 @@ void Console::RunTHLScan(std::string inputChips,
 
     if (inputChips == "0"){
 	// in this case perform for all chips
-	for( unsigned short chip = 0; chip < _nbOfChips; chip++){
-	    pc->DoTHLScan(chip + 1, coarselow, coarsehigh, threshold_boundaries, loop_stop);	    
+	for (auto chip : _chip_set){
+	    pc->DoTHLScan(chip, coarselow, coarsehigh, threshold_boundaries, loop_stop);	    
 	}
     }
     else{
@@ -2064,7 +2081,7 @@ int Console::CommandTHLScan(){
 
     unsigned short coarselow;
     unsigned short coarsehigh;
-    std::cout << "Which chip do you want to THL scan? (1-"
+    std::cout << "Which chip do you want to THL scan? (0-"
 	      << _nbOfChips << ") \n"
 	      << "0 for all chips." << std::endl;
 
@@ -2136,7 +2153,7 @@ void Console::CommandSCurve(){
     // first we're going to let the user decide which chips to calibrate
     // define a set of ints, which will contain the number of the chips we're
     // going to use
-    std::set<int> chip_set;
+    std::set<unsigned short> chip_set;
     chip_set = ChipSelection();
 
     // ask user for CTPR value to choose
@@ -2237,7 +2254,7 @@ int Console::CommandSCurveOld(){
     unsigned short StopTHL[9] = {1023};
     std::cout << "Hello, this is fast S-Curve scan. I will do a THL scan and "
     	      << "count how many counts there are in average on the chips. "
-    	      << "Scan will be done for one chip after the other from chip 1 to " 
+    	      << "Scan will be done for one chip after the other from chip 0 to " 
     	      <<  _nbOfChips 
     	      << ") " 
     	      << std::flush;
@@ -2259,7 +2276,7 @@ int Console::CommandSCurveOld(){
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     time       = std::stoi(input);
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+    for (auto chip : _chip_set){
     	std::cout << "Start (lower) THL for chip " << chip << " " << std::flush;
     	input          = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     	if (input == "quit") return -1;
@@ -2495,7 +2512,7 @@ int Console::CommandDoTHSopt(){
 	}
     }
     if (chp == 0){
-	for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+	for (auto chip : _chip_set){
 	    pc->DoTHSopt(doTHeq, pix_per_row_THeq, chip, ths, ext_coarse, max_thl, min_thl);
 	}
     }
@@ -2567,7 +2584,7 @@ int Console::CommandThresholdEqNoiseCenter(){
 	}
     }
     if (chp == 0){
-	for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+	for (auto chip : _chip_set){
 	    pc->DoThresholdEqCenter(pix_per_row, chip, ext_coarse, max_thl, min_thl);
 	}
     }
@@ -2602,7 +2619,7 @@ void Console::CommandTOCalib(){
     // first we're going to let the user decide which chips to calibrate
     // define a set of ints, which will contain the number of the chips we're
     // going to use
-    std::set<int> chip_set;
+    std::set<unsigned short> chip_set;
     chip_set = ChipSelection();
 
     // second we're going to determine whether the user wants to do a TOT or a 
@@ -2905,7 +2922,7 @@ int Console::CommandCalibrate(){
     input      = getUserInput(_prompt, true, false);
     if (input == "quit") return -1;
     time       = std::stoi(input);
-    for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+    for (auto chip : _chip_set){
 	std::cout << "End (upper) THL for chip "   << chip << ": " << std::flush;
 	input          = getUserInput(_prompt, true, false);
 	if (input == "quit") return -1;
@@ -2965,7 +2982,7 @@ int Console::CommandCalibrate(){
 	std::cout << "Ok, lets start!"<<std::endl;
     }
     if (chp == 0){
-	for (unsigned short chip = 1;chip <= _nbOfChips ;chip++){
+	for (auto chip : _chip_set){
 	    pc->DoTHSopt(0, 0, chip, ths, ext_coarse, max_thl, min_thl);
 	    pc->DoThresholdEqCenter(pix_per_row, chip, ext_coarse, max_thl, min_thl);
 	}
@@ -3295,13 +3312,12 @@ void Console::CommandSetCenterChip(){
     // this function provides a user interface to set the center chip member
     // variable of the PC object, which decides when the FADC is being read out
     std::string input="";
-    const char *prompt = "Set the center chip (range: 1 to num_chips): ";
+    const char *prompt = "Set the center chip (range: 0 to num_chips - 1): ";
     std::set<std::string> allowedChipNum;
-    // make sure only 1 to NumChips chips are typed in. More than 9 (due to illogical
-    // numbering of chips starting from 1 instead of 0) and we will get a
-    // segmentation fault in the timepix creator. Size of arrays for chips
-    // are hardcoded at the moment to allow for 9 chips.
-    for(int l = 1; l < _nbOfChips + 1; l++) allowedChipNum.insert(std::to_string(l));
+    // make sure only 0 to NumChips - 1 chips are typed in
+    for(auto chip : _chip_set){
+	allowedChipNum.insert(std::to_string(chip));
+    }
     
     input = getUserInputNumericalNoDefault(prompt, &allowedChipNum);
     if (input == "quit") return;

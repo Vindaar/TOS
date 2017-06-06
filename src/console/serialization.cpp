@@ -1,7 +1,7 @@
 #include "console.hpp"
 
 int Console::CommandLoadMatrix() {
-    for (unsigned short chip_id = 1; chip_id <= _nbOfChips; chip_id++){
+    for (auto chip_id : _chip_set){
         std::string default_path = pc->GetMatrixFileName(chip_id);
 
         std::cout << "Matrix filename for chip "
@@ -27,7 +27,7 @@ int Console::CommandLoadMatrix() {
 int Console::CommandLoadFSR() {
     int err = 0;
 
-    for (unsigned short chip_id = 1;chip_id <= _nbOfChips; chip_id++){
+    for (auto chip_id : _chip_set){
         std::string default_path = pc->GetFSRFileName(chip_id);
         std::cout << "FSR filename for chip "
             << chip_id
@@ -60,16 +60,16 @@ int Console::CommandLoadFSRAll() {
     int err = 0;
 
     std::string input;
-    std::string default_path_chip1 = pc->GetFSRFileName(1);
+    std::string default_path_chip0 = pc->GetFSRFileName(0);
 
     std::cout << "Enter a FSR filename to be loaded for all chips.\n"
-        << "(press ENTER to load default " << default_path_chip1 << "):" << std::endl;
+        << "(press ENTER to load default " << default_path_chip0 << "):" << std::endl;
 
     std::string filename;
-    if (!getUserInputOrDefaultFile(_prompt, default_path_chip1, filename))
+    if (!getUserInputOrDefaultFile(_prompt, default_path_chip0, filename))
         return -1;
 
-    for (unsigned short chip_id = 1; chip_id <= _nbOfChips; chip_id++) {
+    for (auto chip_id : _chip_set){
         err = pc->fpga->tp->LoadFSRFromFile(filename, chip_id);
 
         if(err == 1) {
@@ -79,8 +79,8 @@ int Console::CommandLoadFSRAll() {
         }
     }
 
-    pc->fpga->tp->SaveFSRToFile(default_path_chip1, 1);
-    std::cout << "FSR saved to program folder as " << default_path_chip1 << std::endl << std::flush;
+    pc->fpga->tp->SaveFSRToFile(default_path_chip0, 0);
+    std::cout << "FSR saved to program folder as " << default_path_chip0 << std::endl << std::flush;
 
     return err;
 }
@@ -88,7 +88,7 @@ int Console::CommandLoadFSRAll() {
 int Console::CommandLoadThreshold() {
     int err = 0;
 
-    for (unsigned short chip_id = 1; chip_id <= _nbOfChips; chip_id++){
+    for (auto chip_id : _chip_set){
         std::string default_path = pc->GetThresholdFileName(chip_id);
 
         std::cout << "Threshold filename for chip "
@@ -117,7 +117,7 @@ int Console::CommandLoadThreshold() {
 
 int Console::CommandSaveMatrix() {
 
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+    for (auto chip : _chip_set){
         std::string input;
         std::string default_path=pc->GetMatrixFileName(chip);
 	std::string filename;
@@ -139,7 +139,7 @@ int Console::CommandSaveMatrix() {
 
 int Console::CommandSaveFSR() {
 
-    for (unsigned short chip = 1; chip <= _nbOfChips; chip++){
+    for (auto chip : _chip_set){
         std::string input;
         std::string default_path=pc->GetFSRFileName(chip);
 	std::string filename;

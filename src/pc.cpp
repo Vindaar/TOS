@@ -93,7 +93,7 @@ PC::PC(Timepix *tp):
     int nChips = fpga->tp->GetNumChips();
     if (nChips == 1){
 	// thus we set the single chip as the main chip
-	_center_chip = nChips;
+	_center_chip = nChips - 1;
     }
 
 
@@ -166,47 +166,46 @@ template<typename T> int PC::DoReadOut(T filenames){
     // do readout function which accepts any kind of filenames,
     // with the only necessity that filenames need to support indexing
 #if DEBUG==2
-        std::cout<<"Enter PC::DoReadOut()"<<std::endl;
+    std::cout<<"Enter PC::DoReadOut()"<<std::endl;
 #endif
-        int result;
-	int nChips = fpga->tp->GetNumChips();
-	std::map<int, Frame> frame_map;
+    int result;
+    std::map<int, Frame> frame_map;
 	
-	for(int i = 1; i <= nChips; i++){
-	    // create a pair and insert into frame_map
-	    Frame chip_frame;
-	    frame_map.insert(std::pair<int, Frame>(i, chip_frame));
-	}
+    for (auto chip : _chip_set){
+	// create a pair and insert into frame_map
+	Frame chip_frame;
+	frame_map.insert(std::pair<int, Frame>(chip, chip_frame));
+	std::cout << "DoReadOut " << chip << std::endl;
+    }
 	    
-        result=fpga->SerialReadOut(&frame_map);
-        if(result==300){
-                for (unsigned short chip = 1; chip <= nChips; chip++){
-		    result=0;
+    result=fpga->SerialReadOut(&frame_map);
+    if(result==300){
+	for (auto chip : _chip_set){
+	    result=0;
 
-		    frame_map[chip].ConvertFullFrameFromLFSR();
-		    frame_map[chip].CalcFullFrameVars();
-		    result = frame_map[chip].GetFullFrameHits();
+	    frame_map[chip].ConvertFullFrameFromLFSR();
+	    frame_map[chip].CalcFullFrameVars();
+	    result = frame_map[chip].GetFullFrameHits();
 
-		    int write_result;
-		    write_result = frame_map[chip].DumpFrameToFile(filenames[chip - 1]);
-		    if(write_result == -1){
-		    	std::cout << "(PC::DoReadOut) Dateifehler" << std::endl;
-		    	return write_result;
-		    }
-                }
-        }
-        else return (-result);
-        return result;
+	    int write_result;
+	    write_result = frame_map[chip].DumpFrameToFile(filenames[chip]);
+	    if(write_result == -1){
+		std::cout << "(PC::DoReadOut) Dateifehler" << std::endl;
+		return write_result;
+	    }
+	}
+    }
+    else return (-result);
+    return result;
 }
 
 int PC::DoReadOut(){
     // if this function is called without arguments, we build the strings for the
     // filenames here and call DoReadOut(std::string filename[9])
 
-    unsigned short nChips = fpga->tp->GetNumChips();
     std::vector<std::string> filenames;
     
-    for (unsigned short chip = 1; chip <= nChips; chip++){
+    for (auto chip : _chip_set){
 	std::string filename;
 	filename = GetDataFileName(chip);
 	filenames.push_back(filename);
@@ -224,7 +223,7 @@ int PC::DoReadOut2(std::string filename, unsigned short chip){
 #endif
     int hits;
     std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
-    hits=fpga->DataFPGAPC(data,chip);
+    hits=fpga->DataFPGAPC(data, chip);
     // only write to file, if there is at least one hit
     if(hits>0){ 
 	FILE* f=fopen(filename.c_str(),"w");
@@ -303,14 +302,14 @@ int PC::DoDACScan(int DACstoScan,unsigned short chip) {
         int value = 0;
         int Bits = 0;
         unsigned short channel;
-        if (chip == 1) {channel=5;}
-        if (chip == 2) {channel=3;}
-        if (chip == 3) {channel=7;}
-        if (chip == 4) {channel=1;}
-        if (chip == 5) {channel=6;}
-        if (chip == 6) {channel=0;}
-        if (chip == 7) {channel=4;}
-        if (chip == 8) {channel=2;}
+        if (chip == 0) {channel=5;}
+        if (chip == 1) {channel=3;}
+        if (chip == 2) {channel=7;}
+        if (chip == 3) {channel=1;}
+        if (chip == 4) {channel=6;}
+        if (chip == 5) {channel=0;}
+        if (chip == 6) {channel=4;}
+        if (chip == 7) {channel=2;}
         std::cout<<"DACstoScan "<<DACstoScan<<std::endl;
         std::fstream f;
         f.open(DACScanFileName,std::fstream::out);
@@ -434,7 +433,7 @@ int PC::DoTHLScan(unsigned short chip,
 
 int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset){
 
-    for (unsigned short chip = 1;chip<= fpga->tp->GetNumChips() ;chip++){
+    for (auto chip : _chip_set){
 	fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 	unsigned short pix_per_row = 8;
 	unsigned short int i = 0;
@@ -467,7 +466,7 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
 		std::cout<<"first step"<<std::endl;
 		fpga->GeneralReset();
 		usleep(1000);
-		for (unsigned short c = 1; c <= fpga->tp->GetNumChips(); c++){
+		for (auto c : _chip_set){
 		    fpga->tp->LoadFSRFromFile(GetFSRFileName(c),c);
 		    fpga->tp->UniformMatrix(0,0,0,0,0,c); //0,0: Medipix modus
 		    fpga->tp->LoadThresholdFromFile(GetThresholdFileName(c),c);
@@ -550,7 +549,7 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
 int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned int step, unsigned short pix_per_row, short ***p3DArray, int sum[256][256], int hit_counter[256][256], short thp, unsigned short chp){
     if(thl%100 == 0) std::cout<<"Thp="<<thp<<" (16=Eq); coarse:"<<coarse<<" , thl:"<<thl<<std::endl; //commented in
     fpga->GeneralReset();
-    //for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+    //for (auto chip : _chip_set){
     fpga->tp->LoadFSRFromFile(GetFSRFileName(chp),chp);
     fpga->tp->SetDAC(6,chp,thl);
     if (ths!=0) {fpga->tp->SetDAC(10,chp,ths);}
@@ -565,7 +564,7 @@ int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned 
 
     /*std::string filename[9]= {""};
       const char* f[8];
-      for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+      for (auto chip : _chip_set){
       filename[chip]=GetDataPathName();
       filename[chip]+="/";
       filename[chip]+=GetDataFileName(chip);
@@ -699,7 +698,7 @@ int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned 
 	summean15 = 0;
 	mean15sum_pix = 0;
 	for (unsigned int step=0; step<1;step++){ //must go from 0 to <(256/pix_per_row)
-	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	    for (auto chip : _chip_set){
 		fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
 	    }
 	    fpga->tp->UniformMatrix(0,0,1,1,0,chp); //0,0: Medipix modus
@@ -710,12 +709,12 @@ int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned 
 	    fpga->SerialReadOut(pix_tempdata);
 	    //usleep(60000 );
 	    fpga->GeneralReset();
-	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	    for (auto chip : _chip_set){
 		fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 	    }
 	    fpga->WriteReadFSR();
 	    fpga->GeneralReset();
-	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	    for (auto chip : _chip_set){
 		fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
 	    }
 	    fpga->tp->UniformMatrix(0,0,1,1,0,chp); //0,0: Medipix modus
@@ -749,7 +748,7 @@ int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned 
 
 	    fpga->GeneralReset();
 	    //usleep(8000);
-	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	    for (auto chip : _chip_set){
 		fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
 	    }
 	    fpga->tp->UniformMatrix(0,0,1,1,15,chp); //0,0: Medipix modus
@@ -893,7 +892,7 @@ int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned 
 
     //store optimised ths in fsr.txt
     std::cout<<"\tSaving optimised ths value in "<<GetFSRFileName(chp)<<"\n> "<<std::flush;
-    //for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+    //for (auto chip : _chip_set){
     fpga->tp->LoadFSRFromFile(GetFSRFileName(chp),chp);
     fpga->tp->SetDAC(10,chp,ths);
     fpga->tp->SaveFSRToFile(GetFSRFileName(chp),chp);
@@ -1034,7 +1033,7 @@ int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, shor
       fpga->tp->SaveMatrixToFile(FileName.c_str());*/
 
     for (unsigned int step=0; step<(256/pix_per_row);step++){ //must go from 0 to <(256/pix_per_row)
-	for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	for (auto chip : _chip_set){
 	    fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
 	}
 	fpga->tp->UniformMatrix(0,0,1,1,0,chp); //0,0: Medipix modus
@@ -1046,14 +1045,14 @@ int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, shor
 	//usleep(60000 );
 	fpga->GeneralReset();
 	//usleep(8000);
-	for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	for (auto chip : _chip_set){
 	    fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 	}
 	fpga->WriteReadFSR();
 	//usleep(8000);
 	fpga->GeneralReset();
 	usleep(2000);
-	for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	for (auto chip : _chip_set){
 	    fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
 	}
 	fpga->tp->UniformMatrix(0,0,1,1,0,chp); //0,0: Medipix modus
@@ -1089,7 +1088,7 @@ int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, shor
 
 	fpga->GeneralReset();
 	//usleep(8000);
-	for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	for (auto chip : _chip_set){
 	    fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
 	}
 	fpga->tp->UniformMatrix(0,0,1,1,15,chp); //0,0: Medipix modus
@@ -1232,7 +1231,7 @@ int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, shor
     std::cout<<"th_eq_DAC for pixel x= 43, y =102 ="<<th_eq_DAC[102][43]<<std::endl;
 
     // save the final threshold dac mask
-    //for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+    //for (auto chip : _chip_set){
     f.open(GetThresholdFileName(chp),std::fstream::out);
     if(f.is_open()){
 	for(y=0;y<256;y++){
@@ -1248,7 +1247,7 @@ int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, shor
 	fpga->GeneralReset();
 	//usleep(8000);
 	//load the threshold dac mask
-	for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	for (auto chip : _chip_set){
 	    fpga->tp->UniformMatrix(0,0,0,0,0,chip); //mask all pixels on all chips, otherwise they draw current
 	}
 	fpga->tp->UniformMatrix(0,0,1,1,0,chp);
@@ -1434,7 +1433,7 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 		double stddevTOT_iteration_spacing[9][32] = {0};
 		int meanTOT_iteration[9] = {0};
 		//fpga->GeneralReset();
-		for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		for (auto chip : _chip_set){
 		    if (TOT == 3) { fpga->tp->UniformMatrix(1,0,0,0,0,chip);} //1,0: TOT modus, Mask and test pulse are set later
 		    else if (TOT == 4) { fpga->tp->UniformMatrix(1,1,0,0,0,chip);} //1,1: TIME modus
 		    else {fpga->tp->UniformMatrix(1,TOT,0,0,0,chip);} //1,0: TOT modus
@@ -1450,11 +1449,11 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 		usleep(2000 );
 		fpga->SerialReadOut(pix_tempdata2);
 		fpga->EnableTPulse(1);
-		for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		for (auto chip : _chip_set){
 		    fpga->tp->SetDAC(14,chip,0);
 		}
 		for (unsigned int CTPR=0;CTPR<32;CTPR++){ //must go from 0 to <(256/pix_per_row)
-		    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		    for (auto chip : _chip_set){
 			fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 			unsigned int CTPRval = 1<<CTPR;
 			fpga->tp->SetDAC(14,chip,CTPRval);
@@ -1473,7 +1472,7 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 		    }
 		    int meanTOT_iteration_spacing[9] = {0};
 		    if (TOT == 3 or TOT == 4) {
-			for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+			for (auto chip : _chip_set){
 			    std::string filename_; //if want to write to file
 			    std::ostringstream sstream;
 			    sstream<<"TOTCalib1"<<"_iteration"<<iteration<<"_step"<<step<<"_chip"<<chip<<".txt";
@@ -1486,7 +1485,7 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 			fpga->DataChipFPGA(result);
 
 // MAIN PART HERE
-			for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+			for (auto chip : _chip_set){
 			    int sumTOT = 0;
 			    int pix_tempdata[256][256]= {0};
 			    int hitcounter = 0;
@@ -1539,12 +1538,12 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 // UNTIL HERE
 
 		    } //TOT
-		    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		    for (auto chip : _chip_set){
 			meanTOT_iteration[chip] += meanTOT_iteration_spacing[chip];
 		    }
 		} // spacingCTPR
 		double sumstd_iteration[9][4] = {0};
-		for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+		for (auto chip : _chip_set){
 		    for (unsigned int ctpr=0; ctpr<32;ctpr++){
 			sumstd_iteration[chip][iteration]+=(stddevTOT_iteration_spacing[chip][ctpr]*stddevTOT_iteration_spacing[chip][ctpr])/(32-1);
 		    }
@@ -1553,7 +1552,7 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 		}
 		fpga->EnableTPulse(0);
 	    }//spacing row
-	    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	    for (auto chip : _chip_set){
 		meanTOT_[chip] += meanTOT_ctpr[chip]/(256/pix_per_row);
 		for (unsigned int step=0; step<(256/pix_per_row);step++){
 		    sumctpr[chip][iteration]+=(sumstddev_iteration_ctpr[chip][step]*sumstddev_iteration_ctpr[chip][step])/((256/pix_per_row)-1);
@@ -1563,7 +1562,7 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 	    //sumstddev_iteration[chip][iteration] hier erzeugen aus sumstddev_iteration_ctpr[chip][iteration] der einzelnen ctprs
 	} // iterations
 	//if (TOT == 0){
-	for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+	for (auto chip : _chip_set){
 	    double sumstd[9]={0};
 	    for (unsigned int iteration=0; iteration<4; iteration++){
 		sumstd[chip]+=(sumstddev_iteration[chip][iteration]*sumstddev_iteration[chip][iteration])/3;
@@ -1600,20 +1599,20 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
     for (unsigned int j = 0; j < voltage.size(); j++){
 	std::cout << "Voltage "<<j<<": "<<voltage[j]<<" with mean TOT (chip 1)"<<meanTOT1[j]<<std::endl;
     }
-    for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
+    for (auto chip : _chip_set){
 	if (TOT == 0) {f.open(GetTOTCalibFileName(chip),std::fstream::out);}
 	else f.open(GetTOACalibFileName(chip),std::fstream::out);
 	if(f.is_open()){
 	    for(unsigned int j = 0; j < voltage.size(); j++){
-		if (chip == 1){f<<voltage[j]-350<<"\t"<<meanTOT1[j]<<"\t"<<stddevTOT1[j]<<std::endl;}
-		else if (chip == 2){f<<voltage[j]-350<<"\t"<<meanTOT2[j]<<"\t"<<stddevTOT2[j]<<std::endl;}
-		else if (chip == 3){f<<voltage[j]-350<<"\t"<<meanTOT3[j]<<"\t"<<stddevTOT3[j]<<std::endl;}
-		else if (chip == 4){f<<voltage[j]-350<<"\t"<<meanTOT4[j]<<"\t"<<stddevTOT4[j]<<std::endl;}
-		else if (chip == 5){f<<voltage[j]-350<<"\t"<<meanTOT5[j]<<"\t"<<stddevTOT5[j]<<std::endl;}
-		else if (chip == 6){f<<voltage[j]-350<<"\t"<<meanTOT6[j]<<"\t"<<stddevTOT6[j]<<std::endl;}
-		else if (chip == 7){f<<voltage[j]-350<<"\t"<<meanTOT7[j]<<"\t"<<stddevTOT7[j]<<std::endl;}
-		else if (chip == 8){f<<voltage[j]-350<<"\t"<<meanTOT8[j]<<"\t"<<stddevTOT8[j]<<std::endl;}
-	    }
+		if      (chip == 0){f<<voltage[j]-350<<"\t"<<meanTOT1[j]<<"\t"<<stddevTOT1[j]<<std::endl;}
+		else if (chip == 1){f<<voltage[j]-350<<"\t"<<meanTOT2[j]<<"\t"<<stddevTOT2[j]<<std::endl;}
+		else if (chip == 2){f<<voltage[j]-350<<"\t"<<meanTOT3[j]<<"\t"<<stddevTOT3[j]<<std::endl;}
+		else if (chip == 3){f<<voltage[j]-350<<"\t"<<meanTOT4[j]<<"\t"<<stddevTOT4[j]<<std::endl;}
+		else if (chip == 4){f<<voltage[j]-350<<"\t"<<meanTOT5[j]<<"\t"<<stddevTOT5[j]<<std::endl;}
+		else if (chip == 5){f<<voltage[j]-350<<"\t"<<meanTOT6[j]<<"\t"<<stddevTOT6[j]<<std::endl;}
+		else if (chip == 6){f<<voltage[j]-350<<"\t"<<meanTOT7[j]<<"\t"<<stddevTOT7[j]<<std::endl;}
+		else if (chip == 7){f<<voltage[j]-350<<"\t"<<meanTOT8[j]<<"\t"<<stddevTOT8[j]<<std::endl;}
+	    }			 
 	    f.close();
 	}
     }
@@ -1625,58 +1624,58 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 
 
 unsigned short PC::CheckOffset(){
-        for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                fpga->tp->VarChessMatrix(254,254,1,1,1,1,8,0,1,1,1,7,chip);
-        }
-        unsigned short oldpreload = fpga->tp->GetPreload();
-        unsigned short usepreload = 0;
-        unsigned short errorsbefore = 512;
-        unsigned short  chips = fpga->tp->GetNumChips();
-	// NOTE: changed preload to go from <= 5 to <= 8 / Sebastian Schmidt 31.05.17
-        for (unsigned short preload = 0; preload <= 8; preload ++){
-                unsigned short errors = 0;
-                for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++){
-                        fpga->tp->SetNumChips(chips,preload);
-                        fpga->WriteReadFSR();
-                        fpga->WriteReadFSR();
-                        fpga->SetMatrix();
-                        std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
-                        int result;
-                        fpga->DataChipFPGA(result);
-                        int hits=fpga->DataFPGAPC(data,chip);
-                        for(int i=0; i<hits*3; i=i+3){
-                                if ( (*data)[i+1] == 255 or (*data)[i+1] == 254) {
-                                        if ((*data)[i+1+1 ] < 254){
-                                                if ((*data)[i+2+1] != 597){
-                                                        errors ++;
-                                                }
-                                        }
-                                }
-                                if ( (*data)[i+1] < 254 ){
-                                        if ((*data)[i+1+1 ] < 254){
-                                                if ((*data)[i+2+1] != 10001){
-                                                        errors ++;
-                                                }
-                                        }
-                                }
-                        }
-                        delete data;
-                }
-                std::cout << "Preload " << preload <<"; Errors " << errors << std::endl;
-                if (errors < errorsbefore){
-                        usepreload = preload;
-                }
-                errorsbefore = errors;
-        }
-        std::cout << "Preload was " << oldpreload  << std::endl;
-        if (usepreload != oldpreload){
-                std::cout << "WARNING: optimum preload has changed !!! "<< std::endl;
-                std::cout << "Preload was " << oldpreload  << std::endl;
-                std::cout << "Optimum preload is  " << usepreload << std::endl;
-                std::cout << "You can change it using the SetNumChips command" << std::endl;
-        }
-        fpga->tp->SetNumChips(fpga->tp->GetNumChips(),oldpreload);
-        return usepreload;
+    for (auto chip : _chip_set){
+	fpga->tp->VarChessMatrix(254,254,1,1,1,1,8,0,1,1,1,7,chip);
+    }
+    unsigned short oldpreload = fpga->tp->GetPreload();
+    unsigned short usepreload = 0;
+    unsigned short errorsbefore = 512;
+    unsigned short  chips = fpga->tp->GetNumChips();
+    // NOTE: changed preload to go from <= 5 to <= 8 / Sebastian Schmidt 31.05.17
+    for (unsigned short preload = 0; preload <= 8; preload ++){
+	unsigned short errors = 0;
+	for (auto chip : _chip_set){
+	    fpga->tp->SetNumChips(chips, preload);
+	    fpga->WriteReadFSR();
+	    fpga->WriteReadFSR();
+	    fpga->SetMatrix();
+	    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
+	    int result;
+	    fpga->DataChipFPGA(result);
+	    int hits=fpga->DataFPGAPC(data,chip);// + 1);
+	    for(int i=0; i<hits*3; i=i+3){
+		if ( (*data)[i+1] == 255 or (*data)[i+1] == 254) {
+		    if ((*data)[i+1+1 ] < 254){
+			if ((*data)[i+2+1] != 597){
+			    errors ++;
+			}
+		    }
+		}
+		if ( (*data)[i+1] < 254 ){
+		    if ((*data)[i+1+1 ] < 254){
+			if ((*data)[i+2+1] != 10001){
+			    errors ++;
+			}
+		    }
+		}
+	    }
+	    delete data;
+	}
+	std::cout << "Preload " << preload <<"; Errors " << errors << std::endl;
+	if (errors < errorsbefore){
+	    usepreload = preload;
+	}
+	errorsbefore = errors;
+    }
+    std::cout << "Preload was " << oldpreload  << std::endl;
+    if (usepreload != oldpreload){
+	std::cout << "WARNING: optimum preload has changed !!! "<< std::endl;
+	std::cout << "Preload was " << oldpreload  << std::endl;
+	std::cout << "Optimum preload is  " << usepreload << std::endl;
+	std::cout << "You can change it using the SetNumChips command" << std::endl;
+    }
+    fpga->tp->SetNumChips(fpga->tp->GetNumChips(),oldpreload);
+    return usepreload;
 }
 
 
@@ -1855,82 +1854,80 @@ int PC::DoRun(unsigned short runtimeFrames_,
     _runMap["numChips"]        = fpga->tp->GetNumChips();
 
     //WriteRunFile();
-    for (unsigned short chip = 1; chip <= fpga->tp->GetNumChips(); chip++)
-    {
-        sstream<<"_"<<chip;
-        FileName=PathName+"/"; FileName+=FSRFileName; FileName+=sstream.str();
-        fpga->tp->SaveFSRToFile(FileName,chip);
-        FileName=PathName+"/"; FileName+=MatrixFileName; FileName+=sstream.str();
-        fpga->tp->SaveMatrixToFile(FileName,chip);
-        sstream.str("");
+    for (auto chip : _chip_set)
+	{
+	    sstream<<"_"<<chip;
+	    FileName=PathName+"/"; FileName+=FSRFileName; FileName+=sstream.str();
+	    fpga->tp->SaveFSRToFile(FileName,chip);
+	    FileName=PathName+"/"; FileName+=MatrixFileName; FileName+=sstream.str();
+	    fpga->tp->SaveMatrixToFile(FileName,chip);
+	    sstream.str("");
+	}
+
+
+	MeasuringCounter = 0;
+
+	// in case we use an external trigger, we call CountingTrigger()
+	if (_useExternalTrigger == true){
+	    // set fpga->UseFastClock to the value of useFastClock
+	    fpga->UseFastClock(_useFastClock);
+	    result = fpga->CountingTrigger(shutterTime);
+	    // after counting, deactivate fast clock variable again
+	    fpga->UseFastClock(false);
+	    if(result!=20){(RunIsRunning)=false;}
+	}
+	// else we call CountingTime()
+	else{
+	    // set fpga->UseFastClock to the value of _useFastClock
+	    fpga->UseFastClock(_useFastClock);
+	    result = fpga->CountingTime(shutterTime, shutter_mode);
+	    // after counting, deactivate fast clock variable again
+	    fpga->UseFastClock(false);
+	    if(result!=20){(RunIsRunning)=false;}
+	}
+
+	result=fpga->DataChipFPGA(result);
+
+
+	//start run
+	mutexRun.lock();
+	RunIsRunning = true;
+	_loop_continue = true;
+	mutexRun.unlock();
+	start(QThread::NormalPriority);
+
+
+	//check var for abort
+	std::string ein="";
+	// time_t start = time(NULL);
+	// int timediff = 0;
+
+	//TODO: Someone - who wrote this - should check the difference between the two if loops...
+	if (runtimeFrames == 0)
+	{
+	    do{
+		std::getline(std::cin,ein);
+		if(ein.compare("q")==0){
+		    StopRun();
+		}
+	    } while(IsRunning()) ;
+	}
+	if (runtimeFrames == 1)
+	{
+	    do{
+		std::getline(std::cin,ein);
+		if(ein.compare("q")==0){
+		    StopRun();
+		}
+	    } while(IsRunning()) ;
+	}
+
+	//result=fpga->DataFPGAPC(data); something like this should in principle be done (Mode 1b = 27 to read out RAM from FPGA from last run). Not important
+
+	//change the global FADC flag back to true (otherwise it stays at false)
+	_useHvFadc = tmpFADC;
+	return 0;
     }
-
-
-    MeasuringCounter = 0;
-
-    // in case we use an external trigger, we call CountingTrigger()
-    if (_useExternalTrigger == true){
-        // set fpga->UseFastClock to the value of useFastClock
-        fpga->UseFastClock(_useFastClock);
-        result = fpga->CountingTrigger(shutterTime);
-        // after counting, deactivate fast clock variable again
-        fpga->UseFastClock(false);
-        if(result!=20){(RunIsRunning)=false;}
-    }
-    // else we call CountingTime()
-    else{
-        // set fpga->UseFastClock to the value of _useFastClock
-        fpga->UseFastClock(_useFastClock);
-        result = fpga->CountingTime(shutterTime, shutter_mode);
-        // after counting, deactivate fast clock variable again
-        fpga->UseFastClock(false);
-        if(result!=20){(RunIsRunning)=false;}
-    }
-
-    result=fpga->DataChipFPGA(result);
-
-
-    //start run
-    mutexRun.lock();
-    RunIsRunning = true;
-    _loop_continue = true;
-    mutexRun.unlock();
-    start(QThread::NormalPriority);
-
-
-    //check var for abort
-    std::string ein="";
-    // time_t start = time(NULL);
-    // int timediff = 0;
-
-    //TODO: Someone - who wrote this - should check the difference between the two if loops...
-    if (runtimeFrames == 0)
-    {
-        do{
-            std::getline(std::cin,ein);
-            if(ein.compare("q")==0){
-                StopRun();
-            }
-        } while(IsRunning()) ;
-    }
-    if (runtimeFrames == 1)
-    {
-        do{
-            std::getline(std::cin,ein);
-            if(ein.compare("q")==0){
-                StopRun();
-            }
-        } while(IsRunning()) ;
-    }
-
-    //result=fpga->DataFPGAPC(data); something like this should in principle be done (Mode 1b = 27 to read out RAM from FPGA from last run). Not important
-
-    //change the global FADC flag back to true (otherwise it stays at false)
-    _useHvFadc = tmpFADC;
-    return 0;
-}
-
-
 
 void PC::StopRun(){
     mutexRun.lock();
@@ -1938,7 +1935,6 @@ void PC::StopRun(){
     _loop_continue=false;
     mutexRun.unlock();
 }
-
 
 
 bool PC::IsRunning()
@@ -2122,7 +2118,7 @@ void PC::runOTPX()
             std::ostringstream sstream;
 
             //build filename(s)
-            for (unsigned short chip = 1;chip <= fpga->tp->GetNumChips() ;chip++)
+	    for (auto chip : _chip_set)
             {
                 sstream << "data" << std::setw(6) << std::setfill('0') << MeasuringCounter << "_" << chip << "_"
                         << std::setw(2) << std::setfill('0') << hh << std::setw(2) << std::setfill('0') << mm
@@ -2495,7 +2491,7 @@ void PC::SpeedTest(int wdh, int freq){ //outdated, not used any more
     int i;
     double hertz;
     timeval start,end;
-    int temp[9][256][256];
+    int temp[8][256][256];
     int msec;
     unsigned long sec;
     long usec;
@@ -2506,7 +2502,7 @@ void PC::SpeedTest(int wdh, int freq){ //outdated, not used any more
     fpga->GeneralReset(); fpga->GeneralReset(); fpga->GeneralReset();
     fpga->tp->LoadFSRFromFile(GetFSRFileName(1),1);
     fpga->WriteReadFSR(); fpga->WriteReadFSR(); fpga->WriteReadFSR();
-    ChipID=fpga->tp->GetChipID(1);
+    ChipID=fpga->tp->GetChipID(0);
 
     fpga->tp->UniformMatrix(0,0,1,1,7,1);
     fpga->SetMatrix(); fpga->SerialReadOut(temp); fpga->SetMatrix(); fpga->SerialReadOut(temp); fpga->SetMatrix(); fpga->SerialReadOut(temp);
@@ -2635,7 +2631,7 @@ int PC::SetDACandWrite(unsigned int dac, unsigned short chip, unsigned int value
     return result;
 }
 
-int PC::SetDACallChips(unsigned short dac, unsigned int value, std::set<int> chip_set){
+int PC::SetDACallChips(unsigned short dac, unsigned int value, std::set<unsigned short> chip_set){
     // function to set one DAC to a specific value for all chips in a set
     // calls SetDACandWrite
 
@@ -2645,4 +2641,15 @@ int PC::SetDACallChips(unsigned short dac, unsigned int value, std::set<int> chi
 	if (result != 50) return result;
     }
     return 0;
+}
+
+
+void PC::SetChipSet(const std::set<unsigned short> &chip_set){
+    // function to hand a const reference to the _chip_set member variable of the
+    // console class, such that always an up-to-date chip set is available to
+    // the sub classes
+
+    _chip_set = chip_set;
+    // and hand chip set reference further to FPGA
+    fpga->SetChipSet(chip_set);
 }
