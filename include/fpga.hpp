@@ -317,7 +317,7 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 	Hits = 4096;
     }
     else {
-	Hits =NumHits;
+	Hits = NumHits;
     }
 
     // in case of exactly 350 hits (which fit into a single package!) we set the number of still to

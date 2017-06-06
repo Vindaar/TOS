@@ -104,7 +104,10 @@ static wchar_t *utf8_to_wchar_t(const char *utf8)
 
     if (utf8) {
 	size_t wlen = mbstowcs(NULL, utf8, 0);
-	if (wlen < 0) {
+	// NOTE S. Schmidt: prev. checked for wlen < 0, which makes no sense, because
+	// size_t is unsigned. mbstowcs returns size_t - 1 in case of an error, so
+	// check for that instead
+	if (wlen == (size_t) - 1) {
 	    return wcsdup(L"");
 	}
 	ret = (wchar_t*)calloc(wlen+1, sizeof(wchar_t));
@@ -781,13 +784,14 @@ int HID_API_EXPORT_CALL hid_get_serial_number_string(hid_device *dev, wchar_t *s
     return get_device_string(dev, DEVICE_STRING_SERIAL, string, maxlen);
 }
 
-int HID_API_EXPORT_CALL hid_get_indexed_string(hid_device *dev, int string_index, wchar_t *string, size_t maxlen)
-{
-    return -1;
-}
+// NOTE Sebastian Schmidt: function not needed, only produces unused variable warnings
+/* int HID_API_EXPORT_CALL hid_get_indexed_string(hid_device *dev, int string_index, wchar_t *string, size_t maxlen) */
+/* { */
+/*     return -1; */
+/* } */
 
-
-HID_API_EXPORT const wchar_t * HID_API_CALL  hid_error(hid_device *dev)
-{
-    return NULL;
-}
+// NOTE Sebastian Schmidt: function not needed, only produces unused variable warnings
+/* HID_API_EXPORT const wchar_t * HID_API_CALL  hid_error(hid_device *dev) */
+/* { */
+/*     return NULL; */
+/* } */

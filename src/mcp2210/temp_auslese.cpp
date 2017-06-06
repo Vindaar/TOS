@@ -140,44 +140,6 @@ float get_temp(hid_device *handle, int RTD_Resistance, int Reference_Resistor){
     return temp;
 }
 
-static struct usb_device *init_mcp2210(void){
-    // DEPRECATED: function to manually initialize the MCP2210 as a USB device
-    
-    // this function initializes the MCP2210 microchip via usb
-    // initializes usb, gets all busses and devices and 
-    // returns the usb device handle of the MCP2210
-    // NULL if not found
-    struct usb_bus *usb_bus;
-    struct usb_device *udev;
-    int ndevices;
-    int nbusses;
-
-    usb_init();
-    nbusses  = usb_find_busses();
-    ndevices = usb_find_devices();
-    
-    std::cout << "Found " << ndevices 
-              << " usb devices on " << nbusses 
-              << " usb busses." << std::endl;
-
-    for (usb_bus = usb_busses; usb_bus; usb_bus = usb_bus->next){
-        for (udev = usb_bus->devices; udev; udev = udev->next){
-            int idVendor  = udev->descriptor.idVendor;
-            int idProduct = udev->descriptor.idProduct;
-            std::cout << "Bus number : " << usb_bus->location << std::endl;
-            std::cout << "Bus dirname : " << usb_bus->dirname << std::endl;
-            std::cout << "Found idVendor  : " << idVendor << std::endl;
-            std::cout << "Found idProduct : " << idProduct << std::endl;
-            if (idVendor == MCP2210_ID_VENDOR && idProduct == MCP2210_ID_PRODUCT){
-                return udev;
-            }
-        }
-    }
-
-    // if not found, return NULL pointer
-    return NULL;
-}
-
 int set_spi_transfer_settings(hid_device *handle){
 
     SPITransferSettingsDef spi_set;
@@ -517,65 +479,45 @@ int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name){
 int temp_auslese_main(std::atomic_bool *loop_continue, bool log_flag){
     // argument is a pointer to a bool variable from the calling function
 
-    bool use_usb_handle = false;
-    
-    if (use_usb_handle == true){
-        struct usb_device *udev;
+    hid_device *handle;
 
-        udev = init_mcp2210();
-        if (udev == NULL){
-            std::cout << "Warning: Could not find MCP2210 as usb device!" << std::endl;
-            return -1;
-        }
+    // initialize using MCP2210 library
+    handle = InitMCP2210();
+    if (handle == NULL){
+	std::cout << "Warning: Could not find MCP2210 as usb device!" << std::endl;
+	return -1;
     }
-    else{
 	
-        hid_device *handle;
+    set_chip_settings(handle);
 
-        // initialize using MCP2210 library
-        handle = InitMCP2210();
-        if (handle == NULL){
-            std::cout << "Warning: Could not find MCP2210 as usb device!" << std::endl;
-            return -1;
-        }
-	
-	set_chip_settings(handle);
-
-	int r;
-        r = set_spi_transfer_settings(handle);
-	if(r != 0){
+    int r;
+    r = set_spi_transfer_settings(handle);
+    if(r != 0){
 	std::cout << "Warning: spi settings could not be properly set. "
 		  << "Readout might be erroneously." << std::endl;
-	}
+    }
         
-        //set_gpio_pins(handle);
+    //set_gpio_pins(handle);
 	
-	print_gpio_pins(handle);
+    print_gpio_pins(handle);
 
-        //debug_spi_via_config(handle);
+    //debug_spi_via_config(handle);
 
-	byte Fault_Error;
-	Fault_Error = read_register(handle, FAULT_STATUS);
-	if(Fault_Error == 0){
-	    for(int i = 0; i < 2; i++){
-		write_byte_to_register(handle, CONFIGURATION, 0b11000001);
-		get_current_active_slave(true);
-	    }
-	    loop_temp(handle, loop_continue, 250, log_flag, "");
+    byte Fault_Error;
+    Fault_Error = read_register(handle, FAULT_STATUS);
+    if(Fault_Error == 0){
+	for(int i = 0; i < 2; i++){
+	    write_byte_to_register(handle, CONFIGURATION, 0b11000001);
+	    get_current_active_slave(true);
 	}
-	else{
-	    check_fault_register(Fault_Error);
-	}
-
-	CancelSPITransfer(handle);
-
+	loop_temp(handle, loop_continue, 250, log_flag, "");
+    }
+    else{
+	check_fault_register(Fault_Error);
     }
 
-    
-    //wchar_t *manufacturerStr;
+    CancelSPITransfer(handle);
 
-    //std::cout << "Manu Str : " << manufacturerStr << std::endl;
-    
 
     return 0;
 }

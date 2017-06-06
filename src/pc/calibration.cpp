@@ -164,7 +164,6 @@ void PC::SingleChipReadoutCalc(int chip,
     				       32,
     				       step,
     				       y_step_size,
-    				       true,
     				       convert_from_LFSR);
     // and get the sum, mean and hits values form this partial frame
     sum  = (*frame_map)[chip].GetLastPFrameSum();
@@ -210,8 +209,7 @@ void PC::SingleChipReadoutCalc(int chip,
 
 void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
 				std::map<std::string, boost::any> parameter_map,
-				std::map<int, Frame> *frame_map,
-				int nChips){
+				std::map<int, Frame> *frame_map){
     // inputs:
     //   std::set<int> chip_set: set storing which chips we are working on
     //   std::map<std::string, boost::any> parameter_map: heterogeneous map storing
@@ -223,9 +221,7 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
     //       frames, which are read
 
     // get the needed parameters from the map using boost::any_cast
-    int step		       = boost::any_cast<int>(parameter_map["step"]);
     int CTPR		       = boost::any_cast<int>(parameter_map["CTPR"]);
-    int pixels_per_column      = boost::any_cast<int>(parameter_map["pixels_per_column"]);
     std::string shutter_range  = boost::any_cast<std::string>(parameter_map["shutter_range"]);
     std::string shutter_time   = boost::any_cast<std::string>(parameter_map["shutter_time"]);
     std::string callerFunction = boost::any_cast<std::string>(parameter_map["callerFunction"]);
@@ -302,7 +298,7 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
 	for (auto chip : chip_set){
 	    // first readout a single chip
 	    FrameArray<int> pixel_data;
-	    int numhits = fpga->DataFPGAPC(&pixel_data, chip);
+	    fpga->DataFPGAPC(&pixel_data, chip);
 	    // call the function which performs the calculation for all chips and finally
 	    // starts to built the whole frames
 	    SingleChipReadoutCalc(chip, parameter_map, frame_map, pixel_data);
@@ -326,6 +322,10 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
 	// now read out all chips of the chip_set into the temporary
 	// readout_frame_map
 	int result  = fpga->SerialReadOut(&readout_frame_map);
+	if (result != 310){
+	    std::cout << "AllChipsSingleStepCtpr Error: call to SerialReadout failed.\n"
+		      << "    unexpected behaviour may occur." << std::endl;
+	}
 	//int result  = fpga->SerialReadOut(&pixel_data);
 	for (auto chip : chip_set){
 	    //int temp_result;
@@ -415,7 +415,7 @@ void PC::SingleIteration(std::set<int> chip_set,
             // now we run over all chips
 	    // SingleStepCtpr will perform a single shutter opening and closing of
 	    // the parameters given in parameter_map, results saved to frames in frame_map
-	    AllChipsSingleStepCtpr(chip_set, parameter_map, &frame_map, nChips);
+	    AllChipsSingleStepCtpr(chip_set, parameter_map, &frame_map);
 
         }
 	// disable test pulses again
@@ -624,7 +624,6 @@ void PC::SCurve(std::string callerFunction,
 	int lower_THLbound = threshold_boundaries.first;
 	int upper_THLbound = threshold_boundaries.second;
 
-	int num_thls = upper_THLbound - lower_THLbound;
 	// create a map, which stores the thl mean values for all chips
 	// first index: chip number, contains:
 	//     map of: <thl values, mean values>
@@ -640,7 +639,6 @@ void PC::SCurve(std::string callerFunction,
 	// add current pulse height to parameter_map
 	parameter_map["pulse"] = pulse;//*it_pulseList;
 
-	int nIterations;
 	for(int thl = lower_THLbound; thl < upper_THLbound; thl++){
 	    // now iterate over all THL values for all steps and all chips
 	    // set THL values for all chips and then call single iteration
@@ -838,14 +836,20 @@ std::map<int, std::pair<double, double>> PC::GetZeroInitMeanStdMap(std::set<int>
 int PC::SCurveSingleTHL(unsigned short thl,
 			unsigned short chip,
 			int time,
-			unsigned short offset,
 			int step,
 			int pulse){
+    // NOTE: FUNCTION IS DEPRECATED! will be taken out soon
     /* This function performs a single thl scan for the SCurve function
        unsigned short thl: the threshold value to scan for
      */
     int result=0;
     int meancounts;
+    bool dump_files;
+#if DEBUG==4
+    dump_files = true;
+#else
+    dump_files = false;
+#endif
 
     // set THL DAC
     SetDACandWrite(6,chip,thl);
@@ -854,8 +858,6 @@ int PC::SCurveSingleTHL(unsigned short thl,
     // calling CountingTime with second argument == 1
     // corresponds to n = 1, power of 256
     fpga->CountingTime(time, 1);
-
-    int nChips = fpga->tp->GetNumChips();
 
     // create an empty frame array to store the data for the readout
     FrameArray<int> pixel_data = {};
@@ -873,11 +875,12 @@ int PC::SCurveSingleTHL(unsigned short thl,
 	int hits = thl_frame.GetFullFrameHits();
 	std::cout << "hits = " << hits << std::endl;
 
-#if DEBUG==4
-	std::string filename;
-	filename = GetFrameDumpFilename(thl, step, pulse);
-	thl_frame.DumpFrameToFile(filename);
-#endif
+	if (dump_files){
+	    std:: string filename;
+	    filename = GetFrameDumpFilename (thl, step, pulse);
+	    thl_frame. DumpFrameToFile (filename);
+	}
+
     }
     else{
 	return result;

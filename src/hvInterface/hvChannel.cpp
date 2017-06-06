@@ -224,11 +224,11 @@ bool hvChannel::setCurrentNominal(float current){
     return good;
 }
 
-bool hvChannel::setVoltageBound(float voltageBound){
+void hvChannel::setVoltageBound(float voltageBound){
     // in contrast to the voltage and current set / nominal functions
     // the voltage bound in our case is simply a software bound. we check
     // whether the voltage is good ourselves
-    _voltageBound = voltageBound;    
+    _voltageBound = voltageBound;
 }
 
 

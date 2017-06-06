@@ -100,8 +100,8 @@ void Frame::StackFrame(FrameArray<int> pixel_data){
     // stack the 2d array on top of the current frame
     
     // loop over all elements of _pixel_data and add pixel_data each time
-    for(int x = 0; x < _pix_per_dimension; x++){
-	for(int y = 0; y < _pix_per_dimension; y++){
+    for(std::size_t x = 0; x < _pix_per_dimension; x++){
+	for(std::size_t y = 0; y < _pix_per_dimension; y++){
 	    // note: IT MIGHT BE that due to the stupidity that is TOS
 	    // one might need to reverse the ordering of x and y for the 
 	    // pixel_data array (since Michael used them the other way round :/)
@@ -111,8 +111,8 @@ void Frame::StackFrame(FrameArray<int> pixel_data){
 }
 
 void Frame::SetMask(FrameArray<bool> mask_array){
-    for(int x = 0; x < _pix_per_dimension; x++){
-	for(int y = 0; y < _pix_per_dimension; y++){
+    for(std::size_t x = 0; x < _pix_per_dimension; x++){
+	for(std::size_t y = 0; y < _pix_per_dimension; y++){
 	    _mask_data[x][y] = mask_array[x][y];
 	}
     }
@@ -123,7 +123,6 @@ void Frame::SetPartialFrame(FrameArray<int> pixel_data,
 			    int x_step_size,
 			    int y_start,
 			    int y_step_size, 
-			    bool ignore_max_flag,
 			    bool convert_from_LFSR){
     // this function sets the data of pixel_data to this frame
     // by starting at x_start, y_start and going in steps of x_step_size and
@@ -188,8 +187,8 @@ void Frame::ConvertFrameFromLFSR(int x_start,
 	CreateLFSRLookUpTable();
     }
 
-    for(int x = x_start; x < _pix_per_dimension; x += x_step_size){
-	for(int y = y_start; y < _pix_per_dimension; y += y_step_size){
+    for(std::size_t x = x_start; x < _pix_per_dimension; x += x_step_size){
+	for(std::size_t y = y_start; y < _pix_per_dimension; y += y_step_size){
 	    pix       = _pixel_data[x][y];
 	    pix_value = _LFSR_LookUpTable[pix];
 	    if(pix_value >= 0 &&
@@ -297,8 +296,8 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
     double var  = 0.0;
     double M2   = 0.0;
     int ignore_max_value = 11810;
-    for(int x = x_start; x < _pix_per_dimension; x += x_step_size){
-	for(int y = y_start; y < _pix_per_dimension; y += y_step_size){
+    for(std::size_t x = x_start; x < _pix_per_dimension; x += x_step_size){
+	for(std::size_t y = y_start; y < _pix_per_dimension; y += y_step_size){
 	    // NOTE: see note from StackFrame
 	    // TODO: CHECK HYPOTHESIS: not necessary to check for mask array! 
 	    //       if mask was set on chip, why would I need to use a software

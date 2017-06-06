@@ -22,11 +22,11 @@
 // TODO: change const char array to something nicer
 extern const char *tosCommands[];
 // Generator function for word completion
-char *TOS_Command_Generator (const char *text, int state);
+char *TOS_Command_Generator(const char *text, int state);
 
 // custom completion function
 //static 
-char **TOS_Command_Completion( const char *text, int start, int end);
+char **TOS_Command_Completion(const char *text, int start, int);
 
 // function which checks if input string is element of set of allowed strings
 int check_if_string_allowed(std::string tempStr, 

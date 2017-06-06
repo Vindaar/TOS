@@ -1642,7 +1642,7 @@ int Console::CommandReadOut2(){
 	// now check whether we're using the FADC
 	if (_hvFadcManagerActive == true){
 	    // in this case use 
-	    result   = pc->DoReadOutFadc(filename, chip);
+	    result   = pc->DoReadOutFadc(chip);
 	}
 	else{
 	    result   = pc->DoReadOut2(filename, chip);
@@ -2036,7 +2036,7 @@ int Console::CommandDACScan(){
 
 }
 
-int Console::RunTHLScan(std::string inputChips,
+void Console::RunTHLScan(std::string inputChips,
 			unsigned short coarselow,
 			unsigned short coarsehigh,
 			std::pair<int, int> threshold_boundaries,
@@ -2053,8 +2053,7 @@ int Console::RunTHLScan(std::string inputChips,
 	chip = std::stoi(inputChips);
 	pc->DoTHLScan(chip, coarselow, coarsehigh, threshold_boundaries, loop_stop);
     }
-
-    
+    return;
 }
 
 int Console::CommandTHLScan(){
@@ -2085,9 +2084,6 @@ int Console::CommandTHLScan(){
     threshold_boundaries = THLBoundarySelection();
     if(threshold_boundaries.first  == 0 &&
        threshold_boundaries.second == 0) return -1;
-
-
-
 
     // now loop over fpga->tpulse to pulse..
     // create seperate thread, which loops and will be stopped, if we type stop in terminal
@@ -2136,8 +2132,6 @@ void Console::CommandSCurve(){
     std::string shutter_time;
     std::pair<int, int> threshold_boundaries;
     std::string input;
-    // for SCurve we use 8 pixels per column
-    int pixels_per_column = 8;
 
     // first we're going to let the user decide which chips to calibrate
     // define a set of ints, which will contain the number of the chips we're

@@ -31,7 +31,7 @@ void Producer::run()
      * var is used as flag to ensure this.
      */
     //up to now: it doesen't - see the "To FIX.." comments
-    bool fadcReadoutNextEvent = false;
+    // bool fadcReadoutNextEvent = false;
 
     // check whether we're running with the FADC, if so, enable the closing of
     // the shutter based on a trigger by the FADC
@@ -207,8 +207,8 @@ void Producer::run()
 	    }
 
 	    //if there was an fadc event: remeber to read out chip and fadc at the next event: 
-	    if(fadcReadout) fadcReadoutNextEvent = true;
-	    else fadcReadoutNextEvent = false;
+	    // if(fadcReadout) fadcReadoutNextEvent = true;
+	    // else fadcReadoutNextEvent = false;
 
 	}//for (unsigned short chip = 0;..
 
@@ -245,15 +245,15 @@ void Producer::run()
 	    parent->mutexVBuffer.unlock();
 
 	    // TODO:!! IMPORTANT!!! TAKE BACK IN AFTER CORRECTING CHECKHVMODULEISGOOD!!!
-	    // if (isGood == -1){
-	    // 	// this means something is wrong with HV
-	    // 	// - call a function to report about problem (dump to file)
-	    // 	// - stop the run with error message
-	    // 	parent->mutexVBuffer.lock();
-	    // 	(parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
-	    // 	parent->mutexVBuffer.unlock();
-	    // 	parent->StopRun();
-	    // }
+	    if (isGood == -1){
+	    	// this means something is wrong with HV
+	    	// - call a function to report about problem (dump to file)
+	    	// - stop the run with error message
+	    	// parent->mutexVBuffer.lock();
+	    	// (parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
+	    	// parent->mutexVBuffer.unlock();
+	    	// parent->StopRun();
+	    }
 	    
 	}
 

@@ -8,36 +8,36 @@ CVmeController::~CVmeController()
 {
 }
 
-bool CVmeController::initController(int controllerNumber)
+bool CVmeController::initController(int)
 {
-	return true;
+    return true;
 }
 
 bool CVmeController::closeController(void)
 {
-	return true;
+    return true;
 }
 
-void CVmeController::writeShort(int vmeAddress, int addressModifier, int data, int *errorCode)
+void CVmeController::writeShort(int, int, int, int *)
 {
 }
 
-int CVmeController::readShort(int vmeAddress, int addressModifier, int *errorCode)
+int CVmeController::readShort(int, int, int *)
 {
-	return 0;
+    return 0;
 }
 
 QString CVmeController::errorString(void)
 {
-	return "";
+    return "";
 }
 
 QString CVmeController::controllerName(void)
 {
-	return "";
+    return "";
 }
 
 QString CVmeController::information(void)
 {
-	return "";
+    return "";
 }

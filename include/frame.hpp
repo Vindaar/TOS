@@ -55,7 +55,6 @@ public:
 			 int x_step_size,
 			 int y_start,
 			 int y_step_size,
-			 bool ignore_max_flag = true,
 			 bool convert_from_LFSR = false);
 
 
@@ -153,7 +152,7 @@ private:
 
 
     // size of the frame per dimension
-    const int _pix_per_dimension;
+    const unsigned int _pix_per_dimension;
 
     // note: zero initialization in this way is the correct way to do it.
     // however, gcc gives a warning about it

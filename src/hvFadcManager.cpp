@@ -19,12 +19,12 @@
 hvFadcManager::hvFadcManager(std::string iniFilePath):
     _createdFlag(false),
     _settingsReadFlag(false),
+    _hvModInitFlag(false),
+    _hvFadcInitFlag(false),
     _fadcTriggerInLastFrame(0),
     _loop_stop(false),
     _scint1_counter(0),
-    _scint2_counter(0),
-    _hvModInitFlag(false),
-    _hvFadcInitFlag(false)
+    _scint2_counter(0)
 {
     // upon initialisation of hvFadcManager, we need to create the
     // vmemodule (HV) instance using the base Addresses
@@ -46,10 +46,10 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     //                   rest to 0.
     // done by creating set of strings corresponding to options
     std::set<std::string> _eventMaskSet = {"CurrentTrip", 
-					  "EndOfRamping", 
-					  "VoltageLimit", 
-					  "CurrentLimit",
-					  "Emergency"};
+                                          "EndOfRamping", 
+                                          "VoltageLimit", 
+                                          "CurrentLimit",
+                                          "Emergency"};
 
     _sleepAcqTime     = 0;
     _sleepTriggerTime = 0;
@@ -75,6 +75,10 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     // now we check, whether we can connect to the HV module
     bool good_connection;
     good_connection = H_CheckIsConnectionGood();
+    if (good_connection == false){
+        std::cout << "hvFadcManager() Error: could not establish connection to HV."
+            << std::endl;
+    }
 
     // set the object created flag to true
     _createdFlag = true;
@@ -94,16 +98,16 @@ hvFadcManager::~hvFadcManager() {
     bool toShutdown = false;
     toShutdown = CheckToShutdown();
     if (toShutdown == true){
-	std::string input;
-	const char *prompt = "Do you wish to shutdown the HV? (y / N)";
-	input = getUserInputNonNumericalDefault(prompt);
-	if ((input.compare("y") == 0) ||
-	    (input.compare("Y") == 0)){
-	    ShutDownHFMForTOS();
-	}
-	else{
-	    std::cout << "Leaving HV turned on." << std::endl;
-	}
+        std::string input;
+        const char *prompt = "Do you wish to shutdown the HV? (y / N)";
+        input = getUserInputNonNumericalDefault(prompt);
+        if ((input.compare("y") == 0) ||
+            (input.compare("Y") == 0)){
+            ShutDownHFMForTOS();
+        }
+        else{
+            std::cout << "Leaving HV turned on." << std::endl;
+        }
     }
 
     // TODO::
@@ -143,20 +147,20 @@ uint16_t hvFadcManager::GetBinaryRepFromNumberSet(std::set<int> numberSet){
     std::set<int>::iterator it;
 
     for(it = numberSet.begin(); it != numberSet.end(); ++it){
-	// loop over all channelSet and assign integer from set
-	// corresponding to iterator value to new int
-	newNumber = *it;
-	// we use this int to perform bitwise operation on 
-	// channelNumberBinary
-	// we shift a '1'
-	// 'newChannelMember' places to the left
-	// e.g.: newChannelNumber = 3
-	// channelNumberBinary = 1 << 3 --> 00000001 << 3 --> 000001000
-	int numberBinary = 0;
-	numberBinary = 1 << newNumber;
+        // loop over all channelSet and assign integer from set
+        // corresponding to iterator value to new int
+        newNumber = *it;
+        // we use this int to perform bitwise operation on 
+        // channelNumberBinary
+        // we shift a '1'
+        // 'newChannelMember' places to the left
+        // e.g.: newChannelNumber = 3
+        // channelNumberBinary = 1 << 3 --> 00000001 << 3 --> 000001000
+        int numberBinary = 0;
+        numberBinary = 1 << newNumber;
 
-	// and now add this binary number to the channelSetInt
-	numberSetInt += numberBinary;
+        // and now add this binary number to the channelSetInt
+        numberSetInt += numberBinary;
     }
 
     return numberSetInt;
@@ -169,15 +173,15 @@ std::set<int> hvFadcManager::GetChannelSetFromBinaryRep(uint32_t binaryRep){
     std::set<int> channelSet;
     int n = 32;
     while(binaryRep != 0){
-	int pow_of_2 = pow(2, n);
-	if (binaryRep % pow_of_2 != binaryRep){
-	    // if binary rep modulo 2^n is not binaryRep, n is a divisor
-	    channelSet.insert(n);
-	    // new value for rep is simply the rest of the division
-	    binaryRep = binaryRep % pow_of_2; 
-	}
-	// decrease n by 1
-	n--;
+        int pow_of_2 = pow(2, n);
+        if (binaryRep % pow_of_2 != binaryRep){
+            // if binary rep modulo 2^n is not binaryRep, n is a divisor
+            channelSet.insert(n);
+            // new value for rep is simply the rest of the division
+            binaryRep = binaryRep % pow_of_2; 
+        }
+        // decrease n by 1
+        n--;
     }
     
     return channelSet;
@@ -204,12 +208,12 @@ void hvFadcManager::AddFlexGroup(hvFlexGroup *ptrGroup){
     // set group on module
     good = ptrGroup->SetGroupOnModule();
     if (good == true){
-	// successfully set on module
-	// only add to list in this case!
-	_flexGroupList.push_back(ptrGroup);
+        // successfully set on module
+        // only add to list in this case!
+        _flexGroupList.push_back(ptrGroup);
     }
     // else{
-    // 	// could not be set on module
+    //  // could not be set on module
     // }
     // and add to group list
 }
@@ -231,13 +235,13 @@ bool hvFadcManager::SetModuleEventGroupMask(){
     std::for_each( _flexGroupList.begin(), _flexGroupList.end(), [&groupSet](hvFlexGroup *ptrGroup){
             int number;
             number = ptrGroup->getGroupNumber();
-	    groupSet.insert(number);
-	} );
+            groupSet.insert(number);
+        } );
 
     // now we need to create binary representation of channels
     // thus call GetBinary function
     activeGroupsBinary = GetBinaryRepFromNumberSet(groupSet);
-	
+        
     // however, for the event group mask, we need a uint32_t instead
     // of a uint16_t:
     uint32_t moduleEventGroupMask = activeGroupsBinary;
@@ -246,25 +250,25 @@ bool hvFadcManager::SetModuleEventGroupMask(){
     int timeout = 1000;
     bool good = false;
     while( (timeout > 0) &&
-	   (_moduleEventGroupMask == moduleEventGroupMask) ){
-	// first set module event group mask
+           (_moduleEventGroupMask == moduleEventGroupMask) ){
+        // first set module event group mask
         H_SetModuleEventGroupMask(static_cast<uint32_t> (moduleEventGroupMask));
-	// now wait default time
-	HV_module->sleepModule();
-	// and update module (which updates _moduleEventGroupMask
-	HV_module->updateModule();
-	_moduleEventGroupMask = HV_module->GetModuleEventGroupMask();
-	timeout--;
+        // now wait default time
+        HV_module->sleepModule();
+        // and update module (which updates _moduleEventGroupMask
+        HV_module->updateModule();
+        _moduleEventGroupMask = HV_module->GetModuleEventGroupMask();
+        timeout--;
     }
     if (timeout < 1){
-	std::cout << "TIMEOUT: could not set module event group mask!" << std::endl;
-	std::cout << "returning false" << std::endl;
-	good = false;
+        std::cout << "TIMEOUT: could not set module event group mask!" << std::endl;
+        std::cout << "returning false" << std::endl;
+        good = false;
     }
     else{
-	std::cout << "timeout in setModuleEventGroupMask " << timeout << std::endl;
-	// else everything is good
-	good = true;
+        std::cout << "timeout in setModuleEventGroupMask " << timeout << std::endl;
+        // else everything is good
+        good = true;
     }
     return good;
 }
@@ -281,13 +285,13 @@ bool hvFadcManager::SetAllChannelsOn(){
     // before loop) with the result, good will only be true, if all channels return 
     // true
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
-	    good *= ptrChannel->turnOn();
-	} );
+            good *= ptrChannel->turnOn();
+        } );
     if (good == true){
-	std::cout << "All channels successfully turned on." << std::endl;
+        std::cout << "All channels successfully turned on." << std::endl;
     }
     else{
-	std::cout << "One or more channels could not be turned on!" << std::endl;
+        std::cout << "One or more channels could not be turned on!" << std::endl;
     }
 
     return good;
@@ -300,28 +304,28 @@ bool hvFadcManager::SetAllChannelsOn(){
         // that means set channels to SetOn = 1
         // for the anodeGridGroup, we only set the master channel
         // to SetOn = 1
-	
-	// now use transform to update Status.Word for each element of
-	// channel status vector. this updates the elements of chStatusVector
-	// transform uses last argument (function) and acts it with arguments contained
-	// in 1st and 2nd argument vectors and puts the result of the function in 
-	// vector of 3rd argument
-	// std::transform( channelNumbers.begin(), 
-	// 		channelNumbers.end(),  
-	// 		chStatusVector.begin(),
-	// 		[this](int channel){
-	// 		    return this->H_GetChannelStatusStruct(channel);
-	// 		} );
-	// explanation of last line: usage of lambda function
-	// problem: wish to use H_GetChannelStatusStruct, which is a non static member
-	// function of hvFadcManager. Thus, it actually needs to arguments:
-	//    - the object which owns the function (non static member functions
-	//      only exist, if an object which owns it exists!)
-	//    - and the argument (int channel)
-	// lambda function acts as a wrapper around this fact. 
-	// [this] means we hand the object, which owns this function (SetAllChannelsOn)
-	// to the lambda function. then the arguments of the runction and we return 
-	// what we wish to return
+        
+        // now use transform to update Status.Word for each element of
+        // channel status vector. this updates the elements of chStatusVector
+        // transform uses last argument (function) and acts it with arguments contained
+        // in 1st and 2nd argument vectors and puts the result of the function in 
+        // vector of 3rd argument
+        // std::transform( channelNumbers.begin(), 
+        //              channelNumbers.end(),  
+        //              chStatusVector.begin(),
+        //              [this](int channel){
+        //                  return this->H_GetChannelStatusStruct(channel);
+        //              } );
+        // explanation of last line: usage of lambda function
+        // problem: wish to use H_GetChannelStatusStruct, which is a non static member
+        // function of hvFadcManager. Thus, it actually needs to arguments:
+        //    - the object which owns the function (non static member functions
+        //      only exist, if an object which owns it exists!)
+        //    - and the argument (int channel)
+        // lambda function acts as a wrapper around this fact. 
+        // [this] means we hand the object, which owns this function (SetAllChannelsOn)
+        // to the lambda function. then the arguments of the runction and we return 
+        // what we wish to return
 }
 
 void hvFadcManager::InitHFMForTOS(){
@@ -345,22 +349,22 @@ void hvFadcManager::InitHFMForTOS(){
     // to create the objects, if not yet created
     // check if HV module has been created
     if (_createdFlag == false){
-	Controller.initController(0);
+        Controller.initController(0);
         HV_module   = new hvModule(&Controller, baseAddress_hv);
         FADC_module = new V1729a_VME(&Controller, sAddress_fadc);
-	// create FADC high level functions
+        // create FADC high level functions
         FADC_Functions = new HighLevelFunction_VME(FADC_module);
-	// and reset FADC
+        // and reset FADC
         FADC_module->reset();
-	bool good;
+        bool good;
         std::cout << "creating... " << std::flush;
-	good = H_CheckIsConnectionGood();
-	_createdFlag = true;
-	if (good == 0){
-	    // break from initHV if connection could not be established
-	    std::cout << "stopping InitHV" << std::endl;
-	    return;
-	}
+        good = H_CheckIsConnectionGood();
+        _createdFlag = true;
+        if (good == 0){
+            // break from initHV if connection could not be established
+            std::cout << "stopping InitHV" << std::endl;
+            return;
+        }
     }
     
     // now call H_SetKillEnable to try and set kill to enable
@@ -376,55 +380,55 @@ void hvFadcManager::InitHFMForTOS(){
     // now simply run over dummyChannelVector to create all channels defined in the ini file
     // and add correct channels to groups
     BOOST_FOREACH( dummyHvChannel channel, _dummyChannelVector ){
-	bool good = false;
-	hvChannel *channelPtr;
-	channelPtr = new hvChannel(HV_module, channel.name, channel.number);
-	AddChannel(channelPtr);
+        bool good = false;
+        hvChannel *channelPtr;
+        channelPtr = new hvChannel(HV_module, channel.name, channel.number);
+        AddChannel(channelPtr);
 
-	// now set channel event mask, voltages and currents
-	good = channelPtr->setVoltage(channel.voltageSet);
-	good = channelPtr->setVoltageBound(channel.voltageBound);
-	good = channelPtr->setCurrent(channel.currentSet);
-	if (good == false) return;
-	
-	// only add grid and anode to anode Grid group
-	if( (channel.name == "grid") ||
-	    (channel.name == "anode") ||
-	    (channel.name == "Ring1") ){
-	    anodeGridMembers.push_back(channelPtr);
-	}
-	if (channel.name == "grid"){
-	    anodeGridGroupMasterChannel = channel.number;
-	}
-	// but add every channel to trip group and ramping group
-	if (channel.name != "szintillator"){
-	    monitorTripMembers.push_back(channelPtr);
-	}
-	rampingMembers.push_back(channelPtr);
+        // now set channel event mask, voltages and currents
+        good = channelPtr->setVoltage(channel.voltageSet);
+	channelPtr->setVoltageBound(channel.voltageBound);
+        good = channelPtr->setCurrent(channel.currentSet);
+        if (good == false) return;
+        
+        // only add grid and anode to anode Grid group
+        if( (channel.name == "grid") ||
+            (channel.name == "anode") ||
+            (channel.name == "Ring1") ){
+            anodeGridMembers.push_back(channelPtr);
+        }
+        if (channel.name == "grid"){
+            anodeGridGroupMasterChannel = channel.number;
+        }
+        // but add every channel to trip group and ramping group
+        if (channel.name != "szintillator"){
+            monitorTripMembers.push_back(channelPtr);
+        }
+        rampingMembers.push_back(channelPtr);
     }
     
     // create flex groups
     hvSetGroup *anodeGridSetOnGroup;
     std::cout << "some stuff\n"
-	      << anodeGridGroupMasterChannel << std::endl;
+              << anodeGridGroupMasterChannel << std::endl;
     anodeGridSetOnGroup = new hvSetGroup(HV_module,
-					 "anodeGridSetOnGroup", 
-					 anodeGridMembers,
-					 anodeGridGroupNumber,
-					 anodeGridGroupMasterChannel);
+                                         "anodeGridSetOnGroup", 
+                                         anodeGridMembers,
+                                         anodeGridGroupNumber,
+                                         anodeGridGroupMasterChannel);
 
     hvMonitorGroup *monitorTripGroup;
     monitorTripGroup = new hvMonitorGroup(HV_module,
-					  "monitorTripGroup",
-					  monitorTripMembers,
-					  monitorTripGroupNumber);
+                                          "monitorTripGroup",
+                                          monitorTripMembers,
+                                          monitorTripGroupNumber);
 
-				    
+                                    
     hvStatusGroup *rampingGroup;
     rampingGroup = new hvStatusGroup(HV_module,
-				     "rampingGroup",
-				     rampingMembers,
-				     rampingGroupNumber);
+                                     "rampingGroup",
+                                     rampingMembers,
+                                     rampingGroupNumber);
 
     // now with our fancy groups, we can just set the options we would like to
     // set
@@ -458,17 +462,17 @@ void hvFadcManager::InitHFMForTOS(){
     // now clear the channel status as far as necessary
     good = ClearAllChannelEventStatus();
     if (good != true){
-	std::cout << "Could not reset Event status.\n" 
-		  << "Probably will not start ramping."
-		  << std::endl;
+        std::cout << "Could not reset Event status.\n" 
+                  << "Probably will not start ramping."
+                  << std::endl;
     }
 
     // and clear module event status
     good = HV_module->clearModuleEventStatusAndCheck();
     if (good != true){
-	std::cout << "Could not reset module event status.\n"
-		  << "Probably will not start ramping."
-		  << std::endl;
+        std::cout << "Could not reset module event status.\n"
+                  << "Probably will not start ramping."
+                  << std::endl;
     }
 
 
@@ -487,9 +491,9 @@ void hvFadcManager::InitHFMForTOS(){
     std::cout << "Do you wish to ramp up the channels now? (Y / n)" << std::endl;
     inputRamp = getUserInputNonNumericalDefault("> ", &allowedInputs);
     if ( (inputRamp == "") ||
-	 (inputRamp == "Y") ||
-	 (inputRamp == "y") ){
-	RampChannels(alreadyInBounds);
+         (inputRamp == "Y") ||
+         (inputRamp == "y") ){
+        RampChannels(alreadyInBounds);
     }
 
     _hvModInitFlag = true;
@@ -507,21 +511,21 @@ void hvFadcManager::RampChannels(bool alreadyInBounds){
 
     // create seperate thread, which loops and will be stopped, if we type stop in terminal
     if (alreadyInBounds == false){
-    	// now check if ramping started
-    	bool rampUpFlag = true;
-	std::thread loop_thread(&hvFadcManager::CheckModuleIsRamping, this, rampUpFlag);
-	_loop_stop = true;
-	//loop_thread.start();
-	const char *waitingPrompt = "> ";
-	std::set<std::string> allowedStrings = {"stop", "q"};
-	std::string input;
-	input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
-	if( (input != "stop") ||
-	    (input == "q") ){
-	    std::cout << "setting loop stop to false" << std::endl;
-	    _loop_stop = false;
-	}
-	loop_thread.join();
+        // now check if ramping started
+        bool rampUpFlag = true;
+        std::thread loop_thread(&hvFadcManager::CheckModuleIsRamping, this, rampUpFlag);
+        _loop_stop = true;
+        //loop_thread.start();
+        const char *waitingPrompt = "> ";
+        std::set<std::string> allowedStrings = {"stop", "q"};
+        std::string input;
+        input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
+        if( (input != "stop") ||
+            (input == "q") ){
+            std::cout << "setting loop stop to false" << std::endl;
+            _loop_stop = false;
+        }
+        loop_thread.join();
     }
 
 }
@@ -539,37 +543,32 @@ void hvFadcManager::CheckModuleIsRamping(bool rampUpFlag){
     bool doneChecking = false;
     
     while( (_loop_stop == true) &&
-	   (timeout > 0) &&
-	   (doneChecking == false) ){
-        // first we define bool variables, to check whether all channels are 
-        // on and ramping
-	bool allRamping = true;
-	bool allOn = true;
-        
-	// in this case we are ramping up
-	// print the current voltage and current
-	// and check whether the channels are on and voltage controlled
-	bool localControlled = true;
-	std::for_each( _channelList.begin(), _channelList.end(), [&localControlled, &rampUpFlag](hvChannel *ptrChannel){
-		ptrChannel->printVoltageAndCurrentMeasured();
+           (timeout > 0) &&
+           (doneChecking == false) ){
+        // in this case we are ramping up
+        // print the current voltage and current
+        // and check whether the channels are on and voltage controlled
+        bool localControlled = true;
+        std::for_each( _channelList.begin(), _channelList.end(), [&localControlled, &rampUpFlag](hvChannel *ptrChannel){
+                ptrChannel->printVoltageAndCurrentMeasured();
 
-		if (rampUpFlag == true){
-		    // if we ramp up, check for onVoltageControlledRamped
-		    localControlled *= ptrChannel->onVoltageControlledRamped(false);
-		}
-		else{
-		    // if we're ramping down, check for finishedRampingDown
-		    localControlled *= ptrChannel->finishedRampingDown();
-		}
-	    } );
+                if (rampUpFlag == true){
+                    // if we ramp up, check for onVoltageControlledRamped
+                    localControlled *= ptrChannel->onVoltageControlledRamped(false);
+                }
+                else{
+                    // if we're ramping down, check for finishedRampingDown
+                    localControlled *= ptrChannel->finishedRampingDown();
+                }
+            } );
 
-	// now set the allControlled by voltage bool to the local controlled bool
-	// thus we leave the while loop on next iteration, if all channels are on and
-	// controlled by voltage
-	doneChecking = localControlled;
+        // now set the allControlled by voltage bool to the local controlled bool
+        // thus we leave the while loop on next iteration, if all channels are on and
+        // controlled by voltage
+        doneChecking = localControlled;
         // wait 1000 milliseconds. Do not need super fast updates to printed values
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	timeout--;
+        timeout--;
     }
     if(timeout < 1){
         std::cout << "TIMEOUT: did not ramp up or down before timeout."
@@ -587,8 +586,8 @@ bool hvFadcManager::CheckAllChannelsInVoltageBound(){
     bool good = true;
 
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
-	    good *= ptrChannel->voltageInBounds();
-	} );
+            good *= ptrChannel->voltageInBounds();
+        } );
     
     return good;
 }
@@ -601,9 +600,9 @@ bool hvFadcManager::CheckToShutdown(){
 
     bool toShutdown = false;
     std::for_each( _channelList.begin(), _channelList.end(), [&toShutdown](hvChannel *ptrChannel){
-	    // we add to toShutdown, since if any channel is on, we need to shut it down
-	    toShutdown += ptrChannel->channelStatusNonZero();
-	} );
+            // we add to toShutdown, since if any channel is on, we need to shut it down
+            toShutdown += ptrChannel->channelStatusNonZero();
+        } );
 
     std::cout << "toShutdown " << toShutdown << std::endl;
     return toShutdown;
@@ -631,8 +630,8 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
         // these will be compared to the values of the last call
         // of this function
 
-	// TODO: event status variables currently not in use
-	//       might be a good idea to implement and check
+        // TODO: event status variables currently not in use
+        //       might be a good idea to implement and check
         // ChEventStatusSTRUCT gridEventStatus    = { };
         // ChEventStatusSTRUCT anodeEventStatus   = { };
         // ChEventStatusSTRUCT cathodeEventStatus = { };
@@ -645,25 +644,25 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
 
 
         // --------------------
-	// REPLACE CODE BY FUNCTION CALL TO hvModule!
+        // REPLACE CODE BY FUNCTION CALL TO hvModule!
 
-	bool good;
-	good = HV_module->isEventStatusGood();
-	if (good == false){
-	    if (verbose == true){
-		std::cout << "One event of the module was triggered. "
-			  << "Printing module event status"
-			  << std::endl;
-		HV_module->printEventStatus();
-	    }
-	    return -1;
+        bool good;
+        good = HV_module->isEventStatusGood();
+        if (good == false){
+            if (verbose == true){
+                std::cout << "One event of the module was triggered. "
+                          << "Printing module event status"
+                          << std::endl;
+                HV_module->printEventStatus();
+            }
+            return -1;
         }
-	// --------------------
+        // --------------------
 
 
-	// TODO: Check for tripping?
-	// std::cout << "One of the groups triggered an Event. Abort Run" << std::endl;
-	// std::cout << "Probably the module tripped." << std::endl;
+        // TODO: Check for tripping?
+        // std::cout << "One of the groups triggered an Event. Abort Run" << std::endl;
+        // std::cout << "Probably the module tripped." << std::endl;
 
 
         // this function basically only does the following:
@@ -673,28 +672,30 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
         // which should be set, if our module is at the set level
         // and isOn is set
 
-	std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
-		good *= ptrChannel->onVoltageControlledRamped();
-	    } );
-	if (good == false){
-	    std::cout << "One of the channels is not voltage controlled." << std::endl;
-	    return -1;
-	}
-	else if (good == true){
-	    // in this case the module is in good shape and all channels are ramped
-	    return 0;
-	}
+        std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
+                good *= ptrChannel->onVoltageControlledRamped();
+            } );
+        if (good == false){
+            std::cout << "One of the channels is not voltage controlled." << std::endl;
+            return -1;
+        }
+        else if (good == true){
+            // in this case the module is in good shape and all channels are ramped
+            return 0;
+        }
     }//end if (_createdFlag == true)
     else{
-	// this should prevent seg faults
-	return -1;
+        // this should prevent seg faults
+        return -1;
     }
 
+    std::cout << "This should never be reached." << std::endl;
+    return -1;
        
 // // ------------------------------
-// 	// REPLACE BY FUNCTION CALLS TO hvChannels from _channelList!!!
-// 	// ADD FUNCTION TO hvChannel isVoltageGood?! 
-	
+//      // REPLACE BY FUNCTION CALLS TO hvChannels from _channelList!!!
+//      // ADD FUNCTION TO hvChannel isVoltageGood?! 
+        
 //         float gridVoltageMeasured;  
 //         float anodeVoltageMeasured; 
 //         float cathodeVoltageMeasured;
@@ -704,29 +705,29 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
 //         cathodeVoltageMeasured = H_GetChannelVoltageMeasure(cathodeChannelNumber);
 
 //         if ((gridVoltageMeasured    >= 0.99*gridVoltageSet)  &&
-// 	    (anodeVoltageMeasured   >= 0.99*anodeVoltageSet) &&
-// 	    (cathodeVoltageMeasured >= 0.99*cathodeVoltageSet)){
-// 	    if (verbose == true){
-// 		std::cout << "All voltages within 1 percent of the set voltage." << std::endl;
-// 		std::cout << "Grid / V\t Anode / V\t Cathode / V\n"
-// 			  << gridVoltageMeasured << "\t\t " 
-// 			  << anodeVoltageMeasured << "\t\t "
-// 			  << cathodeVoltageMeasured << std::endl;
-// 	    }
+//          (anodeVoltageMeasured   >= 0.99*anodeVoltageSet) &&
+//          (cathodeVoltageMeasured >= 0.99*cathodeVoltageSet)){
+//          if (verbose == true){
+//              std::cout << "All voltages within 1 percent of the set voltage." << std::endl;
+//              std::cout << "Grid / V\t Anode / V\t Cathode / V\n"
+//                        << gridVoltageMeasured << "\t\t " 
+//                        << anodeVoltageMeasured << "\t\t "
+//                        << cathodeVoltageMeasured << std::endl;
+//          }
 //         }
 //         else{
-// 	    if (verbose == true){
-// 		std::cout << "Voltage outside of 1 percent of set voltage.\n" 
-// 			  << std::endl;
-// 	    }
-// 	    return -1;
+//          if (verbose == true){
+//              std::cout << "Voltage outside of 1 percent of set voltage.\n" 
+//                        << std::endl;
+//          }
+//          return -1;
 //         }
 // // ------------------------------
 
 
 // // ------------------------------
-// 	// REPLACE BY FUNCTION CALLS TO hvChannels from _channelList!!!
-// 	// CHECK 
+//      // REPLACE BY FUNCTION CALLS TO hvChannels from _channelList!!!
+//      // CHECK 
 
 //         ChStatusSTRUCT gridStatus    = { 0 };
 //         ChStatusSTRUCT anodeStatus   = { 0 };
@@ -736,37 +737,37 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
 //         cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
 
 //         if ((gridStatus.Bit.ControlledByVoltage    == 1) &&
-// 	    (gridStatus.Bit.isOn    == 1) &&
-// 	    (anodeStatus.Bit.ControlledByVoltage   == 1) &&
-// 	    (anodeStatus.Bit.isOn   == 1) &&
-// 	    (cathodeStatus.Bit.ControlledByVoltage == 1) &&
-// 	    (cathodeStatus.Bit.isOn == 1)){
-// 	    if (verbose == true){
-// 		std::cout << "All channels controlled by voltage and set to isOn.\n" 
-// 			  << "All good, continue run." << std::endl;
-// 	    }
-// 	    return 0;
+//          (gridStatus.Bit.isOn    == 1) &&
+//          (anodeStatus.Bit.ControlledByVoltage   == 1) &&
+//          (anodeStatus.Bit.isOn   == 1) &&
+//          (cathodeStatus.Bit.ControlledByVoltage == 1) &&
+//          (cathodeStatus.Bit.isOn == 1)){
+//          if (verbose == true){
+//              std::cout << "All channels controlled by voltage and set to isOn.\n" 
+//                        << "All good, continue run." << std::endl;
+//          }
+//          return 0;
 
 //         }
 //         else{
-// 	    if (verbose == true){
-// 		std::cout << "One or more channels not controlled by voltage or turned off.\n" 
-// 			  << "Probably module already tripped.\n" 
-// 			  << "See HV_error_log.txt for more information\n"
-// 			  << "Stopping run immediately." << std::endl;
-// 	    }
-// 	    return -1;
+//          if (verbose == true){
+//              std::cout << "One or more channels not controlled by voltage or turned off.\n" 
+//                        << "Probably module already tripped.\n" 
+//                        << "See HV_error_log.txt for more information\n"
+//                        << "Stopping run immediately." << std::endl;
+//          }
+//          return -1;
 //         }
 // // ------------------------------
-	
+        
     
 //     }//end if (_createdFlag == true)
 //     else{
-// 	// this should prevent seg faults
-// 	return -1;
+//      // this should prevent seg faults
+//      return -1;
 //     }
 
-	
+        
 }
 
 void hvFadcManager::sleepModule(int sleepTime, std::string unit){
@@ -774,20 +775,20 @@ void hvFadcManager::sleepModule(int sleepTime, std::string unit){
     // macro in header
     
     if (sleepTime == 0){
-	// if we hand default value of 0, we set the sleepTime
-	// to the member variable (which is set to the default given
-	// by a macro in the header)
-	sleepTime = _sleepTime;
+        // if we hand default value of 0, we set the sleepTime
+        // to the member variable (which is set to the default given
+        // by a macro in the header)
+        sleepTime = _sleepTime;
     }
     
     if (unit == "milliseconds"){
-	std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
     }
     else if (unit == "minutes"){
-	std::this_thread::sleep_for(std::chrono::minutes(sleepTime));
+        std::this_thread::sleep_for(std::chrono::minutes(sleepTime));
     }
     else{
-	std::cout << "Time unit currently not supported!" << std::endl;
+        std::cout << "Time unit currently not supported!" << std::endl;
     }
 }
 
@@ -803,16 +804,16 @@ void hvFadcManager::printAllChannelStatus(){
     // this function runs over the channel list and prints the channel
     // status for each
     std::for_each( _channelList.begin(), _channelList.end(), [](hvChannel *ptrChannel){
-	    ptrChannel->printChannelStatus();
-	} );
+            ptrChannel->printChannelStatus();
+        } );
 }
 
 void hvFadcManager::printAllChannelEventStatus(){
     // this function runs over the channel list and prints the channel
     // status for each
     std::for_each( _channelList.begin(), _channelList.end(), [](hvChannel *ptrChannel){
-	    ptrChannel->printChannelEventStatus();
-	} );
+            ptrChannel->printChannelEventStatus();
+        } );
 }
 
 void hvFadcManager::printModuleStatus(){
@@ -843,8 +844,8 @@ void hvFadcManager::H_DumpErrorLogToFile(int event){
 
     // prepare appending to file
     logfile << "\n" << "\n" 
-	    << "######################### NEW ENTRY #########################" 
-	    << "\n" << std::endl;
+            << "######################### NEW ENTRY #########################" 
+            << "\n" << std::endl;
 
     // the commented code below would be nicer, but is only supported from
     // gcc 5.2 onwards
@@ -869,56 +870,56 @@ void hvFadcManager::H_DumpErrorLogToFile(int event){
     cathodeEventStatus.Word = H_GetChannelEventStatus(cathodeChannelNumber);
 
     logfile << "##### Event Group Status #####\n"
-	    << "type: uint32_t \n"
-	    << "Each bit corresponds to one group. If a bit is set, the "
-	    << "corresponding group had an event\n"
-	    << "moduleEventGroupStatus: " << moduleEventGroupStatus << "\n\n";
+            << "type: uint32_t \n"
+            << "Each bit corresponds to one group. If a bit is set, the "
+            << "corresponding group had an event\n"
+            << "moduleEventGroupStatus: " << moduleEventGroupStatus << "\n\n";
     
     logfile << "##### Channel Event Status #####\n"
-	    << "Grid Event Status: \n"
-	    << "\t EventInputError:          " << gridEventStatus.Bit.EventInputError << "\n"
-	    << "\t EventOnToOff:             " << gridEventStatus.Bit.EventOnToOff << "\n"
-	    << "\t EventEndOfRamping:        " << gridEventStatus.Bit.EventEndOfRamping << "\n"
-	    << "\t EventEmergency:           " << gridEventStatus.Bit.EventEmergency << "\n"
-	    << "\t EventControlledByVoltage: " << gridEventStatus.Bit.EventControlledByVoltage << "\n"
-	    << "\t EventControlledByCurrent: " << gridEventStatus.Bit.EventControlledByCurrent << "\n"
-	    << "\t EventCurrentBounds:       " << gridEventStatus.Bit.EventCurrentBounds << "\n"
-	    << "\t EventExternalInhibit:     " << gridEventStatus.Bit.EventExternalInhibit << "\n"
-	    << "\t EventCurrentTrip:         " << gridEventStatus.Bit.EventCurrentTrip << "\n"
-	    << "\t EventCurrentLimit:        " << gridEventStatus.Bit.EventCurrentLimit << "\n"
-	    << "\t EventVoltageLimit:        " << gridEventStatus.Bit.EventVoltageLimit << "\n"
-	    << "\n";
+            << "Grid Event Status: \n"
+            << "\t EventInputError:          " << gridEventStatus.Bit.EventInputError << "\n"
+            << "\t EventOnToOff:             " << gridEventStatus.Bit.EventOnToOff << "\n"
+            << "\t EventEndOfRamping:        " << gridEventStatus.Bit.EventEndOfRamping << "\n"
+            << "\t EventEmergency:           " << gridEventStatus.Bit.EventEmergency << "\n"
+            << "\t EventControlledByVoltage: " << gridEventStatus.Bit.EventControlledByVoltage << "\n"
+            << "\t EventControlledByCurrent: " << gridEventStatus.Bit.EventControlledByCurrent << "\n"
+            << "\t EventCurrentBounds:       " << gridEventStatus.Bit.EventCurrentBounds << "\n"
+            << "\t EventExternalInhibit:     " << gridEventStatus.Bit.EventExternalInhibit << "\n"
+            << "\t EventCurrentTrip:         " << gridEventStatus.Bit.EventCurrentTrip << "\n"
+            << "\t EventCurrentLimit:        " << gridEventStatus.Bit.EventCurrentLimit << "\n"
+            << "\t EventVoltageLimit:        " << gridEventStatus.Bit.EventVoltageLimit << "\n"
+            << "\n";
    
     logfile << "Anode Event Status: \n"
-	    << "\t EventInputError:          " << anodeEventStatus.Bit.EventInputError << "\n"
-	    << "\t EventOnToOff:             " << anodeEventStatus.Bit.EventOnToOff << "\n"
-	    << "\t EventEndOfRamping:        " << anodeEventStatus.Bit.EventEndOfRamping << "\n"
-	    << "\t EventEmergency:           " << anodeEventStatus.Bit.EventEmergency << "\n"
-	    << "\t EventControlledByVoltage: " << anodeEventStatus.Bit.EventControlledByVoltage << "\n"
-	    << "\t EventControlledByCurrent: " << anodeEventStatus.Bit.EventControlledByCurrent << "\n"
-	    << "\t EventCurrentBounds:       " << anodeEventStatus.Bit.EventCurrentBounds << "\n"
-	    << "\t EventExternalInhibit:     " << anodeEventStatus.Bit.EventExternalInhibit << "\n"
-	    << "\t EventCurrentTrip:         " << anodeEventStatus.Bit.EventCurrentTrip << "\n"
-	    << "\t EventCurrentLimit:        " << anodeEventStatus.Bit.EventCurrentLimit << "\n"
-	    << "\t EventVoltageLimit:        " << anodeEventStatus.Bit.EventVoltageLimit << "\n"
-	    << "\n";
+            << "\t EventInputError:          " << anodeEventStatus.Bit.EventInputError << "\n"
+            << "\t EventOnToOff:             " << anodeEventStatus.Bit.EventOnToOff << "\n"
+            << "\t EventEndOfRamping:        " << anodeEventStatus.Bit.EventEndOfRamping << "\n"
+            << "\t EventEmergency:           " << anodeEventStatus.Bit.EventEmergency << "\n"
+            << "\t EventControlledByVoltage: " << anodeEventStatus.Bit.EventControlledByVoltage << "\n"
+            << "\t EventControlledByCurrent: " << anodeEventStatus.Bit.EventControlledByCurrent << "\n"
+            << "\t EventCurrentBounds:       " << anodeEventStatus.Bit.EventCurrentBounds << "\n"
+            << "\t EventExternalInhibit:     " << anodeEventStatus.Bit.EventExternalInhibit << "\n"
+            << "\t EventCurrentTrip:         " << anodeEventStatus.Bit.EventCurrentTrip << "\n"
+            << "\t EventCurrentLimit:        " << anodeEventStatus.Bit.EventCurrentLimit << "\n"
+            << "\t EventVoltageLimit:        " << anodeEventStatus.Bit.EventVoltageLimit << "\n"
+            << "\n";
 
     logfile << "Cathode Event Status: \n"
-	    << "\t EventInputError:          " << cathodeEventStatus.Bit.EventInputError << "\n"
-	    << "\t EventOnToOff:             " << cathodeEventStatus.Bit.EventOnToOff << "\n"
-	    << "\t EventEndOfRamping:        " << cathodeEventStatus.Bit.EventEndOfRamping << "\n"
-	    << "\t EventEmergency:           " << cathodeEventStatus.Bit.EventEmergency << "\n"
-	    << "\t EventControlledByVoltage: " << cathodeEventStatus.Bit.EventControlledByVoltage << "\n"
-	    << "\t EventControlledByCurrent: " << cathodeEventStatus.Bit.EventControlledByCurrent << "\n"
-	    << "\t EventCurrentBounds:       " << cathodeEventStatus.Bit.EventCurrentBounds << "\n"
-	    << "\t EventExternalInhibit:     " << cathodeEventStatus.Bit.EventExternalInhibit << "\n"
-	    << "\t EventCurrentTrip:         " << cathodeEventStatus.Bit.EventCurrentTrip << "\n"
-	    << "\t EventCurrentLimit:        " << cathodeEventStatus.Bit.EventCurrentLimit << "\n"
-	    << "\t EventVoltageLimit:        " << cathodeEventStatus.Bit.EventVoltageLimit << "\n"
-	    << "\n";
+            << "\t EventInputError:          " << cathodeEventStatus.Bit.EventInputError << "\n"
+            << "\t EventOnToOff:             " << cathodeEventStatus.Bit.EventOnToOff << "\n"
+            << "\t EventEndOfRamping:        " << cathodeEventStatus.Bit.EventEndOfRamping << "\n"
+            << "\t EventEmergency:           " << cathodeEventStatus.Bit.EventEmergency << "\n"
+            << "\t EventControlledByVoltage: " << cathodeEventStatus.Bit.EventControlledByVoltage << "\n"
+            << "\t EventControlledByCurrent: " << cathodeEventStatus.Bit.EventControlledByCurrent << "\n"
+            << "\t EventCurrentBounds:       " << cathodeEventStatus.Bit.EventCurrentBounds << "\n"
+            << "\t EventExternalInhibit:     " << cathodeEventStatus.Bit.EventExternalInhibit << "\n"
+            << "\t EventCurrentTrip:         " << cathodeEventStatus.Bit.EventCurrentTrip << "\n"
+            << "\t EventCurrentLimit:        " << cathodeEventStatus.Bit.EventCurrentLimit << "\n"
+            << "\t EventVoltageLimit:        " << cathodeEventStatus.Bit.EventVoltageLimit << "\n"
+            << "\n";
 
     logfile << "##### Module related #####\n"
-	    << "TO BE IMPLEMENTED \n\n";
+            << "TO BE IMPLEMENTED \n\n";
 
 }
 
@@ -936,7 +937,7 @@ void hvFadcManager::ShutDownHFMForTOS(){
     toShutdown = CheckToShutdown();
 
     if(toShutdown == true){
-	// TODO: rewrite the shutdown function!!!
+        // TODO: rewrite the shutdown function!!!
 
         std::cout << std::endl << "Starting shutdown of HV for TOS" << std::endl << std::endl;
         
@@ -960,10 +961,10 @@ void hvFadcManager::ShutDownHFMForTOS(){
         // channelControl.Bit.setON = 0;
         // H_SetChannelControl(cathodeChannelNumber, channelControl.Word);
 
-	// run over all channels and turn them off
-	std::for_each( _channelList.begin(), _channelList.end(), [](hvChannel *ptrChannel){
-		ptrChannel->turnOff();
-	    } );
+        // run over all channels and turn them off
+        std::for_each( _channelList.begin(), _channelList.end(), [](hvChannel *ptrChannel){
+                ptrChannel->turnOff();
+            } );
 
         // check if the module is ramping down
         bool rampUpFlag = false;
@@ -976,7 +977,7 @@ void hvFadcManager::ShutDownHFMForTOS(){
         // and set Kill Enable to 0
         moduleControl.Word = H_GetModuleControl();
         moduleControl.Bit.DoClear = 1;
-	// do not disable kill enable
+        // do not disable kill enable
         // moduleControl.Bit.SetKillEnable = 0;
         H_SetModuleControl(moduleControl.Word);
         
@@ -985,7 +986,7 @@ void hvFadcManager::ShutDownHFMForTOS(){
         _hvModInitFlag = false;
     }
     else{
-	std::cout << "HV was already shut down / not initialized yet." << std::endl;
+        std::cout << "HV was already shut down / not initialized yet." << std::endl;
     }
 
 }
@@ -1004,15 +1005,15 @@ bool hvFadcManager::ClearAllChannelEventStatus(){
     // before loop) with the result, good will only be true, if all channels return 
     // true
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
-	    good *= ptrChannel->clearChannelEventStatus();
-	} );
+            good *= ptrChannel->clearChannelEventStatus();
+        } );
     if(good == true){
-	std::cout << "All channels' ChannelEventStatus successfully reset." 
-		  << std::endl;
+        std::cout << "All channels' ChannelEventStatus successfully reset." 
+                  << std::endl;
     }
     else{
-	std::cout << "Could not reset ChannelEventStatus of one or more channels" 
-		  << std::endl;
+        std::cout << "Could not reset ChannelEventStatus of one or more channels" 
+                  << std::endl;
     }
     
     return good;
@@ -1027,54 +1028,54 @@ void hvFadcManager::H_SetNominalValues(){
     // only possible to call this function, if settings were read
     // and hv obj created
     if ((_createdFlag      == true) &&
-	(_settingsReadFlag == true)){
+        (_settingsReadFlag == true)){
         // first set module to stop, so we can set nominal voltages
         // get channel grid
-	HV_module->setStopModule(true);
+        HV_module->setStopModule(true);
 
         // now we can set the nominal values
         std::cout.precision(15);
         timeout = 1000;
-	bool good = true;
+        bool good = true;
         while(timeout > 0){
-	    if(HV_module->isStop() == true){
-		good = true;
-		// set voltages and currents for all channels
-		std::for_each( _channelList.begin(), _channelList.end(), [&good,this](hvChannel *ptrChannel){
-			if( ptrChannel->getChannelName() == "grid" ){
-			    good *= ptrChannel->setVoltageNominal(this->gridVoltageNominal);
-			    good *= ptrChannel->setCurrentNominal(this->gridCurrentNominal);
-			}
-			else if ( ptrChannel->getChannelName() == "anode" ){
-			    good *= ptrChannel->setVoltageNominal(this->anodeVoltageNominal);
-			    good *= ptrChannel->setCurrentNominal(this->anodeCurrentNominal);
-			}
-			else if ( ptrChannel->getChannelName() == "cathode" ){
-			    good *= ptrChannel->setVoltageNominal(this->cathodeVoltageNominal);
-			    good *= ptrChannel->setCurrentNominal(this->cathodeCurrentNominal);
-			}
-		    } );
-		
-		// if good is still true, after this, all channels could be set correctly
-		if (good == true){
-		    break;
-		}
-	    }
-	    HV_module->sleepModule();
-	    timeout--;
+            if(HV_module->isStop() == true){
+                good = true;
+                // set voltages and currents for all channels
+                std::for_each( _channelList.begin(), _channelList.end(), [&good,this](hvChannel *ptrChannel){
+                        if( ptrChannel->getChannelName() == "grid" ){
+                            good *= ptrChannel->setVoltageNominal(this->gridVoltageNominal);
+                            good *= ptrChannel->setCurrentNominal(this->gridCurrentNominal);
+                        }
+                        else if ( ptrChannel->getChannelName() == "anode" ){
+                            good *= ptrChannel->setVoltageNominal(this->anodeVoltageNominal);
+                            good *= ptrChannel->setCurrentNominal(this->anodeCurrentNominal);
+                        }
+                        else if ( ptrChannel->getChannelName() == "cathode" ){
+                            good *= ptrChannel->setVoltageNominal(this->cathodeVoltageNominal);
+                            good *= ptrChannel->setCurrentNominal(this->cathodeCurrentNominal);
+                        }
+                    } );
+                
+                // if good is still true, after this, all channels could be set correctly
+                if (good == true){
+                    break;
+                }
+            }
+            HV_module->sleepModule();
+            timeout--;
         }
         if (timeout == 0){
-        	std::cout << "ERROR: Could not set nominal Voltages / Currents" << std::endl;
-        	std::cout << "       Module did not enter IsStop == 1         " << std::endl;
+                std::cout << "ERROR: Could not set nominal Voltages / Currents" << std::endl;
+                std::cout << "       Module did not enter IsStop == 1         " << std::endl;
         }
 
         // now revert SetStop back to 0
-	HV_module->setStopModule(false);
+        HV_module->setStopModule(false);
     }
     else{
-	std::cout << "Before calling SetNominalValues() the Settings need to be correctly "
-		  << "read from the .ini file and the HV object has to be created.\n"
-		  << "Nominal values NOT set." << std::endl;
+        std::cout << "Before calling SetNominalValues() the Settings need to be correctly "
+                  << "read from the .ini file and the HV object has to be created.\n"
+                  << "Nominal values NOT set." << std::endl;
     }
 
 }
@@ -1121,14 +1122,14 @@ std::set<std::string> hvFadcManager::PrintActiveChannels(){
     
     std::cout << "isOn state of currently active channels (0 = off, 1 = on):" << std::endl;
     std::for_each( _channelList.begin(), _channelList.end(), [&allowedStrings](hvChannel *ptrChannel){
-	    // print channel information regarding on / off state
-	    ptrChannel->printChannelIsOn();
+            // print channel information regarding on / off state
+            ptrChannel->printChannelIsOn();
 
-	    // add channel number to allowed strings
-	    std::string number;
-	    number = std::to_string(ptrChannel->getChannelNumber());
-	    allowedStrings.insert(number);
-	} );
+            // add channel number to allowed strings
+            std::string number;
+            number = std::to_string(ptrChannel->getChannelNumber());
+            allowedStrings.insert(number);
+        } );
 
     return allowedStrings;    
 }
@@ -1149,24 +1150,24 @@ void hvFadcManager::TurnChannelOnOff(){
     std::string input;
     input = getUserInputNonNumericalNoDefault("> ", &allowedStrings);
     if(input == "quit"){
-	return;
+        return;
     }
     else{
-	// run over channelList and switch channel with name 'input'
-	std::for_each( _channelList.begin(), _channelList.end(), [&input](hvChannel *ptrChannel){
-		// get channel number
-		std::string number;
-		if (input != "all") {
-		    number = std::to_string(ptrChannel->getChannelNumber());
-		    // and switch correct channel
-		    if(input == number){
-			ptrChannel->switchOnOff();
-		    }
-		}
-		else{
-		    ptrChannel->switchOnOff();
-		}
-	    } );
+        // run over channelList and switch channel with name 'input'
+        std::for_each( _channelList.begin(), _channelList.end(), [&input](hvChannel *ptrChannel){
+                // get channel number
+                std::string number;
+                if (input != "all") {
+                    number = std::to_string(ptrChannel->getChannelNumber());
+                    // and switch correct channel
+                    if(input == number){
+                        ptrChannel->switchOnOff();
+                    }
+                }
+                else{
+                    ptrChannel->switchOnOff();
+                }
+            } );
     }
     
 }
@@ -1178,32 +1179,32 @@ bool hvFadcManager::ClearChannelEventStatus(){
     // create a set of allowed strings for input
     std::set<std::string> allowedStrings;
     std::for_each( _channelList.begin(), _channelList.end(), [&allowedStrings](hvChannel *ptrChannel){
-	    // print channel information
-	    ptrChannel->printChannelName();
+            // print channel information
+            ptrChannel->printChannelName();
 
-	    // add channel number to allowed strings
-	    std::string number;
-	    number = std::to_string(ptrChannel->getChannelNumber());
-	    allowedStrings.insert(number);
-	} );    
+            // add channel number to allowed strings
+            std::string number;
+            number = std::to_string(ptrChannel->getChannelNumber());
+            allowedStrings.insert(number);
+        } );    
 
     std::cout << "Select channel for which to clear event status / type quit: " << std::endl;
     std::string input;
     input = getUserInputNonNumericalNoDefault("> ", &allowedStrings);
     if(input == "quit"){
-	return good;
+        return good;
     }
     else{
-	// run over channelList and switch channel with name 'input'
-	std::for_each( _channelList.begin(), _channelList.end(), [&input, &good](hvChannel *ptrChannel){
-		// get channel number
-		std::string number;
-		number = std::to_string(ptrChannel->getChannelNumber());
-		// and switch correct channel
-		if(input == number){
-		    good = ptrChannel->clearChannelEventStatus();
-		}
-	    } );
+        // run over channelList and switch channel with name 'input'
+        std::for_each( _channelList.begin(), _channelList.end(), [&input, &good](hvChannel *ptrChannel){
+                // get channel number
+                std::string number;
+                number = std::to_string(ptrChannel->getChannelNumber());
+                // and switch correct channel
+                if(input == number){
+                    good = ptrChannel->clearChannelEventStatus();
+                }
+            } );
     }
 
     return good;    
@@ -1249,45 +1250,45 @@ void hvFadcManager::RunVoltageScheduler(std::string channelIdentifier, std::stri
     // using for_each we do not need to define an iterator, which runs over the whole list,
     // but can rather use a lambda function, which takes a pair (element of list) as argument
     std::for_each( _voltageScheduler.begin(), _voltageScheduler.end(), [&channelIdentifier, &groupIdentifier, this] (std::pair<int, int> voltagePair){
-	    // voltage pair should now be a pair of the _voltageScheduler
-	    float voltage = voltagePair.first;
-	    int time    = voltagePair.second;
+            // voltage pair should now be a pair of the _voltageScheduler
+            float voltage = voltagePair.first;
+            int time    = voltagePair.second;
 
-	    // now check whether we want to ramp group or channel
-	    if (groupIdentifier == ""){
-		// in this case we want to ramp a single channels
-		std::list<hvChannel *>::iterator it;
-		//it = _channelList.end();
-		for(it = _channelList.begin(); it != _channelList.end(); ++it){
-		    hvChannel *channel;
-		    channel = *it;
-		    if( channel->getChannelName() == channelIdentifier ){
-			// if we have the correct channel
-			channel->setVoltage(voltage);
-			// and set channel to on
-			channel->turnOn();
-		    }
-		}
-	    }
-	    else if(channelIdentifier == ""){
-		// if we want to ramp a whole group, set voltage for all channels of group
-		// get group first
-		std::list<hvFlexGroup *>::iterator itGroup;
-		for(itGroup = _flexGroupList.begin(); itGroup != _flexGroupList.end(); ++itGroup){
-		    hvFlexGroup *group;
-		    group = *itGroup;
-		    if( group->getGroupName() == groupIdentifier ){
-			// in this case we have the correct group, set voltage
-			group->setVoltageForGroup(voltage);
-		    }
-		}
-	    }
-	    
-	    // after we have set the voltage, make sure we're ramping
-	    CheckModuleIsRamping(true);
-	    // and if ramping is done, wait the time we want to wait 
-	    sleepModule(time, "minutes");
-	} );
+            // now check whether we want to ramp group or channel
+            if (groupIdentifier == ""){
+                // in this case we want to ramp a single channels
+                std::list<hvChannel *>::iterator it;
+                //it = _channelList.end();
+                for(it = _channelList.begin(); it != _channelList.end(); ++it){
+                    hvChannel *channel;
+                    channel = *it;
+                    if( channel->getChannelName() == channelIdentifier ){
+                        // if we have the correct channel
+                        channel->setVoltage(voltage);
+                        // and set channel to on
+                        channel->turnOn();
+                    }
+                }
+            }
+            else if(channelIdentifier == ""){
+                // if we want to ramp a whole group, set voltage for all channels of group
+                // get group first
+                std::list<hvFlexGroup *>::iterator itGroup;
+                for(itGroup = _flexGroupList.begin(); itGroup != _flexGroupList.end(); ++itGroup){
+                    hvFlexGroup *group;
+                    group = *itGroup;
+                    if( group->getGroupName() == groupIdentifier ){
+                        // in this case we have the correct group, set voltage
+                        group->setVoltageForGroup(voltage);
+                    }
+                }
+            }
+            
+            // after we have set the voltage, make sure we're ramping
+            CheckModuleIsRamping(true);
+            // and if ramping is done, wait the time we want to wait 
+            sleepModule(time, "minutes");
+        } );
     
     // well I kind of doubt that this works!
 }
@@ -1312,13 +1313,13 @@ bool hvFadcManager::CreateChannel(std::string channelName, int voltage){
     //good = newChannel->setCurrentNominal(DEFAULT_CURRENT_NOMINAL);
     // now set voltage and current
     good = newChannel->setVoltage(voltage);
-    good = newChannel->setVoltageBound(DEFAULT_VOLTAGE_BOUND);
+    newChannel->setVoltageBound(DEFAULT_VOLTAGE_BOUND);
     good = newChannel->setCurrent(DEFAULT_CURRENT_SET);
 
     // and finally add channel to channel list
     std::cout << "adding channel " << channelName
-	      << " # " << channelNumber
-	      << std::endl;
+              << " # " << channelNumber
+              << std::endl;
     AddChannel(newChannel);
 
     return good;
@@ -1331,17 +1332,17 @@ void hvFadcManager::RemoveChannelByNumber(int channelNumber){
     // loop over channel list, check if channel with name channelNumber
     // exists, if so pop it
     std::for_each( _channelList.begin(), _channelList.end(), [&channelNumber, this](hvChannel *ptrChannel){
-	    int number;
-	    number = ptrChannel->getChannelNumber();
+            int number;
+            number = ptrChannel->getChannelNumber();
 
-	    if (number == channelNumber){
-		// first remove the element from the list
-		this->_channelList.remove(ptrChannel);
-		// and then delete the channel, thus shutting it down
-		ptrChannel->SetRampDownUponDelete(true);
-		delete(ptrChannel);		
-	    }
-	} );
+            if (number == channelNumber){
+                // first remove the element from the list
+                this->_channelList.remove(ptrChannel);
+                // and then delete the channel, thus shutting it down
+                ptrChannel->SetRampDownUponDelete(true);
+                delete(ptrChannel);             
+            }
+        } );
 
     // all good
 }
@@ -1353,17 +1354,17 @@ void hvFadcManager::RemoveChannelByName(std::string channelName){
     // loop over channel list, check if channel with name channelName
     // exists, if so pop it
     std::for_each( _channelList.begin(), _channelList.end(), [&channelName, this](hvChannel *ptrChannel){
-	    std::string name;
-	    name = ptrChannel->getChannelName();
+            std::string name;
+            name = ptrChannel->getChannelName();
 
-	    if (name == channelName){
-		// first remove the element from the list
-		this->_channelList.remove(ptrChannel);
-		// and then delete the channel, thus shutting it down
-		ptrChannel->SetRampDownUponDelete(true);
-		delete(ptrChannel);		
-	    }
-	} );
+            if (name == channelName){
+                // first remove the element from the list
+                this->_channelList.remove(ptrChannel);
+                // and then delete the channel, thus shutting it down
+                ptrChannel->SetRampDownUponDelete(true);
+                delete(ptrChannel);             
+            }
+        } );
 
     // all good
 }
@@ -1372,36 +1373,36 @@ void hvFadcManager::PrintChannel(int channelNumber){
     // this function calls the basic printing function of the channel
     // with channel number channelNumber
     std::for_each( _channelList.begin(), _channelList.end(), [&channelNumber](hvChannel *ptrChannel){
-	    int number;
-	    number = ptrChannel->getChannelNumber();
-	    if (number == channelNumber){
-		// call the printing function
-		ptrChannel->printChannel();
-	    }
-	} );    
+            int number;
+            number = ptrChannel->getChannelNumber();
+            if (number == channelNumber){
+                // call the printing function
+                ptrChannel->printChannel();
+            }
+        } );    
     
 }
 
 void hvFadcManager::SetChannelValue(std::string key, int channelNumber, std::string value){
     // this function sets voltage, current, or nominal values of a specific channel
     std::for_each( _channelList.begin(), _channelList.end(), [&channelNumber, &key, &value](hvChannel *ptrChannel){
-	    int number;
-	    number = ptrChannel->getChannelNumber();
-	    if (number == channelNumber){
-		if (key == "voltage"){
-		    ptrChannel->setVoltage(std::stoi(value));
-		}
-		else if (key == "voltageNominal"){
-		    ptrChannel->setVoltageNominal(std::stoi(value));
-		}
-		else if (key == "current"){
-		    ptrChannel->setCurrent(std::stod(value));
-		}
-		else if (key == "currentNominal"){
-		    ptrChannel->setCurrent(std::stod(value));
-		}
-	    }
-	} );        
+            int number;
+            number = ptrChannel->getChannelNumber();
+            if (number == channelNumber){
+                if (key == "voltage"){
+                    ptrChannel->setVoltage(std::stoi(value));
+                }
+                else if (key == "voltageNominal"){
+                    ptrChannel->setVoltageNominal(std::stoi(value));
+                }
+                else if (key == "current"){
+                    ptrChannel->setCurrent(std::stod(value));
+                }
+                else if (key == "currentNominal"){
+                    ptrChannel->setCurrent(std::stod(value));
+                }
+            }
+        } );        
 
 }
 
@@ -1456,20 +1457,20 @@ void hvFadcManager::StartFadcPedestalRun(){
     int nChannels = 4;
 
     for (int i = 0; i < fadcPedestalNumRuns; i++){
-	// we start by performing general reset of FADC
-	F_Reset();
-	// now set up FADC in the same way we're going to use it for data taking
-	SetFadcSettings();
-	// now start FADC acquisition
-	F_StartAcquisition();
-	// wait for time read from HFM_settings.ini
+        // we start by performing general reset of FADC
+        F_Reset();
+        // now set up FADC in the same way we're going to use it for data taking
+        SetFadcSettings();
+        // now start FADC acquisition
+        F_StartAcquisition();
+        // wait for time read from HFM_settings.ini
         std::this_thread::sleep_for(std::chrono::milliseconds(fadcPedestalRunTime));
-	// send software trigger to stop acquisition
-	F_SendSoftwareTrigger();
-	// and read the data
-	std::vector<int> fadcData = F_GetAllData(nChannels);
-	// and add data to pedestalRunList
-	pedestalRunList.push_front(fadcData);
+        // send software trigger to stop acquisition
+        F_SendSoftwareTrigger();
+        // and read the data
+        std::vector<int> fadcData = F_GetAllData(nChannels);
+        // and add data to pedestalRunList
+        pedestalRunList.push_front(fadcData);
     }
 
     // once we're done with all pedestal runs, we can calculate the mean value of each value
@@ -1480,12 +1481,12 @@ void hvFadcManager::StartFadcPedestalRun(){
     // very wrong!)
     meanFadcData.resize( pedestalRunList.front().size(), 0);
     std::for_each( pedestalRunList.begin(),
-		   pedestalRunList.end(),
-		   [&meanFadcData, this](std::vector<int> fadcData){
-	    for(int i = 0; i < fadcData.size(); i++){
-		meanFadcData[i] += fadcData[i] / this->fadcPedestalNumRuns;
-	    }
-	} );
+                   pedestalRunList.end(),
+                   [&meanFadcData, this](std::vector<int> fadcData){
+            for(unsigned int i = 0; i < fadcData.size(); i++){
+                meanFadcData[i] += fadcData[i] / this->fadcPedestalNumRuns;
+            }
+        } );
 
     // get the fadc parameter map (needed for header of output file)
     std::map<std::string, int> fadcParams;
@@ -1510,12 +1511,12 @@ std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunF
     // TODO: finish this function as to use it for all cases?
 
     if( (filePath == "") &&
-	(pedestalRunFlag == true) ){
-	filePath = "data/pedestalRuns/";
+        (pedestalRunFlag == true) ){
+        filePath = "data/pedestalRuns/";
     }
     else if( (filePath == "") &&
-	     (pedestalRunFlag == false) ){
-	filePath = "data/singleFrames/";
+             (pedestalRunFlag == false) ){
+        filePath = "data/singleFrames/";
     }
 
     std::stringstream buildFileName;
@@ -1523,21 +1524,21 @@ std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunF
 
     //FIXME!!
     if (pedestalRunFlag == true){
-	// depending on whether it is a pedestal run, the filename will start with...
-	buildFileName << "pedestalRun";
+        // depending on whether it is a pedestal run, the filename will start with...
+        buildFileName << "pedestalRun";
     }
     else{
-	// ... or ... 
-	buildFileName << "/data";	
+        // ... or ... 
+        buildFileName << "/data";       
     }
     buildFileName << std::setw(6) << std::setfill('0') << eventNumber
-		  << ".txt";
+                  << ".txt";
 
     fileName = filePath + buildFileName.str();
 
     if (pedestalRunFlag == true){
-	// in case this is a pedestal run also append the fadc flag
-	fileName += "-fadc";
+        // in case this is a pedestal run also append the fadc flag
+        fileName += "-fadc";
     }
 
     return fileName;    
@@ -1565,47 +1566,47 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
         //write data to output file
         if( outFile.is_open() )
         {
-    	//write petrig/postrig/etc to file
-    	outFile << "# nb of channels: "  << fadcParams["NumChannels"]  << std::endl;
-    	outFile << "# channel mask: "    << fadcParams["ChannelMask"]  << std::endl;
-    	outFile << "# postrig: "         << fadcParams["PostTrig"]     << std::endl;
-    	outFile << "# pretrig: "         << fadcParams["PreTrig"]      << std::endl;
-    	outFile << "# triggerrecord: "   << fadcParams["TriggerRec"]   << std::endl;
-    	outFile << "# frequency: "       << fadcParams["Frequency"]    << std::endl;
-    	outFile << "# sampling mode: "   << fadcParams["ModeRegister"] << std::endl;
-    	outFile << "# pedestal run: "    << fadcParams["PedestalRun"]  << std::endl;
-    	outFile << "#Data:" << std::endl;
+        //write petrig/postrig/etc to file
+        outFile << "# nb of channels: "  << fadcParams["NumChannels"]  << std::endl;
+        outFile << "# channel mask: "    << fadcParams["ChannelMask"]  << std::endl;
+        outFile << "# postrig: "         << fadcParams["PostTrig"]     << std::endl;
+        outFile << "# pretrig: "         << fadcParams["PreTrig"]      << std::endl;
+        outFile << "# triggerrecord: "   << fadcParams["TriggerRec"]   << std::endl;
+        outFile << "# frequency: "       << fadcParams["Frequency"]    << std::endl;
+        outFile << "# sampling mode: "   << fadcParams["ModeRegister"] << std::endl;
+        outFile << "# pedestal run: "    << fadcParams["PedestalRun"]  << std::endl;
+        outFile << "#Data:" << std::endl;
 
 
-    	// TODO: why unsigned int used? problematic, since channels is int.
-    	// -> changed iData and iVector to int
-    	//"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
-    	std::cout << "number of channels?! " << channels << std::endl;
-    	for(int iData = 0; iData < 3*channels; iData++)
-    	    outFile << "#" << fadcData[iData] << std::endl;
+        // TODO: why unsigned int used? problematic, since channels is int.
+        // -> changed iData and iVector to int
+        //"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
+        std::cout << "number of channels?! " << channels << std::endl;
+        for(int iData = 0; iData < 3*channels; iData++)
+            outFile << "#" << fadcData[iData] << std::endl;
         
-    	//print the actual data to file
-    	for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
-    	    outFile << fadcData[iVector] << std::endl;
+        //print the actual data to file
+        for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
+            outFile << fadcData[iVector] << std::endl;
               
-    	//"skip the remaining data points
-    	for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
-    	    outFile << "# " << fadcData.at(iRest) << std::endl;
+        //"skip the remaining data points
+        for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
+            outFile << "# " << fadcData.at(iRest) << std::endl;
 
-    	good = true;
+        good = true;
 
         }//end of if( outFile.is_open() )
         else{
-    	// could not write to file
-    	good = false;
+        // could not write to file
+        good = false;
         }
 
         //close output file
         outFile.close();
     }
     else{
-	std::cout << "FADC is not active. Call ActivateHFM and SetFadcSettings before starting readout."
-		  << std::endl;
+        std::cout << "FADC is not active. Call ActivateHFM and SetFadcSettings before starting readout."
+                  << std::endl;
     }
 
     return good;
@@ -1708,38 +1709,38 @@ void hvFadcManager::ReadHVSettings(){
     // now loop over HvChannels section to create all of the channels
     int nHvChannels = 0;
     for (auto& key : pt.get_child("HvChannels")) {
-	std::cout << key.first << "=" << key.second.get_value<std::string>() << "\n";
-	// set the nHvChannels variable to the number of elements in the dummyChannelVector
-	// minus 1, so that we can use nHvChannels to access the elements of the list
-	nHvChannels = _dummyChannelVector.size() - 1;
-	
-	if (key.first.find("Name") != std::string::npos){
-	    // if Name is in the current key, we add a new dummy channel to the dummyChannelVector
-	    dummyHvChannel channel;
-	    channel.name = key.second.get_value<std::string>();
-	    _dummyChannelVector.push_back(channel);
-	}
-	else if(key.first.find("Number") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].number         = key.second.get_value<int>();
-	}
-	else if(key.first.find("VoltageSet") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].voltageSet     = key.second.get_value<float>();
-	}
-	else if(key.first.find("VoltageNominal") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].voltageNominal = key.second.get_value<float>();
-	}
-	else if(key.first.find("VoltageBound") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].voltageBound   = key.second.get_value<float>();
-	}
-	else if(key.first.find("CurrentSet") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].currentSet     = key.second.get_value<float>();
-	}
-	else if(key.first.find("CurrentNominal") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].currentNominal = key.second.get_value<float>();
-	}
-	else if(key.first.find("CurrentBound") != std::string::npos){
-	    _dummyChannelVector[nHvChannels].currentBound   = key.second.get_value<float>();
-	}
+        std::cout << key.first << "=" << key.second.get_value<std::string>() << "\n";
+        // set the nHvChannels variable to the number of elements in the dummyChannelVector
+        // minus 1, so that we can use nHvChannels to access the elements of the list
+        nHvChannels = _dummyChannelVector.size() - 1;
+        
+        if (key.first.find("Name") != std::string::npos){
+            // if Name is in the current key, we add a new dummy channel to the dummyChannelVector
+            dummyHvChannel channel;
+            channel.name = key.second.get_value<std::string>();
+            _dummyChannelVector.push_back(channel);
+        }
+        else if(key.first.find("Number") != std::string::npos){
+            _dummyChannelVector[nHvChannels].number         = key.second.get_value<int>();
+        }
+        else if(key.first.find("VoltageSet") != std::string::npos){
+            _dummyChannelVector[nHvChannels].voltageSet     = key.second.get_value<float>();
+        }
+        else if(key.first.find("VoltageNominal") != std::string::npos){
+            _dummyChannelVector[nHvChannels].voltageNominal = key.second.get_value<float>();
+        }
+        else if(key.first.find("VoltageBound") != std::string::npos){
+            _dummyChannelVector[nHvChannels].voltageBound   = key.second.get_value<float>();
+        }
+        else if(key.first.find("CurrentSet") != std::string::npos){
+            _dummyChannelVector[nHvChannels].currentSet     = key.second.get_value<float>();
+        }
+        else if(key.first.find("CurrentNominal") != std::string::npos){
+            _dummyChannelVector[nHvChannels].currentNominal = key.second.get_value<float>();
+        }
+        else if(key.first.find("CurrentBound") != std::string::npos){
+            _dummyChannelVector[nHvChannels].currentBound   = key.second.get_value<float>();
+        }
     }
     
     _settingsReadFlag = true;
@@ -1794,7 +1795,7 @@ int hvFadcManager::GetFadcTriggerInLastFrame(){
 // #############################################################################
 
 void hvFadcManager::SetScintillatorCounters(unsigned short scint1_counter,
-					    unsigned short scint2_counter){
+                                            unsigned short scint2_counter){
     // this function sets the global timepix variables for the scintillor counters,
     // which count the number of clock cycles between the last scintillator signals
     // and the FADC trigger, which ended the shutter
@@ -2289,8 +2290,8 @@ void         hvFadcManager::F_StartAcquisition() throw(){
     std::this_thread::sleep_for(std::chrono::microseconds(_sleepAcqTime));
     FADC_module->startAcquisition();
     if (_sleepTriggerTime != 0){
-	std::this_thread::sleep_for(std::chrono::microseconds(_sleepTriggerTime));
-	F_SendSoftwareTrigger();
+        std::this_thread::sleep_for(std::chrono::microseconds(_sleepTriggerTime));
+        F_SendSoftwareTrigger();
     }
 }
 

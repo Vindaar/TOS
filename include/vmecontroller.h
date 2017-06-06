@@ -8,17 +8,17 @@
 class CVmeController
 {
 public:
-	CVmeController();
-	virtual ~CVmeController();
+    CVmeController();
+    virtual ~CVmeController();
 
-	virtual bool initController(int controllerNumber);
-	virtual bool closeController(void);
-	virtual QString errorString(void);
-	virtual QString controllerName(void);
-	virtual QString information(void);
+    virtual bool initController(int);
+    virtual bool closeController(void);
+    virtual QString errorString(void);
+    virtual QString controllerName(void);
+    virtual QString information(void);
 
-	virtual void writeShort(int vmeAddress, int addressModifier, int data, int *errorCode = NULL);
-	virtual int  readShort(int vmeAddress, int addressModifier, int *errorCode = NULL);
+    virtual void writeShort(int, int, int, int * = NULL);
+    virtual int  readShort(int, int, int * = NULL);
 };
 
 #endif // __VMECONTROLLER_H

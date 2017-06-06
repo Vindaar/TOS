@@ -4,177 +4,177 @@
 
 CVmUsb::CVmUsb()
 {
-	udev = NULL;
+    udev = NULL;
 
 #ifdef Q_OS_LINUX
-	const QString libName = "xx_usb";
+    const QString libName = "xx_usb";
 #else
-	const QString libName = "libxxusb";
+    const QString libName = "libxxusb";
 #endif
 
-	lib = new QLibrary(libName);
-	lib->load();
+    lib = new QLibrary(libName);
+    lib->load();
 
-	if ( (lib) && (lib->isLoaded()) ) {
-		qDebug() << lib->fileName() << "loaded";
+    if ( (lib) && (lib->isLoaded()) ) {
+	qDebug() << lib->fileName() << "loaded";
 
-		xxusbDevicesFind = (t_xxusbDevicesFind) lib->resolve("xxusb_devices_find");
-		qDebug("xxusbDevicesFind = 0x%X", (long int)xxusbDevicesFind);
+	xxusbDevicesFind = (t_xxusbDevicesFind) lib->resolve("xxusb_devices_find");
+	qDebug("xxusbDevicesFind = 0x%lX", (long int)xxusbDevicesFind);
 
-		xxusbDeviceOpen = (t_xxusbDeviceOpen) lib->resolve("xxusb_device_open");
-		qDebug("xxusbDeviceOpen = 0x%X", (long int)xxusbDeviceOpen);
+	xxusbDeviceOpen = (t_xxusbDeviceOpen) lib->resolve("xxusb_device_open");
+	qDebug("xxusbDeviceOpen = 0x%lX", (long int)xxusbDeviceOpen);
 
-		xxusbDeviceClose = (t_xxusbDeviceClose) lib->resolve("xxusb_device_close");
-		qDebug("xxusbDeviceClose = 0x%X", (long int)xxusbDeviceClose);
+	xxusbDeviceClose = (t_xxusbDeviceClose) lib->resolve("xxusb_device_close");
+	qDebug("xxusbDeviceClose = 0x%lX", (long int)xxusbDeviceClose);
 
-		vmeRead16 = (t_vmeRead16) lib->resolve("VME_read_16");
-		qDebug("vmeRead16 = 0x%X", (long int)vmeRead16);
+	vmeRead16 = (t_vmeRead16) lib->resolve("VME_read_16");
+	qDebug("vmeRead16 = 0x%lX", (long int)vmeRead16);
 
-		vmeWrite16 = (t_vmeWrite16) lib->resolve("VME_write_16");
-		qDebug("vmeWrite16 = 0x%X", (long int)vmeWrite16);
+	vmeWrite16 = (t_vmeWrite16) lib->resolve("VME_write_16");
+	qDebug("vmeWrite16 = 0x%lX", (long int)vmeWrite16);
 
-		vmeRead32 = (t_vmeRead32) lib->resolve("VME_read_32");
-		qDebug("vmeRead32 = 0x%X", (long int)vmeRead32);
+	vmeRead32 = (t_vmeRead32) lib->resolve("VME_read_32");
+	qDebug("vmeRead32 = 0x%lX", (long int)vmeRead32);
 
-		vmeWrite32 = (t_vmeWrite32) lib->resolve("VME_write_32");
-		qDebug("vmeWrite32 = 0x%X", (long int)vmeWrite32);
+	vmeWrite32 = (t_vmeWrite32) lib->resolve("VME_write_32");
+	qDebug("vmeWrite32 = 0x%lX", (long int)vmeWrite32);
 
-		vmeBltRead32 = (t_vmeBltRead32) lib->resolve("VME_BLT_read_32");
-		qDebug("vmeBltRead32 = 0x%X", (long int)vmeBltRead32);
+	vmeBltRead32 = (t_vmeBltRead32) lib->resolve("VME_BLT_read_32");
+	qDebug("vmeBltRead32 = 0x%lX", (long int)vmeBltRead32);
 
-		if (!xxusbDevicesFind || !xxusbDeviceOpen || !xxusbDeviceClose || !vmeRead16 || !vmeWrite16 || !vmeRead32 || !vmeWrite32 || !vmeBltRead32) {
-			ErrorString = "Error while loading shared library '" + libName + "'!";
-			lib->unload();
-			delete lib;
-			lib = NULL;
+	if (!xxusbDevicesFind || !xxusbDeviceOpen || !xxusbDeviceClose || !vmeRead16 || !vmeWrite16 || !vmeRead32 || !vmeWrite32 || !vmeBltRead32) {
+	    ErrorString = "Error while loading shared library '" + libName + "'!";
+	    lib->unload();
+	    delete lib;
+	    lib = NULL;
 
-			/// ERROR!
-		}
-
-	} else {
-		qDebug() << lib->errorString();
-		ErrorString = lib->errorString();
-		delete lib;
-		lib = NULL;
-
-		/// TODO give the errors back to VmeControl
+	    /// ERROR!
 	}
+
+    } else {
+	qDebug() << lib->errorString();
+	ErrorString = lib->errorString();
+	delete lib;
+	lib = NULL;
+
+	/// TODO give the errors back to VmeControl
+    }
 }
 
 CVmUsb::~CVmUsb()
 {
-	if ((lib)) {
-		lib->unload();
-		delete lib;
-		lib = NULL;
-	}
+    if ((lib)) {
+	lib->unload();
+	delete lib;
+	lib = NULL;
+    }
 }
 
 /*QStringList CVmUsb::enumControllers(void)
-{
-	QString controllerName;
-	QStringList controllerList;
-	xxusb_device_type devices[32]; // should be enough
+  {
+  QString controllerName;
+  QStringList controllerList;
+  xxusb_device_type devices[32]; // should be enough
 
-	if ( (libxxusb) && (libxxusb->isLoaded())) {
+  if ( (libxxusb) && (libxxusb->isLoaded())) {
 
-		// Find XX_USB devices and open the first one found
-		int deviceCount = xxusbDevicesFind(devices);
+  // Find XX_USB devices and open the first one found
+  int deviceCount = xxusbDevicesFind(devices);
 
-		for (int i = 0; i < deviceCount; i++) {
-			controllerName = devices[i].SerialString;
-			controllerList << controllerName;
-		}
-	}
+  for (int i = 0; i < deviceCount; i++) {
+  controllerName = devices[i].SerialString;
+  controllerList << controllerName;
+  }
+  }
 
-	return controllerList;
-}*/
+  return controllerList;
+  }*/
 
 bool CVmUsb::initController(int controllerNumber)
 {
-	xxusb_device_type devices[32]; // should be enough
+    xxusb_device_type devices[32]; // should be enough
 
-	if ((!lib)) {
-		return false;
-	}
+    if ((!lib)) {
+	return false;
+    }
 
-	int deviceCount = xxusbDevicesFind(devices);
+    int deviceCount = xxusbDevicesFind(devices);
 
-	// no controllers found
-	if (controllerNumber >= deviceCount) {
-		ErrorString = QString("No VM-USB controller # %1 found!") .arg(controllerNumber);
-		return false;
-	}
+    // no controllers found
+    if (controllerNumber >= deviceCount) {
+	ErrorString = QString("No VM-USB controller # %1 found!") .arg(controllerNumber);
+	return false;
+    }
 
-	// Open the device
-	udev = xxusbDeviceOpen(devices[controllerNumber].usbdev);
+    // Open the device
+    udev = xxusbDeviceOpen(devices[controllerNumber].usbdev);
 
-	serialNumber = QString("%s") .arg(devices[controllerNumber].SerialString);
+    serialNumber = QString("%s") .arg(devices[controllerNumber].SerialString);
 
-	return true;
+    return true;
 }
 
 /*bool CVmUsb::initController(QString controllerName)
-{
-	return true;
-}*/
+  {
+  return true;
+  }*/
 
 void CVmUsb::writeShort(int vmeAddress, int addressModifier, int data, int *errorCode)
 {
-	int result = -1;
+    int result = -1;
 
-	if ( (lib) && (udev) ) {
-		result = vmeWrite16(udev, addressModifier, vmeAddress, data);
-	}
+    if ( (lib) && (udev) ) {
+	result = vmeWrite16(udev, addressModifier, vmeAddress, data);
+    }
 
-	if ((errorCode)) {
-		*errorCode = result;
-	}
+    if ((errorCode)) {
+	*errorCode = result;
+    }
 }
 
 int CVmUsb::readShort(int vmeAddress, int addressModifier, int *errorCode)
 {
-	long data = 0;
-	int  result = -1;
+    long data = 0;
+    int  result = -1;
 
-	if ( (lib) && (udev) ) {
-		result = vmeRead16(udev, addressModifier, vmeAddress, &data);
-	}
+    if ( (lib) && (udev) ) {
+	result = vmeRead16(udev, addressModifier, vmeAddress, &data);
+    }
 
-	if ((errorCode)) {
-		*errorCode = result;
-	}
+    if ((errorCode)) {
+	*errorCode = result;
+    }
 
-	return data;
+    return data;
 }
 
 void CVmUsb::writeLong(int vmeAddress, int addressModifier, int data, int *errorCode)
 {
-	int result = -1;
+    int result = -1;
 
-	if ( (lib) && (udev) ) {
-		result = vmeWrite32(udev, addressModifier, vmeAddress, data);
-	}
+    if ( (lib) && (udev) ) {
+	result = vmeWrite32(udev, addressModifier, vmeAddress, data);
+    }
 
-	if ((errorCode)) {
-		*errorCode = result;
-	}
+    if ((errorCode)) {
+	*errorCode = result;
+    }
 }
 
 int CVmUsb::readLong(int vmeAddress, int addressModifier, int *errorCode)
 {
-	long data = 0;
-	int  result = -1;
+    long data = 0;
+    int  result = -1;
 
-	if ( (lib) && (udev) ) {
-		result = vmeRead32(udev, addressModifier, vmeAddress, &data);
-	}
+    if ( (lib) && (udev) ) {
+	result = vmeRead32(udev, addressModifier, vmeAddress, &data);
+    }
 
-	if ((errorCode)) {
-		*errorCode = result;
-	}
+    if ((errorCode)) {
+	*errorCode = result;
+    }
 
-	return data;
+    return data;
 }
 
 std::vector<int> CVmUsb::readBlock32( int addr, int nWords, int addrMod)
@@ -182,76 +182,80 @@ std::vector<int> CVmUsb::readBlock32( int addr, int nWords, int addrMod)
 /* Function taken directly from Interface.h from Thorsten Krautscheid 
    uses functions defined in libxxusb.h directly */
     
-  if( udev < 0 )
-  {
-    return std::vector<int>();
-  }
+    if( udev != 0 )
+    {
+	return std::vector<int>();
+    }
 
-  long tempData[nWords];
-  
-  int result = vmeBltRead32( udev, addrMod, nWords, addr, tempData );
+    //long tempData[nWords];
+    long *tempData;
+    tempData = (long *) malloc(nWords * sizeof(long));
+    
+    int result = vmeBltRead32( udev, addrMod, nWords, addr, tempData );
 
-  std::cout << "Result: " << result << std::endl;
+    std::cout << "Result: " << result << std::endl;
 
 
-  std::vector<int> data;
-  data.assign( &tempData[0], &tempData[0] + nWords );
+    std::vector<int> data;
+    // NOTE: make sure & is correct here
+    data.assign( &tempData[0], &tempData[0] + nWords );
 
-  unsigned iData = 0;
+    unsigned iData = 0;
 
-  while( iData < data.size() )
-  {
-    int word = data[iData];
+    while( iData < data.size() )
+    {
+	int word = data[iData];
 
-    int LSB = word & 8191;
-    int MSB = (word >> 16) & 8191;
+	int LSB = word & 8191;
+	int MSB = (word >> 16) & 8191;
 
-    std::cout << "3: " << std::setw(4) << MSB << "\t 2: " << std::setw(5) << LSB ;
+	std::cout << "3: " << std::setw(4) << MSB << "\t 2: " << std::setw(5) << LSB ;
 
-    ++iData;
+	++iData;
 
-    word = data[iData];
+	word = data[iData];
 
-    LSB = word & 8191;
-    MSB = (word >> 16) & 8191;
+	LSB = word & 8191;
+	MSB = (word >> 16) & 8191;
 
-    std::cout << "\t 1: " << std::setw(5) << MSB << "\t 0: " << std::setw(5) << LSB << std::endl;
+	std::cout << "\t 1: " << std::setw(5) << MSB << "\t 0: " << std::setw(5) << LSB << std::endl;
 
-    ++iData;
-  }
+	++iData;
+    }
 
-  return data;
+    free(tempData);
+    return data;
 }
 
 
 bool CVmUsb::closeController(void)
 {
-	if ( (lib) && (udev) ) {
-		xxusbDeviceClose(udev);
-	}
+    if ( (lib) && (udev) ) {
+	xxusbDeviceClose(udev);
+    }
 
-	return true;
+    return true;
 }
 
 QString CVmUsb::errorString(void)
 {
-	return ErrorString;
+    return ErrorString;
 }
 
 QString CVmUsb::controllerName(void)
 {
-	return "Wiener VM-USB";
+    return "Wiener VM-USB";
 }
 
 QString CVmUsb::information(void)
 {
-	QString result;
+    QString result;
 
-	if (!lib) {
-		result = "Not connected to Wiener XXUSB library!";
-	} else {
-		result = QString("Connected to VME controller %1") .arg(serialNumber);
-	}
+    if (!lib) {
+	result = "Not connected to Wiener XXUSB library!";
+    } else {
+	result = QString("Connected to VME controller %1") .arg(serialNumber);
+    }
 
-	return result;
+    return result;
 }

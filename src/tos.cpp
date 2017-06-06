@@ -110,7 +110,6 @@ int main(int argc, char *argv[])
     std::string iniFilePath;
 
     //get parameter for the HV_FADC object use
-    extern char* optarg;
     int option = 0;
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = true;

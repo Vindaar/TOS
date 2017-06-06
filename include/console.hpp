@@ -172,11 +172,11 @@ private:
     int CommandTHLScan();
 
     // the actual THL function, which is run in a separate thread
-    int RunTHLScan(std::string inputChips,
-		   unsigned short coarselow,
-		   unsigned short coarsehigh,
-		   std::pair<int, int> threshold_boundaries,
-		   std::atomic_bool *loop_stop);
+    void RunTHLScan(std::string inputChips,
+		    unsigned short coarselow,
+		    unsigned short coarsehigh,
+		    std::pair<int, int> threshold_boundaries,
+		    std::atomic_bool *loop_stop);
     void CommandSCurve();
     int CommandSCurveOld();
     int Commandi2creset();

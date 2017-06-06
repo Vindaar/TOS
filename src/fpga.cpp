@@ -21,9 +21,9 @@
 //C~tor
 FPGA::FPGA(Timepix *tp_pointer_from_parent):
     ErrInfo(0),
+    _hvFadcManager(NULL),
     _fadcBit(0),
     _fadcFlag(false),
-    _hvFadcManager(NULL),
     _fadcShutterCountOn(DEFAULT_FADC_SHUTTER_COUNT_ON),
     ok(1),
     TriggerConnectionIsTLU(0),
@@ -190,9 +190,14 @@ void FPGA::MakeARPEntry(){
     cmd+=" ";
     cmd+=MAC_ADDR;
     std::cout<<cmd<<std::endl;
-    system(cmd.c_str());
+    int result = 0;
+    result = system(cmd.c_str());
     std::cout<<"\nShow new ARP-Table: arp -a"<<std::endl;
-    system("arp -a");
+    result = system("arp -a");
+    if (result == -1){
+	std::cout << "MakeARPEntry() Error: Could not send shell command." << std::endl;
+    }
+    
 }
 
 
@@ -519,7 +524,11 @@ int FPGA::i2cADC(unsigned short channel)
     OutgoingLength=18; 
     IncomingLength=18+400; 
     PacketQueueSize=1;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
+    err_code = Communication(PacketBuffer,PacketQueue[0]);
+    if (err_code != 0){
+	std::cout << "i2cADC(): Error in communication function." << std::endl;
+	return -1;
+    }
     double ADCmV = 2.0818*tp->GetADCresult()+56.15;
     std::cout<< "ADC conversion result of channel " 
 	     << tp->GetADCchannel() 
@@ -576,6 +585,10 @@ int FPGA::EnableTPulse(int tpulse){
     IncomingLength=18; 
     PacketQueueSize=1;
     err_code=Communication(PacketBuffer,PacketQueue[0]);
+    if (err_code != 0){
+	std::cout << "EnableTPulse(): Error in communication function." << std::endl;
+	return -1;
+    }
     return 20+err_code;	
 }
 
@@ -630,7 +643,6 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
 #endif
     // the timeout integer can be handed to the function to set the timeout. Given in mu seconds
     int err_code;
-    int RecvBytes;
     SendBuffer[0]=SoftwareCounter; (SoftwareCounter<255) ? ++SoftwareCounter : SoftwareCounter=0;
     SendBuffer[1]=FPGACounter;
     SendBuffer[2]=IncomingLength/256;
@@ -645,8 +657,11 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
 
-    RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
-#if DEBUG==1 
+#if DEBUG!=1
+    sendWrapper(sock,SendBuffer,OutgoingLength,0);
+#else
+    int RecvBytes;
+    RecvBytes = sendWrapper(sock,SendBuffer,OutgoingLength,0);
     std::cout << "Paket gesendet "<<RecvBytes<< std::endl;
 #endif
 
@@ -675,8 +690,8 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
 #endif
 
 //#if DEBUG==1
-    if (err_code<0) std::cout << "Fehler in select" << std::endl;
-    if (err_code==0) std::cout << "Timeout in select" << std::endl; 
+    if (err_code < 0)  std::cout << "Fehler in select" << std::endl;
+    if (err_code == 0) std::cout << "Timeout in select" << std::endl; 
 //#endif
     // check if _timeout expired, before chip answered. in that case,
     // select returns 0 and we return 2
@@ -689,11 +704,12 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     else{
 	err_code=0;
     }
-
-    RecvBytes=recvWrapper(sock, RecvBuffer, PLen + 18, 0);
+#if DEBUG!=1
+    recvWrapper(sock, RecvBuffer, PLen + 18, 0);
+#else
     //std::cout << "recv() returned errno: " << errno << std::endl;
     //usleep(3000);
-#if DEBUG==1
+    RecvBytes = recvWrapper(sock, RecvBuffer, PLen + 18, 0);
     std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
     std::cout << "RecvBuffer[1]:" << RecvBuffer[1] 
 	      << ", FPGACounter+1:" 
@@ -812,7 +828,8 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
 #if DEBUG==2
     std::cout<<"Enter FPGA::Communication2()"<<std::endl;
 #endif
-    int err_code, RecvBytes, Hits;
+    int err_code;
+    int Hits;
 
     SendBuffer[0]=SoftwareCounter; (SoftwareCounter<255) ? ++SoftwareCounter : SoftwareCounter=0;
     SendBuffer[1]=FPGACounter;
@@ -828,8 +845,11 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     SendBuffer[16]=tp->GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
-    RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
-#if DEBUG==1
+#if DEBUG!=1
+    sendWrapper(sock,SendBuffer,OutgoingLength,0);
+#else
+    int RecvBytes;
+    RecvBytes = sendWrapper(sock,SendBuffer,OutgoingLength,0);
     std::cout << "Paket gesendet "<<RecvBytes<< std::endl;
 #endif
     //usleep(3000);
@@ -862,9 +882,11 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     }
 
 
+#if DEBUG!=1
+    recvWrapper(sock,RecvBuffer,PLen+18,0);
+#else
     RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
     //usleep(3000);
-#if DEBUG==1
     std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
     std::cout << "RecvBuffer[1]:" << RecvBuffer[1] << ", FPGACounter+1:" << FPGACounter+1 << std::endl;
 #endif
@@ -896,13 +918,13 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
 	else{
 	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
 	}
-#if DEBUG==1
+
+#if DEBUG!=1
+	recvWrapper(sock,RecvBuffer,PLen+18,0);
+#else
 	std::cout << "Timeout " << _timeout.tv_usec << " sec used" << std::endl;
-#endif
 	//++SoftwareCounter;
 	RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
-
-#if DEBUG==1
 	std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
 	std::cout << "RecvBuffer[1]:" << RecvBuffer[1] 
 		  << ", FPGACounter+1:" << FPGACounter+1 << std::endl;
@@ -926,8 +948,8 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     Hits=RecvBuffer[10] << 16;
     Hits+=RecvBuffer[11] << 8;
     Hits+=RecvBuffer[12];
-    int Storage = RecvBuffer[13];
 #if DEBUG==1
+    int Storage = RecvBuffer[13];
     std::cout << "Number of Hits: " << Hits << "" << std::endl;
     std::cout << "Communication Info: Number of Hits: " << Hits 
 	      << " , HitsMode: "<< HitsMode 
@@ -947,7 +969,8 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 #if DEBUG==2
     std::cout<<"Enter FPGA::Communication()"<<std::endl;
 #endif
-    int err_code,RecvBytes,Hits;
+    int err_code;
+    int Hits;
 
     SendBuffer[0]=SoftwareCounter; (SoftwareCounter<255) ? ++SoftwareCounter : SoftwareCounter=0;
     SendBuffer[1]=FPGACounter;
@@ -963,8 +986,11 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     SendBuffer[16]=tp->GetI2C()%256;
     //SendBuffer[5]=M0 + 2 * M1 + 4 * Enable_IN + 8 * Shutter + 16 * Reset + 32 * Enable_Test;
     //usleep(3000);
+#if DEBUG!=1
+    sendWrapper(sock,SendBuffer,OutgoingLength,0);
+#else
+    int RecvBytes;
     RecvBytes=sendWrapper(sock,SendBuffer,OutgoingLength,0);
-#if DEBUG==1
     std::cout << "Paket gesendet " << RecvBytes << std::endl;
 #endif
     testfd=readfd;
@@ -987,9 +1013,10 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 #endif
     if(err_code<0){return 1;} else if(err_code==0){return 2;} else{err_code=0;}
 
-
+#if DEBUG!=1
+    recvWrapper(sock,RecvBuffer,PLen+18,0);
+#else
     RecvBytes=recvWrapper(sock,RecvBuffer,PLen+18,0);
-#if DEBUG==1
     std::cout << "Antwort empfangen:" << RecvBytes << "Bytes" << std::endl;
     std::cout << "RecvBuffer[1]:" << RecvBuffer[1] 
 	      << ", FPGACounter+1:" << FPGACounter+1 << std::endl;
@@ -1010,8 +1037,6 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     Hits=RecvBuffer[10] << 16;
     Hits+=RecvBuffer[11] << 8;
     Hits+=RecvBuffer[12];
-    int Storage = RecvBuffer[13];
-
     // TODO: take this out, if all works
     // no need to set timeout here again
     //_timeout.tv_sec = 0;
@@ -1056,6 +1081,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 	
 
 #if DEBUG==1
+    int Storage = RecvBuffer[13];
     std::cout << "Number of Hits: " << Hits << ""<< std::endl;
     std::cout << "Communication Info: Number of Hits: " << Hits 
 	      << " on chip " << chip
@@ -1404,7 +1430,6 @@ int FPGA::SaveData(int hit_x_y_val[12288], int NumHits){
 // }
 
 int FPGA::SaveData(std::map<int, Frame> *frame_map){
-    int nChips = tp->GetNumChips();
 
     for (auto &frame_pair : *frame_map){
     	FrameArray<int> pixel_data;
@@ -1445,7 +1470,6 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, unsigned short chip){
     // some helper variables for access and determining whether to add bit or not
     unsigned short current_byte = 0;
     unsigned short check_bit = 0;
-    bool bit_is_nonzero = false;
     unsigned short bit_value = 0;
     int package = 0;
     int pos_in_package = 0;
@@ -1502,17 +1526,6 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, unsigned short chip){
 		bit_value = (current_byte & check_bit) > 0;
 		// add this value bitshifted by b bits to left
 		(*pixel_data)[x][y] += bit_value << (13 - b);
-		// bit_is_nonzero = bit_value > 0;
-		// if (bit_is_nonzero){
-		//     // if this byte is non zero, add the bit we're currently considering
-		//     // (remember: b == bit we're currently on for current row and
-		//     //            specific column x)
-		//     (*pixel_data)[x][y] += 1 << (13 - b);
-		//     std::cout << "bit is nonzero " << bit_is_nonzero
-		// 	      << "\t bit_value " << bit_value
-		// 	      << "\t shift " << (7 - (aktBit % 8))
-		// 	      << std::endl;
-		// }
 	    }
 	}
     }
@@ -1580,7 +1593,7 @@ bool FPGA::SetTimeout(int timeout){
 int FPGA::ShutterRangeToMode(std::string shutter_range){
     // this function converts the shutter range (string of type) to 
     // the mode n
-    int n;
+    int n = 0;
     
     if( shutter_range == "standard" ){
 	n = 0;

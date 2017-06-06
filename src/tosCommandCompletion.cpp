@@ -179,7 +179,10 @@ char *TOS_Command_Generator(const char *text, int state){
 
 // custom completion function
 //static
-char **TOS_Command_Completion(const char *text, int start, int end){
+// NOTE S.Schmidt: last variable has no name, since we do not need it here.
+//     However, needed for call to readline function, which expectes 3 args
+//     Would otherwise cause unused variable warning.
+char **TOS_Command_Completion(const char *text, int start, int){
     // this prevents appending space to the end of the matching word
     // commented out for now. not too bad? but not all that useful either
     rl_completion_append_character = '\0';

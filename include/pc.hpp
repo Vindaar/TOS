@@ -88,7 +88,7 @@ public:
     // list of default filenames from GetDataFilename()
     int DoReadOut();
     int DoReadOut2(std::string filename, unsigned short chip);
-    int DoReadOutFadc(std::string filename, unsigned short chip);
+    int DoReadOutFadc(unsigned short chip);
 
     
     // TODO: HV_FADC_Obj
@@ -99,7 +99,7 @@ public:
 		  unsigned short coarsehigh,
 		  std::pair<int, int> threshold_boundaries,
 		  std::atomic_bool *loop_stop);
-    int SCurveSingleTHL(unsigned short thl, unsigned short chip, int time, unsigned short offset, int step, int pulse);
+    int SCurveSingleTHL(unsigned short thl, unsigned short chip, int time, int step, int pulse);
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
 
     
@@ -107,7 +107,15 @@ public:
     int DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl);
     // NOTE: TOCalibFast is deprecated! not to be used anymore. Use TOCalib instead. Will be removed, once made sure that TOCalib()
     // works as expected
+
     int TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsigned short time, unsigned short TOT, unsigned short internalPulser);
+
+
+
+    //################################################################################
+    //########### Rewritten calibration related functions ############################
+    //################################################################################
+    
     void AllChipsSetUniformMatrix(std::set<int> chip_set,
 				  std::map<std::string, boost::any> parameter_map,
 				  const int nChips);
@@ -117,8 +125,7 @@ public:
 			       FrameArray<int> &pixel_data);
     void AllChipsSingleStepCtpr(std::set<int> chip_set,
 				std::map<std::string, boost::any> parameter_map,
-				std::map<int, Frame> *frame_map,
-				int nChips);
+				std::map<int, Frame> *frame_map);
     void SingleIteration(std::set<int> chip_set,
 			 std::map<std::string, boost::any> parameter_map,
 			 std::map<int, std::pair<double, double>> *chip_mean_std_map);
@@ -155,6 +162,10 @@ public:
 
 
     
+    //################################################################################
+    //#################### other functions ###########################################
+    //################################################################################
+    
     unsigned short CheckOffset();
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a);
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup);
@@ -181,7 +192,6 @@ public:
   
     void StopRun();
 		
-    void DACScanHistogram(void* PointerToObject, char dac, int bit, int val);
     int okay();
 		
     bool SetDataPathName(std::string DataPath);

@@ -60,7 +60,7 @@ public:
     bool setVoltageNominal(float voltage);
     bool setCurrentNominal(float current);
     
-    bool setVoltageBound(float voltageBound);
+    void setVoltageBound(float voltageBound);
     
     // get voltage and current only returns the set voltages and currents!
     float getVoltage();

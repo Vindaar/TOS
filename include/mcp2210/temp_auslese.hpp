@@ -47,7 +47,6 @@ void set_gpio_pins(hid_device *handle);
 void set_chip_settings(hid_device *handle);
 // deprecated functions, debugging and initialization as USB deviec
 void debug_spi_via_config(hid_device *handle);
-static struct usb_device *init_mcp2210(void);
 
 void loop(hid_device *handle,
 	  std::atomic_bool *loop_continue,

@@ -109,10 +109,6 @@ class HighLevelFunction_VME{
 
   void printDataToFile(std::vector<std::vector<int> > const& dataVec, std::string fileName = "Data");
 
-
-  void printDataToFileBlockMode(std::vector<std::vector<int> > const& dataVec, std::string fileName = "Data");
-  
-
  protected:
 
 

@@ -459,7 +459,7 @@ std::vector<std::vector<int> > HighLevelFunction_VME::correctData(std::vector<in
     unsigned int end_cell = 20*(( posttrig + 128 + var - trigger_rec ) % 128);
     unsigned int newId = (2560 + oldId - end_cell) % 2560;
     
-    if( ch == ( channels - 1 ) ) 
+    if( ch == (int)( channels - 1 ) ) 
     {
       corrDataVec.at(0).push_back(newId);
       oldId++;
@@ -543,7 +543,7 @@ void HighLevelFunction_VME::printDataToFile(std::vector<int> const& dataVec, std
       //let's transform the units of the FADC to Volt
       outFile << double(dataVec[iVector]*countsToVolt);
                         
-      if( ch == ( channels -1 ) )
+      if( ch == (int)( channels -1 ) )
       {
 	outFile << std::endl;
       }
@@ -683,13 +683,6 @@ void HighLevelFunction_VME::printDataToFile(std::vector<std::vector<int> > const
 
   return;
 }//end of printDataToFile
-
-
-void HighLevelFunction_VME::printDataToFileBlockMode(std::vector<std::vector<int> > const& dataVec, std::string fileName)
-{
-  return;
-}//end of printDataToFileBlockMode
-
 
 
 void HighLevelFunction_VME::sleepModule(){

@@ -14,9 +14,9 @@
 PC::PC(Timepix *tp):
     _useHvFadc(false),
     _hvFadcManager(NULL),
+    _center_chip(DEFAULT_CENTER_CHIP),
     BufferSize(80),
-    Vbuffer( BufferSize, std::vector<std::vector<int>* >( 8)),
-    _center_chip(DEFAULT_CENTER_CHIP)
+    Vbuffer( BufferSize, std::vector<std::vector<int>* >( 8))
 {
 #if DEBUG == 2
     std::cout << "Enter PC::PC()" << std::endl;
@@ -257,7 +257,7 @@ int PC::DoReadOut2(std::string filename, unsigned short chip){
     return -1;
 }
 
-int PC::DoReadOutFadc(std::string filename, unsigned short chip){
+int PC::DoReadOutFadc(unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter PC::DoReadOutFadc()"<<std::endl;
 #endif
@@ -491,7 +491,7 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
 		int meancounts_per_step[1024] = {0};
 		for(unsigned int thl=startTHL[chip];thl<=stopTHL[chip];thl++){
 
-		    meancounts_per_step[thl] = SCurveSingleTHL(thl, chip, time, offset, step, volt);
+		    meancounts_per_step[thl] = SCurveSingleTHL(thl, chip, time, step, volt);
 		    std::cout << "Chip "  << chip
 			      << " of "   << fpga->tp->GetNumChips()
 			      << " step " << step / 8 + 1
@@ -546,18 +546,6 @@ int PC::DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9]
     }
     return 0;
 }
-
-void PC::DACScanHistogram(void* PointerToObject, char dac, int bit, int val){
-#if DEBUG==2
-        std::cout<<"Enter PC::DACScanHistogram()"<<std::endl;
-#endif
-        if(bit>0)dac=-1;
-        // TODO: Alex code has the next line not commented
-        //       Tobys code: line is commented
-        //       commented for now. Need to take a look
-        // Console::WrapperToDACScanLive(PointerToObject, dac, val);
-}
-
 
 int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned int step, unsigned short pix_per_row, short ***p3DArray, int sum[256][256], int hit_counter[256][256], short thp, unsigned short chp){
     if(thl%100 == 0) std::cout<<"Thp="<<thp<<" (16=Eq); coarse:"<<coarse<<" , thl:"<<thl<<std::endl; //commented in
@@ -1988,7 +1976,6 @@ void PC::runFADC()
     std::cout << "Enter: PC::runFADC()" << std::endl;
 #endif
 
-    time_t start = time(NULL);
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED,NULL);
 
