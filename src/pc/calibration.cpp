@@ -266,7 +266,10 @@ void PC::AllChipsSingleStepCtpr(std::set<int> chip_set,
 
 	
         //unsigned int CTPRval = 255;//;1 << CTPR;
-	unsigned int CTPRval = 1 << CTPR;
+	// NOTE: the calculation of CTPRval now takes into account that the CTPR
+	//     value needs to be 1 larger than the offset one wants, also taking
+	//     into account that an offset of CTPR == 32 should not overflow
+	unsigned int CTPRval = 1 << ((CTPR + 1) % 32);
         // and set the CTPR DAC to that value
         fpga->tp->SetDAC(14, chip, CTPRval);
 
@@ -369,6 +372,7 @@ void PC::SingleIteration(std::set<int> chip_set,
     int pixels_per_column      = boost::any_cast<int>(parameter_map["pixels_per_column"]);
     int CTPR_start             = boost::any_cast<int>(parameter_map["CTPR_start"]);
     int CTPR_stop              = boost::any_cast<int>(parameter_map["CTPR_stop"]);
+
 
     std::string callerFunction = boost::any_cast<std::string>(parameter_map["callerFunction"]);
 
