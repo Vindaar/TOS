@@ -1034,7 +1034,7 @@ def main(args):
     # want to accept key inputs, after the files have been read a single
     # time.
     # and the second thread, which performs the refreshing
-    p2 = mp.Process(target = refresh, args = (ns, folder) )
+    p2 = mp.Process(target = refresh, args = (ns, folder))
     p2.start()
 
     # now create the main thread, which starts the plotting

@@ -33,6 +33,6 @@ mpl.interactive(true)
 
 Pkg.add("PyPlot")
 using PyPlot
-for i in range(1, 7)
+for i in range(0, 7)
     main(i)
 end

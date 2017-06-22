@@ -83,14 +83,14 @@ Timepix::Timepix(unsigned short nbOfChips){
 	IKrumBitPos[x]=	   255-(   4+x) +2 ;
 	DiscBitPos[x]=	   255-(  12+x) -0;
 	PreampBitPos[x]=   255-(  20+x) -0;
-	BuffAnalogBBitPos[x]=255-(60+x)  -0;
-	HistBitPos[x]=	   255-(  86+x)  -0;
-	VcasBitPos[x]=	   255-( 120+x)  -0;
-	FBKBitPos[x]=	   255-( 128+x) -0 ;
-	GNDBitPos[x]=	   255-( 136+x)  -0;
-	THSBitPos[x]=	   255-( 181+x)  -0;
-	BiasLVDSBitPos[x]= 255-( 227+x)  -0;
-	RefLVDSBitPos[x]=  255-( 235+x)  -0;
+	BuffAnalogBBitPos[x]=255-(60+x) -0;
+	HistBitPos[x]=	   255-(  86+x) -0;
+	VcasBitPos[x]=	   255-( 120+x) -0;
+	FBKBitPos[x]=	   255-( 128+x) -0;
+	GNDBitPos[x]=	   255-( 136+x) -0;
+	THSBitPos[x]=	   255-( 181+x) -0;
+	BiasLVDSBitPos[x]= 255-( 227+x) -0;
+	RefLVDSBitPos[x]=  255-( 235+x) -0;
     }
     for(x=0;x<4;x++){ 
 	BuffAnalogABitPos[x]=	255-( 46 +x)  -0;

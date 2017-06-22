@@ -179,15 +179,22 @@ void PC::SingleChipReadoutCalc(int chip,
     double std;
     std = sqrt(var);
 
-    // get variables needed for printing current status
-    int iter  = boost::any_cast<int>(parameter_map["iteration"]);
+    // get variables needed for printing current status 
     int pulse = boost::any_cast<int>(parameter_map["pulse"]);
-    int thl   = boost::any_cast<int>(parameter_map["thl"]);
+    // define thl and iter variables (thl for SCurve, iter for TOCalib)
+    int thl  = 0;
+    int iter = 0;
+    if (callerFunction == "SCurve"){ 
+	thl   = boost::any_cast<int>(parameter_map["thl"]);
+	std::cout << "thl "      << thl   << "\t" << std::flush;
+    }
+    else if (callerFunction == "TOCalib"){
+	iter  = boost::any_cast<int>(parameter_map["iteration"]);
+	std::cout << "iter "     << iter  << "\t" << std::flush;
+    }
 
     // and give some output to see what's going on :)
-    std::cout << "thl "      << thl   << "\t"
-              << "iter "     << iter  << "\t"
-              << "pulse "    << pulse << "\t"
+    std::cout << "pulse "    << pulse << "\t"
               << "chip "     << chip  << "\t"
               << "step "     << step  << "\t"
               << "CTPR "     << CTPR  << "\t"
@@ -200,7 +207,12 @@ void PC::SingleChipReadoutCalc(int chip,
 
 #if DEBUG==4
     std::string filename;
-    filename = GetFrameDumpFilename(thl, step, pulse);
+    if (callerFunction == "SCurve"){
+	filename = GetFrameDumpFilename(thl, step, pulse);
+    }
+    else{
+	filename = GetFrameDumpFilename(iter, step, pulse);
+    }
     (*frame_map)[chip].DumpFrameToFile(filename);
 #endif
 
