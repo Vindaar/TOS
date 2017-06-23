@@ -12,7 +12,7 @@ OBJECTS_DIR = output/tmp
 MOC_DIR = output/tmp
 DESTDIR = output/bin
 DEFINES += "PERFORMANCE=0"
-DEFINES += "DEBUG=0"
+DEFINES += "DEBUG=4"
 
 # Input
 HEADERS += include/caseHeader.h \ 
@@ -50,6 +50,7 @@ HEADERS += include/caseHeader.h \
 
 SOURCES += src/caseFunctions.cc \
            src/console.cpp \
+           src/console/userinterface.cpp \
            src/console/serialization.cpp \
            src/console/selection.cpp \
            src/fpga.cpp \ 
