@@ -103,7 +103,13 @@ public:
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
 
     
-    int DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl);
+    int DoTHSopt(bool doTHeq,
+		 unsigned short pix_per_row_THeq,
+		 unsigned short chp,
+		 short ths,
+		 short ext_coarse,
+		 short max_thl,
+		 short min_thl);
     int DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl);
     // NOTE: TOCalibFast is deprecated! not to be used anymore. Use TOCalib instead. Will be removed, once made sure that TOCalib()
     // works as expected

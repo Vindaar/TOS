@@ -600,7 +600,10 @@ int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned 
 }
 
 
-int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned short chp,short ths,short ext_coarse,short max_thl,short min_thl){ //untill now only one chip at same time
+int PC::DoTHSopt(bool doTHeq,
+		 unsigned short pix_per_row_THeq,
+		 unsigned short chp,
+		 short ths,short ext_coarse,short max_thl,short min_thl){ //untill now only one chip at same time
     //#if DEBUG==2
     std::cout<<"Enter PC::THSopt()"<<std::endl;
     //#endif
@@ -885,20 +888,22 @@ int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned 
 	else {
 	    ths = (short)newths;
 	}
-	std::cout<<"ths for this iteration was "<<last_ths<<" with delta of "<<last_delta0_15<<std::endl;
-	std::cout<<"ths for next iteration will be "<<ths<<std::endl;
-	std::cout<<"doTHeq= "<<doTHeq<<std::endl;
+	std::cout << "ths for this iteration was " << last_ths
+		  << " with delta of " << last_delta0_15
+		  << std::endl;
+	std::cout << "ths for next iteration will be " << ths << std::endl;
+	std::cout << "doTHeq= " << doTHeq << std::endl;
     } //while loop end ends when delta0_15 = optdelta +-2
 
     //store optimised ths in fsr.txt
-    std::cout<<"\tSaving optimised ths value in "<<GetFSRFileName(chp)<<"\n> "<<std::flush;
+    std::cout << "\tSaving optimised ths value in " << GetFSRFileName(chp) << "\n> " << std::flush;
     //for (auto chip : _chip_set){
     fpga->tp->LoadFSRFromFile(GetFSRFileName(chp),chp);
     fpga->tp->SetDAC(10,chp,ths);
     fpga->tp->SaveFSRToFile(GetFSRFileName(chp),chp);
     //}
 
-    std::cout<<"\tTHS optimisation finished\n> "<<std::flush;
+    std::cout << "\tTHS optimisation finished\n> " << std::flush;
     // De-Allocate memory to prevent memory leak
     for (int i = 0; i < x_length; ++i) {
 	for (int j = 0; j < y_length; ++j){
@@ -913,7 +918,7 @@ int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned 
     delete pix_tempdata;
 
 //}
-    if (doTHeq==1){
+    if (doTHeq == true){
 	DoThresholdEqCenter(pix_per_row_THeq,chp,ext_coarse,max_thl,min_thl);
     }
     return 0;
@@ -922,7 +927,7 @@ int PC::DoTHSopt(unsigned short doTHeq,unsigned short pix_per_row_THeq,unsigned 
 
 int PC::DoThresholdEqCenter(unsigned short pix_per_row, unsigned short chp, short ext_coarse, short max_thl, short min_thl){
 //#if DEBUG==2
-    std::cout<<"Enter PC::ThresholdEqCenter()"<<std::endl;
+    std::cout << "Enter PC::ThresholdEqCenter()" << std::endl;
 //#endif
     int x,y,thl;
     unsigned int coarse;

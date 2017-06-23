@@ -111,7 +111,6 @@ unsigned short Console::getPreload()
     return preload;
 }
 
-
 int Console::okay(){
 #if DEBUG==2
     std::cout<<"Enter Console::okay()"<<std::endl;	
@@ -1781,48 +1780,43 @@ int Console::CommandTestTPulse(){
 
 int Console::CommandDoTHSopt(){
 
-    unsigned short doTHeq = 0;
-    unsigned short pix_per_row_THeq = 1;
-    unsigned short chp = 1;
+    bool doTHeq = 0;
+    short pix_per_col_THeq = 1;
 
-    std::string ein0="";
-    std::cout << "Hello, this is THS optimisation.  You have " 
-	      << _nbOfChips 
-	      << " chips, for which of them do you want to do the optimization? "
-	      << "Put 0 if you want to go for all of them one after the other. " 
-	      << std::endl;
-    ein0 = getUserInput(_prompt);
-    if (ein0 == "quit") return -1;
-    if(ein0==""){ chp=1; }
-    else{
-	chp=(unsigned short) atoi(ein0.data());
+    // first we're going to let the user decide which chips to calibrate
+    // define a set of ints, which will contain the number of the chips we're
+    // going to use
+    std::set<unsigned short> chip_set = ChipSelection();
+    if (chip_set.size() == 0){
+	return -1;
     }
-    std::cout << "Chip= " << chp << std::endl;
-    std::string ein="";
+
+    std::string input = "";
     std::cout << "I will do a few threshold scans as in THeq, but with 16 pixels"
 	      << " active per row at same time (but only one step). Only 4096 "
 	      << "pixels are used. Do you want to do a THeq directly afterwards?"
-	      << " (no extended coarse THeq possible) (1=yes, 0=no) " 
+	      << " (no extended coarse THeq possible) (yes / NO) " 
 	      << std::endl;
-    ein = getUserInput(_prompt);
-    if (ein == "quit") return -1;
-    if(ein==""){doTHeq=0;}
+    std::set<std::string> allowedStrings = {"y", "Y", "yes", "YES",
+					    "n", "N", "no", "NO"};
+    input = getUserInputNonNumericalDefault(_prompt, &allowedStrings);
+    if (input == "quit") return -1;
+    else if(input == ""){
+	doTHeq = false;
+    }
+    else if (input == "yes" || input == "y" || input == "YES" || input == "Y"){
+	doTHeq = true;
+    }
     else{
-	doTHeq=(unsigned short) atoi(ein.data());
+	doTHeq = false;
     }
     std::cout << "doTHeq= " << doTHeq << std::endl;
 
-    if (doTHeq==1){
-	std::string ein1="";
-	std::cout << "How many pixel per row at same time for THeq later? "
-		  << "1,2,4,8,16 (more is not good!)? But 0 if you want to "
-		  << "decide later " 
-		  << std::endl;
-	ein1 = getUserInput(_prompt);
-	if (ein1 == "quit") return -1;
-	if(ein1==""){pix_per_row_THeq=1;}
-	else{
-	    pix_per_row_THeq =(unsigned short) atoi(ein1.data());
+    if (doTHeq == true){
+	std::cout << "For THeq after THSopt choose:" << std::endl;
+	pix_per_col_THeq = PixPerColumnSelection();
+	if(pix_per_col_THeq == -1){
+	    return -1;
 	}
     }
     short ths = 255;
@@ -1868,53 +1862,32 @@ int Console::CommandDoTHSopt(){
 	    min_thl=(unsigned short) atoi(ein5.data());
 	}
     }
-    if (chp == 0){
-	for (auto chip : _chip_set){
-	    pc->DoTHSopt(doTHeq, pix_per_row_THeq, chip, ths, ext_coarse, max_thl, min_thl);
-	}
+    for (auto chip : chip_set){
+	pc->DoTHSopt(doTHeq, pix_per_col_THeq, chip, ths, ext_coarse, max_thl, min_thl);
     }
-    else pc->DoTHSopt(doTHeq, pix_per_row_THeq, chp, ths, ext_coarse, max_thl, min_thl);
     return 0;
 }
 
 
 int Console::CommandThresholdEqNoiseCenter(){
     std::string ein;
-    unsigned short pix_per_row = 0;
-    unsigned short chp = 1;
+    short pix_per_col = 0;
     short ext_coarse = 0;
     short max_thl = 1023;
     short min_thl = 0;
 
-    std::cout << "You have " 
-	      << _nbOfChips 
-	      << "chips, for which of them do you want to do the threshold "
-	      << "equalisation? Put 0 if you want to go for all of them "
-	      << "one after the other." 
-	      << std::endl;
-    ein = getUserInput(_prompt);
-    if (ein == "quit") return -1;
-    if(ein==""){chp=1;}
-    else{
-	chp=(unsigned short) atoi(ein.data());
+    // first we're going to let the user decide which chips to calibrate
+    // define a set of ints, which will contain the number of the chips we're
+    // going to use
+    std::set<unsigned short> chip_set = ChipSelection();
+    if (chip_set.size() == 0){
+	return -1;
     }
-    std::cout << "chip " << chp << std::endl;
-    std::cout << " You have " 
-	      << _nbOfChips 
-	      << " chips, equalisation will be done for chip " 
-	      << chp 
-	      << std::flush;
-    std::string ein1="";
-    std::cout << " How many pixel per row at same time? 1,2,4,8,16 "
-	      << "(more is not good!)? " 
-	      << std::endl;
-    ein1 = getUserInput(_prompt);
-    if (ein1 == "quit") return -1;
-    if(ein1==""){pix_per_row=1;}
-    else{
-	pix_per_row=(unsigned short) atoi(ein1.data());
-    }
-    std::cout << pix_per_row << " pixel per row at same time" << std::endl;
+
+    // now determine the pixels per columns to use
+    pix_per_col = PixPerColumnSelection();
+    if (pix_per_col == -1) return -1;
+
     std::string ein3="";
     const char *promptUseExtendedTHLRange = "Do you want to use extended coarse thl range (coarse 6 and 8 in addition to 7)? (1=yes, 0=no) ";
     ein3 = getUserInput(promptUseExtendedTHLRange);
@@ -1940,12 +1913,9 @@ int Console::CommandThresholdEqNoiseCenter(){
 	    min_thl=(unsigned short) atoi(ein5.data());
 	}
     }
-    if (chp == 0){
-	for (auto chip : _chip_set){
-	    pc->DoThresholdEqCenter(pix_per_row, chip, ext_coarse, max_thl, min_thl);
-	}
+    for (auto chip : chip_set){
+	pc->DoThresholdEqCenter(pix_per_col, chip, ext_coarse, max_thl, min_thl);
     }
-    else pc->DoThresholdEqCenter(pix_per_row, chp, ext_coarse, max_thl, min_thl);
     return 0;
 }
 
