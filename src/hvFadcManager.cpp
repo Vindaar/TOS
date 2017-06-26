@@ -1672,7 +1672,17 @@ void hvFadcManager::ReadHVSettings(){
     // bool containsNotFlag = false;
 
     boost::property_tree::ptree pt;
-    boost::property_tree::ini_parser::read_ini(iniFile, pt);
+    try{
+	boost::property_tree::ini_parser::read_ini(iniFile, pt);
+    }
+    catch (boost::property_tree::ini_parser::ini_parser_error){
+	std::cout << "Could not find .ini file. Please enter path to .ini" << std::endl;
+	std::string input_path;
+	const char* prompt = "> ";
+	input_path = getUserInputNonNumericalNoDefault(prompt);
+	iniFile = prePath + '/' + input_path;
+	boost::property_tree::ini_parser::read_ini(iniFile, pt);
+    }
     std::cout << pt.get<std::string>("General.baseAddress_hv") << std::endl;
     std::cout << pt.get<std::string>("HvChannels.0_Name") << std::endl;
 

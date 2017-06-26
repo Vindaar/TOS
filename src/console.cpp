@@ -159,7 +159,7 @@ void Console::CommandActivateHvFadcManager(){
 	iniFilePath = getUserInput(promptConfig, numericalInput, allowDefaultOnEmptyInput);
 	if (iniFilePath == "quit") return;
 	if (iniFilePath == ""){
-	    iniFilePath = "../config/HFM_settings.ini";
+	    iniFilePath = "./config/HFM_settings.ini";
 	}
 
 
