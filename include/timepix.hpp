@@ -35,7 +35,11 @@
 
 class Timepix{
 public:
+    // C'tor
     Timepix(unsigned short nbOfChips);
+    // D'tor
+    ~Timepix();
+    
     int GetFSR(unsigned char* FSR_);
     int ChipID(unsigned char* ReplyPacket,unsigned short chip);
     int PackMatrix(std::vector<std::vector<unsigned char> > *PackQueue);

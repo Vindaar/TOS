@@ -124,8 +124,12 @@ Timepix::Timepix(unsigned short nbOfChips){
     for(x=0;x<10;x++){THLBitPos[x]   = 255 - ( 100 + x) - 0;}
     for(x=0;x<24;x++){ChipIDBitPos[x]= 255 - ( _chipIdOffset + x);} 
 	
-    for (unsigned short i = 0; i < 8; i++){
-	ChipID_[i]=0;
+    for (unsigned short i = 0; i < DEFAULT_MAX_NUM_CHIPS; i++){
+	ChipID_[i]    = 0;
+	ChipLetter[i] = "";
+	ChipWaver[i]  = 0;
+	ChipNumber[i] = 0;	
+	ChipType_[i]  = 0;
     }
     NumberDefPixel=0;
     IsCounting_=0;	
@@ -136,7 +140,7 @@ Timepix::Timepix(unsigned short nbOfChips){
     }
     for (int i = 0; i < 8; i++){
 	for(x = 0; x < 52; x++){
-	    FSR[i][x]=0;
+	    FSR[i][x] = 0;
 	}
     }
     for (unsigned short chip = 0; chip < 8; chip++){
@@ -152,6 +156,12 @@ Timepix::Timepix(unsigned short nbOfChips){
     }
 	
 }
+
+Timepix::~Timepix(){
+    // destructor of timepix class
+    // nothing to do here
+}
+
 int Timepix::GetFSR(unsigned char* FSR_){
 #if DEBUG==2
     std::cout<<"Enter Timepix::GetFSR()"<<std::endl;
@@ -159,15 +169,20 @@ int Timepix::GetFSR(unsigned char* FSR_){
     int i;
     UpdateFSR();
     for (auto chip : _chip_set){
-        if (chip==0){
-	    for(i=18;i<18+34;i++)FSR_[i]=FSR[chip][i];
+        if (chip == 0){
+	    for(i = 18; i < 18 + 34; i++){
+		FSR_[i] = FSR[chip][i];
+	    }
         }
         else {
-	    for(i=19;i<18+34;i++)FSR_[i+(32 * chip)]=FSR[chip][i];
+	    for(i = 19; i < 18 + 34; i++){
+		FSR_[i+(32 * chip)] = FSR[chip][i];
+	    }
         }
     }
     return 0;
 }
+
 int Timepix::LoadFSRFromFile(std::string filename, unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::LoadFSRFromFile()"<<std::endl;	

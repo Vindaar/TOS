@@ -51,15 +51,18 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
     ip=IP_ADRESSE;
 
     FD_ZERO(&readfd);
-    FD_SET(sock,&readfd);
+    FD_SET(sock, &readfd);
 
     // TODO:: UNDERSTAND why we should want to set FD_SET to stdin?! Causes super weird
     // behaviour in case one presses ENTER :/
-// #ifdef __WIN32__
-//     //FD_SET(0,&readfd); //0=stdin -> Lesen von der Konsole Geht unter WIN nicht mit select() muss trotzdem rein
-// #else
-//     FD_SET(0,&readfd); //0=stdin -> Lesen von der Konsole
-// #endif
+    // #ifdef __WIN32__
+    //
+    //    FD_SET(0,&readfd);
+    //    0=stdin -> Lesen von der Konsole Geht unter WIN nicht mit select() muss trotzdem rein
+    // #else
+    //     FD_SET(0,&readfd);
+    //     0=stdin -> Lesen von der Konsole
+    // #endif
 
     _timeout.tv_sec   = 5; 
     _timeout.tv_usec  = 10000;
@@ -87,6 +90,15 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
     }
     //enlarge socket buffers: When you set SO_RCVBUF with setsockopt, the kernel allocates twice the
     //memory you set
+
+    // now initialize packet buffer abd queue to 0
+    for(int i = 0; i < PLen+18; i++){
+	PacketBuffer[i] = 0;
+	for(int j = 0; j < PQueue; j++){
+	    PacketQueue[j][i] = 0;
+	}
+    }
+    
 
     int sock_recv_buf_size;
     int sock_send_buf_size;
@@ -460,7 +472,7 @@ int FPGA::WriteReadFSR(){
     // changed to 34*tp->GetNumChips() + 2 (in Alex code was 33*tp->GetNumChips())
     IncomingLength=18+(34*tp->GetNumChips()) + 2; 
     PacketQueueSize=1;
-    err_code=Communication(PacketBuffer,PacketQueue[0]);
+    err_code=Communication(PacketBuffer, PacketQueue[0]);
     if(err_code>0){
 	return 50+err_code;
     }
@@ -658,7 +670,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     //usleep(3000);
 
 #if DEBUG!=1
-    sendWrapper(sock,SendBuffer,OutgoingLength,0);
+    sendWrapper(sock, SendBuffer, OutgoingLength, 0);
 #else
     int RecvBytes;
     RecvBytes = sendWrapper(sock,SendBuffer,OutgoingLength,0);
