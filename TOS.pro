@@ -15,8 +15,7 @@ DEFINES += "PERFORMANCE=0"
 DEFINES += "DEBUG=4"
 
 # Input
-HEADERS += include/caseHeader.h \ 
-           include/console.hpp \ 
+HEADERS += include/console.hpp \ 
            include/fpga.hpp \ 
            include/pc.hpp \ 
            include/timepix.hpp \
@@ -48,8 +47,7 @@ HEADERS += include/caseHeader.h \
            include/helper_functions.hpp 
            
 
-SOURCES += src/caseFunctions.cc \
-           src/console.cpp \
+SOURCES += src/console.cpp \
            src/console/userinterface.cpp \
            src/console/serialization.cpp \
            src/console/selection.cpp \

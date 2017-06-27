@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 
     //initialise TOS
     //std::cout<<"\nTOS> "<<std::flush;
-    QCoreApplication app(argc, argv);
+    //QCoreApplication app(argc, argv);
   
     //check if one wants to use the FADC
     if(useHvFadcManager){

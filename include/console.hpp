@@ -34,11 +34,8 @@
 #include "hvFadcManager.hpp"
 #include "timepix.hpp"
 #include "fpga.hpp"
-#include "caseHeader.h"
 #include "pc.hpp"
 #include "tosCommandCompletion.hpp"
-
-
 
 //class V1729a;
 //class PC;
@@ -81,6 +78,8 @@ private:
   
     //The main userinterface  
     int UserInterface();                         //< classical version
+    void ParseNormalTosCommands(std::string input, int &running);
+    void ParseActiveHfmCommands(std::string input);
     // user input interface to select chips
     std::set<unsigned short> ChipSelection();
     // user input interface function for fastclock, shutter range and time selection

@@ -10,17 +10,25 @@
 #include <readline/history.h>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
+
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <set>
+#include <string>
 
 
 // the following array contains all possible TOS commands
 // TODO: change const char array to something nicer
-extern const char *tosCommands[];
+// extern const char *tosCommands[];
+const std::set<std::string> get_tos_commands();
+const std::set<std::string> get_hfm_commands();
+
 // Generator function for word completion
 char *TOS_Command_Generator(const char *text, int state);
 
@@ -33,7 +41,7 @@ int check_if_string_allowed(std::string tempStr,
 			    std::set<std::string> *allowedStrings);
 
 // get user input function
-std::string getUserInput(const char *prompt, 
+std::string getUserInput(const char *prompt,
 			 bool numericalInput = true, 
 			 bool allowDefaultOnEmptyInput = true,
 			 std::set<std::string> *allowedStrings = NULL);
@@ -61,5 +69,9 @@ std::string getUserInputNonNumericalNoDefault(const char *prompt,
 					      std::set<std::string> allowedStrings);
 
 bool getUserInputOrDefaultFile(const char *prompt, const std::string& default_path, std::string& filename);
+
+// function to get input for FADC functions
+int getInputValue();
+
 
 #endif

@@ -5,175 +5,241 @@
 // https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
 
 #include "tosCommandCompletion.hpp"
-#include <algorithm>
-
-#include <boost/filesystem.hpp>
-
-#include <stdio.h>
-#include <string>
-
 
 namespace fs = boost::filesystem;
 
 
-const char *tosCommands[] = {"GeneralReset", 
-                             "1", 
-                             "UserInterface", 
-                             "Counting", 
-                             "2", 
-                             "CountingStop", 
-                             "2s", 
-                             "CountingLong", 
-                             "CountingTrigger", 
-                             "2t", 
-                             "CountingTime", 
-                             "2z", 
-                             "2f", 
-                             "ReadOut", 
-                             "3", 
-                             "ReadOut2", 
-                             "3a", 
-                             "SetMatrix", 
-                             "4", 
-                             "WriteReadFSR", 
-                             "5", 
-                             "Run", 
-                             "EnableTPulse", 
-                             "DisableTPulse", 
-                             "DACScan", 
-                             "THLScan", 
-                             "SCurve", 
-                             "i2creset", 
-                             "i2cDAC", 
-                             "i2cADC", 
-                             "tpulse",
-			     "TestTPulse",
-                             "THSopt", 
-                             "6", 
-                             "ThEqNoiseCenter", 
-                             "7", 
-                             "TOCalib", 
-                             "8", 
-                             "TOCalibFast", 
-                             "8a", 
-                             "LoadThreshold", 
-                             "SaveFSR", 
-                             "LoadFSR", 
-                             "lf",
-			     "LoadFSRAll",
-			     "lfa",
-                             "SetDAC", 
-                             "ShowFSR",
-                             "ChessMatrix",
-			     "ChessMatrixAll",
-			     "DefaultChessMatrix",
-			     "GetMatrixAndDump",
-                             "UniformMatrix", 
-                             "um",
-			     "UniformMatrixAllChips",
-			     "uma",
-                             "SaveMatrix", 
-                             "LoadMatrix", 
-                             "Trigger", 
-                             "SetIP", 
-                             "ShowIP", 
-                             "MakeARP", 
-                             "quit", 
-                             "help", 
-                             "spacing", 
-                             "SetNumChips", 
-                             "SetOption", 
-                             "CheckOffset", 
-                             "Calibrate", 
-			     "SetChipIDOffset",
-                             "EnableFastClock", 
-                             "DisableFastClock",
-// HV_FADC commands
-			     "InitHFM",
-			     "InitHV_FADC",
-			     "RampChannels",
-			     "ShutdownHFM",
-			     "ActivateHFM",
-			     "CheckHVModuleIsGood",
-			     "ConnectModule",
-			     "TurnChannelOnOff",
-			     "ClearChannelEventStatus",
-			     "PrintChannelStatus",
-			     "PrintChannelEventStatus",
-			     "PrintModuleStatus",
-			     "PrintModuleEventStatus",
-			     "AddChannel",
-			     "RemoveChannel",
-			     "AddFlexGroup",
-			     "RemoveFlexGroup",
-			     "PrintActiveChannels",
-			     "SetChannelValue",
-// FADC commands
-			     "PrintFADCSettings",
-			     "ResetFADC",
-			     "SetFadcSettings",
-			     "StartFadcPedestalRun",
-			     "StartFadcAcquisition",
-			     "StartFadcAcq",
-			     "EnableFADCshutter", 
-                             "DisableFADCshutter", 
-			     "SendFadcSoftwareTrigger",
-			     "ReadFadcInterrupt",
-			     "ReleaseFadcInterrupt",
-			     "SetFadcTriggerThresholdDACAll",
-			     "GetFadcTriggerPerChannel",
-			     "SetFadcTriggerThresholdRegisterAll",
-			     "GetFadcTriggerThresholdRegister",
-			     "LoadFadcTriggerThresholdDAC",
-			     "SetFadcTriggerType",
-			     "GetFadcTriggerType",
-			     "SetFadcTriggerChannelSource",
-			     "GetFadcTriggerChannelSource",
-			     "SetFadcPostTrig",
-			     "GetFadcPostTrig",
-			     "SetFadcPreTrig",
-			     "GetFadcPreTrig",
-			     "SetFadcChannelMask",
-			     "GetFadcChannelMask",
-			     "SetFadcNumberOfChannels",
-			     "GetFadcNumberOfChannels",
-			     "SetFadcModeRegister",
-			     "GetFadcModeRegister",
-			     "SetFadcFrequency",
-			     "GetFadcFrequency",
-			     "SetFadcReadMode",
-			     "GetFadcReadMode",
-			     "SetFadcPostStopLatency",
-			     "GetFadcPostStopLatency",
-			     "SetFadcPostLatencyPreTrig",
-			     "GetFadcPostLatencyPretrig()",
-			     "SetFadcSleepAcqTime",
-			     "SetFadcSleepTriggerTime",
-			     "SetCenterChip",
-			     "PrintCenterChip",
+const std::set<std::string> get_tos_commands(){
+    // function which returns all tos commands
+    const std::set<std::string> tosCommandsSet {"GeneralReset", 
+						"1", 
+						"UserInterface", 
+						"Counting", 
+						"2", 
+						"CountingStop", 
+						"2s", 
+						"CountingLong", 
+						"CountingTrigger", 
+						"2t", 
+						"CountingTime", 
+						"2z", 
+						"2f", 
+						"ReadOut", 
+						"3", 
+						"ReadOut2", 
+						"3a", 
+						"SetMatrix", 
+						"4", 
+						"WriteReadFSR", 
+						"5", 
+						"Run", 
+						"EnableTPulse", 
+						"DisableTPulse", 
+						"DACScan", 
+						"THLScan", 
+						"SCurve", 
+						"i2creset", 
+						"i2cDAC", 
+						"i2cADC", 
+						"tpulse",
+						"TestTPulse",
+						"THSopt", 
+						"6", 
+						"ThEqNoiseCenter", 
+						"7", 
+						"TOCalib", 
+						"8", 
+						"TOCalibFast", 
+						"8a", 
+						"LoadThreshold", 
+						"SaveFSR", 
+						"LoadFSR", 
+						"lf",
+						"LoadFSRAll",
+						"lfa",
+						"SetDAC", 
+						"ShowFSR",
+						"ChessMatrix",
+						"ChessMatrixAll",
+						"DefaultChessMatrix",
+						"GetMatrixAndDump",
+						"UniformMatrix", 
+						"um",
+						"UniformMatrixAllChips",
+						"uma",
+						"SaveMatrix", 
+						"LoadMatrix", 
+						"Trigger", 
+						"SetIP", 
+						"ShowIP", 
+						"MakeARP", 
+						"quit", 
+						"help", 
+						"spacing", 
+						"SetNumChips", 
+						"SetOption", 
+						"CheckOffset", 
+						"Calibrate", 
+						"SetChipIDOffset",
+						"EnableFastClock", 
+						"DisableFastClock",
 // MCP2210 temperature readaout commands
-			     "TempLoopReadout"};
+						"TempLoopReadout"};
+
+    return tosCommandsSet;
+}
+
+const std::set<std::string> get_hfm_commands(){
+    // HV and FADC commands
+    const std::set<std::string> HFMCommandsSet =  {"InitHFM",
+						   "InitHV_FADC",
+						   "RampChannels",
+						   "ShutdownHFM",
+						   "ActivateHFM",
+						   "CheckHVModuleIsGood",
+						   "ConnectModule",
+						   "TurnChannelOnOff",
+						   "ClearChannelEventStatus",
+						   "PrintChannelStatus",
+						   "PrintChannelEventStatus",
+						   "PrintModuleStatus",
+						   "PrintModuleEventStatus",
+						   "AddChannel",
+						   "RemoveChannel",
+						   "AddFlexGroup",
+						   "RemoveFlexGroup",
+						   "PrintActiveChannels",
+						   "SetChannelValue",
+// FADC commands
+						   "PrintFADCSettings",
+						   "ResetFADC",
+						   "SetFadcSettings",
+						   "StartFadcPedestalRun",
+						   "StartFadcAcquisition",
+						   "StartFadcAcq",
+						   "EnableFADCshutter", 
+						   "DisableFADCshutter", 
+						   "SendFadcSoftwareTrigger",
+						   "ReadFadcInterrupt",
+						   "ReleaseFadcInterrupt",
+						   "SetFadcTriggerThresholdDACAll",
+						   "GetFadcTriggerPerChannel",
+						   "SetFadcTriggerThresholdRegisterAll",
+						   "GetFadcTriggerThresholdRegister",
+						   "LoadFadcTriggerThresholdDAC",
+						   "SetFadcTriggerType",
+						   "GetFadcTriggerType",
+						   "SetFadcTriggerChannelSource",
+						   "GetFadcTriggerChannelSource",
+						   "SetFadcPostTrig",
+						   "GetFadcPostTrig",
+						   "SetFadcPreTrig",
+						   "GetFadcPreTrig",
+						   "SetFadcChannelMask",
+						   "GetFadcChannelMask",
+						   "SetFadcNumberOfChannels",
+						   "GetFadcNumberOfChannels",
+						   "SetFadcModeRegister",
+						   "GetFadcModeRegister",
+						   "SetFadcFrequency",
+						   "GetFadcFrequency",
+						   "SetFadcReadMode",
+						   "GetFadcReadMode",
+						   "SetFadcPostStopLatency",
+						   "GetFadcPostStopLatency",
+						   "SetFadcPostLatencyPreTrig",
+						   "GetFadcPostLatencyPretrig()",
+						   "SetFadcSleepAcqTime",
+						   "SetFadcSleepTriggerTime",
+						   "SetCenterChip",
+						   "PrintCenterChip"};
+    return HFMCommandsSet;
+}
+
+const char** create_tos_commands(){
+    // this function builds the list of TOS commands as the readline
+    // function demands (const char** array)
+
+    // first get possible commands
+    static const std::set<std::string> tosCommandsSet = get_tos_commands();
+    static const std::set<std::string> HFMCommandsSet = get_hfm_commands();
+    
+    const short tos_cmd_size = tosCommandsSet.size();
+    const short hfm_cmd_size = HFMCommandsSet.size();
+    static const short elements = tos_cmd_size + hfm_cmd_size;
+
+    // allocate memory for elements + 1 char*. + 1 to store NULL
+    // pointer as last element
+    const char** cmds = new const char* [elements + 1];
+    int index = 0;
+    // fill the array
+    for (auto cmd : tosCommandsSet){
+	cmds[index] = cmd.c_str();
+	index++;
+    }
+    for (auto cmd : HFMCommandsSet){
+	cmds[index] = cmd.c_str();
+	index++;
+    }
+
+    // now NULL pointer to properly handle last call to
+    // TOS_Command_Generator (while break condition)
+    cmds[index] = NULL;
+    
+    return cmds;
+}
 
 
 char *TOS_Command_Generator(const char *text, int state){
+    // inputs:
+    //     const char *text: the string to be checked
+    //     int state: a variable to allow for initialization of this
+    //                function.
+    //                - state == 0 on first call
+    //                - state  > 0 on every call afterwards
+    //       last state value is custom:
+    //                - state == -1 in case last call to this happened
+    //                  and we wish to delete the tosCommands array
 
-    static int list_index, length;
-    const char *name;
     
-    // if in good state
-    if (!state){
-        list_index = 0;
-        length = strlen(text);
-    }
-
-    while ( (name = tosCommands[list_index]) ){
-        list_index++;
-        if (strncmp (name, text, length) == 0){
-            return strdup (name);
+    // define two static variables. One to store the set
+    // of commands and a bool to check whether the command
+    // set was initialized yet. 
+    static const char **tosCommands;
+    static bool tosCommandsCreated = false;
+    if (state >= 0){
+        if (!tosCommandsCreated){
+	    tosCommands = create_tos_commands();
+	    tosCommandsCreated = true;
         }
+
+        static int list_index, length;
+        const char *name;
+        
+        // if in good state
+        if (!state){
+            list_index = 0;
+            length = strlen(text);
+        }
+
+        while ( (name = tosCommands[list_index]) ){
+	    list_index++;
+            if (strncmp (name, text, length) == 0){
+                return strdup (name);
+            }
+        }
+
+
+        // if no names matched, then return NULL
+        return ((char *) NULL);
+    }
+    else if(state == -1){
+	//std::cout << "deleting TOS commands array" << std::endl;
+	//delete[] tosCommands;
+	return ((char *) NULL);
     }
 
-    // if no names matched, then return NULL
+    // this should never be reached in principle
     return ((char *) NULL);
 }
 
@@ -238,7 +304,7 @@ std::string getUserInput(const char *prompt,
 
     char *buf;
     // add the user input to the history
-//    add_history( buf );
+    // add_history( buf );
     while ( true ){
 	buf = readline(prompt);
 
@@ -308,6 +374,24 @@ std::string getUserInput(const char *prompt,
     return input;
 }
 
+// int getUserInput(const char *prompt,
+// 		 bool numericalInput, 
+// 		 bool allowDefaultOnEmptyInput,
+// 		 std::set<std::string> *allowedStrings){
+//     // a wrapper around getUserInput to return an int, instead of a string
+//     int input;
+//     std::string input_str;
+//     input_str = getUserInput(prompt, numericalInput, allowDefaultOnEmptyInput, allowedStrings);
+
+//     input = std::stoi(input_str);
+//     return input;    
+// }
+
+// template<class T> T getUserInputNumericalNoDefault(const char *prompt, std::set<std::string> *allowedStrings){
+//     // template function to return any kind of value (typically a type of int or string)
+//     return getUserInput(prompt, true, true, allowedStrings);
+// }
+    
 
 // convenience functions to simply call getUserInput with certain flags
 std::string getUserInputNumericalDefault(const char *prompt, std::set<std::string> *allowedStrings){
@@ -368,3 +452,24 @@ bool getUserInputOrDefaultFile(const char *prompt, const std::string& default_pa
 
     return true;
 }
+
+
+// get Input value function used for FADC input.
+// TODO: To be taken out at some point...
+int getInputValue(){
+  // Prompt for input var
+  std::cout << "Enter positive integer value: ";
+
+  //Get input var
+  int value = 0 ;
+  std::cin.exceptions( std::istringstream::failbit );
+  
+  try{ //Check whether input is of valid type
+    std::cin >> value ;
+  }catch( std::istream::failure &e){
+    value = -1; 
+    std::cout << "Invalid input value, value is set to -1" << std::endl;    
+    std::cin.clear();
+  }
+  return value;
+}//end of getInputValue
