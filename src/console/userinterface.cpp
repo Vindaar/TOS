@@ -11,14 +11,14 @@ int Console::UserInterface(){
     int running = 1;
     
     // create a char buffer, which stores the input from the readline() function
-    char *buf;
+    char *buf = NULL;
     // define the attempted completion function (our custom TOS_Command_Completion
     // function defined in tosCommandCompletion.cpp
     rl_attempted_completion_function = TOS_Command_Completion;
+ 
+    static const std::set<std::string> TOSCommandsSet = get_tos_commands();
+    static const std::set<std::string> HFMCommandsSet = get_hfm_commands();
 
-    // define a boost range iterator to search within the input string
-    // to conceal all FADC functions as long as the HFM was not init'd
-    //boost::iterator_range<std::string::const_iterator> range;
   
     // while loop runs the basic UserInterface
     // it checks, whether we're still running, prints 
@@ -30,8 +30,7 @@ int Console::UserInterface(){
     // each string which is compared needs to be added to the
     // char array tosCommands in tosCommandComplention.cpp!
     // ##################################################
-    while(running && ((buf = readline("TOS> ")) != NULL))
-    {
+    while(running && ((buf = readline("TOS> ")) != NULL)){
 
         // exit ends the program
         if (strcmp (buf, "exit") == 0) break;
@@ -50,23 +49,23 @@ int Console::UserInterface(){
         // in order to start the case machine
         std::string input(buf);
 	
-	static const std::set<std::string> HFMCommandsSet = get_hfm_commands();
-	auto is_hv_input = HFMCommandsSet.find(input);
+	auto is_hfm_input = HFMCommandsSet.find(input);
+	auto is_tos_input = TOSCommandsSet.find(input);
 
 	// first parse the normal TOS commands (all non-HFM commands)
-	ParseNormalTosCommands(input, running);
-
+	if (is_tos_input != TOSCommandsSet.end()){
+	    ParseNormalTosCommands(input, running);
+	}
         // ##################################################
         // ################## HV_FADC related commands ######
         // ##################################################   
 
-        if (input.compare("ActivateHFM") == 0)
-        {
+        else if (input.compare("ActivateHFM") == 0){
             CommandActivateHvFadcManager();
         }
 
 	else if (_hvFadcManagerActive == false &&
-		 is_hv_input != HFMCommandsSet.end()){
+		 is_hfm_input != HFMCommandsSet.end()){
 	    std::cout << "HFM not initialized. Nothing to do. \n" 
 		      << "Call ActivateHFM command and try again"
 		      << std::endl;
@@ -79,7 +78,7 @@ int Console::UserInterface(){
 		std::cout << _hvFadcManager->H_ConnectModule() << std::endl;
 	    }
 
-	    if (is_hv_input != HFMCommandsSet.end()){
+	    if (is_hfm_input != HFMCommandsSet.end()){
 		// call function to parse the (valid) command related to HFM
 		ParseActiveHfmCommands(input);
 	    }
@@ -97,7 +96,7 @@ int Console::UserInterface(){
         else if( input.compare("")==0 )
         {
             // TODO: is this necessary??
-            //std::cout << "" << std::flush;
+            std::cout << "" << std::flush;
         }
         else{
             std::cout<<"command not found"<<std::endl;
