@@ -1409,54 +1409,55 @@ int Console::CommandDACScan(){
 
 }
 
-void Console::RunTHLScan(std::string inputChips,
-			unsigned short coarselow,
-			unsigned short coarsehigh,
-			std::pair<int, int> threshold_boundaries,
-			std::atomic_bool *loop_stop){
+void Console::RunTHLScan(std::set<unsigned short> chip_set,
+			 std::pair<int, int> coarse_boundaries,
+			 std::pair<int, int> threshold_boundaries,
+			 std::string shutter_range,
+			 std::string shutter_time,			 
+			 std::atomic_bool *loop_stop){
 
-    if (inputChips == "0"){
-	// in this case perform for all chips
-	for (auto chip : _chip_set){
-	    pc->DoTHLScan(chip, coarselow, coarsehigh, threshold_boundaries, loop_stop);	    
-	}
-    }
-    else{
-	unsigned short chip;
-	chip = std::stoi(inputChips);
-	pc->DoTHLScan(chip, coarselow, coarsehigh, threshold_boundaries, loop_stop);
+    // in this case perform for all chips
+    for (auto chip : chip_set){
+	pc->DoTHLScan(chip,
+		      coarse_boundaries,
+		      threshold_boundaries,
+		      shutter_range,
+		      shutter_time,
+		      loop_stop);	    
     }
     return;
 }
 
 int Console::CommandTHLScan(){
     // variables for getUserInput
-    bool numericalInput = true;
-    bool allowDefaultOnEmptyInput = false;
     std::string input;
+    std::string shutter_range;
+    std::string shutter_time;
 
-    unsigned short coarselow;
-    unsigned short coarsehigh;
-    std::cout << "Which chip do you want to THL scan? (0-"
-	      << _nbOfChips << ") \n"
-	      << "0 for all chips." << std::endl;
+    // first we're going to let the user decide which chips to calibrate
+    // define a set of ints, which will contain the number of the chips we're
+    // going to use
+    std::set<unsigned short> chip_set;
+    chip_set = ChipSelection();
 
-    std::string inputChips;
-    inputChips = getUserInputNonNumericalDefault(_prompt);
-    if(inputChips == "quit") return -1;
-    std::cout << "Start coarse " << std::flush;
-    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    coarselow = std::stoi(input);
-    std::cout << "End coarse " << std::flush;
-    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
-    if (input == "quit") return -1;
-    coarsehigh = std::stoi(input);
+    // coarse boundary seleection
+    std::pair<int, int> coarse_boundaries;
+    coarse_boundaries = CoarseBoundarySelection();
+    if(coarse_boundaries.first  == 0 &&
+       coarse_boundaries.second == 0) return -1;
+    
     // threshold boundary seleection
     std::pair<int, int> threshold_boundaries;
     threshold_boundaries = THLBoundarySelection();
     if(threshold_boundaries.first  == 0 &&
        threshold_boundaries.second == 0) return -1;
+
+    // shutter type selection
+    shutter_range = ShutterRangeSelection();
+    
+    // shutter time selection
+    shutter_time  = ShutterTimeSelection(shutter_range);
+
 
     // now loop over fpga->tpulse to pulse..
     // create seperate thread, which loops and will be stopped, if we type stop in terminal
@@ -1465,10 +1466,11 @@ int Console::CommandTHLScan(){
     loop_stop = false;
     std::thread loop_thread(&Console::RunTHLScan,
 			    this,
-			    inputChips,
-			    coarselow,
-			    coarsehigh,
+			    chip_set,
+			    coarse_boundaries,
 			    threshold_boundaries,
+			    shutter_range,
+			    shutter_time,
 			    &loop_stop);
     //loop_thread.start();
     const char *waitingPrompt = "THL scan is running. type 'q' to quit> ";

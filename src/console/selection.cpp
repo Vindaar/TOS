@@ -477,11 +477,59 @@ int Console::PixPerColumnSelection(){
     return output;
 }
 
+
+// TODO: think about refactoring Coarse and THL functions into
+// a general function to select an upper and lower bound for both
+// either done by:
+//     - have generic function, which also receives strings as arguments
+//       which describe whether coarse or thl
+//       however, requires that one also hands the specific ranges for
+//       thl or coarse (unless only these two hardcoded)
+//     - or simply define a generic function, which is used to build
+//       functions for each, where we hand the generic function the
+//       ranges and names and the final function is returned
+//     C++: how to handle function pointers etc.?
+int Console::CoarseAny(std::string boundary){
+    // handles the user interface of a seleection of an upper / lower
+    // 'coarse' value
+    std::string input;
+
+    std::cout << "Choose a " << boundary << " coarse value\n"
+	      << "range: 0 - 15"
+	      << std::endl;
+    std::set<std::string> allowedValues;
+    for(int i = 0; i < 15; i++) allowedValues.insert(std::to_string(i));
+
+    input = getUserInputNumericalNoDefault(_prompt, allowedValues);
+    if(input == "quit") return -1;
+
+    return std::stoi(input);
+}
+
+std::pair<int, int> Console::CoarseBoundarySelection(){
+    // this function handles user input in regards to the selection of
+    // upper and lower coarse values
+    // call CoarseAny for both boundaries 
+    // and combine both to a pair, which is returned
+    int lower_bound;
+    int upper_bound;
+
+    lower_bound = CoarseAny("lower");
+    if (lower_bound == -1) return std::make_pair(0, 0);
+    upper_bound = CoarseAny("upper");
+    if (upper_bound == -1) return std::make_pair(0, 0);
+
+    //std::pair<std::string, std::string> threshold_boundary_pair;
+    auto coarse_boundary_pair = std::make_pair(lower_bound, upper_bound);
+
+    return coarse_boundary_pair;
+}
+
 int Console::THLAnyBoundary(std::string boundary){
     // handles the user interface of a selection of an upper / lower THL boundary
     std::string input;
 
-    std::cout << "Choose an " << boundary << " THL bound\n"
+    std::cout << "Choose a " << boundary << " THL bound\n"
 	      << "range: 0 - 1023"
 	      << std::endl;
 

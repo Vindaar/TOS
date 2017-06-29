@@ -95,10 +95,12 @@ public:
     int DoDACScan(int DACstoScan, unsigned short chip);
 
     int DoTHLScan(unsigned short chip,
-		  unsigned short coarselow,
-		  unsigned short coarsehigh,
+		  std::pair<int, int> coarse_boundaries,
 		  std::pair<int, int> threshold_boundaries,
+		  std::string shutter_range,
+		  std::string shutter_time,
 		  std::atomic_bool *loop_stop);
+    
     int SCurveSingleTHL(unsigned short thl, unsigned short chip, int time, int step, int pulse);
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);
 

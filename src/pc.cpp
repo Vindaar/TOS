@@ -373,61 +373,65 @@ int PC::DoDACScan(int DACstoScan,unsigned short chip) {
 
 
 int PC::DoTHLScan(unsigned short chip,
-		  unsigned short coarselow,
-		  unsigned short coarsehigh,
+		  std::pair<int, int> coarse_boundaries,
 		  std::pair<int, int> threshold_boundaries,
+		  std::string shutter_range,
+		  std::string shutter_time,
 		  std::atomic_bool *loop_stop){
-        fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
+    fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 
-	std::fstream thlStream;
-	thlStream.open("data/THLScan.txt", std::fstream::app);
+    std::fstream thlStream;
+    thlStream.open("data/THLScan.txt", std::fstream::app);
 
-        for(unsigned int coarse=coarselow;coarse<=coarsehigh;coarse++){
-                fpga->GeneralReset();
-                usleep(10000);
-                fpga->SetMatrix();
-                usleep(60000 );
-                int data[9][256][256];
-                fpga->SerialReadOut(data);
-                fpga->tp->SetDAC(13,chip,coarse);
+    int lower_coarse_bound = coarse_boundaries.first;
+    int upper_coarse_bound = coarse_boundaries.second;
 
-		int lower_thl_bound = threshold_boundaries.first;
-		int upper_thl_bound = threshold_boundaries.second;
-		int thl = lower_thl_bound;
+    for(unsigned int coarse = lower_coarse_bound; coarse <= upper_coarse_bound; coarse++){
+	fpga->GeneralReset();
+	usleep(10000);
+	fpga->SetMatrix();
+	usleep(60000);
+	int data[9][256][256];
+	fpga->SerialReadOut(data);
+	fpga->tp->SetDAC(13,chip,coarse);
 
-		// TODO: 
-		//       - custom shutter length
-		do{
-		    fpga->tp->SetDAC(6,chip,thl);
-		    fpga->WriteReadFSR();
-		    usleep(10000 );
-		    // was 255, 0 before
-		    //fpga->CountingTime(4, 1);
-		    fpga->CountingTime(13, 2);
-		    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
-		    int hits = 0;
-		    int result=0;
-		    fpga->DataChipFPGA(result);
-		    hits = fpga->DataFPGAPC(data,chip);
-		    usleep(20000);
-		    std::cout << "Hits:\t" << hits
-			      << "\tCoarse:\t" << coarse
-			      << "\tTHL: " << thl
-			      << std::endl;
-		    thlStream << "Hits:\t" << hits
-			      << "\tCoarse:\t" << coarse
-			      << "\tTHL: " << thl
-			      << std::endl;
-		    delete data;
+	int lower_thl_bound = threshold_boundaries.first;
+	int upper_thl_bound = threshold_boundaries.second;
+	int thl = lower_thl_bound;
 
-		    thl++;
-                } while ( (thl < upper_thl_bound) && (*loop_stop == false) );
+	// TODO: 
+	//       - custom shutter length
+	do{
+	    fpga->tp->SetDAC(6,chip,thl);
+	    fpga->WriteReadFSR();
+	    usleep(10000 );
+	    // was 255, 0 before
+	    //fpga->CountingTime(4, 1);
+	    fpga->CountingTime(shutter_time, shutter_time);
+	    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
+	    int hits = 0;
+	    int result=0;
+	    fpga->DataChipFPGA(result);
+	    hits = fpga->DataFPGAPC(data,chip);
+	    usleep(20000);
+	    std::cout << "Hits:\t" << hits
+		      << "\tCoarse:\t" << coarse
+		      << "\tTHL: " << thl
+		      << std::endl;
+	    thlStream << "Hits:\t" << hits
+		      << "\tCoarse:\t" << coarse
+		      << "\tTHL: " << thl
+		      << std::endl;
+	    delete data;
+
+	    thl++;
+	} while ( (thl <= upper_thl_bound) && (*loop_stop == false) );
 		    
 		
-        }
-	thlStream.close();
+    }
+    thlStream.close();
 
-        return 0;
+    return 0;
 }
 
 
