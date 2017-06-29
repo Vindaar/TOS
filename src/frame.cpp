@@ -119,7 +119,7 @@ void Frame::SetMask(FrameArray<bool> mask_array){
 }
 
 void Frame::SetPartialFrame(FrameArray<int> pixel_data, 
-			    int x_start, 
+			    int x_start,
 			    int x_step_size,
 			    int y_start,
 			    int y_step_size, 
@@ -320,11 +320,13 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
 	    if( (pix_value != 0) &&
 		(pix_value != ignore_max_value) &&
 		(_mask_data[x][y] == false) ){
-		double delta = 0;
+		double delta  = 0;
+		double delta2 = 0;
 		hits++;
 		delta  = pix_value - mean;
 		mean  += delta / hits;
-		M2    += delta * (pix_value - mean);
+		delta2 = pix_value - mean;
+		M2    += delta * delta2;
 
 		sum += pix_value;
 		if (pFrameFlag == true){
@@ -345,6 +347,17 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
 	var = 0;
     }
 
+    // NOTE: the following can be used to analyze weird frames with huge variances
+    // if (var > 10000){
+    // 	std::cout << "WARNING, WARNING, variance is huge : " << var << "\n"
+    // 		  << "M2 " << M2 << "\n"
+    // 		  << "hits " << hits << "\n"
+    // 		  << "\n dumping to file var_huge.txt"
+    // 		  << std::endl;
+    // 	std::string filename = "tmp/framedumps/var_huge.txt";
+    // 	DumpFrameToFile(filename);
+    // }
+    
     // now pack the sum, hits, mean and variance into a map and hand it back to the
     // caller
     std::map<std::string, double> var_map;
@@ -427,9 +440,6 @@ int Frame::GetFullFrameVariance(){
     // returns the variance of the last partial frame, which was set
     return _fullFrameVariance;
 }
-
-
-
 
 // void Frame::CalcSumHitsMean(bool lastPFrameFlag,
 // 			    bool ignore_max_flag,

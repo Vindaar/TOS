@@ -34,9 +34,8 @@ void PC::AllChipsSetUniformMatrix(std::set<unsigned short> chip_set,
         // on top of this now also set the masking and test pulses for all
         // pixels which are considered in the current step
         // only done for chips we actually want to calibrate (!), i.e. part of chip_set
-        std::set<unsigned short>::iterator it_chip_in_set;
         // try to find chip in the chip_set, if found we set the mask and test pulse
-        it_chip_in_set = chip_set.find(chip);
+        auto it_chip_in_set = chip_set.find(chip);
         if (it_chip_in_set != chip_set.end()){
             // set mask and test pulse
             fpga->tp->Spacing_row(       step, pixels_per_column, chip);
@@ -141,14 +140,14 @@ void PC::SingleChipReadoutCalc(int chip,
     //(*frame_map)[chip].ResetMemberVariables();
     bool convert_from_LFSR = false;
     if (callerFunction == "TOCalib"){
-	convert_from_LFSR = false;
+    	convert_from_LFSR = false;
     }
     else if (callerFunction == "SCurve"){
 	// in case of SCurve we do full frame readout, hence we need to convert
 	// the pixels from pseudo randomw to normal pix values
 	convert_from_LFSR = true;
 	// in case of SCurve we might also set the mask
-	//(*frame_map)[chip].SetMask(fpga->tp->GetMaskArray(chip));	
+	//(*frame_map)[chip].SetMask(fpga->tp->GetMaskArray(chip));
     }
 
 
@@ -157,13 +156,13 @@ void PC::SingleChipReadoutCalc(int chip,
 	      << " y_step_size " << y_step_size
 	      << std::endl;
 
-
     (*frame_map)[chip].SetPartialFrame(pixel_data,
     				       CTPR,
     				       32,
     				       step,
     				       y_step_size,
     				       convert_from_LFSR);
+
     // and get the sum, mean and hits values form this partial frame
     sum  = (*frame_map)[chip].GetLastPFrameSum();
     hits = (*frame_map)[chip].GetLastPFrameHits();
@@ -186,11 +185,11 @@ void PC::SingleChipReadoutCalc(int chip,
     int iter = 0;
     if (callerFunction == "SCurve"){ 
 	thl   = boost::any_cast<int>(parameter_map["thl"]);
-	std::cout << "thl "      << thl   << "\t" << std::flush;
+	std::cout << "thl "  << thl  << "\t" << std::flush;
     }
     else if (callerFunction == "TOCalib"){
 	iter  = boost::any_cast<int>(parameter_map["iteration"]);
-	std::cout << "iter "     << iter  << "\t" << std::flush;
+	std::cout << "iter " << iter << "\t" << std::flush;
     }
 
     // and give some output to see what's going on :)
@@ -276,7 +275,8 @@ void PC::AllChipsSingleStepCtpr(std::set<unsigned short> chip_set,
 	// NOTE: the calculation of CTPRval now takes into account that the CTPR
 	//     value needs to be 1 larger than the offset one wants, also taking
 	//     into account that an offset of CTPR == 32 should not overflow
-	unsigned int CTPRval = 1 << ((CTPR + 1) % 32);
+	unsigned int CTPRval = 0;
+	CTPRval = 1 << ((CTPR + 1) % 32);
         // and set the CTPR DAC to that value
         fpga->tp->SetDAC(14, chip, CTPRval);
 
@@ -815,11 +815,11 @@ void PC::SetTestpulseThresholds(int pulse, std::string callerFunction){
     fpga->i2cDAC(threshold_voltage, 3);
     if (callerFunction == "TOCalib"){
 	// one pulse w/ frequency 50/500 kHz
-	fpga->tpulse(1,50);
+	fpga->tpulse(1, 50);
     }
     else if (callerFunction == "SCurve"){
 	// 1000 pulses w/ frequency 10/500 kHz
-	fpga->tpulse(1000,10);
+	fpga->tpulse(1000, 10);
     }
 }
 

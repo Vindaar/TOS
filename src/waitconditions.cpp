@@ -46,8 +46,7 @@ void Producer::run()
 
 	// TODO: change for usage with HV_FADC_Obj
 	//start measurement at the fadc
-	if((parent->_useHvFadc) && !(parent->_hvFadcManager == NULL))
-	{
+	if((parent->_useHvFadc) && !(parent->_hvFadcManager == NULL)){
 	    // before we start the acquisition, reset the i2c value of the timepix
 	    // object (FADC trigger at clock cycle calculated from it)
 	    parent->fpga->tp->SetI2C(0);
@@ -61,7 +60,6 @@ void Producer::run()
 	    parent->mutexVBuffer.lock();               
 	    (parent->_hvFadcManager)->F_StartAcquisition();       //< start acq
 	    parent->mutexVBuffer.unlock();             
-
 	}
 
 	// in case we use an external trigger, we call CountingTrigger()
@@ -71,7 +69,9 @@ void Producer::run()
 	    result = parent->fpga->CountingTrigger(parent->shutterTime);
 	    // after counting, deactivate fast clock variable again
 	    parent->fpga->UseFastClock(false);
-	    if(result!=20){(parent->RunIsRunning)=false;}
+	    if(result!=20){
+		(parent->RunIsRunning)=false;
+	    }
 	}
 	// else we call CountingTime()
 	else{
@@ -80,7 +80,9 @@ void Producer::run()
 	    result = parent->fpga->CountingTime(parent->shutterTime, parent->shutter_mode);
 	    // after counting, deactivate fast clock variable again
 	    parent->fpga->UseFastClock(false);
-	    if(result!=20){(parent->RunIsRunning)=false;}	    
+	    if(result!=20){
+		(parent->RunIsRunning)=false;
+	    }
 	}
    
 	parent->mutexVBuffer.lock();               
@@ -92,8 +94,7 @@ void Producer::run()
 
 
 	//check if simultaneous FADC and chip readout is activated
-	if(parent->_useHvFadc)                   
-	{
+	if(parent->_useHvFadc){
 	    parent->mutexVBuffer.lock();             
 	    //if there was a trigger from the fadc: stop data taking and readout the chip and fadc event
 	    if((parent->fpga->ReadoutFadcFlag()) == 1){
@@ -106,11 +107,9 @@ void Producer::run()
 	
 	// now call the first function for the readout
 	parent->fpga->DataChipFPGA(result);
- 
     
 	//Producer filling the VBuffer (or a readout vec) for the readout
-	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
-	{
+	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++){
 	    std::vector<int> *dataVec  = new std::vector<int>(12288+1,0);
 
 	    #if DEBUG==2
@@ -471,9 +470,10 @@ void Consumer::run()
 	parent->mutexVBuffer.unlock();
 
 
-	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++)
-	{
-	    if(hits[chip]<0){(parent->RunIsRunning)=false;}
+	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++){
+	    if(hits[chip]<0){
+		(parent->RunIsRunning)=false;
+	    }
 	}
 
 	i++;

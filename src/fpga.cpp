@@ -1354,7 +1354,7 @@ int FPGA::SaveData(std::vector<int> *pHitArray, int NumHits ){
 	Packets = 1;
     }
     if (Hits !=0 ){
-	for (byte=18; byte<=PacketLenght+18;byte=byte+4) {
+	for (byte=18; byte<=PacketLenght+18;byte=byte+4){
 	    (*pHitArray)[i+1] = ((*PackQueueReceive)[packet][byte]); //std::cout << "i: " << i<<std::endl;
 	    i++;
 	    (*pHitArray)[i+1] = ((*PackQueueReceive)[packet][byte + 1]);//std::cout << "i: " << i<<std::endl;
@@ -1365,7 +1365,7 @@ int FPGA::SaveData(std::vector<int> *pHitArray, int NumHits ){
 	    if (packet == Packets-1){
 		PacketLenght = LastPacketLenght-18-4;
 	    }
-	    if (byte+4==PLen+18 or byte+5==PLen+18 or byte+6==PLen+18 or byte+7==PLen+18 ) {
+	    if (byte+4==PLen+18 or byte+5==PLen+18 or byte+6==PLen+18 or byte+7==PLen+18 ){
 		if (packet < Packets-1){
 		    packet++;
 		    byte=14;

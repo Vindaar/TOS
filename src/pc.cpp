@@ -383,8 +383,8 @@ int PC::DoTHLScan(unsigned short chip,
     std::fstream thlStream;
     thlStream.open("data/THLScan.txt", std::fstream::app);
 
-    int lower_coarse_bound = coarse_boundaries.first;
-    int upper_coarse_bound = coarse_boundaries.second;
+    unsigned int lower_coarse_bound = coarse_boundaries.first;
+    unsigned int upper_coarse_bound = coarse_boundaries.second;
 
     for(unsigned int coarse = lower_coarse_bound; coarse <= upper_coarse_bound; coarse++){
 	fpga->GeneralReset();
@@ -407,7 +407,7 @@ int PC::DoTHLScan(unsigned short chip,
 	    usleep(10000 );
 	    // was 255, 0 before
 	    //fpga->CountingTime(4, 1);
-	    fpga->CountingTime(shutter_time, shutter_time);
+	    fpga->CountingTime(shutter_time, shutter_range);
 	    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
 	    int hits = 0;
 	    int result=0;
