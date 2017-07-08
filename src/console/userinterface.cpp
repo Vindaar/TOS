@@ -84,14 +84,6 @@ int Console::UserInterface(){
 	    }
 	}
 
-        // ##################################################
-        // ################## MCP2210 related commands ######
-        // ##################################################   
-
-        else if (input.compare("TempLoopReadout") == 0){
-            CommandTempLoopReadout();
-        }       
-        
         // if no other if was true, command not found
         else if( input.compare("")==0 )
         {
@@ -373,6 +365,15 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
     else if (input.compare("PrintCenterChip") == 0){
 	CommandPrintCenterChip();
     }
+
+    // ##################################################
+    // ################## MCP2210 related commands ######
+    // ##################################################   
+
+    else if (input.compare("TempLoopReadout") == 0){
+	CommandTempLoopReadout();
+    }       
+
 }
 
 
