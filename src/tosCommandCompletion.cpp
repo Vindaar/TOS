@@ -173,11 +173,11 @@ const char** create_tos_commands(){
     const char** cmds = new const char* [elements + 1];
     int index = 0;
     // fill the array
-    for (auto cmd : tosCommandsSet){
+    for (auto &cmd : tosCommandsSet){
 	cmds[index] = cmd.c_str();
 	index++;
     }
-    for (auto cmd : HFMCommandsSet){
+    for (auto &cmd : HFMCommandsSet){
 	cmds[index] = cmd.c_str();
 	index++;
     }
