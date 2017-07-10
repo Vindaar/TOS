@@ -11,10 +11,11 @@ import os
 import time
 from septemModule.septemClasses import chip, septem, customColorbar, MyFuncAnimation
 from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, read_zsub_mp, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump, create_list_of_files, create_list_of_files_dumb
-from septemModule.septemPlot  import plot_file, plot_fadc_file, plot_occupancy, plot_pixel_histogram
+from septemModule.septemPlot  import plot_file_general, plot_fadc_file, plot_occupancy, plot_pixel_histogram
 from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_run, get_occupancy_batch_header, fill_classes_from_file_data_mp
 
 import pyinotify
+import argparse
 
 import multiprocessing as mp
 import collections
@@ -392,7 +393,7 @@ class WorkOnFile:
             # folder. Need to obtain temps from yielder thread
             temps = self.ns.currentTemps
         else:
-            temps = self.temps_dict
+            temps = self.ns.temps_dict
 
         # set the filenames to None, to easier check whether files dictionary was already
         # populated
@@ -422,7 +423,6 @@ class WorkOnFile:
             
             plot_file_general(self.filepath, 
                               filename, 
-                              self.septem,
                               self.fig,
                               self.chip_subplots,
                               self.im_list,
@@ -464,9 +464,7 @@ class WorkOnFile:
 
         batches_flag = batches_dict["batches_flag"]
         nbatches     = batches_dict["nbatches"]
-        
-        # to scale batches, which contain less than one hour up
-        scaling_factors = np.ones(nbatches, dtype=int)
+
         
         if batches_flag is True and nbatches is None:
             # in this case calculate nbatches to ~1 batch per hour
@@ -476,6 +474,9 @@ class WorkOnFile:
         elif batches_flag is False:
             # set batches to 1
             nbatches = 1
+
+        # to scale batches, which contain less than one hour up
+        scaling_factors = np.ones(nbatches, dtype = int)            
             
         for i in xrange(nbatches):
             # get current scaling
@@ -718,7 +719,9 @@ class WorkOnFile:
                                                          self.ns.nfiles,
                                                          fadcFlag = False)
             # we create the event and chip header object
-            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
+            filename = os.path.join(self.filepath, filename)
+            
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(filename)
             # now go through each chip header and add data of frame
             # to chip_arrays
             for chpHeader in chpHeaderList:
@@ -774,7 +777,8 @@ class WorkOnFile:
                                                              self.ns.nfiles,
                                                              fadcFlag = False)
             # we create the event and chip header object
-            evHeader, chpHeaderList = read_zero_suppressed_data_file(self.filepath + filename)
+            filename = os.path.join(self.filepath, filename)
+            evHeader, chpHeaderList = read_zero_suppressed_data_file(filename)
             # now go through each chip header and add data of frame
             # to chip_arrays
             for chpHeader in chpHeaderList:
@@ -889,91 +893,124 @@ def main(args):
     # args dict contains additional arguments to be given to the WorkOnFile object
     args_dict = {}
 
-    if len(args) > 0:
-        try:
-            f = open(args[0], 'r')
-            singleFile = True
-            f.close()
-        except IOError:
-            folder = args[0]
+    parser = argparse.ArgumentParser(description = 'Python Septemboard TOS event display')
+    parser.add_argument('run_folder',
+                        help = "The folder, which contains the run to be plotted from")
+    parser.add_argument('-o', '--occupancy', '--occupancy_flag',
+                        action = 'store_true',
+                        help = "Program will only create occupancy plot of given run folder")
+    parser.add_argument('--cb_flag', default = 1, type = int,
+                        help = "Sets color bar flag to absolute (1) or percentile of values (0)")
+    parser.add_argument('--cb_value', default = 80, type = int,
+                        help = "Sets color bar max value to absolute (if --cb_flag true) \
+                        or relative value given")
+    parser.add_argument('--cb_chip', default = 3, type = int,
+                        help = "Sets chip from which to determine color bar")
+    parser.add_argument('--single_chip', action = 'store_true', dest = "single_chip_flag",
+                        help = "Use single chip instead of Septemboard")
+    parser.add_argument('--start_iter', default = 0, type = int,
+                        help = "Start at event of this index in run folder")
+    parser.add_argument('--ignore_full_frames', action = 'store_true',
+                        help = "Ignore completely full frames in occupancy plot")
+    parser.add_argument('--batches_flag', action = "store_true",
+                        help = "Use batches in occupancy plot.")    
+    parser.add_argument('--batches', default = None, type = int, dest = "nbatches",
+                        help = "Use this many batches for occupancy plot. If 0 and \
+                        batches_flag == True, calc batches to be ~1 hour.")
 
-        # now we check whether the -o flag was given from the command line
-        # this activates occupancy mode, i.e. it creates an occupancy plot of the whole run
-        if "-o" in args:
-            occupancy_flag = True
-        if "--cb_flag" in args:
-            try:
-                ind  = args.index("--cb_flag")
-                flag = args[ind + 1]
-                if flag == "1":
-                    cb_flag = True
-                else:
-                    cb_flag = False
-            except IndexError:
-                print 'If you enter cb_flag please enter 1 or 0 afterwards.'
-                import sys
-                sys.exit()
-        if "--cb_value" in args:
-            try:
-                ind  = args.index("--cb_value")
-                cb_value = float(args[ind + 1])
-            except IndexError:
-                print 'If you enter cb_value please enter a value to use afterwards.'
-                import sys
-                sys.exit()
-        if "--cb_chip" in args:
-            try:
-                ind  = args.index("--cb_chip")
-                cb_chip = int(args[ind + 1])
-            except IndexError:
-                print 'If you enter cb_chip please enter a value to use afterwards.'
-                import sys
-                sys.exit()
-        if "--single_chip" in args:
-            args_dict["single_chip_flag"] = True
-        else:
-            args_dict["single_chip_flag"] = False
-        if "--start_iter" in args:
-            try:
-                ind = args.index("--start_iter")
-                args_dict["start_iter"] = int(args[ind + 1])
-            except IndexError:
-                print 'If you enter --start_iter please enter a start value.'
-                args_dict["start_iter"] = 0
-        else:
-                args_dict["start_iter"] = 0
-        if "--ignore_full_frames" in args:
-            # if this is given as argument, we will drop events with more than 4096 pixels per chip
-            # in the occupancy, since maximum of zero suppressed readout
-            args_dict["ignore_full_frames"] = True
-        else:
-            args_dict["ignore_full_frames"] = False
-        if "--batches" in args:
-            try:
-                ind = args.index("--batches")
-                args_dict["nbatches"] = int(args[ind + 1])
-                args_dict["batches_flag"] = True
-            except IndexError:
-                args_dict["nbatches"] = None
-                args_dict["batches_flag"] = True
-        else:
-            args_dict["batches_flag"] = False
-            args_dict["nbatches"]     = None
-        if "--occupancy" in args:
-            args_dict["occupancy"] = True
-        else:
-            args_dict["occupancy"] = False
+    args_dict = vars(parser.parse_args())
+    folder = os.path.abspath(args_dict["run_folder"])
+
+    print(args_dict)
+    # import sys
+    # sys.exit()
+    
+    
+    # if len(args) > 0:
+    #     try:
+    #         f = open(args[0], 'r')
+    #         singleFile = True
+    #         f.close()
+    #     except IOError:
+    #         folder= args[0]
+
+    #     now we check whether the -o flag was given from the command line
+    #     this activates occupancy mode, i.e. it creates an occupancy plot of the whole run
+    #     if "-o" in args:
+    #         occupancy_flag = True
+    #     if "--cb_flag" in args:
+    #         try:
+    #             ind  = args.index("--cb_flag")
+    #             flag = args[ind + 1]
+    #             if flag == "1":
+    #                 cb_flag = True
+    #             else:
+    #                 cb_flag = False
+    #         except IndexError:
+    #             print 'If you enter cb_flag please enter 1 or 0 afterwards.'
+    #             import sys
+    #             sys.exit()
+    #     if "--cb_value" in args:
+    #         try:
+    #             ind  = args.index("--cb_value")
+    #             cb_value = float(args[ind + 1])
+    #         except IndexError:
+    #             print 'If you enter cb_value please enter a value to use afterwards.'
+    #             import sys
+    #             sys.exit()
+    #     if "--cb_chip" in args:
+    #         try:
+    #             ind  = args.index("--cb_chip")
+    #             cb_chip = int(args[ind + 1])
+    #         except IndexError:
+    #             print 'If you enter cb_chip please enter a value to use afterwards.'
+    #             import sys
+    #             sys.exit()
+    #     if "--single_chip" in args:
+    #         args_dict["single_chip_flag"] = True
+    #     else:
+    #         args_dict["single_chip_flag"] = False
+    #     if "--start_iter" in args:
+    #         try:
+    #             ind = args.index("--start_iter")
+    #             args_dict["start_iter"] = int(args[ind + 1])
+    #         except IndexError:
+    #             print 'If you enter --start_iter please enter a start value.'
+    #             args_dict["start_iter"] = 0
+    #     else:
+    #             args_dict["start_iter"] = 0
+    #     if "--ignore_full_frames" in args:
+    #         if this is given as argument, we will drop events with more than 4096 pixels per chip
+    #         in the occupancy, since maximum of zero suppressed readout
+    #         args_dict["ignore_full_frames"] = True
+    #     else:
+    #         args_dict["ignore_full_frames"] = False
+    #     if "--batches" in args:
+    #         try:
+    #             ind = args.index("--batches")
+    #             args_dict["nbatches"] = int(args[ind + 1])
+    #             args_dict["batches_flag"] = True
+    #         except IndexError:
+    #             args_dict["nbatches"] = None
+    #             args_dict["batches_flag"] = True
+    #     else:
+    #         args_dict["batches_flag"] = False
+    #         args_dict["nbatches"]     = None
+    #     if "--occupancy" in args:
+    #         args_dict["occupancy"] = True
+    #     else:
+    #         args_dict["occupancy"] = False
 
                 
-    else:
-        print 'No argument given. Please give a folder from which to read files'
-        import sys
-        sys.exit()
+    # else:
+    #     print 'No argument given. Please give a folder from which to read files'
+    #     import sys
+    #     sys.exit()
 
 
     # create a custom colorbar object to store colorbar related properties; 
     # initialize with values either as defaults from above or command line argument
-    cb = customColorbar(cb_flag, cb_value, cb_chip)
+    cb = customColorbar(args_dict["cb_flag"], args_dict["cb_value"], args_dict["cb_chip"])
 
     # get list of files in folder
     # if singleFile == False:

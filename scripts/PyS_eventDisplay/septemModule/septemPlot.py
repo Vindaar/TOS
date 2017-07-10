@@ -1,6 +1,7 @@
 # this file implements the functions, which perform the plotting of the data
 # for the septem board and the FADC data
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -29,7 +30,7 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps
     """
 
     # create full path to file
-    filepathName = filepath + filename
+    filepathName = os.path.join(filepath, filename)
     # and read that file
     evHeader, chpHeaderList = read_zero_suppressed_data_file(filepathName)
     
@@ -115,11 +116,11 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
             chip_full_array[chip_data[:,1], chip_data[:,0]] = chip_data[:,2]
 
             # now create an image, but rather use im_list to set the correct image data
-            im_list[chipNum - 1].set_data(chip_full_array)
+            im_list[chipNum].set_data(chip_full_array)
                         
             # # now remove this chip from the plots_to_hide list
-            plots_to_hide.remove(chipNum - 1)
-            im_list[chipNum - 1].set_visible(True)
+            plots_to_hide.remove(chipNum)
+            im_list[chipNum].set_visible(True)
 
             
             if cb.flag == True:
@@ -128,9 +129,9 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
                 data_nonzero = chip_full_array[np.nonzero(chip_full_array)]
                 color_value  = np.percentile(data_nonzero, cb.value)
 
-                im_list[chipNum - 1].set_clim(0, color_value)
+                im_list[chipNum].set_clim(0, color_value)
             else:
-                im_list[chipNum - 1].set_clim(0, cb.value)
+                im_list[chipNum].set_clim(0, cb.value)
 
             # not needed anymore
             #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])#, vmin=0, vmax=250)
@@ -160,9 +161,11 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
     if nChips > 1:
         # update colorbar
         cb.update_normal(im_list[cb.chip])
+        cb.update_normal(im_list[cb.chip])        
     else:
         # only update colorbar in this case
         cb.update_normal(im_list[0])
+        cb.update_normal(im_list[0])        
         #cb.update_normal(im_list[0])
         # now we draw the canvas again. This is only done, because when using an animation 
         # (auto updating), sometimes otherwise we'd end up with a blank canvas where the plots

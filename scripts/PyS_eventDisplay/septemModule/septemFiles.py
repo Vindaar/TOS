@@ -62,6 +62,7 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     # with the zero suppressed readout
     # the optional flag header_only can be used to only read the header.
     # in this case the pix data array will be set to []
+    print(filepath)
     if header_only == True:
         # in case we only want the header, give the sizehint equal to 1
         # for very large files, not the whole file will be read, speeding up the
@@ -349,7 +350,7 @@ def create_list_of_files(nStart, nEnd, eventSet, filepath):
     inodes_2 = create_list_of_inodes(filepath)
     #inodes = [os.stat(el).st_ino for el in list_of_files]
     # TODO FINIISNFINDISNDIANSDIX
-    print('done getting inode'))
+    print('done getting inode')
     fi = [x for (y, x) in sorted(zip(inodes_2, list_of_files))]
 
     return fi
