@@ -786,8 +786,10 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     // the CountingTime() function (FADC readout is only implemented there!)
     bool isCountingMode = false;
     isCountingMode = checkIfModeIsCounting(Mode);
-    
-    if( (_fadcBit == 1) &&
+
+    // TODO: build something, which does not check for NULL pointer
+    if( (_hvFadcManager != NULL) &&
+	(_fadcBit == 1) &&
 	(isCountingMode == true) ){
 	// if fadc bit was set and Communication was called from CountingTime
 	// we set the clock cycle at which the FADC triggered and the clock cycles
