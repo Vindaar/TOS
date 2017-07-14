@@ -2,6 +2,9 @@
 import numpy as np
 from matplotlib import animation
 import pyinotify
+from septemMisc import tail, convert_datetime_str_to_datetime
+import Queue
+
 
 
 class chip:
@@ -188,7 +191,7 @@ class eventHeader:
                 key = el_key[0].split()[-1]
                 val = el.split()[-1]
             
-            #print val, key
+            #print(val, key
             self.attr[key] = val
         else:
             return
@@ -204,7 +207,7 @@ class eventHeader:
             runNum = "Run # : ".ljust(nFill)
             runNum += self.attr["runNumber"] + "\n"
         except KeyError:
-            print 'no run number contained, continue without'
+            print('no run number contained, continue without')
             runNum = ''
         
         try:
@@ -215,11 +218,11 @@ class eventHeader:
                 event = "Event # : ".ljust(nFill)
                 event += self.attr["eventNumber:"] + "\n"
             except KeyError:
-                print 'KeyError: eventNumber not found in file', self.filename
+                print('KeyError: eventNumber not found in file', self.filename)
                 # NOTE: this keeps popping up in files, which do indeed HAVE an eventNumber:
                 # line, but have no active pixels (which does not seem to make sense in a
                 # calibratin run)
-                print self.attr
+                print(self.attr)
                 # NOTE2: the print in the line before is empty in these cases, too. so this
                 # is definitely weird
                 # workaround, we return an empty header
@@ -264,7 +267,7 @@ class eventHeader:
             runNum = "Run # : ".ljust(nFill)
             runNum += self.attr["runNumber"] + "\n"
         except KeyError:
-            print 'Run number not available yet, skipping'
+            print('Run number not available yet, skipping')
             runNum = ""
         
         date = "Date : ".ljust(nFill)
@@ -298,7 +301,7 @@ class chipHeaderData:
             el  = el.split(":")
             val = el[1].strip()
             key = el[0].split()[-1]
-            #print val, key
+            #print(val, key
             self.attr[key] = val
         else:
             return
@@ -343,7 +346,7 @@ class Fadc:
         self.channel2 = []
         self.channel3 = []
 
-        self.pedestalDefaultPath = "../../bin/data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
+        self.pedestalDefaultPath = "../../data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
 
         # now apply the pedestal run
         self.applyPedestalRun()
@@ -407,7 +410,7 @@ class Fadc:
 
         # calculate the number of indices to roll based on trigger record ans post trigger
         self.nRoll = (self.trigger_rec - self.posttrig) * 20
-        print "trig rec, posttrig, roll ", self.trigger_rec, self.posttrig, self.nRoll
+        print("trig rec, posttrig, roll ", self.trigger_rec, self.posttrig, self.nRoll)
         # and roll the array
         self.fadcValues = np.roll(self.fadcValues, -self.nRoll)
         # set flag for temporal correction
@@ -637,11 +640,58 @@ class MyFuncAnimation(animation.FuncAnimation):
                 a.figure.canvas.restore_region(bg_cache[a])
 
 
-class EventHandler(pyinotify.ProcessEvent):
+class TempHandler(pyinotify.ProcessEvent):
     """
     This class deals with watching the run folder for changes, as
-    well as watching changes to the temp_log file
+    well as watching changes to the temp_log file, specifically for 
+    the temp log
     """
+
+    def __init__(self, ns, lock):
+        self.ns = ns
+        self.lock = lock
+        super(TempHandler, self).__init__()
+
+    def my_init(self, maxqsize = 1):
+        # also accepts a maxqsize keyword, which sets the maximal size
+        # of the Queue. If default 0, no maximum size.
+        # e.g. dealing with temp_log, good idea to have maxqsize = 1
+        # if max size of Queue is reached, the 'queue.put' statement
+        # will be blocking!
+        self.q = Queue.Queue(maxsize = maxqsize)
+
+        self.current_temps = {"IMB" : None,
+                              "Septem" : None,
+                              "Date" : None}
+
+    def get_last_line(self):
+        line = None
+        if self.is_empty() is False:
+            fname = self.get_filename_from_queue()
+            line  = tail(fname, 1)[0]
+        else:
+            pass
+        return line
+
+    def set_new_temparature(self, line):
+        # sets the temparature for the new line
+        imb, septem, date = line.split()
+        self.current_temps["IMB"]    = imb
+        self.current_temps["Septem"] = septem
+        self.current_temps["Date"]   = convert_datetime_str_to_datetime(date)
+
+    def get_current_temps(self):
+        # returns the dictionary of the current
+        # temparatures
+        # first call get_last_line
+        line = self.get_last_line()
+        if line is not None:
+            self.set_new_temparature(line)
+            
+            self.lock.acquire()
+            self.ns.currentTemps = (self.current_temps["IMB"], self.current_temps["Septem"])
+            self.lock.release()
+        #return (self.current_temps["IMB"], self.current_temps["Septem"])
 
     def yield_file(self, pathname, descr):
         # yields the file, which was added (an event)
@@ -649,16 +699,154 @@ class EventHandler(pyinotify.ProcessEvent):
         # descr: descriptor, depending on which function called
         #        this function
         yield (pathname, descr)
+
+    def get_filename_from_queue(self):
+        # returns the filename from the queue
+        fname, descr = self.q.get()
+        return fname        
+
+    def put_queue(self, pathname, descr):
+        # puts event into queue
+        # descr: descriptor, depending on which function called
+        # put a tuple of pathname and event into queue
+        self.q.put((pathname, descr))
+        self.get_current_temps()
+        
+    def get_queue(self):
+        # gets the next element from the queue
+        return self.q.get()
+
+    def is_empty(self):
+        # returns queue empty state
+        return self.q.empty()
+
+    def is_full(self):
+        # returns queue full state
+        return self.q.full()        
     
     def process_IN_CREATE(self, event):
-        # print "Creating:", event.pathname
-        # print pyinotify.ProcessEvent
-        yield_file(event.pathname, "create")
+        #print("Creating:", event.pathname)
+        #print(pyinotify.ProcessEvent)
+        self.put_queue(event.pathname, "create")
         
     def process_IN_DELETE(self, event):
-        #print "Removing:", event.pathname
-        yield_file(event.pathname, "delete")
+        #print("Removing:", event.pathname)
+        self.put_queue(event.pathname, "delete")
         
     def process_IN_MODIFY(self, event):
-        #print "Modifying:", event.pathname
-        yield_file(event.pathname, "modify")
+        #print("Modifying:", event.pathname)
+        #print('is empty yet ' , self.is_empty())
+        self.put_queue(event.pathname, "modify")
+
+    def print_files(self):
+        pass
+
+    
+
+# class TempHandler():
+#     """ This is a special class, which owns an EventHandler, specially
+#         suited to deal with temparature log files """
+#     def __init__(self, event_handler = None, maxqsize = 1):
+#         if event_handler is None:
+#             self.event_handler = EventHandler(maxqsize = maxqsize)
+#         else:
+#             self.event_handler = event_handler
+#             print(id(event_handler))
+        
+        
+class EventsHandler(pyinotify.ProcessEvent):
+    """
+    This class deals with watching the run folder for changes,
+    realizing when new event files were written to disk
+    """
+
+    def __init__(self, ns, lock):
+        self.ns = ns
+        self.lock = lock
+        super(EventsHandler, self).__init__()
+
+    def my_init(self, maxqsize = 0):
+        # also accepts a maxqsize keyword, which sets the maximal size
+        # of the Queue. If default 0, no maximum size.
+        # for events, we do not want a maximum size
+        # if max size of Queue is reached, the 'queue.put' statement
+        # will be blocking!
+        self.q = Queue.Queue(maxsize = maxqsize)
+        self.last_event = ""
+
+    # def get_last_line(self):
+    #     line = None
+    #     if self.is_empty() is False:
+    #         fname = self.get_filename_from_queue()
+    #         line  = tail(fname, 1)[0]
+    #     else:
+    #         pass
+    #     return line
+
+    # def set_new_temparature(self, line):
+    #     # sets the temparature for the new line
+    #     imb, septem, date = line.split()
+    #     self.current_temps["IMB"]    = imb
+    #     self.current_temps["Septem"] = septem
+    #     self.current_temps["Date"]   = convert_datetime_str_to_datetime(date)
+
+    # def get_current_temps(self):
+    #     # returns the dictionary of the current
+    #     # temparatures
+    #     # first call get_last_line
+    #     line = self.get_last_line()
+    #     if line is not None:
+    #         self.set_new_temparature(line)
+            
+    #         self.lock.acquire()
+    #         self.ns.currentTemps = (self.current_temps["IMB"], self.current_temps["Septem"])
+    #         self.lock.release()
+    #     #return (self.current_temps["IMB"], self.current_temps["Septem"])
+
+    def yield_file(self, pathname, descr):
+        # yields the file, which was added (an event)
+        # or changed (the temp log)
+        # descr: descriptor, depending on which function called
+        #        this function
+        yield (pathname, descr)
+
+    def get_filename_from_queue(self):
+        # returns the filename from the queue
+        fname, descr = self.q.get()
+        return fname        
+
+    def put_queue(self, pathname, descr):
+        # puts event into queue
+        # descr: descriptor, depending on which function called
+        # put a tuple of pathname and event into queue
+        self.q.put((pathname, descr))
+        print(self.q.get())
+        
+    def get_queue(self):
+        # gets the next element from the queue
+        return self.q.get()
+
+    def is_empty(self):
+        # returns queue empty state
+        return self.q.empty()
+
+    def is_full(self):
+        # returns queue full state
+        return self.q.full()        
+    
+    def process_IN_CREATE(self, event):
+        print("Creating:", event.pathname)
+        #print(pyinotify.ProcessEvent)
+        self.put_queue(event.pathname, "create")
+        
+    def process_IN_DELETE(self, event):
+        print("Removing:", event.pathname)
+        self.put_queue(event.pathname, "delete")
+        
+    def process_IN_MODIFY(self, event):
+        print("Modifying:", event.pathname)
+        #print('is empty yet ' , self.is_empty())
+        self.put_queue(event.pathname, "modify")
+
+    def print_files(self):
+        pass

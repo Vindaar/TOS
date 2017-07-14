@@ -4,10 +4,19 @@
 import os
 import scandir
 import numpy as np
-from septemClasses import eventHeader, chipHeaderData
-#from septemMisc import convert_datetime_str_to_datetime
 import collections
 import cPickle
+
+#try:
+from septemClasses import eventHeader, chipHeaderData
+from septemMisc import convert_datetime_str_to_datetime
+# except ImportError:
+#     in this case the class was already imported in another file
+#     TODO: properly fix this
+#     print("WARNING: Already imported some of the local modules in another file.")
+#     pass
+# 
+
 
 
 ################################################################################

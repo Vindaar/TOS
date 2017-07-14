@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+import os
+import time
+import pyinotify
+import argparse
+
 import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
@@ -7,25 +12,20 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.animation as animation
 from matplotlib.lines import Line2D
-import os
-import time
-from septemModule.septemClasses import chip, septem, customColorbar, MyFuncAnimation
-from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, read_zsub_mp, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump, create_list_of_files, create_list_of_files_dumb
+
+from septemModule.septemClasses import chip, septem, customColorbar, MyFuncAnimation, TempHandler, EventsHandler
+from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, read_zsub_mp, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump, create_list_of_files, create_list_of_files_dumb, get_temp_filename
 from septemModule.septemPlot  import plot_file_general, plot_fadc_file, plot_occupancy, plot_pixel_histogram
 from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_run, get_occupancy_batch_header, fill_classes_from_file_data_mp
 
-import pyinotify
-import argparse
-
 import multiprocessing as mp
-import collections
 from multiprocessing.managers import BaseManager, Namespace, NamespaceProxy
 
 
 # create global lock on the multiprocessing
 lock = mp.Lock()
 
-def refresh(ns, filepath):
+def refresh(ns, filepath, temp_handler):
     while ns.doRefresh == True:
         lock.acquire()
         # on first call we read the files, which are already in the folder
@@ -36,25 +36,11 @@ def refresh(ns, filepath):
         ns.nfiles         = len(ns.eventSet)
         refreshInterval   = ns.refreshInterval
         lock.release()
+        # get current temps (written to ns.currentTemps is new available)
+        temp_handler.get_current_temps()
 
-        # # then start watcher daemon, which watches over filepath and checks
-        # # whether files change / are added
-        # wm   = pyinotify.WatchManager()
-        # mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY
-
-        # temp_log_file = os.path.join(filepath, get_temp_filename())
-
-        # notifier = pyinotify.ThreadedNotifier(wm, EventHandler())
-        # notifier.start()
-        # wdd_run   = wm.add_watch(filepath, mask, rec=False)
-        # wdd_temps = wm.add_watch(filepath, mask, rec=False)
-        
-        
-        
-        
         time.sleep(refreshInterval)
         #print 'done updating filelist'
-
 
 ##################################################
 ########## WORK ON FILE ##########################
@@ -392,6 +378,7 @@ class WorkOnFile:
             # in this case we're doing online viewing, i.e. jumping to last file in
             # folder. Need to obtain temps from yielder thread
             temps = self.ns.currentTemps
+            #print('temps are ', temps)
         else:
             temps = self.ns.temps_dict
 
@@ -447,7 +434,7 @@ class WorkOnFile:
         # of the filelist and always plot the last element of the list
         # it is simply a wrapper around work_on_file, with the argument -1, as to always call the 
         # last element of the files dictionary
-        self.work_on_file(-1)
+        self.work_on_file(-1, online_flag = True)
 
 
     def create_occupancy_plot(self, 
@@ -874,6 +861,37 @@ def create_chip_axes(sep, fig, single_chip_flag):
     
     return chip_subplots
 
+def setup_temp_watcher(filepath, ns):
+    # sets up the temparature file watcher. Can easily be extended
+    # to check every file in run folder
+    
+    # then start watcher daemon, which watches over filepath and checks
+    # whether files change / are added
+    #wm_run   = pyinotify.WatchManager()
+    wm_temp  = pyinotify.WatchManager()
+    mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY
+
+    temp_log_file = os.path.join(filepath, get_temp_filename())
+
+
+    temp_handler = TempHandler(ns, lock)
+    print('nsns', ns)
+    #temp_handler.my_init(ns, maxqsize = 0)
+    temp_notifier = pyinotify.ThreadedNotifier(wm_temp, temp_handler)
+    temp_notifier.start()
+    wdd_temps = wm_temp.add_watch(temp_log_file, mask, rec=False)
+
+    # run_handler  = EventsHandler(ns, lock)
+    # run_notifier = pyinotify.ThreadedNotifier(wm_run, run_handler)
+    # run_notifier.start()
+    # wdd_run   = wm_run.add_watch(filepath, mask, rec=False)
+    run_notifier = None
+    run_handler = None
+
+    #notifier.stop()
+
+    return (temp_notifier, temp_handler), (run_notifier, run_handler)
+
 def main(args):
 
     singleFile = False
@@ -922,6 +940,113 @@ def main(args):
     folder = os.path.abspath(args_dict["run_folder"])
 
     print(args_dict)
+
+    # create a custom colorbar object to store colorbar related properties; 
+    # initialize with values either as defaults from above or command line argument
+    cb = customColorbar(args_dict["cb_flag"], args_dict["cb_value"], args_dict["cb_chip"])
+
+    # get list of files in folder
+    # if singleFile == False:
+    #     files, filesFadc = create_files_from_path_combined(folder, None, None, False)
+    if singleFile == True:
+        path = args[0].split('/')[:-1]
+        folder = ""
+        for el in path:
+            folder += el + '/'
+        files = [args[0].split('/')[-1]]
+
+    # initialize a septem object
+    fig_x_size = 15
+    fig_y_size = 10
+    sep = septem(0.0, fig_x_size, fig_y_size, 0.8)
+    # and use it to set the appropriate figure size
+    x = fig_x_size
+    y = fig_y_size# * sep.y_size / sep.x_size
+    # define the figure for the septem board
+    fig = plt.figure(figsize=(x, y))
+    fig.canvas.set_window_title('This is a secret title!')
+    # add a subplot for the FADC plot
+    fadc = gridspec.GridSpec(1, 1)
+    # set the fadc plot to some reasonable value.. 
+    fadc.update(left=0.55, right=0.95, top=0.7, bottom=0.25)
+    fadcPlot = fig.add_subplot(fadc[0])
+
+    
+    # create the axes for the chip layout 
+    chip_subplots = create_chip_axes(sep, fig, args_dict["single_chip_flag"])
+
+
+    # and create the namespace, which will be given to both threads, so they can access
+    # the same resources
+    ns                 = mp.Manager().Namespace()
+    # define a flag for the refreshing thread, so it knows when to stop
+    ns.doRefresh       = True
+    # define the ordered dictionary, in which we store the filenames
+    # ns.filelist        = filelistManager.OrderedDict()
+    # individual lists, which are generated from the dictionary
+    # ns.filelistEvents  = []
+    # ns.filelistFadc    = []
+    # these two sets are the successors to the previously used list of
+    # files. We now only store the event numbers and create the corresponding
+    # filenames on the fly from the path
+    ns.eventSet        = set()
+    ns.fadcSet         = set()
+    ns.nfiles          = 0
+    # and the interval, in which the thread refreshes the filelist
+    ns.refreshInterval = 0.0001
+    print ns
+
+    # temparature readout related
+    ns.currentTemps = None
+    ns.temps_dict   = None
+
+    
+    try:
+        (temp_notifier, temp_watcher), (run_notifier, run_handler) = setup_temp_watcher(folder, ns)
+        #temp_watcher = None
+        # we start the file refreshing (second) thread first, because we only
+        # want to accept key inputs, after the files have been read a single
+        # time.
+        # and the second thread, which performs the refreshing
+        p2 = mp.Process(target = refresh, args = (ns, folder, temp_watcher))
+        p2.start()
+        
+
+        # now create the main thread, which starts the plotting
+        files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb, args_dict)
+        files.connect()
+
+        plt.show()
+        p2.join()
+    except KeyboardInterrupt:
+        temp_notifier.stop()
+        #run_notifier.stop()
+        pass
+    else:
+        temp_notifier.stop()
+        #run_notifier.stop()
+        pass
+
+if __name__=="__main__":
+    import sys
+    main(sys.argv[1:])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     # import sys
     # sys.exit()
     
@@ -1005,82 +1130,4 @@ def main(args):
     # else:
     #     print 'No argument given. Please give a folder from which to read files'
     #     import sys
-    #     sys.exit()
-
-
-    # create a custom colorbar object to store colorbar related properties; 
-    # initialize with values either as defaults from above or command line argument
-    cb = customColorbar(args_dict["cb_flag"], args_dict["cb_value"], args_dict["cb_chip"])
-
-    # get list of files in folder
-    # if singleFile == False:
-    #     files, filesFadc = create_files_from_path_combined(folder, None, None, False)
-    if singleFile == True:
-        path = args[0].split('/')[:-1]
-        folder = ""
-        for el in path:
-            folder += el + '/'
-        files = [args[0].split('/')[-1]]
-
-    # initialize a septem object
-    fig_x_size = 15
-    fig_y_size = 10
-    sep = septem(0.0, fig_x_size, fig_y_size, 0.8)
-    # and use it to set the appropriate figure size
-    x = fig_x_size
-    y = fig_y_size# * sep.y_size / sep.x_size
-    # define the figure for the septem board
-    fig = plt.figure(figsize=(x, y))
-    fig.canvas.set_window_title('This is a secret title!')
-    # add a subplot for the FADC plot
-    fadc = gridspec.GridSpec(1, 1)
-    # set the fadc plot to some reasonable value.. 
-    fadc.update(left=0.55, right=0.95, top=0.7, bottom=0.25)
-    fadcPlot = fig.add_subplot(fadc[0])
-
-    
-    # create the axes for the chip layout 
-    chip_subplots = create_chip_axes(sep, fig, args_dict["single_chip_flag"])
-
-
-    # and create the namespace, which will be given to both threads, so they can access
-    # the same resources
-    ns                 = mp.Manager().Namespace()
-    # define a flag for the refreshing thread, so it knows when to stop
-    ns.doRefresh       = True
-    # define the ordered dictionary, in which we store the filenames
-    # ns.filelist        = filelistManager.OrderedDict()
-    # individual lists, which are generated from the dictionary
-    # ns.filelistEvents  = []
-    # ns.filelistFadc    = []
-    # these two sets are the successors to the previously used list of
-    # files. We now only store the event numbers and create the corresponding
-    # filenames on the fly from the path
-    ns.eventSet        = set()
-    ns.fadcSet         = set()
-    ns.nfiles          = 0
-    # and the interval, in which the thread refreshes the filelist
-    ns.refreshInterval = 0.0001
-    print ns
-
-    # temparature readout related
-    ns.currentTemps = None
-    ns.temps_dict   = None
-
-    # we start the file refreshing (second) thread first, because we only
-    # want to accept key inputs, after the files have been read a single
-    # time.
-    # and the second thread, which performs the refreshing
-    p2 = mp.Process(target = refresh, args = (ns, folder))
-    p2.start()
-
-    # now create the main thread, which starts the plotting
-    files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb, args_dict)
-    files.connect()
-
-    plt.show()
-    p2.join()
-
-if __name__=="__main__":
-    import sys
-    main(sys.argv[1:])
+    #     sys.exit()    

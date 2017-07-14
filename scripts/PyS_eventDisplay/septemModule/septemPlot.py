@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from septemFiles import read_zero_suppressed_data_file
 from septemClasses import Fadc
+from septemMisc import add_line_to_header, convert_datetime_str_to_datetime
 from profilehooks import profile
 
 
@@ -46,18 +47,18 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps
         dtime = convert_datetime_str_to_datetime(evHeader.attr["dateTime"])
         date = nearest_date(temp_dict, dtime)
         IMB_temp, septem_temp = temp_dict[date]
-    elif type(temps) is int:
+    elif type(temps) is tuple:
         # case: online viewing, temps is a tuple of both temparatures
         IMB_temp, septem_temp = temps
 
     if temps is not None:
         # add to header in case we obtained temps
-        header_text.adds_line_to_header(header_text,
-                                        "IMB temp (C)",
-                                        IMB_temp)
-        header_text.adds_line_to_header(header_text,
-                                        "septem temp (C)",
-                                        septem_temp)
+        header_text = add_line_to_header(header_text,
+                                         "IMB temp (C)",
+                                         IMB_temp)
+        header_text = add_line_to_header(header_text,
+                                         "septem temp (C)",
+                                         septem_temp)
 
     plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list, cb)
     
@@ -208,7 +209,7 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     # first we create an FADC object and give the filename to it
     
     # create full path to file
-    filepathName = filepath + filename
+    filepathName = os.path.join(filepath, filename)
     # creating the fadc object takes care of pedestal runs, temporal corrections
     # and the splitting by channels
     fadc = Fadc(filepathName)

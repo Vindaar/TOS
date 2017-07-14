@@ -1,9 +1,11 @@
 # functions not related to files, plotting or classes
-from septemFiles import read_zero_suppressed_data_file, create_filename_from_event_number, work_on_read_data
-from septemClasses import eventHeader, chipHeaderData
 from datetime import datetime
 import numpy as np
 from time import sleep
+from collections import deque
+
+#from septemFiles import read_zero_suppressed_data_file, create_filename_from_event_number, work_on_read_data
+
 
 def add_line_to_header(header, str_to_add, value):
     # adds an additional line to a header of a plot
@@ -254,5 +256,9 @@ def calc_shutter_length(time, mode):
     
     return length
 
-
     
+def tail(fname, lines = 1):
+    # tails the given file, returning lines as list using deque
+    with open(fname) as f:
+        data = deque(f, lines)
+        return list(data)
