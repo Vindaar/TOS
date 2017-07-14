@@ -1849,7 +1849,6 @@ int PC::DoRun(unsigned short runtimeFrames_,
     mkdir(PathName.c_str(),0755);
 #endif
 
-
     // add information to _runMap to write them to headers
     _runMap["runTime"]         = runtime;
     _runMap["runTimeFrames"]   = runtimeFrames;
@@ -1863,80 +1862,79 @@ int PC::DoRun(unsigned short runtimeFrames_,
     _runMap["numChips"]        = fpga->tp->GetNumChips();
 
     //WriteRunFile();
-    for (auto chip : _chip_set)
-	{
-	    sstream<<"_"<<chip;
-	    FileName=PathName+"/"; FileName+=FSRFileName; FileName+=sstream.str();
-	    fpga->tp->SaveFSRToFile(FileName,chip);
-	    FileName=PathName+"/"; FileName+=MatrixFileName; FileName+=sstream.str();
-	    fpga->tp->SaveMatrixToFile(FileName,chip);
-	    sstream.str("");
-	}
-
-
-	MeasuringCounter = 0;
-
-	// in case we use an external trigger, we call CountingTrigger()
-	if (_useExternalTrigger == true){
-	    // set fpga->UseFastClock to the value of useFastClock
-	    fpga->UseFastClock(_useFastClock);
-	    result = fpga->CountingTrigger(shutterTime);
-	    // after counting, deactivate fast clock variable again
-	    fpga->UseFastClock(false);
-	    if(result!=20){(RunIsRunning)=false;}
-	}
-	// else we call CountingTime()
-	else{
-	    // set fpga->UseFastClock to the value of _useFastClock
-	    fpga->UseFastClock(_useFastClock);
-	    result = fpga->CountingTime(shutterTime, shutter_mode);
-	    // after counting, deactivate fast clock variable again
-	    fpga->UseFastClock(false);
-	    if(result!=20){(RunIsRunning)=false;}
-	}
-
-	result=fpga->DataChipFPGA(result);
-
-
-	//start run
-	mutexRun.lock();
-	RunIsRunning = true;
-	_loop_continue = true;
-	mutexRun.unlock();
-	start(QThread::NormalPriority);
-
-
-	//check var for abort
-	std::string ein="";
-	// time_t start = time(NULL);
-	// int timediff = 0;
-
-	//TODO: Someone - who wrote this - should check the difference between the two if loops...
-	if (runtimeFrames == 0)
-	{
-	    do{
-		std::getline(std::cin,ein);
-		if(ein.compare("q")==0){
-		    StopRun();
-		}
-	    } while(IsRunning()) ;
-	}
-	if (runtimeFrames == 1)
-	{
-	    do{
-		std::getline(std::cin,ein);
-		if(ein.compare("q")==0){
-		    StopRun();
-		}
-	    } while(IsRunning()) ;
-	}
-
-	//result=fpga->DataFPGAPC(data); something like this should in principle be done (Mode 1b = 27 to read out RAM from FPGA from last run). Not important
-
-	//change the global FADC flag back to true (otherwise it stays at false)
-	_useHvFadc = tmpFADC;
-	return 0;
+    for (auto chip : _chip_set){
+	sstream<<"_"<<chip;
+	FileName=PathName+"/"; FileName+=FSRFileName; FileName+=sstream.str();
+	fpga->tp->SaveFSRToFile(FileName,chip);
+	FileName=PathName+"/"; FileName+=MatrixFileName; FileName+=sstream.str();
+	fpga->tp->SaveMatrixToFile(FileName,chip);
+	sstream.str("");
     }
+
+
+    MeasuringCounter = 0;
+
+    // in case we use an external trigger, we call CountingTrigger()
+    if (_useExternalTrigger == true){
+	// set fpga->UseFastClock to the value of useFastClock
+	fpga->UseFastClock(_useFastClock);
+	result = fpga->CountingTrigger(shutterTime);
+	// after counting, deactivate fast clock variable again
+	fpga->UseFastClock(false);
+	if(result!=20){(RunIsRunning)=false;}
+    }
+    // else we call CountingTime()
+    else{
+	// set fpga->UseFastClock to the value of _useFastClock
+	fpga->UseFastClock(_useFastClock);
+	result = fpga->CountingTime(shutterTime, shutter_mode);
+	// after counting, deactivate fast clock variable again
+	fpga->UseFastClock(false);
+	if(result!=20){(RunIsRunning)=false;}
+    }
+
+    result=fpga->DataChipFPGA(result);
+
+
+    //start run
+    mutexRun.lock();
+    RunIsRunning = true;
+    _loop_continue = true;
+    mutexRun.unlock();
+    start(QThread::NormalPriority);
+
+
+    //check var for abort
+    std::string ein="";
+    // time_t start = time(NULL);
+    // int timediff = 0;
+
+    //TODO: Someone - who wrote this - should check the difference between the two if loops...
+    if (runtimeFrames == 0)
+    {
+	do{
+	    std::getline(std::cin,ein);
+	    if(ein.compare("q")==0){
+		StopRun();
+	    }
+	} while(IsRunning()) ;
+    }
+    if (runtimeFrames == 1)
+    {
+	do{
+	    std::getline(std::cin,ein);
+	    if(ein.compare("q")==0){
+		StopRun();
+	    }
+	} while(IsRunning()) ;
+    }
+
+    //result=fpga->DataFPGAPC(data); something like this should in principle be done (Mode 1b = 27 to read out RAM from FPGA from last run). Not important
+
+    //change the global FADC flag back to true (otherwise it stays at false)
+    _useHvFadc = tmpFADC;
+    return 0;
+}
 
 void PC::StopRun(){
     mutexRun.lock();

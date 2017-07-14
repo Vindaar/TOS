@@ -53,7 +53,8 @@ void Producer::run()
 	    // reset extra byte
 	    parent->fpga->tp->SetExtraByte(0);
 	    // and reset the calculated fadc trigger at clock cycle
-	    parent->_hvFadcManager->SetFadcTriggerInLastFrame(0);
+	    // setting FADC trigger to -1 in case it did not trigger
+	    parent->_hvFadcManager->SetFadcTriggerInLastFrame(-1);
 	    // and the scintillator counters
 	    parent->_hvFadcManager->SetScintillatorCounters(0, 0);
 	    
