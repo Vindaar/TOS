@@ -7,16 +7,8 @@ import numpy as np
 import collections
 import cPickle
 
-#try:
-from septemClasses import eventHeader, chipHeaderData
-from septemMisc import convert_datetime_str_to_datetime
-# except ImportError:
-#     in this case the class was already imported in another file
-#     TODO: properly fix this
-#     print("WARNING: Already imported some of the local modules in another file.")
-#     pass
-# 
-
+import septemClasses
+import septemMisc
 
 
 ################################################################################
@@ -29,7 +21,7 @@ def read_zsub_mp(co_ns, list_of_files, qRead):
     all files of the list of files and puts it into the queue qRead
     """
     # TODO: implement max cached batches 
-    
+
     while co_ns.doRead is True:
         for i, f in enumerate(list_of_files):
             if i % 500 == 0:
@@ -102,7 +94,7 @@ def read_temparature_log(filepath):
         if "#" not in line:
             line = line.split()
             imb, septem, date = line
-            dtime = convert_datetime_str_to_datetime(date)
+            dtime = septemMisc.convert_datetime_str_to_datetime(date)
             temp_dict[dtime] = (float(imb), float(septem))
 
     return temp_dict
@@ -119,7 +111,7 @@ def work_on_read_data(data, filepath = None, header_only = False):
     # the zero suppressed files are setup as follows:
     # double hash ' ## ' indicates the file header (information about run and event)
     # single hash ' # '  indicates the header for a single chip
-    evHeader  = eventHeader(filepath)
+    evHeader  = septemClasses.eventHeader(filepath)
     chpHeaderList = []
     for line in data:
         line = line.strip()
@@ -134,7 +126,7 @@ def work_on_read_data(data, filepath = None, header_only = False):
                 if len(chpHeaderList) > 0:
                     chpHeaderList[-1].convert_list_to_array()
                     
-                chpHeader = chipHeaderData()
+                chpHeader = septemClasses.chipHeaderData()
                 chpHeaderList.append(chpHeader)
             # in this case read the chip header
             chpHeaderList[-1].set_attribute(line)
@@ -281,17 +273,20 @@ def create_occupancy_filename(filepath, iBatch):
     out_path = os.path.join("out/", name)
     return out_path
 
-def create_pickle_filename(filename):
+def create_pickle_filename(filename, fadc_triggered_only):
     foldername = os.path.dirname(filename)
     basename   = os.path.basename(filename)
-    new_fname  = "cPickle_" + basename + ".dat"
+    if fadc_triggered_only is False:
+        new_fname  = "cPickle_" + basename + ".dat"
+    else:
+        new_fname  = "cPickle_FADConly_" + basename + ".dat"
     pickle_filename = os.path.join(foldername, new_fname)
     return pickle_filename
 
-def dump_occupancy_data(filename, data, header_text):
+def dump_occupancy_data(filename, data, header_text, fadc_triggered_only):
     # this function cPickles the data needed for an occupancy plot and 
     # dumps it
-    pickle_filename = create_pickle_filename(filename)
+    pickle_filename = create_pickle_filename(filename, fadc_triggered_only)
     data_dump = open(pickle_filename, 'wb')
     
     # create a dictionary to store the data
@@ -340,13 +335,18 @@ def create_list_of_files(nStart, nEnd, eventSet, filepath):
     event nEnd using eventSet and prepending the filepath.
     """
     list_of_files = []
-    print('start creating files')
+    print('start creating files from %s to %s' % (nStart, nEnd))
     print(type(eventSet))
     for event in eventSet:
         if event < nStart:
             continue
         elif event >= nEnd:
-            break
+            # a break from here is not safe, because the elements
+            # in a set might be randomly ordered. Thus, we cannot
+            # be sure to not encounter any elements smaller than
+            # nEnd after a single event bigger
+            # break
+            continue
         filename = create_filename_from_event_number(eventSet,
                                                      event,
                                                      len(eventSet),
@@ -356,11 +356,13 @@ def create_list_of_files(nStart, nEnd, eventSet, filepath):
     print('done creating files')
     # given list of files get inodes and sort by them
     # TODO: write support for nStart and nEnd using inodes function!
-    inodes_2 = create_list_of_inodes(filepath)
-    #inodes = [os.stat(el).st_ino for el in list_of_files]
+    if nStart == 0 and nEnd == len(eventSet):
+        inodes = create_list_of_inodes(filepath)
+    else:
+        inodes = [os.stat(el).st_ino for el in list_of_files]
     # TODO FINIISNFINDISNDIANSDIX
     print('done getting inode')
-    fi = [x for (y, x) in sorted(zip(inodes_2, list_of_files))]
+    fi = [x for (y, x) in sorted(zip(inodes, list_of_files))]
 
     return fi
 

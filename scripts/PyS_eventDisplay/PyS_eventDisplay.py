@@ -80,7 +80,8 @@ class WorkOnFile:
         # if len(self.chip_subplots) == 1:
         #     # turn to true if only one axis object in list
         #     self.single_chip_flag = True
-        self.ignore_full_frames = args_dict["ignore_full_frames"]
+        self.ignore_full_frames  = args_dict["ignore_full_frames"]
+        self.fadc_triggered_only = args_dict["fadc_triggered_only"]
 
         self.batches_dict = { "nbatches"     : args_dict["nbatches"],
                               "batches_flag" : args_dict["batches_flag"] }
@@ -449,13 +450,19 @@ class WorkOnFile:
         self.ns.doRefresh = False
         lock.release()
 
+        if self.fadc_triggered_only is True:
+            print('Using only FADC triggered events for occupancy.')
+            event_set = self.ns.fadcSet
+        else:
+            event_set = self.ns.eventSet
+
         batches_flag = batches_dict["batches_flag"]
         nbatches     = batches_dict["nbatches"]
 
         
         if batches_flag is True and nbatches is None:
             # in this case calculate nbatches to ~1 batch per hour
-            nbatches, scaling_factors = get_batch_num_hours_for_run(self.filepath, self.ns.eventSet)
+            nbatches, scaling_factors = get_batch_num_hours_for_run(self.filepath, event_set)
             print('Calculated to use %i batches for occupancy plot.' % nbatches)
             print('Last batch scaled by %f.' % scaling_factors[-1])
         elif batches_flag is False:
@@ -471,16 +478,19 @@ class WorkOnFile:
 
             # get filename for batch
             occupancy_filename = create_occupancy_filename(self.filepath, i)
-            data_dump_filename = create_pickle_filename(occupancy_filename)
+            data_dump_filename = create_pickle_filename(occupancy_filename,
+                                                        self.fadc_triggered_only)
             
             file_exists = check_occupancy_dump_exist(data_dump_filename)
             if file_exists is True:
                 print('%s file exists, loading data...' % data_dump_filename)
                 # now load dump and plot
+                
                 chip_arrays, header_text = load_occupancy_dump(data_dump_filename)
             else:
                 print('No data dump found for file %s, reading data...' % data_dump_filename)
-                chip_arrays, header_text = self.create_occupancy_data_batch_mp(ignore_full_frames,
+                chip_arrays, header_text = self.create_occupancy_data_batch_mp(event_set,
+                                                                               ignore_full_frames,
                 #chip_arrays, header_text = self.create_occupancy_data_batch(ignore_full_frames,
                                                                                i,
                                                                                nbatches)
@@ -506,13 +516,15 @@ class WorkOnFile:
         lock.release()
                 
 
-    def create_occupancy_data_batch_mp(self, ignore_full_frames, iter_batch, nbatches):
+    def create_occupancy_data_batch_mp(self, event_set, ignore_full_frames, iter_batch, nbatches):
         # multithreaded version of create_occupancy_data_batch
         # see single threaded version for documentation
         benchmarking_flag = False
 
         # first create the header text box for the occupancy plot
-        header_text = get_occupancy_batch_header(self.ns.eventSet, 
+        # call with full eventSet, because function only needs to read any file,
+        # which exists in this case
+        header_text = get_occupancy_batch_header(self.ns.eventSet,
                                                  self.ns.nfiles, 
                                                  self.filepath, 
                                                  ignore_full_frames,
@@ -523,26 +535,34 @@ class WorkOnFile:
             # in this case we save all plots
             save_figures = True
             # need sorted list for iteration
-            eventNumbers = sorted(list(self.ns.eventSet))
+            eventNumbers = sorted(list(event_set))
             nEventsPerBatch = np.ceil(len(eventNumbers) / nbatches)
         else:
-            # assign iterable object 'events' our normal eventSet
-            # in case of nbatches == 1, we don't care about the order in which
-            # we iterate over the batches
-            eventNumbers    = self.ns.eventSet
+            # for now we create a sorted list in every case (even if we use every
+            # single event and shouldn't care about sorting)
+            # Do it to index eventNumbers to get start and end index
+            eventNumbers    = sorted(list(event_set))
             nEventsPerBatch = len(eventNumbers)
+        # elif self.fadc_triggered_only is True:
+        #     # in case we only consider FADC triggered events, we need a
+        #     # sorted list, because otherwise we cannot index eventNumbers
+        #     eventNumbers = sorted
+        # else:
+        #     # assign iterable object 'events' our normal eventSet
+        #     # in case of nbatches == 1, we don't care about the order in which
+        #     # we iterate over the batches
+        #     eventNumbers    = event_set
+        #     nEventsPerBatch = len(eventNumbers)
 
         # calculate starting point
-        nStart = iter_batch * nEventsPerBatch
-        nEnd   = (iter_batch + 1) * nEventsPerBatch
+        nStart = eventNumbers[iter_batch * nEventsPerBatch]
+        nEnd   = eventNumbers[(iter_batch + 1) * nEventsPerBatch - 1]
         if benchmarking_flag is True:
             list_of_files = create_list_of_files_dumb(self.filepath)
         else:
             # create list of files
-            list_of_files = create_list_of_files(nStart, nEnd, self.ns.eventSet, self.filepath)
+            list_of_files = create_list_of_files(nStart, nEnd, event_set, self.filepath)
 
-
-        
         print('List of files has entries: start: %i end: %i total: %i' % (nStart, nEnd, len(list_of_files)))
         print('nEvents %i batches %i nEventsPerBatch %i' % (len(eventNumbers), nbatches, nEventsPerBatch))
 
@@ -609,11 +629,11 @@ class WorkOnFile:
                         # and now add chip data to chip_arrays if non empty
                         npix = np.size(chip_data)
                         if npix > 0 and ignore_full_frames is False:
-                            chip_arrays[chip_num - 1, chip_data[:,1], chip_data[:,0]] += 1
+                            chip_arrays[chip_num, chip_data[:,1], chip_data[:,0]] += 1
                         elif npix > 0 and ignore_full_frames is True and npix < 4097:
                             # if ignore_full_frames is True we drop all events with more 
                             # than 4096 pixels
-                            chip_arrays[chip_num - 1, chip_data[:,1], chip_data[:,0]] += 1
+                            chip_arrays[chip_num, chip_data[:,1], chip_data[:,0]] += 1
 
                             event_num = int(evHeader.attr["eventNumber"])
                             if event_num % 1000 == 0:
@@ -639,14 +659,17 @@ class WorkOnFile:
 
         # before the plot, dump the file to a cPickle
         print('dumping data of batch %i' % (iter_batch))
-        dump_occupancy_data(self.current_filename, chip_arrays, header_text)
+        dump_occupancy_data(self.current_filename,
+                            chip_arrays,
+                            header_text,
+                            self.fadc_triggered_only)
 
         print('finished batch #%i at event #%i' % (iter_batch, nEnd))
 
         return chip_arrays, header_text
             
 
-    def create_occupancy_data_batch(self, ignore_full_frames, iter_batch, nbatches):
+    def create_occupancy_data_batch(self, event_set, ignore_full_frames, iter_batch, nbatches):
         """
         create an occupancy plot. count number of times each pixel was hit during the 
         whole run
@@ -667,6 +690,7 @@ class WorkOnFile:
         """
 
         # first create the header text box for the occupancy plot
+        # call with full event set, since we only need to read any file
         header_text = get_occupancy_batch_header(self.ns.eventSet, 
                                                  self.ns.nfiles, 
                                                  self.filepath, 
@@ -678,13 +702,13 @@ class WorkOnFile:
             # in this case we save all plots
             save_figures = True
             # need sorted list for iteration
-            eventNumbers = sorted(list(self.ns.eventSet))
+            eventNumbers = sorted(list(event_set))
             nEventsPerBatch = np.ceil(len(eventNumbers) / nbatches)
         else:
             # assign iterable object 'events' our normal eventSet
             # in case of nbatches == 1, we don't care about the order in which
             # we iterate over the batches
-            eventNumbers    = self.ns.eventSet
+            eventNumbers    = event_set
             nEventsPerBatch = len(eventNumbers)
 
         # create a list of numpy arrays. one array for each occupancy plot of each chip
@@ -701,7 +725,7 @@ class WorkOnFile:
             elif eventNumber == nStart:
                 print("starting batch #%i at event #%i" % (iter_batch, nStart))
             # first create the filename
-            filename = create_filename_from_event_number(self.ns.eventSet,
+            filename = create_filename_from_event_number(event_set,
                                                          eventNumber,
                                                          self.ns.nfiles,
                                                          fadcFlag = False)
@@ -917,8 +941,12 @@ def main(args):
     parser.add_argument('-o', '--occupancy', '--occupancy_flag',
                         action = 'store_true',
                         help = "Program will only create occupancy plot of given run folder")
+    parser.add_argument('--fadc_triggered_only', action = 'store_true',
+                        help = "Defines to only use FADC triggered events for occupancy")
     parser.add_argument('--cb_flag', default = 1, type = int,
-                        help = "Sets color bar flag to absolute (1) or percentile of values (0)")
+                        help = "Sets color bar flag to absolute (1) or percentile of values (0).\ 
+                        In case of relative values, it is the percentile for each individual \
+                        chip, i.e. chips will have a different scale!" )
     parser.add_argument('--cb_value', default = 80, type = int,
                         help = "Sets color bar max value to absolute (if --cb_flag true) \
                         or relative value given")

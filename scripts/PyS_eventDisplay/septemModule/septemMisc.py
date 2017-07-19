@@ -1,10 +1,12 @@
 # functions not related to files, plotting or classes
+import os
 from datetime import datetime
 import numpy as np
 from time import sleep
 from collections import deque
 
 #from septemFiles import read_zero_suppressed_data_file, create_filename_from_event_number, work_on_read_data
+import septemFiles
 
 
 def add_line_to_header(header, str_to_add, value):
@@ -19,7 +21,6 @@ def get_TOS_date_syntax():
     # as a string, which can be used for python's datetime 
     # strptime function
     return '%Y-%m-%d.%H:%M:%S'
-
 
 # DEPRECATED
 # def calc_scaling_factor(batches, i):
@@ -58,8 +59,8 @@ def get_batch_num_hours_for_run(run_folder, eventSet, total_flag = False):
     # get first and last file in set
     eventsSorted = sorted(eventSet)
     nfiles = len(eventsSorted)
-    first = run_folder + create_filename_from_event_number(eventSet, eventsSorted[0], nfiles, False)
-    last  = run_folder + create_filename_from_event_number(eventSet, eventsSorted[-1], nfiles, False)
+    first = run_folder + septemFiles.create_filename_from_event_number(eventSet, eventsSorted[0], nfiles, False)
+    last  = run_folder + septemFiles.create_filename_from_event_number(eventSet, eventsSorted[-1], nfiles, False)
     
     if total_flag is True:
         nbatches = calc_total_length_of_run(first, last)
@@ -94,8 +95,8 @@ def calc_total_length_of_run(first, last):
        string last:  filename of last event in run
     """
     
-    evHeaderFirst, chpHeadersFirst = read_zero_suppressed_data_file(first, True)
-    evHeaderLast, chpHeadersLast   = read_zero_suppressed_data_file(last, True)
+    evHeaderFirst, chpHeadersFirst = septemFiles.read_zero_suppressed_data_file(first, True)
+    evHeaderLast, chpHeadersLast   = septemFiles.read_zero_suppressed_data_file(last, True)
 
     date_syntax = get_TOS_date_syntax()
     dateFirst = datetime.strptime(evHeaderFirst.attr["dateTime"], date_syntax)
@@ -119,7 +120,7 @@ def calc_active_length_of_run(event_file, nfiles):
        returns: total hours of active time in run
     """
 
-    evHeader, chpHeaders = read_zero_suppressed_data_file(event_file, True)
+    evHeader, chpHeaders = septemFiles.read_zero_suppressed_data_file(event_file, True)
 
     shutter_length = calc_shutter_length_from_event_header(evHeader)
     active_length  = shutter_length * nfiles
@@ -145,11 +146,13 @@ def get_occupancy_batch_header(eventSet, nfiles, filepath, ignore_full_frames, n
     """
     if len(eventSet) > 0:
         # need to read one of the files to get the header. Choose first file, thus
-        filename     = create_filename_from_event_number(eventSet,
-                                                         0,
-                                                         nfiles,
-                                                         fadcFlag = False)
-        evHeader, chpHeaderList = read_zero_suppressed_data_file(filepath + filename)
+        filename     = septemFiles.create_filename_from_event_number(eventSet,
+                                                                     0,
+                                                                     nfiles,
+                                                                     fadcFlag = False)
+        print
+        fname = os.path.join(filepath, filename)
+        evHeader, chpHeaderList = septemFiles.read_zero_suppressed_data_file(fname)
         header_text = evHeader.get_run_header_text()
     else:
         print 'filelist not filled yet or empty; returning.'
@@ -187,13 +190,13 @@ def fill_classes_from_file_data_mp(co_ns, qRead, qWork):
         if qRead.empty() is False:
             print('Worker process: retrieving from queue...')
             data  = qRead.get()
-            #ev_ch = [ work_on_read_data(el) for el in data ]
+            #ev_ch = [ septemFiles.work_on_read_data(el) for el in data ]
             print('Worker process: data size %i' % len(data))
             ev_ch = []
             for i, el in enumerate(data):
                 if i % 100 == 0:
                     print('Finshed working on %i files' % i)
-                ev_ch.append(work_on_read_data(el))
+                ev_ch.append(septemFiles.work_on_read_data(el))
             qWork.put(ev_ch)
         elif qRead.empty() is True and co_ns.finishedReading is False:
             # in this case sleep, because we're waiting for new elements in queue
