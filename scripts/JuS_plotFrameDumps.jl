@@ -9,13 +9,24 @@ using PyPlot
 
 function get_frame_from_file(path, file)
     filename = string(path, file)
-    print("Reading ", filename)
+    println("Reading ", filename)
     try
         frame = readdlm(filename)
+        lines, columns = size(frame)
+        if columns == 3
+            # in case there's 3 columns, we're dealing with a zero suppressed frmae
+            # then convert to full frame
+            full_frame = zeros(256, 256)
+            y   = view(frame, :, 1)
+            x   = view(frame, :, 2)
+            pix = view(frame, :, 3)
+            # TODO: finish this to be able to plot zero suppressed
+            # files properly
+        end
         return frame
     catch e
         if isa(e, LoadError) | isa(e, SystemError)
-            print("File ", filename, " not found.")
+            println("File ", filename, " not found.")
             return zeros(256,256)
         else
             rethrow()
@@ -33,8 +44,8 @@ function poll_new_file(fm)
     # end
     path = "/home/schmidt/TOS/tmp/framedumps/"
     file_mod = wait(fm::FileMonitor)
-    sleep(0.07)
-    print(file_mod)
+    sleep(0.17)
+    println(file_mod)
     file = file_mod[1]
     # s = string(path, file)
     # fn = open(s)
@@ -43,30 +54,42 @@ function poll_new_file(fm)
     return file
 end
 
-function draw_new_frame(fig, cb, image, frame)
-    println("Drawing new frame")
+function draw_new_frame(fig, cb, image, frame, file)
     image[:set_data](frame)
-    image[:autoscale]()
-    #image[:set_clim](0, 1)
+    #println(frame)
+
+    # get the filename written prev.
+    texts = fig[:texts]
+    for i in range(1, length(texts))
+        # and remove each
+        texts[1][:remove]()
+    end
+    # write new filename
+    fig[:text](0.4, 0.9, file)
+    # scale the colorbar
+    #image[:autoscale]()
+    image[:set_clim](0, 100)
     cb[:update_normal](image)
     fig[:canvas][:draw]()
+    #sleep(1)
     draw()
+    #sleep(1)
 end
 
 function poll_and_get_frame(fm, path)
     file = poll_new_file(fm)
-    print("Working on ", file)
+    println("Working on ", file)
     frame = get_frame_from_file(path, file)
 
-    return frame
+    return (frame, file)
 end
 
-function try_to_draw(fig, cb, image, frame)
+function try_to_draw(fig, cb, image, frame, file)
     try
-        draw_new_frame(fig, cb, image, frame)
+        draw_new_frame(fig, cb, image, frame, file)
     catch e
         if isa(e, LoadError)
-            draw_new_frame(fig, cb, image, frame)
+            draw_new_frame(fig, cb, image, frame, file)
         end
     end
 end
@@ -107,13 +130,13 @@ function main(interactive)
     @sync begin
         @async while true
             put!(ch, poll_and_get_frame(fm1, path1))
-            frame = take!(ch)
-            try_to_draw(fig, cb, image, frame)
+            frame, file = take!(ch)
+            try_to_draw(fig, cb, image, frame, file)
         end
         @async while true
             put!(ch, poll_and_get_frame(fm2, path2))
-            frame = take!(ch)
-            try_to_draw(fig, cb, image, frame)
+            frame, file = take!(ch)
+            try_to_draw(fig, cb, image, frame, file)
         end
     end
     
