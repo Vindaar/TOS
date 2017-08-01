@@ -676,7 +676,7 @@ int Console::CommandRun(bool useHvFadc){
     // select fastclock, yes or no
     inputFastClock = FastClockSelection();
     if (inputFastClock == "quit") return -1;
-    else if (inputFastClock == "standard"){
+    else if (inputFastClock == "fastclock"){
 	useFastClock = true;
     }
     else{
