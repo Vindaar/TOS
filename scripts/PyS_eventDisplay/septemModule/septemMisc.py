@@ -265,3 +265,20 @@ def tail(fname, lines = 1):
     with open(fname) as f:
         data = deque(f, lines)
         return list(data)
+
+
+def calc_centroid(data):
+    # this function calculates the centroid of a zero suppressed frame
+    # (receives columns of x, y, TOT value instead of full frame) and
+    # calculates the center of the cluster as well as the energy from the
+    # number of hit pixels
+
+    x_mean = int(np.rint(np.mean(data[:,0])))
+    y_mean = int(np.rint(np.mean(data[:,1])))
+    npix   = np.shape(data)[0]
+    # calculate energy by assuming each hit corresponds to one primary
+    # electron, i.e. an ionisation energy of 26 eV
+    energy = npix * 0.026
+
+    return (x_mean, y_mean, energy)
+    

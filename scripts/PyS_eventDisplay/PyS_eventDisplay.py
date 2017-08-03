@@ -14,9 +14,9 @@ import matplotlib.animation as animation
 from matplotlib.lines import Line2D
 
 from septemModule.septemClasses import chip, septem, customColorbar, MyFuncAnimation, TempHandler, EventsHandler
-from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, read_zsub_mp, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump, create_list_of_files, create_list_of_files_dumb, get_temp_filename
+from septemModule.septemFiles import create_files_from_path_combined, read_zero_suppressed_data_file, read_zsub_mp, create_filename_from_event_number, create_occupancy_filename, create_pickle_filename, check_occupancy_dump_exist, dump_occupancy_data, load_occupancy_dump, create_list_of_files, create_list_of_files_dumb, get_temp_filename, write_centroids_to_file
 from septemModule.septemPlot  import plot_file_general, plot_fadc_file, plot_occupancy, plot_pixel_histogram
-from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_run, get_occupancy_batch_header, fill_classes_from_file_data_mp
+from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_run, get_occupancy_batch_header, fill_classes_from_file_data_mp, calc_centroid
 
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager, Namespace, NamespaceProxy
@@ -82,6 +82,7 @@ class WorkOnFile:
         #     self.single_chip_flag = True
         self.ignore_full_frames  = args_dict["ignore_full_frames"]
         self.fadc_triggered_only = args_dict["fadc_triggered_only"]
+        self.calc_centroid_flag  = args_dict["calc_centroids"]
 
         self.batches_dict = { "nbatches"     : args_dict["nbatches"],
                               "batches_flag" : args_dict["batches_flag"] }
@@ -105,8 +106,6 @@ class WorkOnFile:
         self.ani_end_running       = False
         self.ani_loop_event_source = None
         self.ani_loop_running      = False
-
-        
 
         # zero initialized numpy array
         temp_array         = np.zeros((256, 256))
@@ -480,7 +479,7 @@ class WorkOnFile:
             occupancy_filename = create_occupancy_filename(self.filepath, i)
             data_dump_filename = create_pickle_filename(occupancy_filename,
                                                         self.fadc_triggered_only)
-            
+
             file_exists = check_occupancy_dump_exist(data_dump_filename)
             if file_exists is True:
                 print('%s file exists, loading data...' % data_dump_filename)
@@ -601,6 +600,10 @@ class WorkOnFile:
 
         pRead.start()
         pWork.start()
+
+        # create an empty list, which will store tuples of centroids including the energy
+        # (from the number of pixels), as (x, y, Energy)
+        centroid_list = []
         
         while co_ns.finishedReading is False or co_ns.finishedWorking is False or qWork.empty() is False:
             # TODO: think about setting doRead and doWork from here based on finished bools?
@@ -626,14 +629,31 @@ class WorkOnFile:
                         # get the data of the frame for this chip
                         chip_data = chpHeader.pixData
                         chip_num  = int(chpHeader.attr["chipNumber"])
+
                         # and now add chip data to chip_arrays if non empty
                         npix = np.size(chip_data)
                         if npix > 0 and ignore_full_frames is False:
-                            chip_arrays[chip_num, chip_data[:,1], chip_data[:,0]] += 1
+                            # TODO: rewrite this and next statement with one
+                            # function to be called
+                            if self.calc_centroid_flag is True:
+                                centroid = calc_centroid(chip_data)
+                                x_mean, y_mean, energy = centroid
+                                if chip_num == self.cb.chip:
+                                    centroid_list.append(centroid)
+                                chip_arrays[chip_num, y_mean, x_mean] += 1
+                            else:
+                                chip_arrays[chip_num, chip_data[:,1], chip_data[:,0]] += 1
                         elif npix > 0 and ignore_full_frames is True and npix < 4097:
                             # if ignore_full_frames is True we drop all events with more 
                             # than 4096 pixels
-                            chip_arrays[chip_num, chip_data[:,1], chip_data[:,0]] += 1
+                            if self.calc_centroid_flag is True:
+                                centroid = calc_centroid(chip_data)
+                                x_mean, y_mean, energy = centroid
+                                if chip_num == self.cb.chip:                                
+                                    centroid_list.append(centroid)
+                                chip_arrays[chip_num, y_mean, x_mean] += 1
+                            else:
+                                chip_arrays[chip_num, chip_data[:,1], chip_data[:,0]] += 1
 
                             event_num = int(evHeader.attr["eventNumber"])
                             if event_num % 1000 == 0:
@@ -663,6 +683,9 @@ class WorkOnFile:
                             chip_arrays,
                             header_text,
                             self.fadc_triggered_only)
+
+        if self.calc_centroid_flag is True:
+            write_centroids_to_file(self.filepath, centroid_list)
 
         print('finished batch #%i at event #%i' % (iter_batch, nEnd))
 
@@ -943,13 +966,16 @@ def main(args):
                         help = "Program will only create occupancy plot of given run folder")
     parser.add_argument('--fadc_triggered_only', action = 'store_true',
                         help = "Defines to only use FADC triggered events for occupancy")
+    parser.add_argument('--calc_centroids', action = 'store_true',
+                        help = """If set will calculate centroids of clusters during occupancy 
+                        creation and dumps to file centroid_hits.dat (for center chip)""")
     parser.add_argument('--cb_flag', default = 1, type = int,
-                        help = "Sets color bar flag to absolute (1) or percentile of values (0).\ 
-                        In case of relative values, it is the percentile for each individual \
-                        chip, i.e. chips will have a different scale!" )
+                        help = """Sets color bar flag to absolute (1) or percentile of values (0).
+                        In case of relative values, it is the percentile for each individual
+                        chip, i.e. chips will have a different scale!""" )
     parser.add_argument('--cb_value', default = 80, type = int,
-                        help = "Sets color bar max value to absolute (if --cb_flag true) \
-                        or relative value given")
+                        help = """Sets color bar max value to absolute (if --cb_flag true)
+                        or relative value given""")
     parser.add_argument('--cb_chip', default = 3, type = int,
                         help = "Sets chip from which to determine color bar")
     parser.add_argument('--single_chip', action = 'store_true', dest = "single_chip_flag",
@@ -961,8 +987,8 @@ def main(args):
     parser.add_argument('--batches_flag', action = "store_true",
                         help = "Use batches in occupancy plot.")    
     parser.add_argument('--batches', default = None, type = int, dest = "nbatches",
-                        help = "Use this many batches for occupancy plot. If 0 and \
-                        batches_flag == True, calc batches to be ~1 hour.")
+                        help = """Use this many batches for occupancy plot. If 0 and
+                        batches_flag == True, calc batches to be ~1 hour.""")
 
     args_dict = vars(parser.parse_args())
     folder = os.path.abspath(args_dict["run_folder"])

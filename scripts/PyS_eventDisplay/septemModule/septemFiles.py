@@ -63,7 +63,6 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     # with the zero suppressed readout
     # the optional flag header_only can be used to only read the header.
     # in this case the pix data array will be set to []
-    print(filepath)
     if header_only == True:
         # in case we only want the header, give the sizehint equal to 1
         # for very large files, not the whole file will be read, speeding up the
@@ -220,6 +219,17 @@ def create_files_from_path_combined(folder, eventSet, fadcSet, test = False):
         return [eventSet, fadcSet]
     else:
         return filesDict
+
+
+def build_filename_string_from_event_number(number, fadcFlag = False):
+    # this function builds the string of the filename for a
+    # given event number. Function is completely dumb
+    if fadcFlag is False:
+        filename = "data" + str(number).zfill(6) + '.txt'
+    else:
+        filename = "data" + str(number).zfill(6) + '.txt-fadc'
+
+    return filename
     
 
 def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcFlag):
@@ -246,11 +256,8 @@ def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcF
     if event_number in event_num_set:
         # if it is in the set, create the filename
         # differentiate between fadcFlag
-        if fadcFlag is False:
-            filename = "data" + str(event_number).zfill(6) + '.txt'
-        else:
-            filename = "data" + str(event_number).zfill(6) + '.txt-fadc'
         # and return
+        filename = build_filename_string_from_event_number(event_number)
         return filename
     else:
         # if it's not in set, return None
@@ -379,3 +386,46 @@ def create_list_of_files_dumb(filepath):
     
     return fi
     
+
+def get_frame_from_file(folder, f, chip):
+    """ 
+    This is a convenience function, which returns a numpy array of the frame 'f',
+    in folder 'folder' given to the function for chip 'chip'.
+    """
+    
+    try:
+        evH, chpHs = read_zero_suppressed_data_file(os.path.join(folder, f))
+    except IOError:
+        print("File not found, returning None.")
+        return None
+    except IndexError:
+        print("File was probably an FADC file.")
+        return None
+
+    # extract pixel data of the given chip
+    data  = chpHs[chip].pixData
+    array = np.zeros((256, 256))
+
+    # insert into empty frame
+    array[data[:,1], data[:,0]] = data[:,2]
+
+    return data, array
+
+def write_centroids_to_file(filepath, centroid_list):
+    # this function writes a file centroid_hits.dat, which contains the centroids
+    # of clusters from the center chip and the energy given by the number of
+    # hit pixels
+    # we convert the centroids to mm before writing them to file
+    
+    filename = os.path.join(filepath, "centroid_hits.dat")
+    print("Writing centroids to file %s" % filename)
+    with open(filename, 'wb') as f:
+        f.write("# x_mean / mm\t y_mean / mm\t Energy / keV\n")
+        for centroid in centroid_list:
+            x, y, E = centroid
+            # convert position to mm by subtracting 127 pixels and multiplying
+            # resulting pixel by 0.055 mm (55 mu pixel pitch)
+            x = (x - 127) * 0.055
+            y = (y - 127) * 0.055
+            s = "%f\t %f\t %f\n" % (x, y, E)
+            f.write(s)
