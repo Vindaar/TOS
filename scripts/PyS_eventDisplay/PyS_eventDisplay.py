@@ -34,6 +34,7 @@ def refresh(ns, filepath, temp_handler):
                                                                   ns.fadcSet,
                                                                   False)
         ns.nfiles         = len(ns.eventSet)
+        ns.last_file      = max(ns.eventSet)
         refreshInterval   = ns.refreshInterval
         lock.release()
         # get current temps (written to ns.currentTemps is new available)
@@ -328,9 +329,20 @@ class WorkOnFile:
     def work_on_existing_file(self, i = None):
         # this function only works on existing files, not trying to run over
         # all files
+
         if i is None:
             # if no i as argument given, use self.i
+            # however, if this is called, after looping on last frame, self.i might
+            # be larger than number of files in folder (if not every event exists)
+            # thus check for this condition and set i back to indexing by number
+            # of event in list, not event number
+            lock.acquire()
+            if self.i > self.ns.nfiles:
+                # set self.i to nfiles - 1 (index of last element)
+                self.i = self.ns.nfiles - 1
+            lock.release()
             i = self.i
+            
         elif i == -1:
             # in case we have called work_on_file_end(), we supply -1 to work_on_file.
             # this can be problematic, if we stop the function and want to go back
@@ -338,11 +350,13 @@ class WorkOnFile:
             # in case we have an ongoing run, this will change all the time, making it
             # impossible to go back (because more and more events are created)
             lock.acquire()
-            self.i = self.ns.nfiles
+            self.i = self.ns.last_file
+            i = self.i
             lock.release()
         else:
             # else, we just set self.i to i
             self.i = i
+
         lock.acquire()
         lst_of_files = sorted(list(self.ns.eventSet))
         lock.release()
@@ -366,7 +380,9 @@ class WorkOnFile:
             # in case we have an ongoing run, this will change all the time, making it
             # impossible to go back (because more and more events are created)
             lock.acquire()
-            self.i = self.ns.nfiles
+            self.i = self.ns.last_file
+            i = self.i
+            print("Reading file %i" % self.i)
             lock.release()
         else:
             # else, we just set self.i to i

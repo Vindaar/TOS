@@ -146,11 +146,11 @@ def get_occupancy_batch_header(eventSet, nfiles, filepath, ignore_full_frames, n
     """
     if len(eventSet) > 0:
         # need to read one of the files to get the header. Choose first file, thus
+        
         filename     = septemFiles.create_filename_from_event_number(eventSet,
-                                                                     0,
+                                                                     min(eventSet),
                                                                      nfiles,
                                                                      fadcFlag = False)
-        print
         fname = os.path.join(filepath, filename)
         evHeader, chpHeaderList = septemFiles.read_zero_suppressed_data_file(fname)
         header_text = evHeader.get_run_header_text()

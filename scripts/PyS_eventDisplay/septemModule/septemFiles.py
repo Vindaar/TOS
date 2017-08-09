@@ -275,7 +275,10 @@ def get_event_number_from_filename(filename):
     
 def create_occupancy_filename(filepath, iBatch):
     # this function creates a correct filename for an occupancy plot
-    folder_name = os.path.basename(os.path.dirname(filepath))
+    # NOTE: previously it said os.path.basename(os.path.dirname(filepath))
+    # for some (at the time of writing this) unknown reason. Leaves the name
+    # of the parent folder, which we do not want?!
+    folder_name = os.path.basename(filepath)
     name = ("occupancy_batch_%s_" % str(iBatch).zfill(3)) + folder_name
     out_path = os.path.join("out/", name)
     return out_path
