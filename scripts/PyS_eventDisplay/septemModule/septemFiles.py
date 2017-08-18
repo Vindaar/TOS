@@ -257,7 +257,7 @@ def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcF
         # if it is in the set, create the filename
         # differentiate between fadcFlag
         # and return
-        filename = build_filename_string_from_event_number(event_number)
+        filename = build_filename_string_from_event_number(event_number, fadcFlag)
         return filename
     else:
         # if it's not in set, return None

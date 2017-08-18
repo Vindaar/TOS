@@ -334,8 +334,9 @@ class Fadc:
         # the Fadc object is given the filename to its data file
         self.filename = filename
         # define variables for trigger record and post trigger
-        self.trigger_rec = 0
-        self.posttrig    = 0
+        self.trigger_rec   = 0
+        self.posttrig      = 0
+        self.mode_register = 0
         
         # and it immediately reads the data from it
         # fadc values stores the raw data from an fadc data file
@@ -350,20 +351,25 @@ class Fadc:
 
         # now apply the pedestal run
         self.applyPedestalRun()
-        # and the temporal correction
-        self.performTemporalCorrection()
 
-        # after both corrections were done, we can create
+        # after pedestal correction, we can get 
         # the individual channels from the data
         self.getChannelsFromFadcArray()
         
-        self.pedestalApplied = False
-        self.temporalApplied = False
+        # perform the temporal correction on each channel
+        self.performTemporalCorrection()
+
+        # and finally convert ticks to V
+        self.convertFadcTicksToCharge()
+
+        self.pedestalApplied        = False
+        self.temporalApplied        = False
+        self.convertedTicksToCharge = False
         
     def getChannelsFromFadcArray(self):
         # this function splits the data read from the data file into the
         # 4 seperate channels
-        # NOTE: done AFTER pedestal run and temporal correction!
+        # NOTE: done AFTER pedestal run but BEFORE temporal correction!
         # FADC file contains data as:
         # channel1_value1, channel2_value1, channel3_value1, channel4_value1,
         # channel1_value2, ... in a list one after another
@@ -371,8 +377,7 @@ class Fadc:
         # check for pedestal and temporal flag, if not set, perform now:
         if self.pedestalApplied is False:
             applyPedestalRun()
-        if self.temporalApplied is False:
-            performTemporalCorrection()
+            
         # create the indices for each channel
         ch0_indices = np.arange(0, 4*2560, 4)
         ch1_indices = np.arange(1, 4*2560, 4) 
@@ -383,6 +388,35 @@ class Fadc:
         self.channel1 = np.asarray(self.fadcValues[ch1_indices])
         self.channel2 = np.asarray(self.fadcValues[ch2_indices])
         self.channel3 = np.asarray(self.fadcValues[ch3_indices])
+
+    def convertFadcTicksToCharge(self):
+        """ this function converts the channel arrays from FADC ticks to V, by 
+            making use of the mode_register written to file.
+            Mode register contains (3 bit register, see CAEN manual p.31):
+               bit 0: EN_VME_IRQ interruption tagging of VME bus?!
+               bit 1: 14BIT_MODE if set to 1, output uses 14 bit register, instead of 
+                      backward compatible 12 bit
+               bit 2: AUTO_RESTART_ACQ if 1, automatic restart of acqusition at end of 
+                      RAM readout
+        """
+
+        mode_register = self.mode_register
+        conversion_factor = 1.
+        # check for bit 1 of mode_register by doing bitwise and of int with 0b010
+        bit_mode14 = mode_register & 0b010 == 0b010
+        if bit_mode14 is True:
+            conversion_factor = 1. / 8192.
+        else:
+            # in this case 12 bit register.
+            # NOTE: Why 4096 in this case and not 2048?!
+            # pretty sure it should be 2048!
+            conversion_factor = 1. / 2048.#4096.
+        self.channel0 *= conversion_factor
+        self.channel1 *= conversion_factor
+        self.channel2 *= conversion_factor
+        self.channel3 *= conversion_factor
+
+        self.convertedTicksToCharge = True
 
     def applyPedestalRun(self, pedestalFileName = None):
         # this function reads a pedestal calibration run from pedestalFileName
@@ -406,13 +440,24 @@ class Fadc:
         # read from the FADC by n steps, in order to have t = 0 at index 0
         # done by shifting
         # nRoll = (TRIG_REC - POSTTRIG) * 20
-        # to the left
+        # to the left for each channel array
 
         # calculate the number of indices to roll based on trigger record ans post trigger
         self.nRoll = (self.trigger_rec - self.posttrig) * 20
         print("trig rec, posttrig, roll ", self.trigger_rec, self.posttrig, self.nRoll)
-        # and roll the array
-        self.fadcValues = np.roll(self.fadcValues, -self.nRoll)
+
+        # and roll each channel array
+        if self.channel0 == []:
+            # in this case first separate the channels
+            self.getChannelsFromFadcArray()
+
+        # in this case we have already separated the channels and can
+        # roll the arrays
+        self.channel0 = np.roll(self.channel0, -self.nRoll)
+        self.channel1 = np.roll(self.channel1, -self.nRoll)
+        self.channel2 = np.roll(self.channel2, -self.nRoll)
+        self.channel3 = np.roll(self.channel3, -self.nRoll)
+        
         # set flag for temporal correction
         self.temporalApplied = True
 
@@ -427,7 +472,9 @@ class Fadc:
         fadc_values = []
         for line in f:
             if filename == None:
-                if 'postrig' in line:
+                # TODO: make sure following allows for both (the typo) and the non typo
+                # to be recognized in a file
+                if 'postrig' in line or 'posttrig' in line:
                     line = line.split()
                     # get last element from line, post trigger
                     self.posttrig = int(line[-1])
@@ -435,6 +482,10 @@ class Fadc:
                     line = line.split()
                     # get last element from line, trigger record
                     self.trigger_rec = int(line[-1])
+                elif 'sampling mode' in line:
+                    line = line.split()
+                    # get last element from line, sampling mode ^= MODE_REGISTER
+                    self.mode_register = int(line[-1])
                 else:
                     line = line.strip()
                     if "#" not in line:

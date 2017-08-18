@@ -94,7 +94,7 @@ class WorkOnFile:
         # write the labels for the FADC plot (only needed to be done once, so no need to call
         # on each call to FADC plot)
         self.fadcPlot.set_xlabel('Time / clock cycles')
-        self.fadcPlot.set_ylabel('U / fadc ticks')
+        self.fadcPlot.set_ylabel('U / V')
         # initialize the FADC plot to be invisible, since possible that no FADC event
         # for first event
         #self.fadcPlotLine[0].set_visible(False)
