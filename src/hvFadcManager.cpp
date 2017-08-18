@@ -1569,13 +1569,13 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
         //write petrig/postrig/etc to file
         outFile << "# nb of channels: "  << fadcParams["NumChannels"]  << std::endl;
         outFile << "# channel mask: "    << fadcParams["ChannelMask"]  << std::endl;
-        outFile << "# postrig: "         << fadcParams["PostTrig"]     << std::endl;
+        outFile << "# posttrig: "        << fadcParams["PostTrig"]     << std::endl;
         outFile << "# pretrig: "         << fadcParams["PreTrig"]      << std::endl;
         outFile << "# triggerrecord: "   << fadcParams["TriggerRec"]   << std::endl;
         outFile << "# frequency: "       << fadcParams["Frequency"]    << std::endl;
         outFile << "# sampling mode: "   << fadcParams["ModeRegister"] << std::endl;
         outFile << "# pedestal run: "    << fadcParams["PedestalRun"]  << std::endl;
-        outFile << "#Data:" << std::endl;
+        outFile << "# Data:" << std::endl;
 
 
         // TODO: why unsigned int used? problematic, since channels is int.
@@ -1583,7 +1583,7 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
         //"skip" 'first sample', 'venier' and 'rest baseline' (manual p27)
         std::cout << "number of channels?! " << channels << std::endl;
         for(int iData = 0; iData < 3*channels; iData++)
-            outFile << "#" << fadcData[iData] << std::endl;
+            outFile << "# " << fadcData[iData] << std::endl;
         
         //print the actual data to file
         for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
