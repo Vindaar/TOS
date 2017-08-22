@@ -229,8 +229,7 @@ void Producer::run()
 	//check if enough frames are recorded or if reason to stop run early
 	if ((parent->_useHvFadc) && 
 	    !(parent->_hvFadcManager == NULL) &&
-	    (i % 10 == 0))
-	{
+	    (i % 10 == 0)){
 	    // TODO: change the frequency of this. do not want hardcoded, but rather
 	    //       based on time (input given in HFO_settings.ini)
 	    int isGood = 0;
@@ -239,17 +238,16 @@ void Producer::run()
 	    isGood = (parent->_hvFadcManager)->H_CheckHVModuleIsGood(true);
 	    parent->mutexVBuffer.unlock();
 
-	    // TODO:!! IMPORTANT!!! TAKE BACK IN AFTER CORRECTING CHECKHVMODULEISGOOD!!!
 	    if (isGood == -1){
 	    	// this means something is wrong with HV
 	    	// - call a function to report about problem (dump to file)
 	    	// - stop the run with error message
-	    	// parent->mutexVBuffer.lock();
-	    	// (parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
-	    	// parent->mutexVBuffer.unlock();
-	    	// parent->StopRun();
+		std::cout << "ERROR: HV module in non-good state. Stopping run!" << std::endl;
+	    	parent->mutexVBuffer.lock();
+	    	(parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
+	    	parent->mutexVBuffer.unlock();
+	    	parent->StopRun();
 	    }
-	    
 	}
 
 	if (parent->runtimeFrames == 1)

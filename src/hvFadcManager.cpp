@@ -630,22 +630,7 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
         // these will be compared to the values of the last call
         // of this function
 
-        // TODO: event status variables currently not in use
-        //       might be a good idea to implement and check
-        // ChEventStatusSTRUCT gridEventStatus    = { };
-        // ChEventStatusSTRUCT anodeEventStatus   = { };
-        // ChEventStatusSTRUCT cathodeEventStatus = { };
-
-        // first need to check whether module tripped. 
-        // check EventTrip
-        // or rather check monitoring group
-
-
-
-
-        // --------------------
-        // REPLACE CODE BY FUNCTION CALL TO hvModule!
-
+	// first check event status of the HV module
         bool good;
         good = HV_module->isEventStatusGood();
         if (good == false){
@@ -659,19 +644,13 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
         }
         // --------------------
 
-
-        // TODO: Check for tripping?
-        // std::cout << "One of the groups triggered an Event. Abort Run" << std::endl;
-        // std::cout << "Probably the module tripped." << std::endl;
-
-
         // this function basically only does the following:
         // reads the current voltages and currents
         // compares them to the values we set in the beginning
         // additionally check whether module is in IsControlledVoltage,
         // which should be set, if our module is at the set level
         // and isOn is set
-
+	
         std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
                 good *= ptrChannel->onVoltageControlledRamped();
             } );
@@ -691,82 +670,6 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
 
     std::cout << "This should never be reached." << std::endl;
     return -1;
-       
-// // ------------------------------
-//      // REPLACE BY FUNCTION CALLS TO hvChannels from _channelList!!!
-//      // ADD FUNCTION TO hvChannel isVoltageGood?! 
-        
-//         float gridVoltageMeasured;  
-//         float anodeVoltageMeasured; 
-//         float cathodeVoltageMeasured;
-        
-//         gridVoltageMeasured    = H_GetChannelVoltageMeasure(gridChannelNumber);
-//         anodeVoltageMeasured   = H_GetChannelVoltageMeasure(anodeChannelNumber);
-//         cathodeVoltageMeasured = H_GetChannelVoltageMeasure(cathodeChannelNumber);
-
-//         if ((gridVoltageMeasured    >= 0.99*gridVoltageSet)  &&
-//          (anodeVoltageMeasured   >= 0.99*anodeVoltageSet) &&
-//          (cathodeVoltageMeasured >= 0.99*cathodeVoltageSet)){
-//          if (verbose == true){
-//              std::cout << "All voltages within 1 percent of the set voltage." << std::endl;
-//              std::cout << "Grid / V\t Anode / V\t Cathode / V\n"
-//                        << gridVoltageMeasured << "\t\t " 
-//                        << anodeVoltageMeasured << "\t\t "
-//                        << cathodeVoltageMeasured << std::endl;
-//          }
-//         }
-//         else{
-//          if (verbose == true){
-//              std::cout << "Voltage outside of 1 percent of set voltage.\n" 
-//                        << std::endl;
-//          }
-//          return -1;
-//         }
-// // ------------------------------
-
-
-// // ------------------------------
-//      // REPLACE BY FUNCTION CALLS TO hvChannels from _channelList!!!
-//      // CHECK 
-
-//         ChStatusSTRUCT gridStatus    = { 0 };
-//         ChStatusSTRUCT anodeStatus   = { 0 };
-//         ChStatusSTRUCT cathodeStatus = { 0 };
-//         gridStatus.Word    = H_GetChannelStatus(gridChannelNumber);
-//         anodeStatus.Word   = H_GetChannelStatus(anodeChannelNumber);
-//         cathodeStatus.Word = H_GetChannelStatus(cathodeChannelNumber);
-
-//         if ((gridStatus.Bit.ControlledByVoltage    == 1) &&
-//          (gridStatus.Bit.isOn    == 1) &&
-//          (anodeStatus.Bit.ControlledByVoltage   == 1) &&
-//          (anodeStatus.Bit.isOn   == 1) &&
-//          (cathodeStatus.Bit.ControlledByVoltage == 1) &&
-//          (cathodeStatus.Bit.isOn == 1)){
-//          if (verbose == true){
-//              std::cout << "All channels controlled by voltage and set to isOn.\n" 
-//                        << "All good, continue run." << std::endl;
-//          }
-//          return 0;
-
-//         }
-//         else{
-//          if (verbose == true){
-//              std::cout << "One or more channels not controlled by voltage or turned off.\n" 
-//                        << "Probably module already tripped.\n" 
-//                        << "See HV_error_log.txt for more information\n"
-//                        << "Stopping run immediately." << std::endl;
-//          }
-//          return -1;
-//         }
-// // ------------------------------
-        
-    
-//     }//end if (_createdFlag == true)
-//     else{
-//      // this should prevent seg faults
-//      return -1;
-//     }
-
         
 }
 
