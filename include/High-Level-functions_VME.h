@@ -26,104 +26,104 @@
 //class HighLevelFunction_VME : public HighLevelFunction{
 class HighLevelFunction_VME{
 
- public:
+public:
   
-  //TODO: Write a load settings from file function
+    //TODO: Write a load settings from file function
 
-  /// C'tor
-  HighLevelFunction_VME(V1729a* dev);
+    /// C'tor
+    HighLevelFunction_VME(V1729a* dev);
 
-  /// D'tor
-  ~HighLevelFunction_VME();
+    /// D'tor
+    ~HighLevelFunction_VME();
 
 
 
-  /*********** General Functions ***********/
+    /*********** General Functions ***********/
   
 
 
-  /** Prints the actual settings of the FADC to
-   * console or to a file
-   **/
-  void printSettings();
+    /** Prints the actual settings of the FADC to
+     * console or to a file
+     **/
+    void printSettings();
 
 
 
-  /*********** Set Functions ***********/
+    /*********** Set Functions ***********/
    
   
   
-  /** Since the FADC fails from time to time to set some parameters
-   * to theire values, a few set functions were rewritten
-   * to ensure in _nb trys, that the parameters are set in 
-   * the intendet way
-   **/  
+    /** Since the FADC fails from time to time to set some parameters
+     * to theire values, a few set functions were rewritten
+     * to ensure in _nb trys, that the parameters are set in 
+     * the intendet way
+     **/  
 
-  int setFrequencyH(const unsigned short& frequency);
-  int setPosttrigH(const unsigned short& bits);
-  int setPretrigH(const unsigned short& bits);
+    int setFrequencyH(const unsigned short& frequency);
+    int setPosttrigH(const unsigned short& bits);
+    int setPretrigH(const unsigned short& bits);
 
-  /**
-   *
-   **/
-  void preformTestMeasurement(); 
-
-
-
-  /*********** Trigger Functions ***********/
+    /**
+     *
+     **/
+    void preformTestMeasurement(); 
 
 
-  
-  /** Trigger related "set functions" (as above)
-   **/
-  int setTriggerTypeH( const unsigned short& type );
-  int setTriggerChannelSourceH( const unsigned short& mask );
 
-  /** Sets the preload register for all channels to the given value and 
-   * executes the load-Trigger-Threshold command. To keep track of the
-   * set value its stored in the triggerThresholdRegister vector.
-   * Returns 0 if succesfull, 1 otherwise. (at least it should)
-   **/
-  unsigned int setTriggerThresholdRegisterAll(const unsigned int threshold);
-
-
-  ///returns the content of the triggerThresholdRegister vector
-  void getTriggerThresholdRegister();
+    /*********** Trigger Functions ***********/
 
 
   
+    /** Trigger related "set functions" (as above)
+     **/
+    int setTriggerTypeH( const unsigned short& type );
+    int setTriggerChannelSourceH( const unsigned short& mask );
 
-  /*********** Readout Functions ***********/
+    /** Sets the preload register for all channels to the given value and 
+     * executes the load-Trigger-Threshold command. To keep track of the
+     * set value its stored in the triggerThresholdRegister vector.
+     * Returns 0 if succesfull, 1 otherwise. (at least it should)
+     **/
+    unsigned int setTriggerThresholdRegisterAll(const unsigned int threshold);
+
+
+    ///returns the content of the triggerThresholdRegister vector
+    void getTriggerThresholdRegister();
+
+
+    /*********** Readout Functions ***********/
 
 
 
-  ///correct Data for trigger position
-  std::vector<std::vector<int> > correctData(std::vector<int> const& dataVec);
+    ///correct Data for trigger position
+    std::vector<std::vector<int> > correctData(std::vector<int> const& dataVec);
  
 
-  /** print data to file (in the file the unit of time will be ns and the unit of
-   * amplitude will be V
-   **/
-  void printDataToFile(std::vector<int> const& dataVec, std::string fileName = "rawData");
+    /** print data to file (in the file the unit of time will be ns and the unit of
+     * amplitude will be V
+     **/
+    void printDataToFile(std::vector<int> const& dataVec, std::string fileName = "rawData");
 
 
-  void printDataToFile(std::vector<std::vector<int> > const& dataVec, std::string fileName = "Data");
+    void printDataToFile(std::vector<std::vector<int> > const& dataVec, std::string fileName = "Data");
 
- protected:
+    int getNumberOfActiveChannels(unsigned short channel_mask);
+
+protected:
 
 
 
- private:
+private:
 
-  // function to wait a short time
-  void sleepModule();
+    // function to wait a short time
+    void sleepModule();
 
-  ///Pointer to the device one works with
-  V1729a* _currentDevice;
-  ///var to set how often some functions should try something
-  int const _nb; 
-  ///vec to store the values of the triggerThresholdRegister (all, ch1, ch2, ch3, ch4)
-  std::vector<unsigned short> _triggerThresholdRegister;
+    ///Pointer to the device one works with
+    V1729a* _currentDevice;
+    ///var to set how often some functions should try something
+    int const _nb; 
+    ///vec to store the values of the triggerThresholdRegister (all, ch1, ch2, ch3, ch4)
+    std::vector<unsigned short> _triggerThresholdRegister;
 
 };//end of class definition
 

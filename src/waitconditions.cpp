@@ -178,19 +178,14 @@ void Producer::run()
 		fadcParams["scint2ClockInt"] = scint_pair.second;
 		
 		//get nb of channels
-		int channels = 4;
+		unsigned short channels = 4;
 
 		if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2) ){
-		    if( !(fadcParams["ChannelMask"] & 8) ) channels--;
-		    if( !(fadcParams["ChannelMask"] & 4) ) channels--;
-		    if( !(fadcParams["ChannelMask"] & 2) ) channels--;
-		    if( !(fadcParams["ChannelMask"] & 1) ) channels--;
+		    channels = parent->_hvFadcManager->FADC_Functions->getNumberOfActiveChannels(fadcParams["channelMask"]);
 		}
 
 		//get fadc data
-		//TODO/FIXME one wants to use channels instead of 4 as parameter of the next function?
-		// TODO: fix this!!!
-		std::vector<int> fadcData = (parent->_hvFadcManager)->F_GetAllData(4);
+		std::vector<int> fadcData = (parent->_hvFadcManager)->F_GetAllData(channels);
 		std::cout << "saving data to parent pointer. will probably fail " << std::endl;
 		// set the data we read from the FADC as the values for our fadc pointer
 		parent->_fadcData   = fadcData;

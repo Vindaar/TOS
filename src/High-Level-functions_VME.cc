@@ -418,12 +418,7 @@ std::vector<std::vector<int> > HighLevelFunction_VME::correctData(std::vector<in
 
   //...get number of channels
   unsigned short channelMask = _currentDevice->getChannelMask();
-  unsigned int channels = 4;
-
-  if( !(channelMask & 8) ) channels--;
-  if( !(channelMask & 4) ) channels--;
-  if( !(channelMask & 2) ) channels--;
-  if( !(channelMask & 1) ) channels--;
+  const unsigned int channels = getNumberOfActiveChannels(channelMask);
 
   std::cout << "[DEBUG] -- correctData -- Number of channels: " << channels << std::endl;
 
@@ -486,13 +481,8 @@ void HighLevelFunction_VME::printDataToFile(std::vector<int> const& dataVec, std
   unsigned int channels = 4;
   
   //set nb of channels for the readout
-  if((nbOfChannels != 1) && (nbOfChannels != 2))
-  {
-    if( !(channelMask & 8) ) channels--;
-    if( !(channelMask & 4) ) channels--;
-    if( !(channelMask & 2) ) channels--;
-    if( !(channelMask & 1) ) channels--;
-
+  if((nbOfChannels != 1) && (nbOfChannels != 2)){
+      channels = getNumberOfActiveChannels(channelMask);
   }  
   
   std::cout << "[DEBUG] -- printDataToFile -- Number of channels: " << channels << std::endl;
@@ -575,12 +565,7 @@ void HighLevelFunction_VME::printDataToFile(std::vector<std::vector<int> > const
 
   //get number of channels
   const unsigned short channelMask = _currentDevice->getChannelMask();
-  unsigned int channels = 4;
-
-  if( !(channelMask & 8) ) channels--;
-  if( !(channelMask & 4) ) channels--;
-  if( !(channelMask & 2) ) channels--;
-  if( !(channelMask & 1) ) channels--;
+  const unsigned int channels = getNumberOfActiveChannels(channelMask);
 
   std::cout << "[DEBUG] -- printDataToFile -- Number of channels: " << channels << std::endl;
 
@@ -690,4 +675,21 @@ void HighLevelFunction_VME::sleepModule(){
     // macro in header
 
     std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_FADC_SLEEP_TIME));
+}
+
+int HighLevelFunction_VME::getNumberOfActiveChannels(unsigned short channel_mask){
+    // this function calculates the number of active channels based on the
+    // the channel mask
+    // TODO: understand what makes this number different from what the FADC returns
+    // upon getNbOfChannels().
+    int channels = 4;
+
+    // based on channel mask, we remove all bits, which are not set
+    if( !(channel_mask & 8) ) channels--;
+    if( !(channel_mask & 4) ) channels--;
+    if( !(channel_mask & 2) ) channels--;
+    if( !(channel_mask & 1) ) channels--;
+
+    return channels;
+
 }
