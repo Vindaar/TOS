@@ -34,7 +34,7 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     iniFile = iniFilePath;
 
     // first read HV settings from ini file
-    ReadHVSettings();
+    ReadHFMConfig();
 
     // create the basic event mask we use for all our channels
     // ChannelEventMask: set all three of our channel masks to the following pattern:
@@ -332,7 +332,7 @@ void hvFadcManager::InitHFMForTOS(){
     std::cout << "Entering Init HV" << std::endl;
 
     // First we read the Settings file
-    //     done in ReadHVSettings() called in creator
+    //     done in ReadHFMConfig() called in creator
     // in case _createdFlag is false 
     // we use the read settings to create the objects properly
     
@@ -345,7 +345,7 @@ void hvFadcManager::InitHFMForTOS(){
     // ModuleControlSTRUCT moduleControl = { 0 };
     // ChControlSTRUCT     channelControl = { 0 };
 
-    // use the read settings (ReadHVSettings() called in creator)
+    // use the read settings (ReadHFMConfig() called in creator)
     // to create the objects, if not yet created
     // check if HV module has been created
     if (_createdFlag == false){
@@ -729,10 +729,14 @@ void hvFadcManager::printModuleEventStatus(){
     HV_module->printEventStatus();
 }
 
-void hvFadcManager::H_DumpErrorLogToFile(int event){
-    // int event: if function is called from a run, we
-    //            include the event after which error log is 
-    //            created
+void hvFadcManager::H_DumpErrorLogToFile(int event, int temp_imb, int temp_septem){
+    /* int event: if function is called from a run, we
+                  include the event after which error log is 
+		  created
+       int temp_IMB: temperature of the intermediate board when this function
+                  was called. If 0, probably not included (default is 0)
+       int temp_septem: temperature of the septemboard. 
+    */
 
     // this function dumps an error log to (relative path)
     // ../log/HV_error.log
@@ -823,6 +827,10 @@ void hvFadcManager::H_DumpErrorLogToFile(int event){
 
     logfile << "##### Module related #####\n"
             << "TO BE IMPLEMENTED \n\n";
+
+    logfile << "#### Temperatures ####\n"
+	    << "temp_IMB:    " << temp_imb << "\n"
+	    << "temp_Septem: " << temp_septem << "\n";
 
 }
 
@@ -1522,7 +1530,7 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
 // #################### Read HV settings #######################################
 // #############################################################################
 
-void hvFadcManager::ReadHVSettings(){
+void hvFadcManager::ReadHFMConfig(){
     // This function reads the .ini file from the 
     // member variable iniFile, which is set in the creator
     // this function is called in the creator    
@@ -1618,6 +1626,12 @@ void hvFadcManager::ReadHVSettings(){
     fadcPedestalRunTime             = pt.get_optional<int>("Fadc.fadcPedestalRunTime").get_value_or(DEFAULT_FADC_PEDESTAL_RUN_TIME);
     fadcPedestalNumRuns             = pt.get_optional<int>("Fadc.fadcPedestalNumRuns").get_value_or(DEFAULT_FADC_PEDESTAL_NUM_RUNS);
     fadcChannelSource               = pt.get_optional<int>("Fadc.fadcChannelSource").get_value_or(DEFAULT_FADC_CHANNEL_SOURCE);
+
+    // Temperature
+    _safeUpperTempIMB    = pt.get_optional<int>("Temperature.safeUpperTempIMB").get_value_or(DEFAULT_SAFE_UPPER_IMB_TEMP);
+    _safeUpperTempSeptem = pt.get_optional<int>("Temperature.safeUpperTempSeptem").get_value_or(DEFAULT_SAFE_UPPER_SEPTEM_TEMP);
+    _safeLowerTempIMB    = pt.get_optional<int>("Temperature.safeLowerTempIMB").get_value_or(DEFAULT_SAFE_LOWER_IMB_TEMP);
+    _safeLowerTempSeptem = pt.get_optional<int>("Temperature.safeLowerTempSeptem").get_value_or(DEFAULT_SAFE_LOWER_SEPTEM_TEMP);
 
     // now loop over HvChannels section to create all of the channels
     int nHvChannels = 0;
@@ -1729,9 +1743,35 @@ std::pair<unsigned short, unsigned short> hvFadcManager::GetScintillatorCounters
 }
 
 
+// #############################################################################
+// ########################### Safety related temperature ######################
+// #############################################################################
+// defines functions, which are safety related (of the detector) and thus
+// are defined in hvFadcManager, instead of simply the MCP2210 functions.
+// this is because this way the safety procedures already defined because of
+// HV can be reused
 
+bool hvFadcManager::CheckIfTempsGood(AtomicTemps *temps){
+    // checks whether the temperatures of IMB and Septem are within the bounds
+    // defined by the safe[Upper, Lower][IMB, Septem]Temp variables
 
+    const int temp_imb = temps->first;
+    const int temp_septem = temps->second;
+    bool tempsGood = false;
 
+    if(temp_imb < _safeUpperTempIMB &&
+       temp_imb > _safeLowerTempIMB &&
+       temp_septem < _safeUpperTempSeptem &&
+       temp_septem > _safeLowerTempSeptem){
+	tempsGood = true;
+    }
+    else{
+	tempsGood = false;
+    }
+
+    // and return
+    return tempsGood;
+}
 
 // **************************************************
 // *********** HV COMMANDS **************************

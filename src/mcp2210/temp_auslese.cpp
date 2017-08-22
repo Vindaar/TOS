@@ -246,6 +246,7 @@ void debug_spi_via_config(hid_device *handle){
 
 void loop(hid_device *handle,
 	  std::atomic_bool *loop_continue,
+	  AtomicTemps &temps,
 	  int sleep_time,
 	  int rtd_resistance,
 	  int ref_resistor){
@@ -275,10 +276,15 @@ void loop(hid_device *handle,
 		  <<  active_slave << " is: " << temp2 << std::endl;
 	simple_sleep(sleep_time);
 	// now change current active chip by calling function with true as argument
-	get_current_active_slave(true);	    
+	get_current_active_slave(true);
 	lsb_rtd = read_register(handle, READ_LSB); 
 	fault_test = lsb_rtd & 0x01;
 	std::cout << std::endl;
+
+
+	// set current values in AtomicTemps reference
+	temps.first  = (int) temp1;
+	temps.second = (int) temp2;
     }
     if(fault_test != 0){
 	std::cout << "Error was detected. The RTD resistance measured is not within the range specified in nthe Threshold Registers." << std::endl;
@@ -292,6 +298,7 @@ void loop(hid_device *handle,
 
 void loop_and_log(hid_device *handle,
 		  std::atomic_bool *loop_continue,
+		  AtomicTemps &temps,		  
 		  int sleep_time,
 		  int rtd_resistance,
 		  int ref_resistor,
@@ -364,6 +371,10 @@ void loop_and_log(hid_device *handle,
 	    std::cout << "    slave "
 		      << "septem" << " is: " << temp_septem << std::endl;
 
+	    // set current values in AtomicTemps reference
+	    temps.first  = (int) temp_IMB;
+	    temps.second = (int) temp_septem;
+
 	    // and reset counter and temps
 	    temp_IMB     = 0;
 	    temp_septem  = 0;
@@ -408,12 +419,13 @@ void loop_and_log(hid_device *handle,
 
 void loop_temp(hid_device *handle,
 	       std::atomic_bool *loop_continue,
+	       AtomicTemps &temps,	       
 	       int sleep_time,
 	       bool log_flag,
 	       std::string path_name){
     /* loops until being stopped by parent thread (settings loop_continue to true)
        and prints current temperatures to console
-       Additionally updates the temperatures
+       Additionally updates the temperatures in the AtomicTemps reference
     */
     
     int config;
@@ -429,17 +441,29 @@ void loop_temp(hid_device *handle,
 	int ref_resistor = 3900;
 
 	if(log_flag == true){
-	    loop_and_log(handle, loop_continue, sleep_time, rtd_resistance, ref_resistor, path_name);
+	    loop_and_log(handle, loop_continue, temps, sleep_time, rtd_resistance, ref_resistor, path_name);
 	}
 	else{
-	    loop(handle, loop_continue, sleep_time, rtd_resistance, ref_resistor);
+	    loop(handle, loop_continue, temps, sleep_time, rtd_resistance, ref_resistor);
 	}
     }
     return;
 }
 
-int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name){
-    // initializes a MCP2210 device and reads out the temperatures
+int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name, AtomicTemps &temps){
+    /* initializes a MCP2210 device and reads out the temperatures
+       inputs: 
+           std::atomic_bool *loop_continue: atomic flag to be able to stop the 
+	   temperature loop from the calling function.
+	   std::string path_name: name of the path to the folder (typically Run 
+	   folder), in which the temperature log is to be stored
+	   AtomicTemps &temps: reference to an AtomicTemps object, which stores 
+	   (rounded to ints) values of the current temperature. This is used 
+	   to be able to (roughly) read the current temperatures and be able
+	   to shutdown a (e.g.) Run in case the cooling has stopped working 
+	   and ramp down the HV.
+    */
+    
     hid_device *handle;
 
     // initialize using MCP2210 library
@@ -466,7 +490,7 @@ int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name){
 	    get_current_active_slave(true);
 	}
 	bool log_flag = true;
-	loop_temp(handle, loop_continue, 5000, log_flag, path_name);
+	loop_temp(handle, loop_continue, temps, 5000, log_flag, path_name);
     }
     else{
 	check_fault_register(Fault_Error);
@@ -503,6 +527,11 @@ int temp_auslese_main(std::atomic_bool *loop_continue, bool log_flag){
 
     //debug_spi_via_config(handle);
 
+
+    AtomicTemps temps;
+    temps.first = 10;
+    temps.second = 10;
+
     byte Fault_Error;
     Fault_Error = read_register(handle, FAULT_STATUS);
     if(Fault_Error == 0){
@@ -510,7 +539,7 @@ int temp_auslese_main(std::atomic_bool *loop_continue, bool log_flag){
 	    write_byte_to_register(handle, CONFIGURATION, 0b11000001);
 	    get_current_active_slave(true);
 	}
-	loop_temp(handle, loop_continue, 250, log_flag, "");
+	loop_temp(handle, loop_continue, temps,  250, log_flag, "");
     }
     else{
 	check_fault_register(Fault_Error);

@@ -232,19 +232,29 @@ void Producer::run()
 	    (i % 10 == 0)){
 	    // TODO: change the frequency of this. do not want hardcoded, but rather
 	    //       based on time (input given in HFO_settings.ini)
-	    int isGood = 0;
+	    int hvGood = 0;
+	    bool tempsGood = false;
 	    parent->mutexVBuffer.lock();
 	    // TODO: deprecated. Call different function!
-	    isGood = (parent->_hvFadcManager)->H_CheckHVModuleIsGood(true);
+	    hvGood = (parent->_hvFadcManager)->H_CheckHVModuleIsGood(true);
 	    parent->mutexVBuffer.unlock();
 
-	    if (isGood == -1){
+	    // hand the current temperatures to a function def. in helper_functions.cpp
+	    // to check if we should stop the run based on temps
+	    tempsGood = (parent->_hvFadcManager)->CheckIfTempsGood(_temps);
+
+	    if (hvGood == -1 || tempsGood == false){
 	    	// this means something is wrong with HV
 	    	// - call a function to report about problem (dump to file)
 	    	// - stop the run with error message
-		std::cout << "ERROR: HV module in non-good state. Stopping run!" << std::endl;
+		if(hvGood == -1){
+		    std::cout << "ERROR: HV module in non-good state. Stopping run!" << std::endl;
+		}
+		if(tempsGood == false){
+		    std::cout << "ERROR: temperatures out of bounds. Stopping run!" << std::endl;
+		}
 	    	parent->mutexVBuffer.lock();
-	    	(parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
+	    	(parent->_hvFadcManager)->H_DumpErrorLogToFile(i, _temps->first, _temps->second);
 	    	parent->mutexVBuffer.unlock();
 	    	parent->StopRun();
 	    }

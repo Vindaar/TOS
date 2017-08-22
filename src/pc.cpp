@@ -1990,13 +1990,22 @@ void PC::runFADC()
     	// MCP2210 related
     	// ##################################################
 
+	// define AtomicTemps object, which will be handed to loop_thread
+	// as well as Producer as a reference, so the run can be stopped in
+	// case temps are out of bounds
+	AtomicTemps temps;
+	// we initialize the temperatures to 10 C to make sure the first value
+	// is within the allowed temperature bounds
+	temps.first = 10;
+	temps.second = 10;
+
     	// start a second thread, which calls init_and_log_temp
     	// to print and log the temperatures during the run
     	std::string path_name(PathName);
-    	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name);
+    	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name, std::ref(temps));
     	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
 
-        Producer producer(this);
+        Producer producer(this, &temps);
         DataAcqRunning = true;
         Consumer consumer(this);
         producer.start();
@@ -2048,14 +2057,24 @@ void PC::runOTPX()
     	// MCP2210 related
     	// ##################################################
 
+	// define AtomicTemps object, which will be handed to loop_thread
+	// as well as Producer as a reference, so the run can be stopped in
+	// case temps are out of bounds
+	AtomicTemps temps;
+	// we initialize the temperatures to 10 C to make sure the first value
+	// is within the allowed temperature bounds
+	temps.first = 10;
+	temps.second = 10;
+
+
     	// start a second thread, which calls init_and_log_temp
     	// to print and log the temperatures during the run
     	std::string path_name(PathName);
-    	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name);
+    	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name, std::ref(temps));
     	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
 
 
-        Producer producer(this);
+        Producer producer(this, &temps);
         DataAcqRunning = true;
         Consumer consumer(this);
         producer.start();

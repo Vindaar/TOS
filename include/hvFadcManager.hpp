@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <list>
 #include <set>
+#include <atomic>
 
 // BOOST
 // boost classes to parse ini file
@@ -44,6 +45,10 @@
 
 // TOS headers
 #include "helper_functions.hpp"
+
+// custom headers related to MCP2210 (temperature readout)
+#include "mcp2210/temp_helpers.hpp"
+//typedef std::pair<std::atomic_int, std::atomic_int> AtomicTemps;
 
 
 
@@ -118,6 +123,12 @@
 #define DEFAULT_FADC_PEDESTAL_NUM_RUNS                            10 // number of pedestal runs for one calibration
 #define DEFAULT_FADC_CHANNEL_SOURCE                               1 // channel 0 is trigger source, bit 0 = 1
 
+// temperature macros
+#define DEFAULT_SAFE_UPPER_IMB_TEMP                               61 // in C
+#define DEFAULT_SAFE_UPPER_SEPTEM_TEMP                            61 // in C
+#define DEFAULT_SAFE_LOWER_IMB_TEMP                               0 // in C
+#define DEFAULT_SAFE_LOWER_SEPTEM_TEMP                            0 // in C
+
 // HV macros
 #define DEFAULT_HV_SLEEP_TIME                                     10 // in milli seconds
 
@@ -178,7 +189,7 @@ public:
     // useful if one wants to add channels externally
     hvModule* getHVModulePtr();
 
-    void ReadHVSettings();
+    void ReadHFMConfig();
     // init HFM sets all settings of HV and FADC, but does not start the ramp
     void InitHFMForTOS();
     // RampChannels starts the ramp up of all channels
@@ -227,7 +238,13 @@ public:
     // HFOSettings.ini) seconds
     // TODO: change!
     int H_CheckHVModuleIsGood(bool verbose = true);
-    void H_DumpErrorLogToFile(int event);
+    
+    // function to check whether temperatures in safe bounds
+    bool CheckIfTempsGood(AtomicTemps *temps);
+    
+    // optional arguments to the error dump include temperatures for IMB and septem,
+    // default to 0 if not supplied.
+    void H_DumpErrorLogToFile(int event, int temp_imb = 0, int temp_septem = 0);
 
     // These two functions are convenience functions, which 
     // write a group (from a GroupSTRUCT struct to the 
@@ -627,6 +644,16 @@ private:
     // scintillator signal and FADC trigger
     unsigned short _scint1_counter;
     unsigned short _scint2_counter;
+
+    // ------------------------------
+    // Temperature
+    // ------------------------------
+    int _safeUpperTempIMB;
+    int _safeUpperTempSeptem;
+    int _safeLowerTempIMB;
+    int _safeLowerTempSeptem;
+
+    
     
     // special functions have no need to be public
     // --- HV Special Control ----------------------------------------------------

@@ -50,22 +50,25 @@ void debug_spi_via_config(hid_device *handle);
 
 void loop(hid_device *handle,
 	  std::atomic_bool *loop_continue,
+	  AtomicTemps &temps,	  
 	  int sleep_time,
 	  int rtd_resistance,
 	  int ref_resistor);
 
 void loop_and_log(hid_device *handle,
 		  std::atomic_bool *loop_continue,
+		  AtomicTemps &temps,
 		  int sleep_time,
 		  int rtd_resistance,
 		  int ref_resistor,
 		  std::string path_name);
 
-void loop_Temp(hid_device *handle,
+void loop_temp(hid_device *handle,
 	       std::atomic_bool *loop_continue,
+	       AtomicTemps &temps,
 	       int sleep_time,
 	       std::string path_name);
 
-int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name);
+int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name, AtomicTemps &temps);
 int temp_auslese_main(std::atomic_bool *loop_continue, bool log_flag);
 
