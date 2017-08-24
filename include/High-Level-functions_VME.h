@@ -84,7 +84,22 @@ public:
      * set value its stored in the triggerThresholdRegister vector.
      * Returns 0 if succesfull, 1 otherwise. (at least it should)
      **/
-    unsigned int setTriggerThresholdRegisterAll(const unsigned int threshold);
+    int setTriggerThresholdRegisterAll(const unsigned int threshold);
+
+    // helper functions to convert from and to mV from fadc_ticks
+    // returns trigger in mV calc'd from FADC ticks, returns int, because
+    // trigger can be negative
+    int calcTriggerThresholdFromTicks(unsigned int fadc_ticks);    
+    int calcTriggerThresholdFromTicks(unsigned int fadc_ticks, bool bit_mode14);
+    // returns FADC ticks from trigger voltage in mV
+    unsigned int calcTriggerThresholdInTicks(int trigger_level);    
+    unsigned int calcTriggerThresholdInTicks(int trigger_level, bool bit_mode14);
+
+    // function to set trigger threshold in mV instead of FADC ticks
+    // function overloaded, if first function is called, mode_register will
+    // be read from device first, then calls 2nd function
+    int setTriggerLevel(int trigger_level);
+    int setTriggerLevel(int trigger_level, int mode_register);    
 
 
     ///returns the content of the triggerThresholdRegister vector

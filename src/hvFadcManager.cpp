@@ -1,7 +1,7 @@
 #include "hvFadcManager.hpp"
 //#include <QDir>
 //#include <QSettings>
-#include <QCoreApplication>
+//#include <QCoreApplication>
 #include "const.h"
 
 // used to control while loops to read / write to HV and
@@ -1351,6 +1351,12 @@ void hvFadcManager::SetFadcSettings(){
     FADC_Functions->setTriggerThresholdRegisterAll( fadcTriggerThresholdRegisterAll );
     //F_PrintSettings();
 
+    // set MODE_REGISTER of FADC (by default we set it to 0b010 in order to enable
+    // 14 bit readout. Need this variable to properly set the trigger threshold
+    // as a range! Range of TriggerThresholdRegister not from 0 - 4096 but 0 - 16384
+    F_SetModeRegister( fadcModeRegister );
+    
+
     _hvFadcInitFlag = true;
     
 }
@@ -1626,6 +1632,7 @@ void hvFadcManager::ReadHFMConfig(){
     fadcPedestalRunTime             = pt.get_optional<int>("Fadc.fadcPedestalRunTime").get_value_or(DEFAULT_FADC_PEDESTAL_RUN_TIME);
     fadcPedestalNumRuns             = pt.get_optional<int>("Fadc.fadcPedestalNumRuns").get_value_or(DEFAULT_FADC_PEDESTAL_NUM_RUNS);
     fadcChannelSource               = pt.get_optional<int>("Fadc.fadcChannelSource").get_value_or(DEFAULT_FADC_CHANNEL_SOURCE);
+    fadcModeRegister                = pt.get_optional<int>("Fadc.fadcModeRegister").get_value_or(DEFAULT_FADC_MODE_REGISTER);
 
     // Temperature
     _safeUpperTempIMB    = pt.get_optional<int>("Temperature.safeUpperTempIMB").get_value_or(DEFAULT_SAFE_UPPER_IMB_TEMP);

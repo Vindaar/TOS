@@ -117,6 +117,7 @@ const std::set<std::string> get_hfm_commands(){
 						   "StartFadcPedestalRun",
 						   "StartFadcAcquisition",
 						   "StartFadcAcq",
+						   "SetFadcTriggerLevel",
 						   "EnableFADCshutter", 
 						   "DisableFADCshutter", 
 						   "SendFadcSoftwareTrigger",

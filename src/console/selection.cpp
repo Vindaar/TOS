@@ -563,6 +563,23 @@ std::pair<int, int> Console::THLBoundarySelection(){
     return threshold_boundary_pair;
 }
 
+int Console::FadcTriggerLevelSelection(){
+    // this functions handles user input in regards to the selection of
+    // the FADC trigger threshold level, given in mV
+    std::string input;
+    
+    std::cout << "Choose a value for the FADC trigger threshold\n"
+	      << "range: -1000 to 1000 mV"
+	      << std::endl;
+    std::set<std::string> allowedValues;
+    for(int i = -1000; i <= 1000; i++) allowedValues.insert(std::to_string(i));
+
+    input = getUserInputNumericalNoDefault(_prompt, allowedValues);
+    if(input == "quit") return -1;
+
+    return std::stoi(input);
+}
+
 
 std::map<std::string, int> Console::ChessMatrixSelection(int chip){
     // this function handles user input in regards to a creation of a chess matrix

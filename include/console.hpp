@@ -186,6 +186,9 @@ private:
     // pedestal calibration run
     void CommandFadcPedestalRun();
 
+    // function to set FADC trigger level in mV
+    void CommandFadcTriggerLevel();
+
     // MCP2210 related functions
     // function to loop over temperature readout (for now just calls temp_loop_main())
     void CommandTempLoopReadout();
@@ -216,6 +219,7 @@ private:
     int THLAnyBoundary(std::string boundary);
     std::pair<int, int> THLBoundarySelection();
     std::map<std::string, int> ChessMatrixSelection(int chip);
+    int FadcTriggerLevelSelection();
 
 
     // ################################################################################

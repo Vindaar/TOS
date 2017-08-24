@@ -372,7 +372,10 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
 
     else if (input.compare("TempLoopReadout") == 0){
 	CommandTempLoopReadout();
-    }       
+    }
+    else{
+	std::cout<<"command not found"<<std::endl;
+    }
 
 }
 
@@ -467,6 +470,9 @@ void Console::ParseActiveHfmCommands(std::string input){
     }
     else if (input.compare("SendFadcSoftwareTrigger") == 0){
 	_hvFadcManager->F_SendSoftwareTrigger();        
+    }
+    else if (input.compare("SetFadcTriggerLevel") == 0){
+	CommandFadcTriggerLevel();
     }
     else if (input.compare("ReadFadcInterrupt") == 0){
 	std::cout << "Interrupt: " << _hvFadcManager->F_ReadInterrupt() << std::endl;
@@ -589,5 +595,8 @@ void Console::ParseActiveHfmCommands(std::string input){
 	std::string input;
 	input = getUserInputNumericalNoDefault(_prompt);
 	_hvFadcManager->setSleepTriggerTime(std::stoi(input));
+    }
+    else{
+	std::cout<<"command not found"<<std::endl;
     }
 }

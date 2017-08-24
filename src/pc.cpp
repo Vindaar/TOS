@@ -1649,7 +1649,7 @@ unsigned short PC::CheckOffset(){
 	    fpga->WriteReadFSR();
 	    fpga->SetMatrix();
 	    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
-	    int result;
+	    int result = 0;
 	    fpga->DataChipFPGA(result);
 	    int hits=fpga->DataFPGAPC(data,chip);// + 1);
 	    for(int i=0; i<hits*3; i=i+3){

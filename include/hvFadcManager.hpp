@@ -122,6 +122,8 @@
 #define DEFAULT_FADC_PEDESTAL_RUN_TIME                            100 // in milli seconds
 #define DEFAULT_FADC_PEDESTAL_NUM_RUNS                            10 // number of pedestal runs for one calibration
 #define DEFAULT_FADC_CHANNEL_SOURCE                               1 // channel 0 is trigger source, bit 0 = 1
+#define DEFAULT_FADC_MODE_REGISTER                                0b010 // Mode register to activate 14 bit mode.
+                                                                        // 0b000 corresponds to 12 bit readout
 
 // temperature macros
 #define DEFAULT_SAFE_UPPER_IMB_TEMP                               61 // in C
@@ -628,6 +630,7 @@ private:
     int fadcPedestalRunTime;
     int fadcPedestalNumRuns;
     int fadcChannelSource;
+    int fadcModeRegister;
 
     // member variable, which stores the clock cycle at which the FADC triggered in the last
     // frame

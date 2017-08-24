@@ -2503,6 +2503,20 @@ void Console::CommandFadcPedestalRun(){
     }
 }
 
+void Console::CommandFadcTriggerLevel(){
+    /* this function calls the FADC functions to set the trigger level of all
+       channels to a value in mV given by the user.
+    */
+
+    int trigger_level = 0;
+    trigger_level = FadcTriggerLevelSelection();
+
+    // now call FADC set trigger level (a wrapper around
+    // SetFadcTriggerThresholdRegisterAll)
+    _hvFadcManager->FADC_Functions->setTriggerLevel(trigger_level);
+    
+}
+
 
 void Console::CommandAddChannel(){
     // this function provides a user interface to add a HV channel to
@@ -2690,3 +2704,4 @@ void Console::CommandTempLoopReadout(){
     loop_thread.join();
 
 }
+

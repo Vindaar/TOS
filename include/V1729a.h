@@ -8,18 +8,18 @@
 #include <string>
 
 /** Abstrac class for the readout of of the V1729a
- *  FlashADC from CAEN. This class only defines a common 
- *  interface for the readout via VME. 
- *  Reference to the manual allwayes refers to the V1729a 
+ *  FlashADC from CAEN. This class only defines a common
+ *  interface for the readout via VME.
+ *  Reference to the manual allwayes refers to the V1729a
  *  user manual by CAEN.
  *
- *  The implementations of the derived classes are not 
+ *  The implementations of the derived classes are not
  *  expected to validate type and format of the input
  *  values for its methods. They are also only intended
- *  to allow access to the different registers and 
- *  commands of the V1729a ADC, the shall not provide any 
- *  higher level functions. Higher level mehtods (like 
- *  pedestal substraction, data realignment, readout 
+ *  to allow access to the different registers and
+ *  commands of the V1729a ADC, they shall not provide any
+ *  higher level functions. Higher level methods (like
+ *  pedestal substraction, data realignment, readout
  *  schemes and so on should be defined in a different class
  *  which uses this FADC class only to access the device.
  *

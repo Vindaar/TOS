@@ -48,21 +48,23 @@ HighLevelFunction_VME::~HighLevelFunction_VME()
 
 
 //TODO: Decide which settings one wants to display
-void HighLevelFunction_VME::printSettings()
-{
-  std::cout << std::endl << "Current Settings of the V1729a FADC:" << std::endl << std::endl;
-  std::cout << "Frequency:      " << _currentDevice->getFrequency()     << " default:  1/2 (2/1Ghz)" << std::endl << std::endl;
-  std::cout << "Read Mode:      " << _currentDevice->getReadMode()      << " default:  0" << std::endl;
-  std::cout << "Mode Register:  " << _currentDevice->getModeRegister()  << " default:  0" << std::endl;
-  std::cout << "Channel Mask:   " << _currentDevice->getChannelMask()   << " default: 15" << std::endl;
-  std::cout << "NB of Channels: " << _currentDevice->getNbOfChannels()  << " default:  0" << std::endl << std::endl;
-  std::cout << "Trigger Type:   " << _currentDevice->getTriggerType()   << " default:  3" << std::endl; 
-  std::cout << "Trigger Channel Sources: " << _currentDevice->getTriggerChannelSource() << " default ?" << std::endl << std::endl;
-  std::cout << "PreTrig:        " << _currentDevice->getPretrig()       << " default: 15000 - 85 seems sufficent" << std::endl;
-  std::cout << "PostTrig:       " << _currentDevice->getPosttrig()      << " default: 64" << std::endl << std::endl;
-  std::cout << "FPGA Version:   " << _currentDevice->getFPGAVersion()   << std::endl << std::endl;
+void HighLevelFunction_VME::printSettings(){
+    int trigger_level = calcTriggerThresholdFromTicks(_triggerThresholdRegister[0]);
+    
+    std::cout << std::endl << "Current Settings of the V1729a FADC:" << std::endl << std::endl;
+    std::cout << "Frequency:         " << _currentDevice->getFrequency()     << " default:  1/2 (2/1Ghz)" << std::endl << std::endl;
+    std::cout << "Read Mode:         " << _currentDevice->getReadMode()      << " default:  0" << std::endl;
+    std::cout << "Mode Register:     " << _currentDevice->getModeRegister()  << " default:  0" << std::endl;
+    std::cout << "Channel Mask:      " << _currentDevice->getChannelMask()   << " default: 15" << std::endl;
+    std::cout << "NB of Channels:    " << _currentDevice->getNbOfChannels()  << " default:  0" << std::endl << std::endl;
+    std::cout << "Trigger Type:      " << _currentDevice->getTriggerType()   << " default:  3" << std::endl; 
+    std::cout << "Trigger Channel Sources: " << _currentDevice->getTriggerChannelSource() << " default ?" << std::endl;
+    std::cout << "Trigger Threshold: (" << _triggerThresholdRegister[0] << " / " << trigger_level << " mV)" << std::endl << std::endl;
+    std::cout << "PreTrig:           " << _currentDevice->getPretrig()       << " default: 15000 - 85 seems sufficent" << std::endl;
+    std::cout << "PostTrig:          " << _currentDevice->getPosttrig()      << " default: 64" << std::endl << std::endl;
+    std::cout << "FPGA Version:      " << _currentDevice->getFPGAVersion()   << std::endl << std::endl;
 
-  return;
+    return;
 }//end of printSettings
 
 
@@ -286,10 +288,6 @@ int HighLevelFunction_VME::setTriggerChannelSourceH(const unsigned short& mask )
 	return 0;
     }
 
-
-
-
-
   //   for(int iTry = 1; iTry <= _nb; iTry++)
   // {
   //   _currentDevice->setTriggerChannelSource(mask);
@@ -305,8 +303,109 @@ int HighLevelFunction_VME::setTriggerChannelSourceH(const unsigned short& mask )
   // return 1;  
 }
 
+int HighLevelFunction_VME::calcTriggerThresholdFromTicks(unsigned int fadc_ticks){
+    // overloaded function to call without bit_mode14 argument. Will be determined
+    // via MODE_REGISTER
 
-unsigned int HighLevelFunction_VME::setTriggerThresholdRegisterAll(const unsigned int threshold)
+    int mode_register = _currentDevice->getModeRegister();
+    // check 2nd bit in mode_register (defines whether 12 or 14 bit mode is used)
+    bool bit_mode14 = (mode_register & 0b010) == 0b010;
+    int result = calcTriggerThresholdFromTicks(fadc_ticks, bit_mode14);
+    return result;
+}
+
+int HighLevelFunction_VME::calcTriggerThresholdFromTicks(unsigned int fadc_ticks, bool bit_mode14){
+    // inverse function of calcTriggerThresholdInTicks(int, bool);
+    // calculates mV trigger level from FADC ticks
+    float trigger_level = 0;
+    float conversion_factor = 1.;
+    if(bit_mode14 == true){
+	// in this case 14 bit register is used, meaning values range from
+	// 0 - 16384 ( ^= -1 to +1 V )
+	conversion_factor = 8192.;
+    }
+    else{
+	// in this case classic 12 bits are used.
+	conversion_factor = 2048.;
+    }
+
+    // calculate trigger level in mV by dividing ticks by half the
+    // total range and subtracting 1 (0 ticks ^= -1 V)
+    trigger_level = fadc_ticks / conversion_factor - 1;
+    // convert trigger level to mV and return
+    
+    return static_cast<int>(trigger_level * 1000);
+}
+
+unsigned int HighLevelFunction_VME::calcTriggerThresholdInTicks(int trigger_level){
+    // overloaded function to call without bit_mode14 argument. Will be determined
+    // via MODE_REGISTER
+
+    int mode_register = _currentDevice->getModeRegister();
+    // check 2nd bit in mode_register (defines whether 12 or 14 bit mode is used)
+    bool bit_mode14 = (mode_register & 0b010) == 0b010;
+    int result = calcTriggerThresholdInTicks(trigger_level, bit_mode14);
+    return result;
+}
+
+unsigned int HighLevelFunction_VME::calcTriggerThresholdInTicks(int trigger_level, bool bit_mode14){
+    // calculates the trigger threshold value in FADC native ticks, instead of
+    // more user friendly mV. Takes into account whether FADC runs in 12 or 14
+    // bit mode
+
+    float fadc_ticks = 0;
+    float conversion_factor = 1.;
+    if(bit_mode14 == true){
+	// in this case 14 bit register is used, meaning values range from
+	// 0 - 16384 ( ^= -1 to +1 V )
+	conversion_factor = 8192.;
+    }
+    else{
+	// in this case classic 12 bits are used.
+	conversion_factor = 2048.;
+    }
+
+    // before calculating ticks, convert trigger_level from mV to V
+    // using new variable, because trigger_level in mV is int
+    const float trigger_level_V = trigger_level / 1000.;
+
+    // now calculate ticks. Add 1 to desired trigger level in V to shift
+    // up (since fadc_ticks == 0 ^= -1 V)
+    // then divide by half the range to get the ticks
+    // e.g. -100 mV => -0.1 V => 0.9 => 1843.2 (12 bit)
+    fadc_ticks = (trigger_level_V + 1) * conversion_factor;
+    
+    return static_cast<unsigned int>(fadc_ticks);
+}
+
+int HighLevelFunction_VME::setTriggerLevel(int trigger_level){
+    // overloaded function of setTriggerLevel(int, int), which first
+    // gets the current mode_register value, then calls the other fn
+
+    int mode_register = _currentDevice->getModeRegister();
+    int result = setTriggerLevel(trigger_level, mode_register);
+
+    return result;
+}
+
+int HighLevelFunction_VME::setTriggerLevel(int trigger_level, int mode_register){
+    // function first checks whether device is in 12 or 14 bit mode (via bit
+    // comparison of bit 1 of mode_register) and then calculates the threshold
+    // value correponding to the trigger_level (given in mV) to FADC ticks
+
+    // check 2nd bit in mode_register (defines whether 12 or 14 bit mode is used)
+    bool bit_mode14 = (mode_register & 0b010) == 0b010;
+
+    // get trigger value for FADC necessary for desired trigger_level in mV
+    unsigned int trigger_ticks = calcTriggerThresholdInTicks(trigger_level, bit_mode14);
+
+    // now call setTriggerThresholdRegisterAll to the calculated value
+    int result = setTriggerThresholdRegisterAll(trigger_ticks);
+
+    return result;
+}
+
+int HighLevelFunction_VME::setTriggerThresholdRegisterAll(const unsigned int threshold)
 {
     //store the threshold in the register vec
     _triggerThresholdRegister[0] = threshold;
@@ -350,9 +449,12 @@ unsigned int HighLevelFunction_VME::setTriggerThresholdRegisterAll(const unsigne
 	timeout--;
     }
     if (timeout < 1){
+	int trigger_thr_mV = 0;
+	trigger_thr_mV = calcTriggerThresholdFromTicks(threshold);
+	
 	std::cout << "Could not set trigger threshold DAC for one or more channels." << std::endl;
-	std::cout << "wanted to set "
-		  << threshold
+	std::cout << "wanted to set ("
+		  << threshold << " / " << trigger_thr_mV << " mV)"
 		  << " is "
 		  << thres0 << "\t"
 		  << thres1 << "\t"
@@ -383,13 +485,23 @@ unsigned int HighLevelFunction_VME::setTriggerThresholdRegisterAll(const unsigne
 
 void HighLevelFunction_VME::getTriggerThresholdRegister()
 {
+    std::vector<int> trigger_levels_mV;
+    for(auto thr: _triggerThresholdRegister){
+	trigger_levels_mV.push_back(calcTriggerThresholdFromTicks(thr));
+    }
+    
     std::cout << "[Begin Message] -- getTriggerThresholdRegister:" << std::endl
-	      << "getTriggerThreshold perChannel:" << std::endl
-	      << "Channel 1: " << _triggerThresholdRegister[1] << std::endl
-	      << "Channel 2: " << _triggerThresholdRegister[2] << std::endl
-	      << "Channel 3: " << _triggerThresholdRegister[3] << std::endl
-	      << "Channel 4: " << _triggerThresholdRegister[4] << std::endl
-	      << "getTriggerThreshold All: " << _triggerThresholdRegister[0] << std::endl 
+	      << "getTriggerThreshold perChannel:" << std::endl;
+
+    for(unsigned int i = 1; i < _triggerThresholdRegister.size(); i++){
+	std::cout << "Channel " << i << ": (" << _triggerThresholdRegister[1] << " / "
+		  << trigger_levels_mV[1] << " mV)"
+		  << std::endl;
+    }
+
+    std::cout << "getTriggerThreshold All: " << _triggerThresholdRegister[0] << " / "
+	      << trigger_levels_mV[0] << ")"
+	      << std::endl
 	      << "[End Message] -- getTriggerThresholdRegister" << std::endl << std::endl;
   
     return;
@@ -693,3 +805,4 @@ int HighLevelFunction_VME::getNumberOfActiveChannels(unsigned short channel_mask
     return channels;
 
 }
+

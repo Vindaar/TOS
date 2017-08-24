@@ -301,7 +301,7 @@ void PC::AllChipsSingleStepCtpr(std::set<unsigned short> chip_set,
 
 
 	// and activate zero suppressed readout in case of TOCalib
-        int temp_result;
+        int temp_result = 0;
 	fpga->DataChipFPGA(temp_result);
 
 	// now we loop over all chips in the chip_set to read them out
