@@ -245,7 +245,7 @@ void debug_spi_via_config(hid_device *handle){
 }
 
 void loop(hid_device *handle,
-	  std::atomic_bool *loop_continue,
+	  std::atomic_bool &loop_continue,
 	  AtomicTemps &temps,
 	  int sleep_time,
 	  int rtd_resistance,
@@ -260,7 +260,7 @@ void loop(hid_device *handle,
 
 
     while( (fault_test == 0) &&
-	   (*loop_continue == true) )
+	   (loop_continue == true) )
     {
 	std::cout << std::endl;
 	temp1 = get_temp(handle, rtd_resistance, ref_resistor);
@@ -297,7 +297,7 @@ void loop(hid_device *handle,
 }
 
 void loop_and_log(hid_device *handle,
-		  std::atomic_bool *loop_continue,
+		  std::atomic_bool &loop_continue,
 		  AtomicTemps &temps,		  
 		  int sleep_time,
 		  int rtd_resistance,
@@ -341,7 +341,7 @@ void loop_and_log(hid_device *handle,
 	      << "num meas " << num_measurements << std::endl;
 
     while( (fault_test == 0) &&
-	   (*loop_continue == true) )
+	   (loop_continue == true) )
     {
 	if( ((counter % num_measurements) == 0) &&
 	    (temp_IMB != 0) &&
@@ -418,7 +418,7 @@ void loop_and_log(hid_device *handle,
 
 
 void loop_temp(hid_device *handle,
-	       std::atomic_bool *loop_continue,
+	       std::atomic_bool &loop_continue,
 	       AtomicTemps &temps,	       
 	       int sleep_time,
 	       bool log_flag,
@@ -450,7 +450,7 @@ void loop_temp(hid_device *handle,
     return;
 }
 
-int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name, AtomicTemps &temps){
+int init_and_log_temp(std::atomic_bool &loop_continue, std::string path_name, AtomicTemps &temps){
     /* initializes a MCP2210 device and reads out the temperatures
        inputs: 
            std::atomic_bool *loop_continue: atomic flag to be able to stop the 
@@ -500,7 +500,7 @@ int init_and_log_temp(std::atomic_bool *loop_continue, std::string path_name, At
     return 0;
 }
 
-int temp_auslese_main(std::atomic_bool *loop_continue, bool log_flag){
+int temp_auslese_main(std::atomic_bool &loop_continue, bool log_flag){
     // argument is a pointer to a bool variable from the calling function
 
     hid_device *handle;

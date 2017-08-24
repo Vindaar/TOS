@@ -273,6 +273,7 @@ private:
     // member variable for general command prompt for input methods
     const char *_prompt;
     std::atomic_bool _loop_stop;
+    std::atomic_bool _temp_check_loop_stop;
 
     // a set of active chips, which we are currently working with
     std::set<unsigned short> _chip_set;

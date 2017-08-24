@@ -48,6 +48,7 @@
 
 // custom headers related to MCP2210 (temperature readout)
 #include "mcp2210/temp_helpers.hpp"
+#include "mcp2210/temp_auslese.hpp"
 //typedef std::pair<std::atomic_int, std::atomic_int> AtomicTemps;
 
 
@@ -242,7 +243,7 @@ public:
     int H_CheckHVModuleIsGood(bool verbose = true);
     
     // function to check whether temperatures in safe bounds
-    bool CheckIfTempsGood(AtomicTemps *temps);
+    bool CheckIfTempsGood(AtomicTemps &temps);
     
     // optional arguments to the error dump include temperatures for IMB and septem,
     // default to 0 if not supplied.
@@ -547,7 +548,10 @@ private:
     bool _settingsReadFlag;
     // Module Initialization flag is used to check whether whole HFM is up and running
     // (FADC and HV)
-    bool _hvModInitFlag;
+    // variable is declared as an atomic_bool, because it has to be handed to the
+    // BackgroundTempLoop function, which checks whether the temperatues are within
+    // safe bounds. 
+    std::atomic_bool _hvModInitFlag;
     // FADC Initialization flag is used to check whether only FADC is up and running
     bool _hvFadcInitFlag;
     bool anodeGridGroupFlag;
@@ -656,7 +660,8 @@ private:
     int _safeLowerTempIMB;
     int _safeLowerTempSeptem;
 
-    
+    std::thread *_temp_safety_loop;
+    std::atomic_bool _safety_temp_loop_continue;
     
     // special functions have no need to be public
     // --- HV Special Control ----------------------------------------------------

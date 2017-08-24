@@ -2002,7 +2002,7 @@ void PC::runFADC()
     	// start a second thread, which calls init_and_log_temp
     	// to print and log the temperatures during the run
     	std::string path_name(PathName);
-    	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name, std::ref(temps));
+    	std::thread loop_thread(init_and_log_temp, std::ref(_loop_continue), path_name, std::ref(temps));
     	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
 
         Producer producer(this, &temps);
@@ -2070,7 +2070,7 @@ void PC::runOTPX()
     	// start a second thread, which calls init_and_log_temp
     	// to print and log the temperatures during the run
     	std::string path_name(PathName);
-    	std::thread loop_thread(init_and_log_temp, &_loop_continue, path_name, std::ref(temps));
+    	std::thread loop_thread(init_and_log_temp, std::ref(_loop_continue), path_name, std::ref(temps));
     	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
 
 

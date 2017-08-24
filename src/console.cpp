@@ -23,7 +23,8 @@ Console::Console():
          _preload(0),
          _hvFadcManager(NULL),
          _hvFadcManagerActive(false),
-	 _prompt(DEFAULT_USER_INPUT_PROMPT)
+	 _prompt(DEFAULT_USER_INPUT_PROMPT),
+	 _temp_check_loop_stop(false)
 {
 #if DEBUG==2
     std::cout<<"Enter Console::Console()"<<std::endl;
@@ -2708,7 +2709,7 @@ void Console::CommandTempLoopReadout(){
 
     bool log_flag = true;
 
-    std::thread loop_thread(temp_auslese_main, &loop_continue, log_flag);
+    std::thread loop_thread(temp_auslese_main, std::ref(loop_continue), log_flag);
     const char *waitingPrompt = "temp readout running. type 'stop' to quit> ";
     std::string input;
     std::set<std::string> allowedStrings = {"stop"};

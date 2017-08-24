@@ -71,17 +71,12 @@ int Console::UserInterface(){
 		      << std::endl;
 	}
 
-        else if (_hvFadcManagerActive == true){
-            // allow access to HFM and FADC functions only in case the HFM is
+        else if (_hvFadcManagerActive == true &&
+		 is_hfm_input != HFMCommandsSet.end()){
+	    // allow access to HFM and FADC functions only in case the HFM is
 	    // initialized
-	    if (input.compare("ConnectModule") == 0){
-		std::cout << _hvFadcManager->H_ConnectModule() << std::endl;
-	    }
-
-	    if (is_hfm_input != HFMCommandsSet.end()){
-		// call function to parse the (valid) command related to HFM
-		ParseActiveHfmCommands(input);
-	    }
+	    // call function to parse the (valid) command related to HFM
+	    ParseActiveHfmCommands(input);
 	}
 
         // if no other if was true, command not found
@@ -388,6 +383,11 @@ void Console::ParseActiveHfmCommands(std::string input){
 	(input.compare("InitHV_FADC") == 0)){
 	_hvFadcManager->InitHFMForTOS();
     }
+
+    else if (input.compare("ConnectModule") == 0){
+	std::cout << _hvFadcManager->H_ConnectModule() << std::endl;
+    }
+    
     // function to call to ramp up
     else if (input.compare("RampChannels") == 0){
 	_hvFadcManager->RampChannels();

@@ -241,7 +241,7 @@ void Producer::run()
 
 	    // hand the current temperatures to a function def. in helper_functions.cpp
 	    // to check if we should stop the run based on temps
-	    tempsGood = (parent->_hvFadcManager)->CheckIfTempsGood(_temps);
+	    tempsGood = (parent->_hvFadcManager)->CheckIfTempsGood(std::ref(*_temps));
 
 	    if (hvGood == -1 || tempsGood == false){
 	    	// this means something is wrong with HV

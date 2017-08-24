@@ -15,6 +15,95 @@
 #include <algorithm>
 #include <functional>
 
+
+void BackgroundTempLoop(hvFadcManager *hfm, std::atomic_bool &loop_continue, std::atomic_bool &hvModInitFlag){
+    /* this function is the safety interlock function of the detector. The moment
+       the HFM is activated, this function is started in a separate thread. It
+       reads the temperature all the time and checks if it is within safe bounds.
+       inputs:
+       hvFadcManager *hfm: allows access to check temps fn and dump error log fn
+       std::atomic_bool &loop_continue: reference to bool variable, which can
+       stop this thread, once TOS is to be shut down 
+       std::atomic_bool &hvModInitFlag: reference to the flag, which shows whether
+       the hvFadcManager was initalized (HV ramped!)
+
+       If not, it will:
+           if HV is on:
+	       print WARNINGS
+	       shut down HV
+           if HV is off:
+	       print WARNINGs
+
+       If in safe bounds:
+           be happy :)
+       NOTE: warnings will also be printed to stdout, to make sure user becomes 
+       aware of the problem! At the same time written to temp log file.
+       (if HV was on, HV error dump file will be created too!)
+       NOTE2: this function is explicitly NOT part of hvFadcManager, because handing 
+       a non-static member function to a separate thread is not allowed.
+       However, this function only needs to know about some hvFadcManager functions
+       which are non-vital (check temps and dump an error log; except that Shutdown
+       functino I suppose....). Not exactly nice, but necessary atm.
+       TODO: find nicer way to handle this!
+       Thus, a pointer of the hvFadcManager object calling this function is 
+       handed (via this).
+    */
+
+    std::string path_name = "./log";
+    AtomicTemps temps;
+    // set atomic temps to 10 first (to be in the safety bounds at the beginning)
+    temps.first = 10;
+    temps.second = 10;
+    // need another thread, which runs the actual temp log, so that this (already
+    // separate thread from the main TOS thread) can perform the actual temperature
+    // checks!
+    // loop_continue variable is used to stop the thread in case TOS is shut down
+    std::thread temp_loop(init_and_log_temp, std::ref(loop_continue), path_name, std::ref(temps));
+
+    bool tempsGood = false;
+    //int hvGood = -1;
+
+    // loop and check temps every 500ms 
+    while(loop_continue == true){
+	if(hvModInitFlag == true){
+	    // HV should be activated! get HV and temps status
+	    //hvGood = hfm->H_CheckHVModuleIsGood(true);
+	    tempsGood = hfm->CheckIfTempsGood(temps);
+	    if(tempsGood == false){
+		// in this case ramp down HV immediately
+		std::cout << "WARNING: Temperatures are out of safety bounds! \n"
+			  << "Temp IMB    = " << temps.first  << "\n"
+			  << "Temp Septem = " << temps.second << "\n"
+			  << "Ramp down of HV will begin immediately!\n"
+			  << "See $TOS/log/HV_error.log for further details."
+			  << std::endl;
+		// write event number -1 to indicate problem happened outside of run
+		hfm->H_DumpErrorLogToFile(-1, temps.first, temps.second);
+		// TODO: exchange this by an actual function dedicated to
+		// ramping down the channels using the groups?
+		hfm->ShutDownHFMForTOS();
+	    }
+	}
+	else if(hvModInitFlag == false){
+	    // in this case still check temperature
+	    tempsGood = hfm->CheckIfTempsGood(temps);
+	    if(tempsGood == false){
+		std::cout << "WARNING: Temperatures are out of safety bounds! "
+			  << "Temp IMB    = " << temps.first  << "\n"
+			  << "Temp Septem = " << temps.second << "\n"		    
+			  << "HV currently not ramped. Take care of this NOW!"
+			  << "See $TOS/log/temp_log.txt for further details."
+			  << std::endl;
+	    }
+	}
+	// after one check wait a short time (half a second seems fine, temperatures
+	// are only updated every 5 seconds anyway)
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+
+    temp_loop.join();
+}
+
 // either create object using addresses for HV
 hvFadcManager::hvFadcManager(std::string iniFilePath):
     _createdFlag(false),
@@ -77,11 +166,24 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     good_connection = H_CheckIsConnectionGood();
     if (good_connection == false){
         std::cout << "hvFadcManager() Error: could not establish connection to HV."
-            << std::endl;
+		  << std::endl;
     }
 
     // set the object created flag to true
     _createdFlag = true;
+
+
+
+    // now start separate thread, which checks for temperatures. Runs until TOS is shut down
+    // (or at least hvFadcManager is deactivated again)
+    std::thread *loop_thread;
+    // set variable, which stops the separate thread when this object is deleted
+    _safety_temp_loop_continue = true;
+    loop_thread = new std::thread(BackgroundTempLoop, this, std::ref(_safety_temp_loop_continue), std::ref(_hvModInitFlag));
+
+    // set the thread pointer owned by this object to the thread we just created
+    // such that we can join the thread safely before deleting this object
+    _temp_safety_loop = loop_thread;
 }
 
 hvFadcManager::~hvFadcManager() {
@@ -118,6 +220,14 @@ hvFadcManager::~hvFadcManager() {
     // - write function to PRINT ALL CHANNELS
     //                     EVENT STATUS
     //                     ETC
+
+    // stop the temperature check thread by setting the
+    // loop_continue to false
+    _safety_temp_loop_continue = false;
+    // and safely join it
+    _temp_safety_loop->join();
+    // before deleting it
+    delete(_temp_safety_loop);
 
     // HV: shut down controller
     Controller.closeController();
@@ -733,6 +843,8 @@ void hvFadcManager::H_DumpErrorLogToFile(int event, int temp_imb, int temp_septe
     /* int event: if function is called from a run, we
                   include the event after which error log is 
 		  created
+		  If function was called from outside event, event number will be
+		  set to -1!
        int temp_IMB: temperature of the intermediate board when this function
                   was called. If 0, probably not included (default is 0)
        int temp_septem: temperature of the septemboard. 
@@ -1758,12 +1870,12 @@ std::pair<unsigned short, unsigned short> hvFadcManager::GetScintillatorCounters
 // this is because this way the safety procedures already defined because of
 // HV can be reused
 
-bool hvFadcManager::CheckIfTempsGood(AtomicTemps *temps){
+bool hvFadcManager::CheckIfTempsGood(AtomicTemps &temps){
     // checks whether the temperatures of IMB and Septem are within the bounds
     // defined by the safe[Upper, Lower][IMB, Septem]Temp variables
 
-    const int temp_imb = temps->first;
-    const int temp_septem = temps->second;
+    const int temp_imb = temps.first;
+    const int temp_septem = temps.second;
     bool tempsGood = false;
 
     if(temp_imb < _safeUpperTempIMB &&
