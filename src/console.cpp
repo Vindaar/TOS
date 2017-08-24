@@ -130,10 +130,25 @@ void Console::ConsoleMain(){
     //call the main "command-function" w or wo FADC commands
 
     // this function only calls the UserInterface
+#if TESTS==0
     UserInterface();
-  
+#else
+    bool hardware_connected = false;
+    std::cout << "\n Starting tests..." << std::endl;
+    RunTests(hardware_connected);
+    std::cout << "... all tests passed!" << std::endl;
+#endif
     return;
 }
+
+
+#if TESTS==1
+// in this case we define a function, which is used to run custom tests
+void Console::RunTests(bool hardware_connected){
+    // run tests
+    HLF_tests(hardware_connected);
+}
+#endif
 
 
 void Console::CommandActivateHvFadcManager(){

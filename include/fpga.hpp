@@ -33,10 +33,17 @@ class hvFadcManager;
 // given in /proc/sys/net/core/rmem_default
 #define DEFAULT_SOCKET_BUFFER_SIZE             212992
 // scaling factor by which the timeout is scaled (10 % longer than time we have to wait)
+#if TESTS==0
 #define DEFAULT_TIMEOUT_SCALING_FACTOR         2//1.1
 // offset, which is added to the shutter length * default_scaling factor for timeout
 // given in micro seconds
 #define DEFAULT_TIMEOUT_OFFSET                 4e6
+#else
+// in case we run (hardware less) test functions, we probably don't want to wait for the
+// select to timeout
+#define DEFAULT_TIMEOUT_SCALING_FACTOR         0//1.1
+#define DEFAULT_TIMEOUT_OFFSET                 0
+#endif
 // default number of clock cycles the shutter remains open, after the FADC triggers
 // (200 clock cycles at 40 MHz == 5 mu s)
 #define DEFAULT_FADC_SHUTTER_COUNT_ON          200

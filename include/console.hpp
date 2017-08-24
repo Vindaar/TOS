@@ -37,6 +37,13 @@
 #include "pc.hpp"
 #include "tosCommandCompletion.hpp"
 
+#if TESTS==1
+//#ifndef _TESTS_INCLUDED
+//#define TESTS_INCLUDED 1
+#include "../tests/HighLevelFunction_VME_tests/HighLevelFunction_VME_tests.hpp"
+//#endif
+#endif
+
 //class V1729a;
 //class PC;
 //class hvFadcManager;
@@ -234,6 +241,14 @@ private:
 
     // function to update the chip set references of the PC, FPGA and timepix object
     void UpdateChipSetReference();
+
+
+#if TESTS==1
+    // define the RunTest() function to run custom tests
+    void RunTests(bool hardware_connected = false);
+    
+#endif
+    
 
     //################################################################################
     //############################## Member variables ################################
