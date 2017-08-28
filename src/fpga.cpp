@@ -1167,7 +1167,7 @@ int FPGA::SaveData(int pix[8][256][256]){
     // get the preload in order to get rid of if else statements within the 
     // 4 nested for loops...
     // now simply add preload to aktBit
-    int preload = tp->GetPreload();
+    // int preload = tp->GetPreload();
 
     for (auto chip : _chip_set){
 	for(y=0;y<256;++y){
@@ -1185,7 +1185,7 @@ int FPGA::SaveData(int pix[8][256][256]){
 		    // you apply on program start since if statement included 
 		    // different values for adding than actual preload value 
 		    // before
-		    aktBit=y*256*14+b*256+(255-x)+8*tp->GetNumChips()+((256*256*14)+256)*chip + preload;
+		    aktBit=y*256*14+b*256+(255-x)+8*tp->GetNumChips()+((256*256*14)+256)*chip;// + preload;
 		    // +8*tp->GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
 		    if((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			pix[chip][y][x]+=1<<(13-b);
@@ -1208,7 +1208,7 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
     // get the preload in order to get rid of if else statements within the 
     // 4 nested for loops...
     // now simply add preload to aktBit
-    int preload = tp->GetPreload();
+    //int preload = tp->GetPreload();
 
     for (auto chip : _chip_set){
 	for(y=0;y<256;++y){
@@ -1219,7 +1219,7 @@ int FPGA::SaveData(std::vector<std::vector<std::vector<int> > > *VecData){
 		    // you apply on program start since if statement included 
 		    // different values for adding than actual preload value 
 		    // before
-		    aktBit = y*256*14 + b*256 + (255-x) + 8*tp->GetNumChips() + ((256*256*14) + 256)*chip + preload;
+		    aktBit = y*256*14 + b*256 + (255-x) + 8*tp->GetNumChips() + ((256*256*14) + 256)*chip;// + preload;
 		    // +8*tp->GetNumChips() for preload. For xinlinx board: additionally +1!, Octoboard also +1 single chip,3 for 8 chips
 		    if ((((*PackQueueReceive)[(aktBit/8)/PLen][18+((aktBit/8)%PLen)]) & 1<<(7-(aktBit%8)))>0){
 			(*VecData)[chip][y][x]+=1<<(13-b);
@@ -1472,7 +1472,7 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, unsigned short chip){
     int b;
     int aktBit;
     // now simply add preload to aktBit
-    int preload = tp->GetPreload();
+    // int preload = tp->GetPreload();
     unsigned short nChips = tp->GetNumChips();
 
     // initialize the whole array to zero to be sure
@@ -1519,9 +1519,8 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, unsigned short chip){
 		//                       the whole frame from x -> x + 1
 		//                       does not change final result, due to postload of 256 bit
 		aktBit = y*256*14 + b*256 + (255-x) +	\
-		    8 * nChips +	\
-		    ((256*256*14) + 256) * chip +	\
-		    preload;
+		    8 * nChips +			\
+		    ((256*256*14) + 256) * chip;// + preload;
 		// use current bit to calculate which package the data should be in
 		//     aktBit / 8      == the byte which our current bit should be in
 		//     / PLen (PLen == 1400, size of network data package - 18 bytes of header)
