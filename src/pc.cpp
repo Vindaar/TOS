@@ -1671,19 +1671,21 @@ unsigned short PC::CheckOffsetFullMatrix(){
 	write_map.insert(std::pair<int, Frame>(chip, frame));
     }
 
-    // map, which stores the absolute differences of the sum of all chips (value)
-    // for each preload value (key)
-    std::map<int, int> diff_write_read;
-    // set LFSR conversion to true, since full frame readout contains
-    // pixel values, which still need to be converted from pseudo random
-    // values
-    bool convert_from_LFSR = true;
+    // map, which stores the absolute differences of the sum of all chips
+    // (value) for each preload value (key) need a long long (64 bit) as the
+    // value, because the total amount of errors can easily exceed the maximum
+    // number an int can store
+    std::map<int, long long> diff_write_read;
+    // set LFSR conversion to false, since full frame readout is already converted
+    // from pseudo random values to real counts
+    bool convert_from_LFSR = false;
     for (unsigned short preload = preload_start; preload <= 8; preload ++){
+	std::cout << "Preload: " << preload << std::endl;
+	
 	// declare variable, which will sum the erros of all chips
 	// for this preload value
-	int diff_preload = 0;
+	long long diff_preload = 0;
 	
-	unsigned short errors = 0;
 	// set the preload we're looking at
 	fpga->tp->SetPreload(preload);
 	fpga->WriteReadFSR();
@@ -1706,10 +1708,9 @@ unsigned short PC::CheckOffsetFullMatrix(){
 	// the chips using the chess matrix above
 	for(auto chip: _chip_set){
 	    FrameArray<int> read_frame = read_map[chip].GetPixelData();
-	    const int diff = write_map[chip].CalcFrameDifference(read_frame, convert_from_LFSR);
-	    std::cout << "Chip: " << chip
-		      << ",\tPreload: " << preload
-		      <<",\tErrors: " << errors
+	    const long long diff = write_map[chip].CalcFrameDifference(read_frame, convert_from_LFSR);
+	    std::cout << "    Chip: " << chip
+		      <<",\tErrors: " << diff
 		      << std::endl;
 	    // and finally add this diff value to the variable, which stores the 
 	    diff_preload += diff;
@@ -1724,7 +1725,7 @@ unsigned short PC::CheckOffsetFullMatrix(){
     // the lambda function []({}) as an argument to the min_element will return
     // an iterator to the smallest value in the map
     auto minimum_val_iter = std::min_element(diff_write_read.begin(), diff_write_read.end(),
-					     [](const std::pair<int, int> &p1, const std::pair<int, int> &p2){
+					     [](const std::pair<int, long long> &p1, const std::pair<int, long long> &p2){
 						 return p1.second < p2.second;
 					     });
     // if one wanted to get corresponding value, use dereference of iterator
@@ -1732,7 +1733,8 @@ unsigned short PC::CheckOffsetFullMatrix(){
     // int val = (*minimum_val).second;
     // using iterator, get the corresponding key as an int
     // NOTE: important, the following assumes we start counting the preload values at 0!
-    auto minimum_key = std::distance(diff_write_read.begin(), minimum_val_iter);
+    // auto minimum_key = std::distance(diff_write_read.begin(), minimum_val_iter);
+    int minimum_key = (*minimum_val_iter).first;
 
     std::cout << "Preload was " << old_preload  << std::endl;
     if (minimum_key != old_preload){

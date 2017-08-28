@@ -144,7 +144,7 @@ void PC::SingleChipReadoutCalc(int chip,
     }
     else if (callerFunction == "SCurve"){
 	// in case of SCurve we do full frame readout, hence we need to convert
-	// the pixels from pseudo randomw to normal pix values
+	// the pixels from pseudo random to normal pix values
 	convert_from_LFSR = true;
 	// in case of SCurve we might also set the mask
 	//(*frame_map)[chip].SetMask(fpga->tp->GetMaskArray(chip));
