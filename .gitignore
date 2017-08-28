@@ -28,3 +28,6 @@ scripts/PyS_eventDisplay/*.lprof
 *.*#
 
 TAGS
+/scripts/PyS_eventDisplay/*.png
+/scripts/PyS_eventDisplay/*.pdf
+/scripts/PyS_eventDisplay/out/
