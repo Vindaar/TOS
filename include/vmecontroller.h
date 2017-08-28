@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
+#if CYGWIN==1
+#include <QBool>
+#endif
 #include <QString>
 
 class CVmeController

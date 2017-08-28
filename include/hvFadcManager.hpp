@@ -57,6 +57,9 @@
 #ifdef __WIN32__
 #include <windows.h>
 #else
+#if CYGWIN==1
+#include <windows.h>
+#endif
 // for linux we need to include unistd.h, to get get_current_dir_name()
 #include <unistd.h>
 #endif

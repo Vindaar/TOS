@@ -12,6 +12,10 @@ MOC_DIR = output/tmp
 DESTDIR = output/bin
 DEFINES += "PERFORMANCE=0"
 DEFINES += "DEBUG=4"
+# if not compiling for cygwin on Windows, change CYGWIN to 1 and
+# remove CONFIG += cygwin
+DEFINES += "CYGWIN=0"
+# CONFIG += cygwin
 
 # last element is considered the active setting. if want to build tests,
 # set tests as last element
@@ -81,7 +85,6 @@ SOURCES += src/console.cpp \
            src/hvInterface/hvStatusGroup.cpp \
            src/frame.cpp \
            src/mcp2210/mcp2210.cpp \
-           src/mcp2210/hid.c \
            src/mcp2210/temp_auslese.cpp \
            src/mcp2210/temp_defaults.cpp \
            src/mcp2210/temp_helpers.cpp \
@@ -108,8 +111,17 @@ LIBS += -Wl,--no-as-needed \
         -Wl,--rpath=/usr/local/lib \
         -Wl,--rpath=/usr/lib \
         -lboost_system -lboost_filesystem \
-        -lreadline \
-        -ludev
+        -lreadline
+
+cygwin {
+message("Adding cygwin variables")
+LIBS += -lhidapi
+}
+else {
+message("Adding linux variables")
+SOURCES += src/mcp2210/hid.c
+LIBS += -ludev
+}
 
 
 # external QT headers

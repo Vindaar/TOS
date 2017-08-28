@@ -1,4 +1,13 @@
 //#include "MCP2210_linux/mcp2210.h"
+
+#ifdef __WIN32__
+#include "windows.h"
+#endif
+#if CYGWIN==1
+#include "windows.h"
+#endif
+
+
 #include "temp_defaults.hpp"
 #include "temp_helpers.hpp"
 #include "helper_functions.hpp"
@@ -12,7 +21,7 @@
 #include <cstddef>
 #include <algorithm>
 #include <atomic>
-
+#include <cmath>
 
 /* current compilation flags
    g++ mini_auslese_clean.cpp -Wall -pedantic -o mini_auslese -lusb -IMCP2210_linux -l:MCP2210_linux/build/Debug/GNU-Linux-x86/mcp2210.o -l:MCP2210_linux/build/Debug/GNU-Linux-x86/hid.o -ludev

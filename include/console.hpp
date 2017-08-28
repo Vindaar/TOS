@@ -19,6 +19,12 @@
 #include <map>
 #include <stdio.h>
 
+#ifdef __WIN32__
+#include <Windows.h> // comes first
+#endif
+
+#include <sys/select.h>
+
 
 // MCP2210
 #include "mcp2210/temp_auslese.hpp"

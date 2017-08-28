@@ -1685,7 +1685,7 @@ void hvFadcManager::ReadHFMConfig(){
     std::string prePath(char_string);
 #else
     std::string prePath;
-    prePath = get_current_dir_name();
+    prePath = getcwd(NULL, 0);//get_current_dir_name();
 #endif
     iniFile = prePath + '/' + iniFile;
     std::cout << "Path to Ini File: " << iniFile << std::endl;

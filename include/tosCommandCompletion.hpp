@@ -6,14 +6,14 @@
 #define _TOS_COMMAND_COMPLETION_HPP 1
 
 
+#include <stdio.h>
+
 #include <readline/readline.h>
 #include <readline/history.h>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem.hpp>
 
-
-#include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
 #include <iostream>

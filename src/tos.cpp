@@ -20,7 +20,7 @@
 #include "console.hpp"
 #include "hvFadcManager.hpp"
 
-#include <QTextStream>
+//#include <QTextStream>
 #include <QString>
 #include <QCoreApplication>
 
@@ -30,6 +30,9 @@
 
 #ifdef __WIN32__
 const WORD MAX_CONSOLE_LINES = 500;
+#include "Windows.h"
+#include <fcntl.h>
+#include <io.h>
 #endif
 
 int main(int argc, char *argv[])

@@ -21,6 +21,8 @@
     #include <netinet/in.h>
 #endif
 
+#include <sys/select.h>
+
 #include <vector>
 #include <string>
 #include <set>

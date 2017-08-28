@@ -5,6 +5,8 @@
 // https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
 
 #include "tosCommandCompletion.hpp"
+#include <cstring>
+
 
 namespace fs = boost::filesystem;
 
