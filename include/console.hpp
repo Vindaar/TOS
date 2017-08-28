@@ -95,6 +95,7 @@ private:
 
     int CommandHelp();
     int CommandSpacing();
+    void CommandSetPreload();    
     int CommandSetNumChips(bool callSetNumChips = true);
     // SetNumChips is the actual function, which changes the number of chips internally
     // CommandSetNumChips() calls this function after getting user input
@@ -180,7 +181,8 @@ private:
     int CommandThresholdEqNoiseCenter();
     void CommandTOCalib();
     int CommandTOCalibFast();
-    int CommandCheckOffset();
+    void CommandCheckOffsetZeroSuppressed();
+    void CommandCheckOffsetFullMatrix();    
     int CommandCalibrate();				
     int CommandSwitchTriggerConnection();
     void DACScanLive(char dac, int val);

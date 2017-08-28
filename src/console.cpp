@@ -514,6 +514,16 @@ int Console::CommandSpacing(){
     return 0;
 }
 
+void Console::CommandSetPreload(){
+    // function to set the preload separate from the number of chips
+    // implemented by getting current number of chips and calling 
+    // the SetNumChips function with that number as an argument
+    int nChips = pc->fpga->tp->GetNumChips();
+    SetNumChips(nChips);
+    return;
+}
+
+
 int Console::CommandSetNumChips(bool callSetNumChips){
     // this function uses getUserInput to get the number
     // of chips to be set and then calls the
@@ -1133,42 +1143,16 @@ int Console::CommandShowFSR(){
 }
 
 void Console::CommandVarChessMatrixDefault(){
-    // this function creates a default chess matrix of 5 by 5 pixels
+    // this function sets a default chess matrix of 5 by 5 pixels
+    // created by CreateDefaultChessMatrix
 
-    int length 	   = 5;
-    int width  	   = 5;
-    int black_p0   = 1;
-    int black_p1   = 0;
-    int black_mask = 1;
-    int black_test = 0;
-    int black_thr  = 5;
-    int white_p0   = 1;
-    int white_p1   = 0;
-    int white_mask = 1;
-    int white_test = 1;
-    int white_thr  = 5;
-    int err        = 0;
-
-    for (auto chip : _chip_set){
-	err = pc->fpga->tp->VarChessMatrix(length,
-					   width,
-					   black_p0,
-					   black_p1,
-					   black_mask,
-					   black_test,
-					   black_thr,
-					   white_p0,
-					   white_p1,
-					   white_mask,
-					   white_test,
-					   white_thr,
-					   chip);
-	if(err == 0){
-	    std::cout << "Default Matrix created\n" << std::flush;
-	}
-	else{
-	    ErrorMessages(80);
-	}
+    int err = 0;
+    err = pc->CreateDefaultChessMatrix();
+    if(err == 0){
+	std::cout << "Default Matrix created\n" << std::flush;
+    }
+    else{
+	ErrorMessages(80);
     }
 
     return;
@@ -2125,10 +2109,22 @@ int Console::CommandTOCalibFast(){
 }
 
 
-int Console::CommandCheckOffset(){
-    unsigned short usepreload = pc->CheckOffset();
+void Console::CommandCheckOffsetFullMatrix(){
+    // function to check for the correct preload value, using full
+    // matrix readout
+
+    pc->CheckOffsetFullMatrix();
+    
+}
+
+void Console::CommandCheckOffsetZeroSuppressed(){
+    // function to check for the correct preload value using zero
+    // suppressed reaout. NOTE: in this case only a very small part of
+    // the chi is actually checked, due to the limit of 4096 pixels in
+    // zero suppressed readout
+    unsigned short usepreload = pc->CheckOffsetZeroSuppressed();
     std::cout << "Use preload " << usepreload << std::endl;
-    return 0;
+    return;
 }
 
 

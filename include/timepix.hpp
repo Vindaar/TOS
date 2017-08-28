@@ -80,6 +80,7 @@ public:
     int SetCounting(int counting);
     std::string GetDACName(unsigned int dac);
     int GetDACCode(unsigned int dac);
+    int SetPreload(unsigned short preload);
     int SetNumChips(unsigned short Chips, unsigned short preload);
     int SetOption(unsigned short option);
     unsigned short GetNumChips();

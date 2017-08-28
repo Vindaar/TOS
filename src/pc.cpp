@@ -1631,15 +1631,129 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
     return 0;
 }
 
+unsigned short PC::CheckOffsetFullMatrix(){
+    /* this function calculates the correct preload value
+       for all possible preload values.
+       Done by creating a default chess matrix, writing it
+       to the chip, and reading out via full matrix readout.
+       Finally, difference between the two frames (the one
+       written and the one read) is calculated. Function returns
+       the preload with the smallest error.
+       structure:
+       - for loop over all preload values
+         - for loop over chip set
+	   - calculate difference of written and read matrix using 
+	     calcFrameDifference()
+    */
 
-unsigned short PC::CheckOffset(){
+    unsigned short old_preload = fpga->tp->GetPreload();
+    unsigned short usepreload = 0;
+    int preload_start = 0;
+
+    // create default chess matrix for all chips in the
+    // chip set
+    CreateDefaultChessMatrix();
+
+    // now create a map of frames containing the chess matrices,
+    // which we will write
+    std::map<int, Frame> write_map;
+    // before we can write the Frames to the write_map, get the
+    // chess matrix as a FrameArray
+    FrameArray<int> chess_matrix;
+    // NOTE: we simply get the matrix of the 0 chip. This is fine,
+    // because CreateDefaultChessMatrix() creates the same chess
+    // matrix on all chips
+    chess_matrix = fpga->tp->GetMatrixAsInts(0);
+    for (auto chip : _chip_set){
+	// create a Frame object, initialize with chess_matrix
+	Frame frame(chess_matrix);
+	// set in write_map
+	write_map.insert(std::pair<int, Frame>(chip, frame));
+    }
+
+    // map, which stores the absolute differences of the sum of all chips (value)
+    // for each preload value (key)
+    std::map<int, int> diff_write_read;
+    // set LFSR conversion to true, since full frame readout contains
+    // pixel values, which still need to be converted from pseudo random
+    // values
+    bool convert_from_LFSR = true;
+    for (unsigned short preload = preload_start; preload <= 8; preload ++){
+	// declare variable, which will sum the erros of all chips
+	// for this preload value
+	int diff_preload = 0;
+	
+	unsigned short errors = 0;
+	// set the preload we're looking at
+	fpga->tp->SetPreload(preload);
+	fpga->WriteReadFSR();
+	fpga->WriteReadFSR();
+	// set the chess matrix on the chips
+	fpga->SetMatrix();
+
+	// create a map of chip numbers and frames to store
+	// the frames we read back after setting the matrix
+	std::map<int, Frame> read_map;
+	for (auto chip : _chip_set){
+	    // and zero initialize with correct number of frames
+	    Frame frame;
+	    read_map.insert(std::pair<int, Frame>(chip, frame));
+	}
+	// short sleep after setting the matrix
+	usleep(2000);
+	fpga->SerialReadOut(&read_map);
+	// given the map, we can now compare with the map we have written to
+	// the chips using the chess matrix above
+	for(auto chip: _chip_set){
+	    FrameArray<int> read_frame = read_map[chip].GetPixelData();
+	    const int diff = write_map[chip].CalcFrameDifference(read_frame, convert_from_LFSR);
+	    std::cout << "Chip: " << chip
+		      << ",\tPreload: " << preload
+		      <<",\tErrors: " << errors
+		      << std::endl;
+	    // and finally add this diff value to the variable, which stores the 
+	    diff_preload += diff;
+	}
+
+	// now add diff_preload in map
+	diff_write_read[preload] = diff_preload;
+    }
+
+    // finally determine the preload with the minimum number of errors
+    // std::min_element expects a range of iterators
+    // the lambda function []({}) as an argument to the min_element will return
+    // an iterator to the smallest value in the map
+    auto minimum_val_iter = std::min_element(diff_write_read.begin(), diff_write_read.end(),
+					     [](const std::pair<int, int> &p1, const std::pair<int, int> &p2){
+						 return p1.second < p2.second;
+					     });
+    // if one wanted to get corresponding value, use dereference of iterator
+    // returning a pair of std::pair<int, int>. Value would be second  element
+    // int val = (*minimum_val).second;
+    // using iterator, get the corresponding key as an int
+    // NOTE: important, the following assumes we start counting the preload values at 0!
+    auto minimum_key = std::distance(diff_write_read.begin(), minimum_val_iter);
+
+    std::cout << "Preload was " << old_preload  << std::endl;
+    if (minimum_key != old_preload){
+	std::cout << "WARNING: optimum preload has changed !!! "<< std::endl;
+	std::cout << "Preload was " << old_preload  << std::endl;
+	std::cout << "Optimum preload is  " << minimum_key << std::endl;
+	std::cout << "You can change it using the SetPreload command" << std::endl;
+    }
+    fpga->tp->SetPreload(old_preload);
+    return usepreload;
+}
+
+
+unsigned short PC::CheckOffsetZeroSuppressed(){
     for (auto chip : _chip_set){
 	fpga->tp->VarChessMatrix(254,254,1,1,1,1,8,0,1,1,1,7,chip);
     }
-    unsigned short oldpreload = fpga->tp->GetPreload();
+    unsigned short old_preload = fpga->tp->GetPreload();
     unsigned short usepreload = 0;
     unsigned short errorsbefore = 512;
-    unsigned short  chips = fpga->tp->GetNumChips();
+    unsigned short chips = fpga->tp->GetNumChips();
     // NOTE: changed preload to go from <= 5 to <= 8 / Sebastian Schmidt 31.05.17
     for (unsigned short preload = 0; preload <= 8; preload ++){
 	unsigned short errors = 0;
@@ -1676,14 +1790,14 @@ unsigned short PC::CheckOffset(){
 	}
 	errorsbefore = errors;
     }
-    std::cout << "Preload was " << oldpreload  << std::endl;
-    if (usepreload != oldpreload){
+    std::cout << "Preload was " << old_preload  << std::endl;
+    if (usepreload != old_preload){
 	std::cout << "WARNING: optimum preload has changed !!! "<< std::endl;
-	std::cout << "Preload was " << oldpreload  << std::endl;
+	std::cout << "Preload was " << old_preload  << std::endl;
 	std::cout << "Optimum preload is  " << usepreload << std::endl;
 	std::cout << "You can change it using the SetNumChips command" << std::endl;
     }
-    fpga->tp->SetNumChips(fpga->tp->GetNumChips(),oldpreload);
+    fpga->tp->SetNumChips(fpga->tp->GetNumChips(), old_preload);
     return usepreload;
 }
 
@@ -2667,6 +2781,47 @@ int PC::SetDACallChips(unsigned short dac, unsigned int value, std::set<unsigned
 	if (result != 50) return result;
     }
     return 0;
+}
+
+
+int PC::CreateDefaultChessMatrix(){
+    // function, which creates a default chess matrix consisting of 5x5 pixel
+    // grid
+
+    int length 	   = 5;
+    int width  	   = 5;
+    int black_p0   = 1;
+    int black_p1   = 0;
+    int black_mask = 1;
+    int black_test = 0;
+    int black_thr  = 5;
+    int white_p0   = 1;
+    int white_p1   = 0;
+    int white_mask = 1;
+    int white_test = 1;
+    int white_thr  = 5;
+    int err        = 0;
+
+    for (auto chip : _chip_set){
+	// call chess matrix creation function and add
+	// result to error variable. If unequal 0, will
+	// result in error in calling function
+	err += fpga->tp->VarChessMatrix(length,
+					width,
+					black_p0,
+					black_p1,
+					black_mask,
+					black_test,
+					black_thr,
+					white_p0,
+					white_p1,
+					white_mask,
+					white_test,
+					white_thr,
+					chip);
+    }
+
+    return err;
 }
 
 

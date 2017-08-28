@@ -895,6 +895,10 @@ void Timepix::SetPackageByte(int aktBit, std::vector<std::vector<unsigned char> 
     (*PackQueue)[package][pos_in_package] += 1<<(7-(aktBit%8));
 }
 
+int Timepix::SetPreload(unsigned short preload){
+    Preload_global = preload;
+    return true;
+}
 
 int Timepix::SetNumChips(unsigned short Chips,unsigned short preload){
     _nbOfChips     = Chips;

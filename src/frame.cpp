@@ -370,6 +370,43 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
     return var_map;
 }
 
+int Frame::CalcFrameDifference(FrameArray<int> pixel_data, bool convert_from_LFSR){
+    // function which calculates the difference between the current _pixel_data
+    // array and the given pixel_data
+    // NOTE: it would be possible to use set partial frame and calc sum hit means for
+    // this purpose, but that would change the Frames _pixel_data. Since we might want
+    // to compare the _pixel_data with several different pixel_data (e.g. in case of
+    // CheckOffset), we refrain from using that method here
+
+    if(convert_from_LFSR == true and _LFSR_set == false){
+	// in case we need to convert pixel_data from LFSR to pix values and
+	// LFSR was not calculate lookup table
+	CreateLFSRLookUpTable();
+    }
+
+    int diff_val = 0;
+    // variable storing pixel of internal and external pixel_data array
+    int pix_ext = 0;
+    int pix_int = 0;
+    for(std::size_t x = 0; x < _pix_per_dimension; x++){
+	for(std::size_t y = 0; y < _pix_per_dimension; y++){
+	    pix_ext = pixel_data[x][y];
+	    pix_int = _pixel_data[x][y];
+	    if(convert_from_LFSR == true){
+		// in this case convert the given pixel
+		// value first to actual count values
+		pix_ext = _LFSR_LookUpTable[pix_ext];
+	    }
+	    // now calculate difference of pix_int and pix_ext
+	    // using absolute value of both (and its difference), since  we want
+	    // to make sure differences cannot sum to 0!
+	    diff_val += std::abs( std::abs(pix_int) - std::abs(pix_ext) );
+	}
+    }
+
+    return diff_val;
+}
+
 int Frame::DumpFrameToFile(std::string filename){
     // this function simply dumps the current frame to a file
     // to be plotted

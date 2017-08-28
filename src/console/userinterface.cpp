@@ -326,6 +326,11 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
     {
 	CommandSpacing();
     }
+    else if( input.compare("SetPreload")==0 )
+    {
+	CommandSetPreload();
+    }
+    
     else if( input.compare("SetNumChips")==0 )
     {
 	CommandSetNumChips();
@@ -334,10 +339,14 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
     {
 	CommandSetOption();
     }
-    else if( input.compare("CheckOffset")==0 )
+    else if( input.compare("CheckOffsetZeroSuppressed")==0 )
     {
-	CommandCheckOffset();
+	CommandCheckOffsetZeroSuppressed();
     }
+    else if( input.compare("CheckOffset")==0 or
+	     input.compare("CheckOffsetFullMatrix") == 0){
+	CommandCheckOffsetFullMatrix();
+    }    
     else if( input.compare("Calibrate")==0 )
     {
 	CommandCalibrate();

@@ -172,8 +172,12 @@ public:
     //################################################################################
     //#################### other functions ###########################################
     //################################################################################
-    
-    unsigned short CheckOffset();
+
+    // create a default 5x5 chess matrix
+    int CreateDefaultChessMatrix();
+    // check offset full and zero suppressed
+    unsigned short CheckOffsetFullMatrix();
+    unsigned short CheckOffsetZeroSuppressed();
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a);
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup);
     void Histogramm(int hist[16384], int pix[256][256], int* m, int* s, int* a, int* sup, int* inf);

@@ -92,6 +92,10 @@ public:
     // function to calculate sum, hits, mean and variance for current frame
     void CalcFullFrameVars(int x_offset = 0);
 
+    // function to caluclate the difference of a full frame given to the
+    // member variable _pixel_data
+    int CalcFrameDifference(FrameArray<int> pixel_data, bool convert_from_LFSR = false);
+
     
     // FUNCTION DEPRECATED
     // double CalcVariance(bool lastPFrameFlag = true,
