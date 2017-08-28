@@ -149,6 +149,7 @@ private:
     unsigned char PacketBuffer[PLen+18]; //Buffer fuer send, bzw bei SetMatrix fuer receive
     unsigned char PacketQueue[PQueue][PLen+18]; //Buffer fuer receive (alle Pakete bei ReadOut), bzw fuer send (alle Pakete) bei SetMatrix
     std::vector<std::vector<unsigned char> > *PackQueueReceive;// = new std::vector<std::vector<unsigned char> >(PQueue, std::vector<unsigned char>(PLen+18));
+    int calcSizeOfLastPackage(int nChips, int p_len);
     int Communication( unsigned char* Bsend, unsigned char* Brecv, int timeout = 2e5); 	                                 //err_code=x
     int Communication2(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip, int timeout = 2e5);        //err_code=x
     int CommunicationReadSend(unsigned char* Bsend, unsigned char* Brecv, int numHits, unsigned short chip, int timeout = 2e5); //err_code=x
@@ -183,12 +184,13 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
 
     int p;
     int err_code;
+    int nChips = tp->GetNumChips();
 	
     //M0=0; M1=0; Enable_IN=0; Shutter=1; Reset=1;	 //ModL= 24 = 0x18
     // Start Serial Readout 0x04
     Mode = 0x04;
-    OutgoingLength=18; 
-    IncomingLength=18+PLen; 
+    OutgoingLength = 18;
+    IncomingLength = 18 + PLen;
     PacketQueueSize=PQueue*tp->GetNumChips();
     err_code=Communication(PacketBuffer,&((*PackQueueReceive)[0][0]));
   
@@ -202,7 +204,8 @@ template <typename Ausgabe> int FPGA::SerialReadOut(Ausgabe aus)
 	{
             // only 8 bit preload instead of 10 doesnt matter here, 
 	    // as postload is enough and not completely transmitted
-	    IncomingLength=18+((256*256*14+8+256)*tp->GetNumChips())/8%PLen; 
+	    // use function to calculate the size of the last package
+	    IncomingLength = calcSizeOfLastPackage(nChips, PLen);
 	    // End Serial Readout 0x06
 	    Mode = 0x06;
 	}

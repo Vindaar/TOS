@@ -33,6 +33,9 @@ FPGA::FPGA(Timepix *tp_pointer_from_parent):
     PacketQueueSize(1),
     SoftwareCounter(0),
     FPGACounter(0),
+    // TODO: make sure PQueue * 8 contains 8 because of a max number of 8 chips? If so,
+    // change definition? However, what to do in case someone wants to increase number of
+    // chips later. Need to increase size of PackQueueReceive upon call of SetNumChips()!
     PackQueueReceive( new std::vector<std::vector<unsigned char> >(PQueue*8, std::vector<unsigned char>(PLen+18)))
 {
     std::cout<<"constructing FPGA"<<std::endl;
@@ -777,7 +780,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     ExtraByte = RecvBuffer[17];
     tp->SetFADCtriggered(FADCtriggered);
     tp->SetExtraByte(ExtraByte);
-    tp->SetADCresult(ADC_ChAlert,ADC_result);
+    tp->SetADCresult(ADC_ChAlert, ADC_result);
 
     // now use both counters to set timepix variables. First set FADC bit, if triggered
     // and if that is the case also write scintillator counts
@@ -1632,3 +1635,20 @@ void FPGA::SetChipSet(const std::set<unsigned short> &chip_set){
     // and hand chip set reference further to Timepix
     tp->SetChipSet(chip_set);
 }
+
+
+int FPGA::calcSizeOfLastPackage(int nChips, int p_len){
+    // function to calculate the size of the last package to be received in case
+    // of full matrix readout (SerialReadOut)
+    // inputs:
+    // int nChips: number of active chips
+    // int p_len: the package length in bytes to be used (either PLen == 1400 or
+    // PLenUseful == 1399 in case of 'last byte empty')
+    int result = 0;
+    int header_size = 18;
+    // + 8 + 256 due to post load
+    int pix_data_in_bits = PIXPD * PIXPD * BIT_PER_PIX;
+    result = header_size + ((pix_data_in_bits + 8 + 256) * nChips) / 8 % p_len;
+    return result;
+}
+

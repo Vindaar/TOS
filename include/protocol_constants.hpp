@@ -23,13 +23,17 @@
  */
 #define PLen 1400
 
-/** Anzahl der Pakete
- * (a+b-1)/b liefert immer aufgerundete Division z.B. a=5,b=3 => (5+ 3-1)/3=2
- */
-#define PQueue (256*256*14/8+33 + PLen-1)/PLen //pre and postload> 256bit+8bit=264bit=33byte
-
 /** 256 pixels per x and y dimension of timepix chip
  */
 #define PIXPD 256
+#define BIT_PER_PIX 14
+
+/** Anzahl der Pakete
+ * (a+b-1)/b liefert immer aufgerundete Division z.B. a=5,b=3 => (5+ 3-1)/3=2
+ */
+// PQueue is 82 in case of PLen == 1400 and 83 for PLen == 1399
+#define PQueue (PIXPD * PIXPD * BIT_PER_PIX / 8 + 33 + PLen - 1)/PLen //pre and postload> 256bit+8bit=264bit=33byte
+
+
 
 #endif
