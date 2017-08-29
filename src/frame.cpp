@@ -377,6 +377,8 @@ int Frame::CalcFrameDifference(FrameArray<int> pixel_data, bool convert_from_LFS
     // this purpose, but that would change the Frames _pixel_data. Since we might want
     // to compare the _pixel_data with several different pixel_data (e.g. in case of
     // CheckOffset), we refrain from using that method here
+    // returns the number of different pixels in the two frames, not the total
+    // difference between the two by adding the diffs.
 
     if(convert_from_LFSR == true and _LFSR_set == false){
 	// in case we need to convert pixel_data from LFSR to pix values and
@@ -385,6 +387,7 @@ int Frame::CalcFrameDifference(FrameArray<int> pixel_data, bool convert_from_LFS
     }
 
     int diff_val = 0;
+    int errors = 0;
     // variable storing pixel of internal and external pixel_data array
     int pix_ext = 0;
     int pix_int = 0;
@@ -400,11 +403,14 @@ int Frame::CalcFrameDifference(FrameArray<int> pixel_data, bool convert_from_LFS
 	    // now calculate difference of pix_int and pix_ext
 	    // using absolute value of both (and its difference), since  we want
 	    // to make sure differences cannot sum to 0!
-	    diff_val += std::abs( std::abs(pix_int) - std::abs(pix_ext) );
+	    diff_val = std::abs( std::abs(pix_int) - std::abs(pix_ext) );
+	    if(diff_val > 0){
+		errors++;
+	    }
 	}
     }
 
-    return diff_val;
+    return errors;
 }
 
 int Frame::DumpFrameToFile(std::string filename){
