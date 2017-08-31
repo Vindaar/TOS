@@ -185,7 +185,9 @@ void Producer::run()
 		}
 
 		//get fadc data
-		std::vector<int> fadcData = (parent->_hvFadcManager)->F_GetAllData(channels);
+		// TODO: if the following uses 'channels' instead of 4, the FADC readout
+		// breaks! All values 0 or massively larger!
+		std::vector<int> fadcData = (parent->_hvFadcManager)->F_GetAllData(4);
 		std::cout << "saving data to parent pointer. will probably fail " << std::endl;
 		// set the data we read from the FADC as the values for our fadc pointer
 		parent->_fadcData   = fadcData;
