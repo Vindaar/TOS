@@ -378,6 +378,10 @@ int PC::DoTHLScan(unsigned short chip,
 		  std::string shutter_range,
 		  std::string shutter_time,
 		  std::atomic_bool *loop_stop){
+
+
+    const int current_thl = fpga->tp->GetDAC(6, chip);
+    
     fpga->tp->LoadFSRFromFile(GetFSRFileName(chip),chip);
 
     std::fstream thlStream;
@@ -430,6 +434,11 @@ int PC::DoTHLScan(unsigned short chip,
 		
     }
     thlStream.close();
+
+    // reverting THL value to previous value
+    fpga->tp->SetDAC(6, chip, current_thl);
+    fpga->WriteReadFSR();
+    fpga->WriteReadFSR();    
 
     return 0;
 }
