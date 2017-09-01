@@ -178,11 +178,11 @@ void Producer::run()
 		fadcParams["scint2ClockInt"] = scint_pair.second;
 		
 		//get nb of channels
-		unsigned short channels = 4;
+		// unsigned short channels = 4;
 
-		if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2) ){
-		    channels = parent->_hvFadcManager->FADC_Functions->getNumberOfActiveChannels(fadcParams["channelMask"]);
-		}
+		// if( (fadcParams["NumChannels"] !=1 ) && (fadcParams["NumChannels"] !=2) ){
+		//     channels = parent->_hvFadcManager->FADC_Functions->getNumberOfActiveChannels(fadcParams["channelMask"]);
+		// }
 
 		//get fadc data
 		// TODO: if the following uses 'channels' instead of 4, the FADC readout
