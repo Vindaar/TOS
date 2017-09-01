@@ -244,13 +244,17 @@ public:
     // HFOSettings.ini) seconds
     // TODO: change!
     int H_CheckHVModuleIsGood(bool verbose = true);
-    
-    // function to check whether temperatures in safe bounds
-    bool CheckIfTempsGood(AtomicTemps &temps);
+
+    void SetCurrentTemps(Temps temps);
+    // TODO: include a Getter for temps? Intention of
+    // set is only to be able to call CheckIfTempsGood() and
+    // not to get values of temp from HFM...
+    // function to return a bool about current state of temperatures
+    bool CheckIfTempsGood();
     
     // optional arguments to the error dump include temperatures for IMB and septem,
     // default to 0 if not supplied.
-    void H_DumpErrorLogToFile(int event, int temp_imb = 0, int temp_septem = 0);
+    void H_DumpErrorLogToFile(int event);
 
     // These two functions are convenience functions, which 
     // write a group (from a GroupSTRUCT struct to the 
@@ -658,6 +662,7 @@ private:
     // ------------------------------
     // Temperature
     // ------------------------------
+    // function to check whether temperatures in safe bounds
     int _safeUpperTempIMB;
     int _safeUpperTempSeptem;
     int _safeLowerTempIMB;
@@ -665,6 +670,7 @@ private:
 
     std::thread *_temp_safety_loop;
     std::atomic_bool _safety_temp_loop_continue;
+    Temps _currentTemps;
     
     // special functions have no need to be public
     // --- HV Special Control ----------------------------------------------------
@@ -676,9 +682,6 @@ private:
     void   H_ProgramModuleBaseAddress(uint16_t address);
     uint16_t H_VerifyModuleBaseAddress(void);
 
-
-
-  
 };
 
 

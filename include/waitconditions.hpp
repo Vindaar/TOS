@@ -13,16 +13,14 @@ class PC;
 class Producer : public QThread
 {
 public:
-    // Producer is passed PC object pointer as well as a reference to an
-    // AtomicTemps object (see mcp2210/temps_helpers.hpp)
-    Producer( PC* par, AtomicTemps *temps ) : parent(par), _temps(temps){}
+    // Producer is passed PC object pointer
+    Producer( PC* par ) : parent(par) {}
     ~Producer() {};
     
     void run();
 
 protected:
     PC* parent;
-    AtomicTemps *_temps;
 };
 
 

@@ -243,7 +243,7 @@ void Producer::run()
 
 	    // hand the current temperatures to a function def. in helper_functions.cpp
 	    // to check if we should stop the run based on temps
-	    tempsGood = (parent->_hvFadcManager)->CheckIfTempsGood(std::ref(*_temps));
+	    tempsGood = (parent->_hvFadcManager)->CheckIfTempsGood();
 
 	    if (hvGood == -1 || tempsGood == false){
 	    	// this means something is wrong with HV
@@ -256,7 +256,7 @@ void Producer::run()
 		    std::cout << "ERROR: temperatures out of bounds. Stopping run!" << std::endl;
 		}
 	    	parent->mutexVBuffer.lock();
-	    	(parent->_hvFadcManager)->H_DumpErrorLogToFile(i, _temps->first, _temps->second);
+	    	(parent->_hvFadcManager)->H_DumpErrorLogToFile(i);
 	    	parent->mutexVBuffer.unlock();
 	    	parent->StopRun();
 	    }

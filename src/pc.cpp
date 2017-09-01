@@ -2110,27 +2110,8 @@ void PC::runFADC()
     //zero surpressed readout
     if (run_mode == 0)
     {
-
-    	// ##################################################
-    	// MCP2210 related
-    	// ##################################################
-
-	// define AtomicTemps object, which will be handed to loop_thread
-	// as well as Producer as a reference, so the run can be stopped in
-	// case temps are out of bounds
-	AtomicTemps temps;
-	// we initialize the temperatures to 10 C to make sure the first value
-	// is within the allowed temperature bounds
-	temps.first = 10;
-	temps.second = 10;
-
-    	// start a second thread, which calls init_and_log_temp
-    	// to print and log the temperatures during the run
-    	std::string path_name(PathName);
-    	std::thread loop_thread(init_and_log_temp, std::ref(_loop_continue), path_name, std::ref(temps));
-    	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
-
-        Producer producer(this, &temps);
+	
+        Producer producer(this);
         DataAcqRunning = true;
         Consumer consumer(this);
         producer.start();
@@ -2140,16 +2121,10 @@ void PC::runFADC()
         consumer.start();
 
         producer.wait();
-        //consumer.wait();
         consumer.wait();
 
-        std::cout << "runFADC: consumer ended"<< std::endl;
-        std::cout<<"Press ENTER to close run "<<std::flush;
-
-	// MCP2210 related: stop logging thread and join
-	//loop_stop = false;
-	loop_thread.join();
-
+        std::cout << "runFADC: consumer ended" << std::endl;
+        std::cout << "Press ENTER to close run " << std::flush;
     }
     else{
         std::cout << "only zero surpressed readout implemeted, while using the FADC!" << std::endl;
@@ -2191,7 +2166,6 @@ void PC::runOTPX()
 	temps.first = 10;
 	temps.second = 10;
 
-
     	// start a second thread, which calls init_and_log_temp
     	// to print and log the temperatures during the run
     	std::string path_name(PathName);
@@ -2199,7 +2173,7 @@ void PC::runOTPX()
     	std::cout << "Temp readout running. Will output to stdout and logfile" << std::endl;
 
 
-        Producer producer(this, &temps);
+        Producer producer(this);
         DataAcqRunning = true;
         Consumer consumer(this);
         producer.start();
@@ -2208,8 +2182,6 @@ void PC::runOTPX()
         #endif
         consumer.start();
         producer.wait();
-
-        //consumer.wait();
         consumer.wait();
 
 

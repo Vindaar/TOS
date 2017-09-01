@@ -18,6 +18,7 @@
 //     the .first  of the pair corresponds to IMB
 //     the .second of the pair corresponds to Septem
 typedef std::pair<std::atomic_int, std::atomic_int> AtomicTemps;
+typedef std::pair<int, int> Temps;
 
 // alternatively we could use the following struct
 // define a struct, which only contains
