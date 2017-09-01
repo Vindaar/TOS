@@ -318,6 +318,11 @@ template <typename Ausgabe> int FPGA::DataChipFPGA(Ausgabe aus){
 }
 
 template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chip){
+    // return values:
+    // a return value of -300 or less corresponds to
+    // an error in Communication2!
+    // where the diff error - 300 corresponds to the error code from
+    // Communication2()
 #if DEBUG==2
     std::cout<<"Enter FPGA::SerialReadOut()"<<std::endl;
 #endif
@@ -354,7 +359,7 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 	    }
 	}
 	err_code=Communication2(PacketBuffer,&((*PackQueueReceive)[p+1][0]),0,chip);
-	if(err_code>0) return 300+err_code;
+	if(err_code>0) return -(300+err_code);
     }
     if(aus!=NULL){
 	err_code=SaveData(aus, NumHits);

@@ -108,6 +108,20 @@ void Producer::run()
 	
 	// now call the first function for the readout
 	parent->fpga->DataChipFPGA(result);
+	if(result != 0){
+	    // return value
+	    // of 1: error in select
+	    // of 2: timeout in select
+	    // of 3:means wrong packet number
+	    std::cout << "ERROR in Producer: return value of DataChipFPGA was "
+		      << result
+		      << ". Stopping run!" << std::endl;
+	    (parent->RunIsRunning) = false;
+	    // and break from while loop, such that we don't continue
+	    // with the readout!
+	    // TODO: think about whether we would want this all the time?
+	    break;
+	}
     
 	//Producer filling the VBuffer (or a readout vec) for the readout
 	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++){
@@ -127,7 +141,23 @@ void Producer::run()
 	    //To FIX the readout problem
 	    // TODO: understand this
 	    //if(parent->_useHvFadc){
-	    parent->fpga->DataFPGAPC(dataVec, chip);
+	    result = 0;
+	    result = parent->fpga->DataFPGAPC(dataVec, chip);
+	    if (result <= -300){
+		// means Communication2() call in DataFPGAPC() failed
+		// with an error code:
+		// of 1: error in select
+		// of 2: timeout in select
+		// of 3:means wrong packet number
+		std::cout << "ERROR in Producer: return value of DataFPGAPC was "
+			  << result
+			  << ". Stopping run!" << std::endl;
+		(parent->RunIsRunning) = false;
+		// and break from while loop, such that we don't continue
+		// with the readout!
+		// TODO: think about whether we would want this all the time?
+		break;		
+	    }
 
 	    // NOTE: The following was from the time, when one was still using a single Chip
 	    // the SerialReadOutReadSend function is not properly implemented in the Virtex Firmware for 
@@ -478,6 +508,8 @@ void Consumer::run()
 
 	for (unsigned short chip = 0; chip < parent->fpga->tp->GetNumChips(); chip++){
 	    if(hits[chip]<0){
+		std::cout << "TAKEOUT. Stopping Run due to hits[chip] < 0; hits, chip "
+			  << hits[chip] << "\t" << chip << std::endl;
 		(parent->RunIsRunning)=false;
 	    }
 	}

@@ -706,7 +706,7 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
 
 //#if DEBUG==1
     if (err_code < 0)  std::cout << "Fehler in select" << std::endl;
-    if (err_code == 0) std::cout << "Timeout in select" << std::endl; 
+    if (err_code == 0) std::cout << "Communication(): Timeout in select" << std::endl; 
 //#endif
     // check if _timeout expired, before chip answered. in that case,
     // select returns 0 and we return 2
@@ -839,8 +839,12 @@ void FPGA::ClearFadcFlag(){
 }
 
 
-int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip, int timeout)
-{
+int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip, int timeout){
+    // return codes:
+    // err_code == 0: all good
+    // err_code == 1: error in select
+    // err_code == 2: timeout in select
+    // err_code == 3: wrong number of packets
 
 #if DEBUG==2
     std::cout<<"Enter FPGA::Communication2()"<<std::endl;
@@ -887,7 +891,7 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     }
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
-    if (err_code==0) std::cout << "Timeout in select" << std::endl;
+    if (err_code==0) std::cout << "Communication2(): Timeout in select" << std::endl;
 #endif
     if(err_code<0){
 	return 1;
@@ -936,6 +940,20 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
 	else{
 	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
 	}
+#if DEBUG==1
+	if (err_code<0) std::cout << "Fehler in select" << std::endl;
+	if (err_code==0) std::cout << "Communication2(): Timeout in select" << std::endl;
+#endif
+	if(err_code<0){
+	    return 1;
+	} 
+	else if(err_code==0){
+	    return 2;
+	} 
+	else{
+	    err_code=0;
+	}
+
 
 #if DEBUG!=1
 	recvWrapper(sock,RecvBuffer,PLen+18,0);
@@ -978,7 +996,9 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     if (HitsMode==1) {
 	return Hits;
     }
-    else return err_code;
+    else{
+	return err_code;
+    }
 }
 
 int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip, int timeout)
@@ -1028,7 +1048,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     }
 #if DEBUG==1
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
-    if (err_code==0) std::cout << "Timeout in select" << std::endl;
+    if (err_code==0) std::cout << "CommunicationReadSend(): Timeout in select" << std::endl;
 #endif
     if(err_code<0){return 1;} else if(err_code==0){return 2;} else{err_code=0;}
 
