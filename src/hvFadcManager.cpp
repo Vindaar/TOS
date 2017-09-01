@@ -110,6 +110,7 @@ void BackgroundTempLoop(hvFadcManager *hfm, std::atomic_bool &loop_continue, std
     temp_loop.join();
 }
 
+
 // either create object using addresses for HV
 hvFadcManager::hvFadcManager(std::string iniFilePath):
     _createdFlag(false),
@@ -1904,6 +1905,12 @@ void hvFadcManager::SetCurrentTemps(Temps temps){
     // sets the given AtomicTemps as the current temperatures
     // passed by value to copy the temperatures
     _currentTemps = temps;
+}
+
+Temps hvFadcManager::GetCurrentTemps(){
+    // getter for SetCurrentTemps(), used in WriteTempsInRunFolder()
+    // helper thread to print current temperatures to run folder
+    return _currentTemps;
 }
 
 

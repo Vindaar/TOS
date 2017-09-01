@@ -1,3 +1,6 @@
+#ifndef TEMP_HELPERS_HPP
+#define TEMP_HELPERS_HPP 1
+
 // some small helper functions for the temp readout
 
 #include "mcp2210.h"
@@ -27,9 +30,6 @@ typedef std::pair<int, int> Temps;
 //     std::atomic_int t_sep;
 // } AtomicTemps;
 
-
-
-
 void simple_sleep(int time_ms);
 const std::string get_temp_log_file_path(std::string pathName);
 int get_current_active_slave(bool change);
@@ -39,3 +39,4 @@ void print_spi_transfer_data(SPIDataTransferStatusDef status_def);
 void print_spi_transfer_settings(hid_device *handle, SPITransferSettingsDef spi_set);
 double calc_temperature(byte lsb_rtd, byte msb_rtd, float ref_resistor, float RTD_resistance);
 
+#endif

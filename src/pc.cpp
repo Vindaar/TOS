@@ -2097,7 +2097,6 @@ void PC::run()
 }
 
 
-
 void PC::runFADC()
 {
 #if DEBUG == 2
@@ -2108,8 +2107,11 @@ void PC::runFADC()
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED,NULL);
 
     //zero surpressed readout
-    if (run_mode == 0)
-    {
+    if (run_mode == 0){
+    	// start a second thread, which calls function to write current temps into
+	// temps_log.txt in run folder
+    	std::string path_name(PathName);
+    	//std::thread loop_thread(WriteTempsIntoRunFolder, _hvFadcManager, std::ref(_loop_continue), path_name);
 	
         Producer producer(this);
         DataAcqRunning = true;
@@ -2122,6 +2124,8 @@ void PC::runFADC()
 
         producer.wait();
         consumer.wait();
+
+	//loop_thread.join();
 
         std::cout << "runFADC: consumer ended" << std::endl;
         std::cout << "Press ENTER to close run " << std::flush;

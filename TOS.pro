@@ -43,6 +43,7 @@ HEADERS += include/console.hpp \
            include/tosCommandCompletion.hpp \
            include/networkWrapper.hpp \
            include/hvFadcManager.hpp \
+           include/hvTempMonitor.hpp \
            include/hvInterface/hvModule.hpp \
            include/hvInterface/hvChannel.hpp \
            include/hvInterface/hvFlexGroup.hpp \
@@ -77,6 +78,7 @@ SOURCES += src/console.cpp \
            src/tosCommandCompletion.cpp \
            src/networkWrapper.cpp \
            src/hvFadcManager.cpp \
+           src/hvTempMonitor.cpp \           
            src/hvInterface/hvModule.cpp \
            src/hvInterface/hvChannel.cpp \
            src/hvInterface/hvFlexGroup.cpp \

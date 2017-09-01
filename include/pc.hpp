@@ -41,6 +41,7 @@
 // #include "timepix.hpp"
 #include "frame.hpp"
 #include "hvFadcManager.hpp"
+#include "hvTempMonitor.hpp"
 #include "timepix.hpp"
 #include "waitconditions.hpp"
 
@@ -60,7 +61,7 @@ class Frame;
 #define TALKATIVNESS 1
 
 
-class PC:public QThread{
+class PC: public QThread{
     friend class Producer;
     friend class Consumer;
 

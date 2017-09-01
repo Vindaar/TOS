@@ -245,11 +245,9 @@ public:
     // TODO: change!
     int H_CheckHVModuleIsGood(bool verbose = true);
 
+    // setter and getter for _currentTemps 
     void SetCurrentTemps(Temps temps);
-    // TODO: include a Getter for temps? Intention of
-    // set is only to be able to call CheckIfTempsGood() and
-    // not to get values of temp from HFM...
-    // function to return a bool about current state of temperatures
+    Temps GetCurrentTemps();
     bool CheckIfTempsGood();
     
     // optional arguments to the error dump include temperatures for IMB and septem,
