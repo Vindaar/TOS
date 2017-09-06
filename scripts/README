@@ -1,2 +1,25 @@
 This folder contains several scripts, which come in handy to analyze data created by TOS.
 
+# PyS_FadcEventDisplay
+
+This is a python/matplotlib-based event display for a Septemboard with FADC.
+
+## Installtation
+
+The dependencies can be installed via pip:
+```
+$ sudo pip install -r requirements.txt
+```
+
+## Usage
+
+Extract example data.
+```
+tar xzf examples/XrayFingerRun_21_reduced.tar.gz -C examples
+```
+
+Start the event display.
+```
+$ cd scripts/PyS_eventDisplay/
+scripts/PyS_eventDisplay/$ ./PyS_eventDisplay.py ../../data/ExampleRun_XRayFinger
+```
