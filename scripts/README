@@ -23,3 +23,16 @@ Start the event display.
 $ cd scripts/PyS_eventDisplay/
 scripts/PyS_eventDisplay/$ ./PyS_eventDisplay.py ../../data/ExampleRun_XRayFinger
 ```
+
+Available commands:
+
+Command | Action
+------- | ------
+n | Go to next file
+b | Go to previous file
+e | Jump to last file and start automatically refreshing
+l | Start to automatically go through all files
+o | Create occupancy plot
+s | Save the current figure
+h | Create the pixel histogram for each chip
+q | Quit
