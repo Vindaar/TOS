@@ -415,7 +415,7 @@ int PC::DoTHLScan(unsigned short chip,
 	    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
 	    int hits = 0;
 	    int result=0;
-	    fpga->DataChipFPGA(result);
+	    result = fpga->DataChipFPGA();
 	    hits = fpga->DataFPGAPC(data,chip);
 	    usleep(20000);
 	    std::cout << "Hits:\t" << hits
@@ -589,7 +589,7 @@ int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned 
     //fpga->SerialReadOut(VecData);
 
     int pix_tempdata2[256][256] = {0};
-    fpga->DataChipFPGA(result);
+    result = fpga->DataChipFPGA();
     fpga->DataFPGAPC(pix_tempdata2,chp); //!!!only one chip!!!
     for(short y=step;y<256;y+=(256/pix_per_row)){
 	for(short x=0;x<256;x++){
@@ -1495,12 +1495,12 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 			    std::ostringstream sstream;
 			    sstream<<"TOTCalib1"<<"_iteration"<<iteration<<"_step"<<step<<"_chip"<<chip<<".txt";
 			    filename_=DataPathName+"/"+"TOT"+"/"; filename_+=sstream.str();
-			    fpga->DataChipFPGA(result);
+			    result = fpga->DataChipFPGA();
 			    DoReadOut2(filename_,chip);
 			}
 		    }
 		    else {
-			fpga->DataChipFPGA(result);
+			result = fpga->DataChipFPGA();
 
 // MAIN PART HERE
 			for (auto chip : _chip_set){
@@ -1775,7 +1775,7 @@ unsigned short PC::CheckOffsetZeroSuppressed(){
 	    fpga->SetMatrix();
 	    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
 	    int result = 0;
-	    fpga->DataChipFPGA(result);
+	    result = fpga->DataChipFPGA();
 	    int hits=fpga->DataFPGAPC(data,chip);// + 1);
 	    for(int i=0; i<hits*3; i=i+3){
 		if ( (*data)[i+1] == 255 or (*data)[i+1] == 254) {
@@ -2018,7 +2018,7 @@ int PC::DoRun(unsigned short runtimeFrames_,
 	if(result!=20){(RunIsRunning)=false;}
     }
 
-    result=fpga->DataChipFPGA(result);
+    result = fpga->DataChipFPGA();
 
 
     //start run

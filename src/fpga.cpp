@@ -182,6 +182,31 @@ FPGA::~FPGA(){
     PackQueueReceive = NULL;
 }
 
+//template <typename Ausgabe> int FPGA::DataChipFPGA(Ausgabe aus){
+int FPGA::DataChipFPGA(){
+    // the previously template function, which (for zero suppressed readout)
+    // tells the FPGA to read data from the Timepix to the FPGA.
+    // return values of < 0 declare errors related to select(), recv() or
+    // send() in Communication2()
+    
+#if DEBUG==2
+    std::cout<<"Enter FPGA::SerialReadOut()"<<std::endl;
+#endif
+    //M0=0; M1=0; Enable_IN=0; Shutter=1; Reset=1;	 //ModL= 24 = 0x18
+    // Start readout chip zero suppressed 0x1A
+    Mode = 0x1A;
+#if DEBUG==1
+    std::cout << "reading out data from chip to FPGA" << std::endl;
+#endif
+    OutgoingLength=18; 
+    IncomingLength=18; 
+    PacketQueueSize=PQueue; //changed: IncomingLength=18+PLen -> 18, no data in new Mode 4, only data Chip -> FPGA
+
+    int result = 0;
+    result = Communication2(PacketBuffer,&((*PackQueueReceive)[0][0]),2,0);// command to read data from chip to FPGA
+    return result;
+}
+
 void FPGA::initHV_FADC(hvFadcManager* hvFadcManager){
     // this function hands the pointer to the hvFadcManager object to the
     // FPGA object so that it can access its functions
@@ -704,10 +729,10 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
     error=WSAGetLastError();
 #endif
 
-//#if DEBUG==1
+#if DEBUG==5
     if (err_code < 0)  std::cout << "Fehler in select" << std::endl;
     if (err_code == 0) std::cout << "Communication(): Timeout in select" << std::endl; 
-//#endif
+#endif
     // check if _timeout expired, before chip answered. in that case,
     // select returns 0 and we return 2
     if(err_code<0){
@@ -732,12 +757,15 @@ int FPGA::Communication(unsigned char* SendBuffer, unsigned char* RecvBuffer, in
 #endif
 		
     if(RecvBuffer[1]!=(FPGACounter+1)%256){
-#if DEBUG==1
-	std::cout << "  Antwort hat falsche Paket-Nummer. SOLL=" 
+#if DEBUG==5
+	std::bitset<8> recv_binary(RecvBuffer[1]);
+	std::cout << "Communication(): Antwort hat falsche Paket-Nummer. SOLL=" 
 		  << FPGACounter+1 << ", IST=" 
-		  << RecvBuffer[1] << std::endl << std::endl; 
+		  << recv_binary << std::endl << std::endl; 
 #endif
-	err_code=3;
+	// return immediately to handle error
+	return 3;
+	//err_code=3;
     }
 
     unsigned short ADC_result = 0;
@@ -842,9 +870,9 @@ void FPGA::ClearFadcFlag(){
 int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, int HitsMode, unsigned short chip, int timeout){
     // return codes:
     // err_code == 0: all good
-    // err_code == 1: error in select
-    // err_code == 2: timeout in select
-    // err_code == 3: wrong number of packets
+    // err_code == -1: error in select
+    // err_code == -2: timeout in select
+    // err_code == -3: wrong number of packets
 
 #if DEBUG==2
     std::cout<<"Enter FPGA::Communication2()"<<std::endl;
@@ -889,15 +917,19 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
     else{
 	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
     }
-#if DEBUG==1
+#if DEBUG==5
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
-    if (err_code==0) std::cout << "Communication2(): Timeout in select" << std::endl;
+    if (err_code==0){
+	std::cout << "Communication2(): Timeout in first select() call" 
+		  << "HitsMode: " << HitsMode
+		  << std::endl;
+    }
 #endif
     if(err_code<0){
-	return 1;
+	return -1;
     } 
     else if(err_code==0){
-	return 2;
+	return -2;
     } 
     else{
 	err_code=0;
@@ -914,10 +946,16 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
 #endif
 
     if(RecvBuffer[1]!=(FPGACounter+1)%256){
-#if DEBUG==1
-	std::cout << "  Antwort hat falsche Paket-Nummer. SOLL=" << FPGACounter+1 << ", IST=" << RecvBuffer[1] << std::endl << std::endl;
+#if DEBUG==5
+	std::bitset<8> recv_binary(RecvBuffer[1]);	
+	std::cout << "Communication2()-1: Antwort hat falsche Paket-Nummer."
+		  << "SOLL = " << FPGACounter+1
+		  << ", IST=" << recv_binary
+		  << std::endl << std::endl;
 #endif
-	err_code=3;
+	// return immediately to handle error
+	return -3;
+	//err_code=-3;
     }
 
 
@@ -940,15 +978,19 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
 	else{
 	    err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
 	}
-#if DEBUG==1
+#if DEBUG==5
 	if (err_code<0) std::cout << "Fehler in select" << std::endl;
-	if (err_code==0) std::cout << "Communication2(): Timeout in select" << std::endl;
+	if (err_code==0){
+	    std::cout << "Communication2(): Timeout in second select call"
+		      << "HitsMode: " << HitsMode
+		      << std::endl;
+	}
 #endif
 	if(err_code<0){
-	    return 1;
+	    return -1;
 	} 
 	else if(err_code==0){
-	    return 2;
+	    return -2;
 	} 
 	else{
 	    err_code=0;
@@ -967,18 +1009,22 @@ int FPGA::Communication2(unsigned char* SendBuffer, unsigned char* RecvBuffer, i
 #endif
 
 	if(RecvBuffer[1]!=(FPGACounter+1)%256){
-#if DEBUG==1
-	    std::cout << "  Antwort hat falsche Paket-Nummer. SOLL=" 
+#if DEBUG==5
+	    std::bitset<8> recv_binary(RecvBuffer[1]);	
+	    std::cout << "Communication2()-2: Antwort hat falsche Paket-Nummer. SOLL=" 
 		      << FPGACounter+1 
 		      << ", IST=" 
-		      << RecvBuffer[1] 
+		      << recv_binary
 		      << std::endl << std::endl;
 #endif
-	    err_code=3;
+	    // return immediately to handle error
+	    return -3;
+	    //err_code=-3;
 	}
-	err_code=0;
+	// this doesn't make any sense: this would set err_code back to 0, if it
+	// was previously set to -3!
+	// err_code=0;
     }
-
 
     FPGACounter=RecvBuffer[1];
     Hits=RecvBuffer[10] << 16;
@@ -1046,7 +1092,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
     else{
 	err_code=select(FD_SETSIZE, &testfd, (fd_set*)0, (fd_set*)0, 0);
     }
-#if DEBUG==1
+#if DEBUG==5
     if (err_code<0) std::cout << "Fehler in select" << std::endl;
     if (err_code==0) std::cout << "CommunicationReadSend(): Timeout in select" << std::endl;
 #endif
@@ -1062,7 +1108,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 #endif
 
     if(RecvBuffer[1]!=(FPGACounter+1)%256){
-#if DEBUG==1
+#if DEBUG==5
 	std::cout << "  Antwort hat falsche Paket-Nummer. SOLL=" 
 		  << FPGACounter+1 
 		  << ", IST=" 
@@ -1092,7 +1138,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 	    // NOTE: removed __WIN32__ ifdef with RecvBuffer as array
             recvWrapper(sock,SendBuffer,PLen+18,0);  
 	    
-	    #if DEBUG==1
+#if DEBUG==1
 	    std::cout << "Packet indicating end of data transfer from Chip to "
 		      << "FPGA received" << std::endl;
 	    #endif
@@ -1104,7 +1150,7 @@ int FPGA::CommunicationReadSend(unsigned char* SendBuffer, unsigned char* RecvBu
 #endif
 
 	    if(RecvBuffer[1]!=(FPGACounter+1)%256){
-#if DEBUG==1
+#if DEBUG==5
 		std::cout << "  Antwort hat falsche Paket-Nummer. SOLL=" 
 			  << FPGACounter+1 
 			  << ", IST=" 

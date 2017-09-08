@@ -1033,7 +1033,7 @@ int Console::CommandReadOut2(){
     std::cout << "Enter Console::CommandReadOut()" << std::endl;
 #endif
     int result = 0;
-    pc->fpga->DataChipFPGA(result);
+    result = pc->fpga->DataChipFPGA();
 
     for (auto chip : _chip_set){
 	std::string filename;//=pc->GetDataPathName();

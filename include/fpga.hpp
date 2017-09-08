@@ -85,7 +85,8 @@ public:
 
     template <typename Ausgabe> int SerialReadOut(Ausgabe aus);	//err_code=3xx
     template <typename Ausgabe> int SerialReadOutReadSend(Ausgabe aus, unsigned short chip);
-    template <typename Ausgabe> int DataChipFPGA(Ausgabe aus);
+    //template <typename Ausgabe> int DataChipFPGA(Ausgabe aus);
+    int DataChipFPGA();    
     template <typename Ausgabe> int DataFPGAPC(Ausgabe aus, unsigned short chip);
 		
     int SetMatrix();	  //err_code=4xx
@@ -299,24 +300,6 @@ template <typename Ausgabe> int FPGA::SerialReadOutReadSend(Ausgabe aus, unsigne
 #endif
 
 
-template <typename Ausgabe> int FPGA::DataChipFPGA(Ausgabe aus){
-#if DEBUG==2
-    std::cout<<"Enter FPGA::SerialReadOut()"<<std::endl;
-#endif
-    //M0=0; M1=0; Enable_IN=0; Shutter=1; Reset=1;	 //ModL= 24 = 0x18
-    // Start readout chip zero suppressed 0x1A
-    Mode = 0x1A;
-#if DEBUG==1
-    std::cout << "reading out data from chip to FPGA" << std::endl;
-#endif
-    OutgoingLength=18; 
-    IncomingLength=18; 
-    PacketQueueSize=PQueue; //changed: IncomingLength=18+PLen -> 18, no data in new Mode 4, only data Chip -> FPGA
-
-    aus = Communication2(PacketBuffer,&((*PackQueueReceive)[0][0]),2,0);// command to read data from chip to FPGA
-    return aus;
-}
-
 template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chip){
     // return values:
     // a return value of -300 or less corresponds to
@@ -337,6 +320,9 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
     IncomingLength=18+PLen; //added as changed above
     int NumHits=Communication2(PacketBuffer,&((*PackQueueReceive)[0][0]),1,chip); // first packet
     std::cout << "Chip: "<<chip <<" Hits: "<< NumHits <<std::endl;
+    if(NumHits < 0){
+	return NumHits;
+    }
     int Hits;
     if (NumHits > 4096){
 	Hits = 4096;
@@ -359,7 +345,7 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 	    }
 	}
 	err_code=Communication2(PacketBuffer,&((*PackQueueReceive)[p+1][0]),0,chip);
-	if(err_code>0) return -(300+err_code);
+	if(err_code < 0) return -300+err_code;
     }
     if(aus!=NULL){
 	err_code=SaveData(aus, NumHits);
