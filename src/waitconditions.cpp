@@ -72,6 +72,13 @@ void Producer::run()
 	    parent->fpga->UseFastClock(false);
 	    if(result!=20){
 		(parent->RunIsRunning)=false;
+		// in this case something went wrong during the Communication()
+		// call. Either a timeout, wrong packet number or an error on
+		// select(). In this case we should return from this function
+		// immediately after setting data acq to false, so that thread
+		// can stop safely
+		parent->DataAcqRunning = false;
+		return;
 	    }
 	}
 	// else we call CountingTime()
@@ -83,6 +90,13 @@ void Producer::run()
 	    parent->fpga->UseFastClock(false);
 	    if(result!=20){
 		(parent->RunIsRunning)=false;
+		// in this case something went wrong during the Communication()
+		// call. Either a timeout, wrong packet number or an error on
+		// select(). In this case we should return from this function
+		// immediately after setting data acq to false, so that thread
+		// can stop safely
+		parent->DataAcqRunning = false;
+		return;
 	    }
 	}
    
@@ -110,17 +124,20 @@ void Producer::run()
 	parent->fpga->DataChipFPGA(result);
 	if(result != 0){
 	    // return value
-	    // of 1: error in select
-	    // of 2: timeout in select
-	    // of 3:means wrong packet number
+	    // of -1: error in select
+	    // of -2: timeout in select
+	    // of -3: means wrong packet number
 	    std::cout << "ERROR in Producer: return value of DataChipFPGA was "
 		      << result
 		      << ". Stopping run!" << std::endl;
 	    (parent->RunIsRunning) = false;
-	    // and break from while loop, such that we don't continue
-	    // with the readout!
-	    // TODO: think about whether we would want this all the time?
-	    break;
+	    // in this case something went wrong during the Communication()
+	    // call. Either a timeout, wrong packet number or an error on
+	    // select(). In this case we should return from this function
+	    // immediately after setting data acq to false, so that thread
+	    // can stop safely
+	    parent->DataAcqRunning = false;
+	    return;
 	}
     
 	//Producer filling the VBuffer (or a readout vec) for the readout
@@ -146,17 +163,21 @@ void Producer::run()
 	    if (result <= -300){
 		// means Communication2() call in DataFPGAPC() failed
 		// with an error code:
-		// of 1: error in select
-		// of 2: timeout in select
-		// of 3:means wrong packet number
+		// of -1: error in select
+		// of -2: timeout in select
+		// of -3:means wrong packet number
 		std::cout << "ERROR in Producer: return value of DataFPGAPC was "
 			  << result
 			  << ". Stopping run!" << std::endl;
 		(parent->RunIsRunning) = false;
-		// and break from while loop, such that we don't continue
-		// with the readout!
-		// TODO: think about whether we would want this all the time?
-		break;		
+		// in this case something went wrong during the Communication()
+		// call. Either a timeout, wrong packet number or an error on
+		// select(). In this case we should return from this function
+		// immediately after setting data acq to false, so that thread
+		// can stop safely
+		parent->DataAcqRunning = false;
+		return;
+
 	    }
 
 	    // NOTE: The following was from the time, when one was still using a single Chip
