@@ -388,9 +388,8 @@ void Console::ParseActiveHfmCommands(std::string input){
     // this function parses the input in case the HFM is activated
     // and the input is a valid command from the HFM commands set
 
-    if ((input.compare("InitHFM") == 0) ||
-	(input.compare("InitHV_FADC") == 0)){
-	_hvFadcManager->InitHFMForTOS();
+    if (input.compare("InitHV") == 0){
+	_hvFadcManager->InitHVForTOS();
     }
 
     else if (input.compare("ConnectModule") == 0){

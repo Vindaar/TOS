@@ -416,6 +416,11 @@ int PC::DoTHLScan(unsigned short chip,
 	    int hits = 0;
 	    int result=0;
 	    result = fpga->DataChipFPGA();
+	    if (result != 0){
+		std::cout << "ERROR DoTHLScan(): FPGA communication bad, return value "
+			  << result << ". Stopping function" << std::endl;
+		return -1;
+	    }
 	    hits = fpga->DataFPGAPC(data,chip);
 	    usleep(20000);
 	    std::cout << "Hits:\t" << hits
@@ -590,6 +595,11 @@ int PC::THscan(unsigned int coarse, int thl, int array_pos, short ths, unsigned 
 
     int pix_tempdata2[256][256] = {0};
     result = fpga->DataChipFPGA();
+    if (result != 0){
+	std::cout << "ERROR THscan(): FPGA communication bad, return value "
+		  << result << ". Stopping function" << std::endl;
+	return -1;
+    }
     fpga->DataFPGAPC(pix_tempdata2,chp); //!!!only one chip!!!
     for(short y=step;y<256;y+=(256/pix_per_row)){
 	for(short x=0;x<256;x++){
@@ -1496,12 +1506,21 @@ int PC::TOCalibFast(unsigned short pix_per_row, unsigned short shuttertype, unsi
 			    sstream<<"TOTCalib1"<<"_iteration"<<iteration<<"_step"<<step<<"_chip"<<chip<<".txt";
 			    filename_=DataPathName+"/"+"TOT"+"/"; filename_+=sstream.str();
 			    result = fpga->DataChipFPGA();
+			    if (result != 0){
+				std::cout << "ERROR TOCalibFast(): FPGA communication bad, return value "
+					  << result << ". Stopping function" << std::endl;
+				return -1;
+			    }
 			    DoReadOut2(filename_,chip);
 			}
 		    }
 		    else {
 			result = fpga->DataChipFPGA();
-
+			if (result != 0){
+			    std::cout << "ERROR TOCalibFast(): FPGA communication bad, return value "
+				      << result << ". Stopping function" << std::endl;
+			    return -1;
+			}
 // MAIN PART HERE
 			for (auto chip : _chip_set){
 			    int sumTOT = 0;
@@ -1776,6 +1795,13 @@ unsigned short PC::CheckOffsetZeroSuppressed(){
 	    std::vector<int> *data = new std::vector<int>((12288+1),0); //+1: Entry 0 of Vector contains NumHits
 	    int result = 0;
 	    result = fpga->DataChipFPGA();
+	    if (result != 0){
+		std::cout << "ERROR CheckOffsetZeroSuppressed(): FPGA communication bad, return value "
+			  << result << ". Stopping function" << std::endl;
+		// cannot return -1, return value unsigned short,
+		// return nonsenical preload value
+		return 999;
+	    }	    
 	    int hits=fpga->DataFPGAPC(data,chip);// + 1);
 	    for(int i=0; i<hits*3; i=i+3){
 		if ( (*data)[i+1] == 255 or (*data)[i+1] == 254) {

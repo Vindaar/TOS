@@ -121,7 +121,7 @@ void Producer::run()
 	}
 	
 	// now call the first function for the readout
-	parent->fpga->DataChipFPGA(result);
+	result = parent->fpga->DataChipFPGA();
 	if(result != 0){
 	    // return value
 	    // of -1: error in select

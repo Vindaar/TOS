@@ -189,6 +189,13 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     // set the thread pointer owned by this object to the thread we just created
     // such that we can join the thread safely before deleting this object
     _temp_safety_loop = loop_thread;
+
+    // finally set the FADC settings on the device (so that FADC readout is
+    // available immediately)
+        // before we start ramping up the HV modules, first set FADC settings
+    std::cout << "Setting FADC settings" << std::endl;
+    SetFadcSettings();
+
 }
 
 hvFadcManager::~hvFadcManager() {
@@ -443,7 +450,7 @@ bool hvFadcManager::SetAllChannelsOn(){
         // what we wish to return
 }
 
-void hvFadcManager::InitHFMForTOS(){
+void hvFadcManager::InitHVForTOS(){
     std::cout << "Entering Init HV" << std::endl;
 
     // First we read the Settings file
@@ -469,8 +476,10 @@ void hvFadcManager::InitHFMForTOS(){
         FADC_module = new V1729a_VME(&Controller, sAddress_fadc);
         // create FADC high level functions
         FADC_Functions = new HighLevelFunction_VME(FADC_module);
-        // and reset FADC
+        // and reset FADC + set settings on device
         FADC_module->reset();
+	SetFadcSettings();
+	
         bool good;
         std::cout << "creating... " << std::flush;
         good = H_CheckIsConnectionGood();
@@ -589,11 +598,6 @@ void hvFadcManager::InitHFMForTOS(){
                   << "Probably will not start ramping."
                   << std::endl;
     }
-
-
-    // before we start ramping up the HV modules, first set FADC settings
-    std::cout << "Setting FADC settings" << std::endl;
-    SetFadcSettings();
 
     // bool variable used to check whether channels already ramped up
     // from a previous usage of TOS
@@ -1475,7 +1479,6 @@ void hvFadcManager::SetFadcSettings(){
     // as a range! Range of TriggerThresholdRegister not from 0 - 4096 but 0 - 16384
     F_SetModeRegister( fadcModeRegister );
     
-
     _hvFadcInitFlag = true;
     
 }

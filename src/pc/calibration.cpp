@@ -303,6 +303,12 @@ void PC::AllChipsSingleStepCtpr(std::set<unsigned short> chip_set,
 	// and activate zero suppressed readout in case of TOCalib
         int temp_result = 0;
 	temp_result = fpga->DataChipFPGA();
+	if (temp_result != 0){
+	    std::cout << "ERROR AllChipsSingleStepCtpr(): FPGA communication bad, return value "
+		      << temp_result << ". Please stop calibration immediately, results \n"
+		      << " not reliable, if function even finishes."
+		      << std::endl;
+	}	
 
 	// now we loop over all chips in the chip_set to read them out
 	// we use a map to map mean_std_pairs to the chips

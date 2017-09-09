@@ -196,8 +196,8 @@ public:
     hvModule* getHVModulePtr();
 
     void ReadHFMConfig();
-    // init HFM sets all settings of HV and FADC, but does not start the ramp
-    void InitHFMForTOS();
+    // init the HV by setting up all channels, ramps up if desired
+    void InitHVForTOS();
     // RampChannels starts the ramp up of all channels
     void RampChannels(bool alreadyInBounds = false);
     void ShutDownHFMForTOS();
@@ -213,9 +213,6 @@ public:
     void RemoveChannelByNumber(int channelNumber);
     // create a simple channel from a channel name and a target voltage
     bool CreateChannel(std::string channelName, int voltage);
-
-
-
 
     // function to create the binary representation of a set of numbers (channels, groups...) needed for module
     uint16_t GetBinaryRepFromNumberSet(std::set<int> numberSet);

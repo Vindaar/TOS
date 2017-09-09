@@ -96,8 +96,7 @@ const std::set<std::string> get_tos_commands(){
 
 const std::set<std::string> get_hfm_commands(){
     // HV and FADC commands
-    const std::set<std::string> HFMCommandsSet =  {"InitHFM",
-						   "InitHV_FADC",
+    const std::set<std::string> HFMCommandsSet =  {"InitHV",
 						   "RampChannels",
 						   "ShutdownHFM",
 						   "ActivateHFM",
