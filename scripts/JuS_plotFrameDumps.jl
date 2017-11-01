@@ -103,6 +103,11 @@ function main(interactive)
     path1 = joinpath(homedir, "TOS/tmp/framedumps/")
     path2 = joinpath(homedir, "TOS/data/singleFrames/")
 
+    if length(ARGS) > 0
+        path3 = ARGS[1]
+    else
+        path3 = ""
+    end
 
     files = readdir(path1)
     
@@ -128,6 +133,7 @@ function main(interactive)
     # @spawn fm2 = FileMonitor(path2)
     fm1 = FileMonitor(path1)
     fm2 = FileMonitor(path2)
+    fm3 = FileMonitor(path3)
     #for file in files[2:end]
 
     ch = Channel{Any}(1)
@@ -143,6 +149,11 @@ function main(interactive)
             frame, file = take!(ch)
             try_to_draw(fig, cb, image, frame, file)
         end
+        @async while true
+            put!(ch, poll_and_get_frame(fm3, path3))
+            frame, file = take!(ch)
+            try_to_draw(fig, cb, image, frame, file)
+        end        
     end
     
   
