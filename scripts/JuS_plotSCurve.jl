@@ -13,7 +13,7 @@ end
 
 function main(chip)
 
-    homedir = homedir()
+    homedir = Base.Filesystem.homedir()
     path = joinpath(homedir, "TOS/data/singleFrames/chip_")
     path = string(path, chip, "/")
     files = readdir(path)
