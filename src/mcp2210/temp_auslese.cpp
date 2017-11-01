@@ -316,9 +316,14 @@ void loop_and_log(hid_device *handle,
 
     std::fstream outfile;
     outfile.open(filepath, std::fstream::out);
-    outfile << "# Temperature log file" << "\n"
-	    << "# Temp_IMB \t Temp_Septem \t DateTime" << std::endl;
-    outfile.close();
+    if (outfile.is_open()){
+	outfile << "# Temperature log file" << "\n"
+		<< "# Temp_IMB \t Temp_Septem \t DateTime" << std::endl;
+	outfile.close();
+    }
+    else{
+	std::cout << "TempReadout: Cannot open output file to write temps." << std::endl;
+    }
 
     byte lsb_rtd = read_register(handle, READ_LSB);
     byte fault_test = lsb_rtd & 0x01;
@@ -350,6 +355,9 @@ void loop_and_log(hid_device *handle,
 
 	    // re-open the output file and append data
 	    outfile.open(filepath, std::fstream::app);
+	    if(!outfile.is_open()){
+		std::cout << "TempReadout: Cannot open output file to write temps." << std::endl;
+	    }	    
 
 	    // calculate average of temps
 	    temp_septem /= num_measurements;
@@ -364,7 +372,6 @@ void loop_and_log(hid_device *handle,
 		    << date << std::endl;
 	    // close outfile
 	    outfile.close();
-	    
 	    std::cout << "Temperature measured from RTD for " << "\n"
 		      << "    slave "
 		      << "IMB"  << " is: " << temp_IMB << std::flush;
