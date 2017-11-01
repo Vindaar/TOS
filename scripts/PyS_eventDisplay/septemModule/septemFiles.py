@@ -2,6 +2,7 @@
 # regards to septem event display
 
 import os
+from os.path import expanduser
 import scandir
 import numpy as np
 import collections
@@ -75,8 +76,34 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     data = work_on_read_data(f, filepath, header_only)
     return data
 
-def get_temp_filename():
-    return "temp_log.txt"
+def get_temp_filename(filepath):
+    # this function returns the filename (incl. full path)
+    # to the temperature log, which is currently in use.
+    # In a normal run, the temperature is logged in the run
+    # folder itself under the name temp_log.txt.
+    # however, in case of using the FADC, it is instead
+    # written to $TOS/log/temp_log.txt, since in this case
+    # the temp log daemon is running in the background,
+    # independent of being in a run
+    basename = "temp_log.txt"
+    # join given folder and basename
+    filename = os.path.join(filepath, basename)
+    # check if file exists
+    in_run_folder = os.path.isfile(filename)
+    if in_run_folder is True:
+        return filename
+    else:
+        # else we check the log folder. expanduser to get
+        # home directory of this user. We assume that TOS
+        # is located in the home directory
+        dirname = os.path.join(expanduser("~"), "TOS/log")
+        filename = os.path.join(dirname, basename)
+        in_log_folder = os.path.isfile(filename)
+        if in_log_folder is True:
+            return filename
+        else:
+            # in this case we could not find a temperature log file
+            return ""
 
 def read_temparature_log(filepath):
     """ 

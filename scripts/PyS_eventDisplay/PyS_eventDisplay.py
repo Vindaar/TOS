@@ -34,11 +34,19 @@ def refresh(ns, filepath, temp_handler):
                                                                   ns.fadcSet,
                                                                   False)
         ns.nfiles         = len(ns.eventSet)
-        ns.last_file      = max(ns.eventSet)
+        # if no files in folder, set empty_folder to True
+        if ns.nfiles == 0:
+            ns.empty_folder = True
+            # in this case last file is 0
+            ns.last_file = 0
+        else:
+            ns.empty_folder = False
+            ns.last_file      = max(ns.eventSet)
         refreshInterval   = ns.refreshInterval
         lock.release()
         # get current temps (written to ns.currentTemps is new available)
-        temp_handler.get_current_temps()
+        if temp_handler is not None:
+            temp_handler.get_current_temps()
 
         time.sleep(refreshInterval)
         #print 'done updating filelist'
@@ -181,8 +189,9 @@ class WorkOnFile:
         for _ in xrange(50):
             lock.acquire()
             nfiles = self.ns.nfiles
+            empty_folder = self.ns.empty_folder
             lock.release()
-            if nfiles > 0:
+            if nfiles > 0 or empty_folder == True:
                 print 'nfiles : ', nfiles
                 break
             else:
@@ -934,15 +943,20 @@ def setup_temp_watcher(filepath, ns):
     wm_temp  = pyinotify.WatchManager()
     mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY
 
-    temp_log_file = os.path.join(filepath, get_temp_filename())
+    temp_log_file = get_temp_filename(filepath)
+    if temp_log_file is not "":
+        print("Temperature log file found at: %s" % temp_log_file)
 
-
-    temp_handler = TempHandler(ns, lock)
-    print('nsns', ns)
-    #temp_handler.my_init(ns, maxqsize = 0)
-    temp_notifier = pyinotify.ThreadedNotifier(wm_temp, temp_handler)
-    temp_notifier.start()
-    wdd_temps = wm_temp.add_watch(temp_log_file, mask, rec=False)
+        temp_handler = TempHandler(ns, lock)
+        print('nsns', ns)
+        #temp_handler.my_init(ns, maxqsize = 0)
+        temp_notifier = pyinotify.ThreadedNotifier(wm_temp, temp_handler)
+        temp_notifier.start()
+        wdd_temps = wm_temp.add_watch(temp_log_file, mask, rec=False)
+    else:
+        temp_handler = None
+        temp_notifier = None
+        print("Warning: could not locate a temperature log file.")
 
     # run_handler  = EventsHandler(ns, lock)
     # run_notifier = pyinotify.ThreadedNotifier(wm_run, run_handler)
@@ -1089,11 +1103,13 @@ def main(args):
         plt.show()
         p2.join()
     except KeyboardInterrupt:
-        temp_notifier.stop()
+        if temp_notifier is not None:
+            temp_notifier.stop()
         #run_notifier.stop()
         pass
     else:
-        temp_notifier.stop()
+        if temp_notifier is not None:
+            temp_notifier.stop()
         #run_notifier.stop()
         pass
 
