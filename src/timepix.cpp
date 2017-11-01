@@ -246,7 +246,7 @@ unsigned int Timepix::GetDAC(unsigned int dac, unsigned short chip){
 #if DEBUG==2
     std::cout<<"Enter Timepix::GetDAC()"<<std::endl;	
 #endif	
-    if(dac>16) {return -1;}
+    if(dac>17) {return -1;}
     return DACValue[chip][dac];
 }
 
@@ -402,8 +402,13 @@ int Timepix::GetDACCode(unsigned int dac){
 void Timepix::UpdateFSR(){
 #if DEBUG==2
     std::cout<<"Enter Timepix::UpdateFSR()"<<std::endl;	
+    // output dacs for debugging
+    for(int j = 0; j < GetNumChips(); j++){
+    	for(int i=0;i<18;++i){
+    	    std::cout<<DACNames[j][i]<<DACValue[j][i]<<std::endl;
+    	}
+    }
 #endif
-    //for(i=0;i<18;++i){std::cout<<DACNames[i]<<DACValue[i]<<std::endl;}
     for (int i = 0; i < 8; i++){
 	for(int j = 0; j < 18 + 34; ++j){
 	    FSR[i][j]=0;

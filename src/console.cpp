@@ -1089,7 +1089,7 @@ int Console::CommandSetDAC(){
     std::cout<<"Enter Console::CommandSetDAC()"<<std::endl;	
 #endif	
     std::string  input;
-    const char *promptDAC = "Please choose a DAC to set (#0 to #13)> ";
+    const char *promptDAC = "Please choose a DAC to set (#0 to #17)> ";
     input = getUserInputNumericalNoDefault(promptDAC);
     if (input == "quit") return -1;
     int dac = std::stoi(input);
@@ -1117,7 +1117,10 @@ int Console::CommandSetDAC(){
 	std::cout << "NOTE: DAC set (and written to chip!). Take this message out "
 		  << "later, once this is common knowledge." << std::endl;
     }
-    if(err != 1) ErrorMessages(err);
+    if(err != 50){
+	std::cout << "SetDACandWrite returned error code: " << err << std::endl;	
+	ErrorMessages(err);
+    }
     else{
 	std::cout << "DAC " << dac 
 		  << " (" << pc->fpga->tp->GetDACName(dac) << ") of chip " << chip 
