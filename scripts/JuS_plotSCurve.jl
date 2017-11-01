@@ -13,7 +13,8 @@ end
 
 function main(chip)
 
-    path = "/home/schmidt/TOS/data/singleFrames/chip_"
+    homedir = homedir()
+    path = joinpath(homedir, "TOS/data/singleFrames/chip_")
     path = string(path, chip, "/")
     files = readdir(path)
     for file in files

@@ -42,7 +42,9 @@ function poll_new_file(fm)
     #         file = file_mod[1]
     #     end
     # end
-    path = "/home/schmidt/TOS/tmp/framedumps/"
+
+    homedir = homedir()
+    path = joinpath(homedir, "TOS/tmp/framedumps/")
     file_mod = wait(fm::FileMonitor)
     sleep(0.17)
     println(file_mod)
@@ -96,8 +98,11 @@ end
 
 function main(interactive)
 
-    path1 = "/home/schmidt/TOS/tmp/framedumps/"
-    path2 = "/home/schmidt/TOS/data/singleFrames/"
+    homedir = homedir()
+    
+    path1 = joinpath(homedir, "TOS/tmp/framedumps/")
+    path2 = joinpath(homedir, "TOS/data/singleFrames/")
+
 
     files = readdir(path1)
     

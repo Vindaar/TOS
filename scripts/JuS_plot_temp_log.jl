@@ -55,7 +55,8 @@ function get_temp_filename()
 end
 
 function get_second_temp()
-    return "/home/schmidt/log/temp_log_29_05_17.txt"
+    homedir = homedir()
+    return joinpath(homedir, "/log/temp_log_29_05_17.txt")
 end
 
 function plot_temps(fig, ax, imb1, dates1)
@@ -69,7 +70,8 @@ function plot_temps(fig, ax, imb1, dates1)
     plt[:title](title)
 
     filename = get_temp_filename()
-    path = "/home/schmidt/TOS/log/"
+    homedir = homedir()
+    path = joinpath(homedir, "TOS/log/")
     
     imb2, dates2 = read_temp_file(path, filename)
     
