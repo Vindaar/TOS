@@ -319,7 +319,6 @@ template <typename Ausgabe> int FPGA::DataFPGAPC(Ausgabe aus, unsigned short chi
 #endif
     IncomingLength=18+PLen; //added as changed above
     int NumHits=Communication2(PacketBuffer,&((*PackQueueReceive)[0][0]),1,chip); // first packet
-    std::cout << "Chip: "<<chip <<" Hits: "<< NumHits <<std::endl;
     if(NumHits < 0){
 	return NumHits;
     }
