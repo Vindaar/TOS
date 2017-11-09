@@ -253,6 +253,31 @@ void Producer::run()
 		// std::vector<int> *tmpVec  = new std::vector<int>(12288+1,0);
 		// (parent->Vbuffer)[(i % parent->BufferSize)][chip] = tmpVec;                 
 	    }
+	    else if( fadcReadout == false ){
+		// in this case we need to make sure to set the fadcParams back 
+		// to 0, as to not write the same numbers until the next FADC
+		// event happens
+
+		parent->mutexVBuffer.lock();
+
+		//fill params map
+		std::map<std::string, int> fadcParams;
+		fadcParams = parent->_hvFadcManager->GetFadcParameterMap();
+		// add current event number to params map
+		fadcParams["eventNumber"] = i;
+		
+		fadcParams["fadcTriggerClock"] = parent->_hvFadcManager->GetFadcTriggerInLastFrame();
+		// and get the corresponding clock values between scintillator events and this
+		// clock cycle
+		std::pair<unsigned short, unsigned short> scint_pair;
+		scint_pair = parent->_hvFadcManager->GetScintillatorCounters();
+		fadcParams["scint1ClockInt"] = scint_pair.first;
+		fadcParams["scint2ClockInt"] = scint_pair.second;
+
+		parent->_fadcParams = fadcParams;
+
+		parent->mutexVBuffer.unlock();
+	    }
 
 	    //if there was an fadc event: remeber to read out chip and fadc at the next event: 
 	    // if(fadcReadout) fadcReadoutNextEvent = true;
