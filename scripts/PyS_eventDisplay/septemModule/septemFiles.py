@@ -76,6 +76,29 @@ def read_zero_suppressed_data_file(filepath, header_only = False):#, out_q1):
     data = work_on_read_data(f, filepath, header_only)
     return data
 
+def read_full_matrix_data_file(filepath):
+    # this function reads a full matrix data file and returns it as
+    # a numpy array in addition to an event header, which only contains
+    # the filename as well as the full_matrix flag
+    # inputs:
+    #    filepath = path to the full matrix file to read
+    # outputs:
+    #    evHeader = dictionary containing `full_matrix_flag` as well as
+    #               filename of event
+    #    data = numpy array of 256 x 256 frame array
+    f = open(filepath, 'r').readlines()
+    evHeader = septemClasses.eventHeader(filepath)
+    evHeader.attr["full_matrix_flag"] = True
+    evHeader.attr["filepath"] = filepath
+
+    data = np.zeros((256, 256))
+    for i, line in enumerate(f):
+        # parse each line as one row of data
+        line = line.split()
+        data[i] = [float(x) for x in line]
+
+    return evHeader, data
+
 def get_temp_filename(filepath):
     # this function returns the filename (incl. full path)
     # to the temperature log, which is currently in use.
@@ -167,6 +190,10 @@ def work_on_read_data(data, filepath = None, header_only = False):
     # of the last element in the chpHeaderList to an array:
     if len(chpHeaderList) > 0:
         chpHeaderList[-1].convert_list_to_array()
+
+    # finally add a full_matrix flag to the event header, specifying that these
+    # files are zero suppressed
+    evHeader.attr["full_matrix_flag"] = False
     return [evHeader, chpHeaderList]
 
 
@@ -205,7 +232,7 @@ def create_files_from_path_fadc(folder):
     return files_fadc
 
 
-def create_files_from_path_combined(folder, eventSet, fadcSet, test = False):
+def create_files_from_path_combined(folder, eventSet, fadcSet, full_matrix = False):
     # this function removes any files which are not chip events
     # or FADC events in a folder
     # functions returns list of two lists.
@@ -215,37 +242,39 @@ def create_files_from_path_combined(folder, eventSet, fadcSet, test = False):
     # filter files by data in file and no fadc flag in filename
     n = 0
     eventFiles = []
-    files_fadc = []
 
-    
-    # we store the files for events and FADC events in a dictionary, where
-    # the key is the filename of the event, and the value is the FADC filename
-    filesDict = {}
-    for path, folder, files in scandir.walk(folder):#files:
-        for el in files:
-            if "data" in el and "fadc" not in el:
-                el = int(el.split('/')[-1].lstrip('data').rstrip('.txt'))
-                if el not in eventSet:
-                    eventSet.add(el)
-            elif "fadc" in el:
-                el = int(el.split('/')[-1].lstrip('data').rstrip('.txt-fadc'))
-                if el not in fadcSet:
-                    fadcSet.add(el)
+    # run over all files in the folder and add the FADC and event files,
+    # if they meet our requirements for the names.
+    # zero suppressed:
+    #     - extract event numbers for each type and add to set
+    # full matrix:
+    #     - append full filename if it contains data or matrix
+    for path, folder, files in scandir.walk(folder):
+        if full_matrix == False:
+            # zero suppressed frames
+            for el in files:
+                if "data" in el and "fadc" not in el:
+                    el = int(el.split('/')[-1].lstrip('data').rstrip('.txt'))
+                    if el not in eventSet:
+                        eventSet.add(el)
+                elif "fadc" in el:
+                    el = int(el.split('/')[-1].lstrip('data').rstrip('.txt-fadc'))
+                    if el not in fadcSet:
+                        fadcSet.add(el)
+        else:
+            # Full matrix frames
+            for el in files:
+                if "data" in el or "matrix" in el:
+                    eventFiles.append(el)
+                elif "fadc" in el:
+                    el = int(el.split('/')[-1].lstrip('data').rstrip('.txt-fadc'))
+                    if el not in fadcSet:
+                        fadcSet.add(el)                    
         
-    if test == True:
-        filesDict = collections.OrderedDict( sorted( filesDict.items() ) )
-
-    #print filesDict
-    #print filesDict.keys()[205]
-
-    #import sys
-    #sys.exit()
-    
-    if test == False:
-    #     return [eventFiles, files_fadc]
+    if full_matrix == False:
         return [eventSet, fadcSet]
     else:
-        return filesDict
+        return [sorted(eventFiles), fadcSet]
 
 
 def build_filename_string_from_event_number(number, fadcFlag = False):

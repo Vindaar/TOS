@@ -29,21 +29,38 @@ def refresh(ns, filepath, temp_handler):
     while ns.doRefresh == True:
         lock.acquire()
         # on first call we read the files, which are already in the folder
-        ns.eventSet, ns.fadcSet = create_files_from_path_combined(filepath,
-                                                                  ns.eventSet,
-                                                                  ns.fadcSet,
-                                                                  False)
-        ns.nfiles         = len(ns.eventSet)
-        # if no files in folder, set empty_folder to True
-        if ns.nfiles == 0:
-            ns.empty_folder = True
-            # in this case last file is 0
-            ns.last_file = 0
+        if ns.full_matrix_flag == False:
+            ns.eventSet, ns.fadcSet = create_files_from_path_combined(filepath,
+                                                                      ns.eventSet,
+                                                                      ns.fadcSet,
+                                                                      full_matrix = False)
+            ns.nfiles         = len(ns.eventSet)
+            # if no files in folder, set empty_folder to True
+            if ns.nfiles == 0:
+                ns.empty_folder = True
+                # in this case last file is 0
+                ns.last_file = 0
+            else:
+                ns.empty_folder = False
+                ns.last_file      = max(ns.eventSet)
         else:
-            ns.empty_folder = False
-            ns.last_file      = max(ns.eventSet)
-        refreshInterval   = ns.refreshInterval
+            ns.files, ns.fadcSet = create_files_from_path_combined(filepath,
+                                                                   ns.eventSet,
+                                                                   ns.fadcSet,
+                                                                   full_matrix = True)
+            # set number of files
+            ns.nfiles = len(ns.files)
+            if ns.nfiles > 0:
+                ns.empty_folder = False
+            else:
+                ns.empty_folder = True
+            ns.last_file = ns.files[-1]
+
+        # get the refresh interval as local var
+        refreshInterval   = ns.refreshInterval            
         lock.release()
+        
+        
         # get current temps (written to ns.currentTemps is new available)
         if temp_handler is not None:
             temp_handler.get_current_temps()
@@ -84,6 +101,10 @@ class WorkOnFile:
         # from the chip_suplots list we now deduce, whether we plot for a single
         # chip or a septemboard
         self.single_chip_flag = args_dict["single_chip_flag"]
+
+        # check whether we expect full matrix or zero suppressed readout frames
+        self.full_matrix_flag = args_dict["full_matrix_flag"]
+        
         # TODO: check if the following is now redundant that we include the single_chip_flag
         # in the args_dict
         # if len(self.chip_subplots) == 1:
@@ -148,6 +169,7 @@ class WorkOnFile:
                 cb_object = plt.colorbar(self.im_list[0], cax = cbaxes)
             self.fig.canvas.draw()
         except UnboundLocalError:
+            print "Warning: UnboundLocalError in init of WorkOnFile"
             print filename
 
         # and assign newly created colorbar as member variable
@@ -366,10 +388,13 @@ class WorkOnFile:
             # else, we just set self.i to i
             self.i = i
 
-        lock.acquire()
-        lst_of_files = sorted(list(self.ns.eventSet))
-        lock.release()
-        eventNumber = lst_of_files[i]
+        if self.full_matrix_flag == False:
+            lock.acquire()
+            lst_of_files = sorted(list(self.ns.eventSet))
+            lock.release()
+            eventNumber = lst_of_files[i]
+        else:
+            eventNumber = i
         self.work_on_file(eventNumber)
         
         
@@ -414,7 +439,7 @@ class WorkOnFile:
 
         # acquire lock and get necessary elements from namespace
         lock.acquire()
-        if self.ns.nfiles > 0:
+        if self.ns.nfiles > 0 and self.full_matrix_flag == False:
             # now given the index i, which corresponds to our event number
             # we need to create the filenames for the event and the FADC
             # events
@@ -426,6 +451,11 @@ class WorkOnFile:
                                                              i,
                                                              self.ns.nfiles,
                                                              fadcFlag = True)
+        elif self.ns.files > 0 and self.full_matrix_flag == True:
+            # for the full matrix frames, simply get the current frame from the
+            # list of filenames
+            filename = self.ns.files[i]
+            filenameFadc = None
         lock.release()
         # now plot septem
         if filename is not None:
@@ -439,7 +469,8 @@ class WorkOnFile:
                               self.chip_subplots,
                               self.im_list,
                               self.cb,
-                              temps)
+                              temps,
+                              full_matrix = self.full_matrix_flag)
             #if filenameFadc is not "":
             if filenameFadc is not None:
                 # only call fadc plotting function, if there is a corresponding FADC event
@@ -1010,6 +1041,8 @@ def main(args):
                         help = "Sets chip from which to determine color bar")
     parser.add_argument('--single_chip', action = 'store_true', dest = "single_chip_flag",
                         help = "Use single chip instead of Septemboard")
+    parser.add_argument('--full_matrix', action = 'store_true', dest = "full_matrix_flag",
+                        help = "Toggle to expect full matrix readout frames, instead of zero suppressed.")
     parser.add_argument('--start_iter', default = 0, type = int,
                         help = "Start at event of this index in run folder")
     parser.add_argument('--ignore_full_frames', action = 'store_true',
@@ -1076,6 +1109,16 @@ def main(args):
     ns.eventSet        = set()
     ns.fadcSet         = set()
     ns.nfiles          = 0
+    if args_dict["full_matrix_flag"] == True:
+        # set the namespace of the refresh process such that it expects
+        # full matrix frames, in effect relax the requirements on the
+        # filenames and instead of reading sets of event numbers, get a
+        # list of files, as back in the past
+        ns.full_matrix_flag = True
+        ns.files = []
+    else:
+        ns.full_matrix_flag = False
+        ns.files = None
     # and the interval, in which the thread refreshes the filelist
     ns.refreshInterval = 0.0001
     print ns

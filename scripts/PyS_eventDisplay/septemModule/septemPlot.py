@@ -5,7 +5,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from septemFiles import read_zero_suppressed_data_file
+from septemFiles import read_zero_suppressed_data_file, read_full_matrix_data_file
 from septemClasses import Fadc
 from septemMisc import add_line_to_header, convert_datetime_str_to_datetime
 from profilehooks import profile
@@ -20,7 +20,7 @@ def make_ticklabels_invisible(subplots):
             tl.set_visible(False)
 
 
-def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps = None):
+def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps = None, full_matrix = False):
     """
     function which decides between offline and online viewing based on type 
     of temps. Depending on case read either from dictionary (offline) or 
@@ -30,14 +30,23 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps
     data for the datetime from the list of temps (if existing)
     """
 
+    header_text = ""
     # create full path to file
     filepathName = os.path.join(filepath, filename)
     # and read that file
-    evHeader, chpHeaderList = read_zero_suppressed_data_file(filepathName)
-    
-    # now add the header for this event. We add it to the last axes in the list
-    # (for no special reason)
-    header_text = evHeader.get_event_header_text()
+    if full_matrix == False:
+        evHeader, chpHeaderList = read_zero_suppressed_data_file(filepathName)
+        # now add the header for this event. We add it to the last axes in the list
+        # (for no special reason)
+        header_text = evHeader.get_event_header_text()
+    else:
+        # we misuse the chpHeaderList variable name here to store the data from the
+        # full matrix frame. Horrible misuse of a dynamically typed language...
+        evHeader, chpHeaderList = read_full_matrix_data_file(filepathName)
+        header_text = add_line_to_header("", "Path", filepath)
+        header_text = add_line_to_header(header_text, "Filename", filename)
+        header_text = add_line_to_header(header_text, "Full matrix", True)
+        
     if header_text == "":
         return None
 
@@ -66,10 +75,17 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps
 #@profile
 def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list, cb):
 
+    # TODO: rewrite the plotting parts such that it is more neatly combined for
+    # full matrix and zero suppressed readout
+    
+
     # using im_list we now define a variable for the number of chips we have
     # (single or septem). That way, we can distinguish in the loop in which
     # we set the data
     nChips = len(im_list)
+
+    # determine whether we are plotting full matrix or zero suppressed frames
+    full_matrix = evHeader.attr["full_matrix_flag"] 
 
     # and remove the text symbol from before
     texts = fig.texts
@@ -90,60 +106,91 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
     hits_text = "Hits\n"
 
     plots_to_hide = range(nChips)
-    for i, chpHeader in enumerate(chpHeaderList):
-        chip_data = chpHeader.pixData
-        # now get current chip number so that we plot on to the correct chip
-        chipNum = int(chpHeader.attr["chipNumber"])
+    if full_matrix == False:
+        for i, chpHeader in enumerate(chpHeaderList):
+            chip_data = chpHeader.pixData
+            # now get current chip number so that we plot on to the correct chip
+            chipNum = int(chpHeader.attr["chipNumber"])
 
-        # using the chip number we can determine whether we still continue or stop now
-        # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
-        if chipNum > nChips:
-            # if the chip number is larger than nChips (note, not >=, because we start
-            # counting chips at 1.
-            plots_to_hide = plots_to_hide[:chipNum]
-            break
+            # using the chip number we can determine whether we still continue or stop now
+            # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
+            if chipNum > nChips:
+                # if the chip number is larger than nChips (note, not >=, because we start
+                # counting chips at 1.
+                plots_to_hide = plots_to_hide[:chipNum]
+                break
 
-        # and get the number of hits (we use numHits)
-        numHits = chpHeader.attr["numHits"] # int(np.size(chip_data))
+            # and get the number of hits (we use numHits)
+            numHits = chpHeader.attr["numHits"] # int(np.size(chip_data))
+            # use both to create the hits box
+            hits_text += "Chip #%i : %s" % (chipNum, numHits)
+            if chipNum != 7:
+                hits_text += "\n"
+            try:
+                chip_full_array = np.zeros((256, 256))
+                # now input the chip data into the image array (need to invert
+                # x and y column. imshow shows the data as row, column
+                # which means y, x coordinates
+                chip_full_array[chip_data[:,1], chip_data[:,0]] = chip_data[:,2]
+
+                # now create an image, but rather use im_list to set the correct image data
+                im_list[chipNum].set_data(chip_full_array)
+                            
+                # # now remove this chip from the plots_to_hide list
+                plots_to_hide.remove(chipNum)
+                im_list[chipNum].set_visible(True)
+
+                
+                if cb.flag == True:
+                    # before we can set the colorscale, we need to get the array, which
+                    # only contains nonzero elements
+                    data_nonzero = chip_full_array[np.nonzero(chip_full_array)]
+                    color_value  = np.percentile(data_nonzero, cb.value)
+
+                    im_list[chipNum].set_clim(0, color_value)
+                else:
+                    im_list[chipNum].set_clim(0, cb.value)
+
+                # not needed anymore
+                #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])#, vmin=0, vmax=250)
+
+            except IndexError:
+                print 'IndexError: chip', chpHeader.attr["chipNumber"], ' has no hits'
+                print chip_data
+            except TypeError:
+                print 'TypeError: chip', chpHeader.attr["chipNumber"], ' has no hits'
+    else:
+        # in this case plot full matrix frames
+        # get the full chip array for the event
+        chip_full_array = chpHeaderList
+        numHits = np.count_nonzero(chip_full_array)
+        # NOTE: we currently only support a single chip for full matrix readout
+        # might change, but set chipNum to 0
+        chipNum = 0
         # use both to create the hits box
-        hits_text += "Chip #%i : %s" % (chipNum, numHits)
-        if chipNum != 7:
-            hits_text += "\n"
-        try:
-            chip_full_array = np.zeros((256, 256))
-            # now input the chip data into the image array (need to invert
-            # x and y column. imshow shows the data as row, column
-            # which means y, x coordinates
-            chip_full_array[chip_data[:,1], chip_data[:,0]] = chip_data[:,2]
+        hits_text += "Chip #%i : %s\n" % (chipNum, numHits)
+        # now create an image, but rather use im_list to set the correct image data
+        im_list[chipNum].set_data(chip_full_array)
+                    
+        # # now remove this chip from the plots_to_hide list
+        plots_to_hide.remove(chipNum)
+        im_list[chipNum].set_visible(True)
 
-            # now create an image, but rather use im_list to set the correct image data
-            im_list[chipNum].set_data(chip_full_array)
-                        
-            # # now remove this chip from the plots_to_hide list
-            plots_to_hide.remove(chipNum)
-            im_list[chipNum].set_visible(True)
-
-            
-            if cb.flag == True:
-                # before we can set the colorscale, we need to get the array, which
-                # only contains nonzero elements
-                data_nonzero = chip_full_array[np.nonzero(chip_full_array)]
+        
+        if cb.flag == True:
+            # before we can set the colorscale, we need to get the array, which
+            # only contains nonzero elements
+            data_nonzero = chip_full_array[np.nonzero(chip_full_array)]
+            if len(data_nonzero) > 0:
                 color_value  = np.percentile(data_nonzero, cb.value)
-
-                im_list[chipNum].set_clim(0, color_value)
             else:
-                im_list[chipNum].set_clim(0, cb.value)
+                color_value  = 0
 
-            # not needed anymore
-            #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])#, vmin=0, vmax=250)
-
-        except IndexError:
-            print 'IndexError: chip', chpHeader.attr["chipNumber"], ' has no hits'
-            print chip_data
-        except TypeError:
-            print 'TypeError: chip', chpHeader.attr["chipNumber"], ' has no hits'
-
-
+            im_list[chipNum].set_clim(0, color_value)
+        else:
+            im_list[chipNum].set_clim(0, cb.value)
+        
+        
     # now create the hits box
     hits_box = fig.text(0.2, 0.9, hits_text,
                         bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
