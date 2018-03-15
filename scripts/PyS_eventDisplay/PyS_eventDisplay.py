@@ -131,6 +131,9 @@ class WorkOnFile:
         # assign the colorbar object to a member variable
         self.cb = cb
 
+        # set the color map
+        self.colormap = args_dict["colormap"]
+
         # animation related:
         self.ani_end_event_source  = None
         self.ani_end_running       = False
@@ -147,7 +150,7 @@ class WorkOnFile:
                               for i in xrange(len(self.chip_subplots))]
         # and set the colormaps for the plots
         for im in self.im_list:
-            im.set_cmap('viridis')
+            im.set_cmap(self.colormap)
 
         # now to create the colorbar
         try:
@@ -1039,6 +1042,8 @@ def main(args):
                         or relative value given""")
     parser.add_argument('--cb_chip', default = 3, type = int,
                         help = "Sets chip from which to determine color bar")
+    parser.add_argument('--colormap', default = "viridis", type = str,
+                        help = """Sets the color map to the given map""" )
     parser.add_argument('--single_chip', action = 'store_true', dest = "single_chip_flag",
                         help = "Use single chip instead of Septemboard")
     parser.add_argument('--full_matrix', action = 'store_true', dest = "full_matrix_flag",
