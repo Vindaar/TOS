@@ -21,6 +21,8 @@ from septemModule.septemMisc import add_line_to_header, get_batch_num_hours_for_
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager, Namespace, NamespaceProxy
 
+# number of pixels per dimension of a timepix chip
+NPIX = 256
 
 # create global lock on the multiprocessing
 lock = mp.Lock()
@@ -104,6 +106,10 @@ class WorkOnFile:
 
         # check whether we expect full matrix or zero suppressed readout frames
         self.full_matrix_flag = args_dict["full_matrix_flag"]
+
+        # check whether we downsample all frames by some factor, set pix_dim accordingly
+        self.downsample = int(args_dict["downsample"])
+        self.pix_dim = int(NPIX / self.downsample)
         
         # TODO: check if the following is now redundant that we include the single_chip_flag
         # in the args_dict
@@ -141,7 +147,7 @@ class WorkOnFile:
         self.ani_loop_running      = False
 
         # zero initialized numpy array
-        temp_array         = np.zeros((256, 256))
+        temp_array         = np.zeros((self.pix_dim, self.pix_dim))
         #self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0, vmax=250) for i in xrange(len(self.chip_subplots))]
         self.im_list       = [chip_subplots[i].imshow(temp_array,
                                                       interpolation='none',
@@ -473,7 +479,8 @@ class WorkOnFile:
                               self.im_list,
                               self.cb,
                               temps,
-                              full_matrix = self.full_matrix_flag)
+                              full_matrix = self.full_matrix_flag,
+                              downsample = self.downsample)
             #if filenameFadc is not "":
             if filenameFadc is not None:
                 # only call fadc plotting function, if there is a corresponding FADC event
@@ -625,7 +632,7 @@ class WorkOnFile:
         print('nEvents %i batches %i nEventsPerBatch %i' % (len(eventNumbers), nbatches, nEventsPerBatch))
 
         # create a list of numpy arrays. one array for each occupancy plot of each chip
-        chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
+        chip_arrays = np.zeros((self.septem.nChips, self.pix_dim, self.pix_dim))# for _ in xrange(self.septem.nChips)]
 
         # create namespace Create Occupancy_NameSpace
         co_ns = mp.Manager().Namespace()
@@ -794,7 +801,7 @@ class WorkOnFile:
             nEventsPerBatch = len(eventNumbers)
 
         # create a list of numpy arrays. one array for each occupancy plot of each chip
-        chip_arrays = np.zeros((self.septem.nChips, 256, 256))# for _ in xrange(self.septem.nChips)]
+        chip_arrays = np.zeros((self.septem.nChips, self.pix_dim, self.pix_dim))# for _ in xrange(self.septem.nChips)]
 
         # calculate starting point for loop
         nStart = iter_batch * nEventsPerBatch
@@ -1044,6 +1051,10 @@ def main(args):
                         help = "Sets chip from which to determine color bar")
     parser.add_argument('--colormap', default = "viridis", type = str,
                         help = """Sets the color map to the given map""" )
+    parser.add_argument('--downsample', default = 1, type = int,
+                        help = """Allows to downsample the frames by the given factor. E.g. 2 results
+                        in 128x128 frames.
+                        WARNING: may result in undefined behaviour if used together with --full_matrix argument!""")
     parser.add_argument('--single_chip', action = 'store_true', dest = "single_chip_flag",
                         help = "Use single chip instead of Septemboard")
     parser.add_argument('--full_matrix', action = 'store_true', dest = "full_matrix_flag",

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from septemFiles import read_zero_suppressed_data_file, read_full_matrix_data_file
 from septemClasses import Fadc
-from septemMisc import add_line_to_header, convert_datetime_str_to_datetime
+from septemMisc import add_line_to_header, convert_datetime_str_to_datetime, block_mean
 from profilehooks import profile
 
 
@@ -20,7 +20,8 @@ def make_ticklabels_invisible(subplots):
             tl.set_visible(False)
 
 
-def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps = None, full_matrix = False):
+def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb,
+                      temps = None, full_matrix = False, downsample = 1):
     """
     function which decides between offline and online viewing based on type 
     of temps. Depending on case read either from dictionary (offline) or 
@@ -28,6 +29,21 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps
     of None.
     It reads the file given by filename and extracts the correct temperature 
     data for the datetime from the list of temps (if existing)
+    inputs:
+     filepath: string containing the path to the file to be read
+     filename: name of the file to be read
+     fig: the matplotlib.figure object in which the images are stored
+     chip_subplots: a list of matplotlib.subplot objects (one for each chip)
+       which contain the axes and on which the matplotlib.image objects are defined
+     im_list: a list of the actual matplotlib.image objects as they were created
+       on the subplots.
+     cb: a custom colorbar object to set the colorbar to any value, define relative
+       of absolute colorbars etc.
+     temps: either a tuple or a dictionary containing temperature data for the detector
+     full_matrix: a bool determining whether we read full matrix events or zero 
+       suppressed data
+     downsample: an int of a factor by which we downsample the events before plotting
+       them
     """
 
     header_text = ""
@@ -69,11 +85,30 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb, temps
                                          "septem temp (C)",
                                          septem_temp)
 
-    plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list, cb)
+    plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list, cb, downsample)
     
             
 #@profile
-def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list, cb):
+def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
+              cb, downsample):
+    # function which performs actual plotting (i.e. updating of the data in the 
+    # images and redrawing) of the event display
+    # inputs:
+    #  evHeader: an eventHeader object, which contains the event header information,
+    #    which will be written into the text boxes
+    # chpHeaderList: a list of chipHeaderData objects, which contain the data for
+    #    for each chip
+    # header_text: the text for the box header so far, as it was created in
+    #    `plot_file_general`
+    # fig: the matplotlib.figure object in which the images are stored
+    # chip_subplots: a list of matplotlib.subplot objects (one for each chip)
+    #    which contain the axes and on which the matplotlib.image objects are defined
+    # im_list: a list of the actual matplotlib.image objects as they were created
+    #    on the subplots.
+    # cb: a custom colorbar object to set the colorbar to any value, define relative
+    #    of absolute colorbars etc.
+    # downsample: an int of a factor by which we downsample the events before plotting
+    #    them
 
     # TODO: rewrite the plotting parts such that it is more neatly combined for
     # full matrix and zero suppressed readout
@@ -134,6 +169,11 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
                 chip_full_array[chip_data[:,1], chip_data[:,0]] = chip_data[:,2]
 
                 # now create an image, but rather use im_list to set the correct image data
+
+                # apply potential downsampling
+                if downsample != 1:
+                    chip_full_array = block_mean(chip_full_array, downsample)
+                
                 im_list[chipNum].set_data(chip_full_array)
                             
                 # # now remove this chip from the plots_to_hide list

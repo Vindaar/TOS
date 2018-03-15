@@ -2,6 +2,7 @@
 import os
 from datetime import datetime
 import numpy as np
+from scipy import ndimage
 from time import sleep
 from collections import deque
 
@@ -282,3 +283,16 @@ def calc_centroid(data):
 
     return (x_mean, y_mean, energy)
     
+def block_mean(ar, fact):
+    # this function is used to downsample a 2D numpy array `ar` by a factor
+    # `fact`
+    # used to downsample 256x256 timepix frames to 128x128 for easier visibility
+    # in saved screens
+    assert isinstance(fact, int), type(fact)
+    if fact == 1: return ar
+    sx, sy = ar.shape
+    X, Y = np.ogrid[0:sx, 0:sy]
+    regions = sy/fact * (X/fact) + Y/fact
+    res = ndimage.mean(ar, labels=regions, index=np.arange(regions.max() + 1))
+    res.shape = (sx/fact, sy/fact)
+    return res
