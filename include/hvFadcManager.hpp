@@ -226,6 +226,7 @@ public:
     GroupSTRUCT *GetFlexGroupStructFromString(std::string stringIdentifier);
 
     void CheckModuleIsRamping(bool rampUpFlag);
+    bool CheckAllChannelsRamped(bool printFlag = false);
     bool CheckAllChannelsInVoltageBound();
     bool CheckToShutdown();
     bool SetAllChannelsOn();

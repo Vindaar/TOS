@@ -110,7 +110,7 @@ void hvChannel::updateChannel(){
 
 }
 
-bool hvChannel::setVoltage(float voltage){
+bool hvChannel::setVoltage(float voltage, bool printFlag){
     // we set a voltage for this channel by calling the parent function necessary
 
     bool good;
@@ -130,7 +130,9 @@ bool hvChannel::setVoltage(float voltage){
         good = false;
     }
     else{
-        std::cout << "timeout in setVoltage " << timeout << std::endl;
+	if (printFlag == true){
+	    std::cout << "timeout in setVoltage " << timeout << std::endl;
+	}
         good = true;
     }
 
@@ -231,6 +233,12 @@ void hvChannel::setVoltageBound(float voltageBound){
     _voltageBound = voltageBound;
 }
 
+float hvChannel::getVoltageBound(){
+    // in contrast to the voltage and current set / nominal functions
+    // the voltage bound in our case is simply a software bound. we check
+    // whether the voltage is good ourselves
+    return _voltageBound;
+}
 
 // these two functions get the currently set voltage and current
 float hvChannel::getVoltage(){
@@ -359,6 +367,15 @@ void hvChannel::printChannelIsOn(){
               << " " << _channelName
               << " : " << _isOn
               << std::endl;
+}
+
+void hvChannel::printVoltageBound(){
+    // this function prints the software voltage bound
+    std::cout << "#" << _channelNumber
+              << " " << _channelName
+              << " voltageBound: " << getVoltageBound()
+              << std::endl;
+
 }
 
 void hvChannel::printChannelEventStatus(){
@@ -722,8 +739,11 @@ bool hvChannel::voltageInBounds(){
     voltageMax = _voltageSet + _voltageBound;
 
     bool good = false;
-    if( (_voltageMeasured > voltageMin) &&
-        (_voltageMeasured < voltageMax) ){
+    // either if below minimum voltage, or if voltage in the bounds
+    // we accept the voltage
+    if( (_voltageMeasured < MIN_VOLTAGE) ||
+	( (_voltageMeasured > voltageMin) &&
+	  (_voltageMeasured < voltageMax) ) ){
         good = true;
     }
     else{
@@ -761,11 +781,17 @@ bool hvChannel::onVoltageControlledRamped(bool printFlag){
 
     // check is on and voltage controlled
     good  = isOn();
-    good *= isVoltageControlled();
+    //std::cout << "channel " << getChannelName() << " isOn " << _isOn << std::endl;
+    // voltage controlled is a bad indicator for channel health
+    // TODO: think about something...
+    // good *= isVoltageControlled();
+    //std::cout << "channel " << getChannelName() << " voltContr " << isVoltageControlled() << std::endl;    
     // and has finished ramping
     good *= endOfRamping();
+    //std::cout << "channel " << getChannelName() << " EoR " << endOfRamping() << std::endl;        
     // and finally also make sure our voltage is within bounds
     good *= voltageInBounds();
+    //std::cout << "channel " << getChannelName() << " voltBounds " << voltageInBounds() << std::endl;    
 
     if (printFlag == true){
         printVoltageAndCurrentMeasured();

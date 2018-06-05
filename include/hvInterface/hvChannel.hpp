@@ -8,6 +8,8 @@
 // HV macros
 // TODO: understand if necessary here as well
 #define DEFAULT_HV_SLEEP_TIME                                     10 // in milli seconds
+// minimum voltage necessary before we look at voltage bounds
+#define MIN_VOLTAGE                                               30 
 
 
 #include "const.h"
@@ -54,13 +56,14 @@ public:
     // channel when we delete the channel object
     void SetRampDownUponDelete(bool rampDownUponDelete);
 
-    bool setVoltage(float voltage);
+    bool setVoltage(float voltage, bool printFlag = true);
     bool setCurrent(float current);
 
     bool setVoltageNominal(float voltage);
     bool setCurrentNominal(float current);
     
     void setVoltageBound(float voltageBound);
+    float getVoltageBound();
     
     // get voltage and current only returns the set voltages and currents!
     float getVoltage();
@@ -96,6 +99,8 @@ public:
     void printVoltageAndCurrentMeasured();
     // function which prints the currently set nominal voltage and current
     void printVoltageCurrentNominal();
+    // function which prints the software voltage bound
+    void printVoltageBound();
     // function to print the channel status    
     void printChannelStatus();
     // function to print the channel event status
