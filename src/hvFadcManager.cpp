@@ -568,7 +568,7 @@ void hvFadcManager::InitHVForTOS(){
     // checked. In our case:
     // Channel.Bit.CurrentTrip == 1 for one channel means group shut down
     monitorTripGroup->setMode(1); 
-    monitorTripGroup->setAction("shut_module");
+    monitorTripGroup->setAction("shut_group");
 
     rampingGroup->setMonitor("is_ramping");
 
@@ -590,6 +590,10 @@ void hvFadcManager::InitHVForTOS(){
                   << "Probably will not start ramping."
                   << std::endl;
     }
+
+    // set the module ramp speed
+    std::cout << "Setting module voltage ramp speed to " << moduleVoltageRampSpeed << std::endl;
+    H_SetModuleVoltageRampSpeed(moduleVoltageRampSpeed);
 
     // and clear module event status
     good = HV_module->clearModuleEventStatusAndCheck();
@@ -1732,8 +1736,8 @@ void hvFadcManager::ReadHFMConfig(){
     baseAddress_hv = pt.get_optional<int>("General.baseAddress_hv").get_value_or(DEFAULT_BASE_ADDRESS_HV);
     // hvModule section
     setKillEnable  = pt.get_optional<bool>("HvModule.setKillEnable").get_value_or(DEFAULT_SET_KILL_ENABLE);
-    moduleVoltageRampSpeed  = pt.get_optional<int>("HvModule.moduleVoltageRampSpeed").get_value_or(DEFAULT_MODULE_VOLTAGE_RAMP_SPEED);
-    moduleCurrentRampSpeed  = pt.get_optional<int>("HvModule.moduleCurrentRampSpeed").get_value_or(DEFAULT_MODULE_CURRENT_RAMP_SPEED);
+    moduleVoltageRampSpeed  = pt.get_optional<float>("HvModule.moduleVoltageRampSpeed").get_value_or(DEFAULT_MODULE_VOLTAGE_RAMP_SPEED);
+    moduleCurrentRampSpeed  = pt.get_optional<float>("HvModule.moduleCurrentRampSpeed").get_value_or(DEFAULT_MODULE_CURRENT_RAMP_SPEED);
     checkModuleTimeInterval = pt.get_optional<int>("HvModule.checkModuleTimeInterval").get_value_or(DEFAULT_CHECK_MODULE_TIME_INTERVAL);
 
     // hvGroups
