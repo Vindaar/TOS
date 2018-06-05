@@ -624,32 +624,116 @@ void hvFadcManager::InitHVForTOS(){
     // and all should be good :)
 }
 
-
 void hvFadcManager::RampChannels(bool alreadyInBounds){
     // this function starts the ramp up of the channels
     // now set all channels to on
-    bool good = false;
-    good = SetAllChannelsOn();
-    if (good == false) return;
 
-    // create seperate thread, which loops and will be stopped, if we type stop in terminal
-    if (alreadyInBounds == false){
-        // now check if ramping started
-        bool rampUpFlag = true;
-        std::thread loop_thread(&hvFadcManager::CheckModuleIsRamping, this, rampUpFlag);
-        _loop_stop = true;
-        //loop_thread.start();
-        const char *waitingPrompt = "> ";
-        std::set<std::string> allowedStrings = {"stop", "q"};
-        std::string input;
-        input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
-        if( (input != "stop") ||
-            (input == "q") ){
-            std::cout << "setting loop stop to false" << std::endl;
-            _loop_stop = false;
-        }
-        loop_thread.join();
+    // performs a slow ramp up of the module
+    // given a set of voltages, it ramps them slowly (not by changing the
+    // ramping speed, but rather by adapting the voltages so that they are
+    // kept within a certain potential difference). The ratio of the different
+    // channels to be ramped is calculated up front and this is used to
+    // always keep the channels at the same ratio (to keep the gradient flat)
+
+    if (!alreadyInBounds){
+	// get max voltage so that we can calculate necessary ratio of all voltages
+	// get the voltage of the 
+	auto maxChannel = std::max_element(_channelList.begin(),
+						 _channelList.end());
+	const float maxVoltage = (*maxChannel)->getVoltage();
+	
+	// create a map of the current voltages (the targets we will aim for) and
+	// the scaling factors needed for each channel based on target voltage and
+	// max voltage
+	std::map<int, float> scalingRatios;
+	std::for_each(
+	    _channelList.begin(),
+	    _channelList.end(),
+	    [&scalingRatios, maxVoltage](hvChannel *ptrChannel){
+		const int number = ptrChannel->getChannelNumber();
+		const float voltage = ptrChannel->getVoltage();
+		const float ratio = float(voltage) / float(maxVoltage);
+		scalingRatios.insert(std::make_pair(number, ratio));
+	    } );
+	
+	// number of steps we use to ramp the voltage
+	// TODO: move this to the ini file!
+	const int nSteps = 150;
+
+	// set the trip current to a "ramping current" by multiplying it by 10
+	const int currentMultiplier = 10;
+	std::for_each(
+	    _channelList.begin(),
+	    _channelList.end(),
+	    [currentMultiplier](hvChannel *ptrChannel){
+		const float current = ptrChannel->getCurrent();
+		ptrChannel->setCurrent(current * currentMultiplier);
+	    } );
+	
+
+	for(int i = int(nSteps / 10); i <= nSteps; i++){
+	    // set the voltages of all channels to the current iteration
+	    // wait for all channels to be in voltage bound
+	    // once done, continue
+	    std::for_each(
+		_channelList.begin(),
+		_channelList.end(),
+		[&scalingRatios, i, nSteps, maxVoltage](hvChannel *ptrChannel){
+		    const int chNumber = ptrChannel->getChannelNumber();
+		    const float voltage = maxVoltage * scalingRatios[chNumber] * (i / float(nSteps));
+		    ptrChannel->setVoltage(voltage, false);
+		} );
+
+	    if (i == int(nSteps / 10)){
+		// in the first iteration set all channels to on
+		bool good = false;
+		good = SetAllChannelsOn();
+		if (good == false) return;
+	    }
+
+	    // call check hv module to print current voltages
+	    H_CheckHVModuleIsGood(true);
+	    
+	    while(!CheckAllChannelsRamped(false)){
+		H_CheckHVModuleIsGood(true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		continue;
+	    }
+	    // once it is done, we continue to the next voltage
+	}
+	
+	// set the trip current back to a "operating current"
+	std::for_each(
+	    _channelList.begin(),
+	    _channelList.end(),
+	    [currentMultiplier](hvChannel *ptrChannel){
+		const float current = ptrChannel->getCurrent();
+		ptrChannel->setCurrent(current / currentMultiplier);
+	    } );
+
     }
+
+    // TODO: implement the above in a separate function, which will also be called for
+    // the ramp down. This can then be done in a separate thread as well.
+    
+    // // create seperate thread, which loops and will be stopped, if we type stop in terminal
+    // if (alreadyInBounds == false){
+    //     // now check if ramping started
+    //     bool rampUpFlag = true;
+    //     std::thread loop_thread(&hvFadcManager::CheckModuleIsRamping, this, rampUpFlag);
+    //     _loop_stop = true;
+    //     //loop_thread.start();
+    //     const char *waitingPrompt = "> ";
+    //     std::set<std::string> allowedStrings = {"stop", "q"};
+    //     std::string input;
+    //     input = getUserInputNonNumericalNoDefault(waitingPrompt, &allowedStrings);
+    //     if( (input != "stop") ||
+    //         (input == "q") ){
+    //         std::cout << "setting loop stop to false" << std::endl;
+    //         _loop_stop = false;
+    //     }
+    //     loop_thread.join();
+    // }
 
 }
 
@@ -700,6 +784,23 @@ void hvFadcManager::CheckModuleIsRamping(bool rampUpFlag){
 
     std::cout << "timeout in CheckModuleIsRamping " << timeout << std::endl;
  
+}
+
+bool hvFadcManager::CheckAllChannelsRamped(bool printFlag){
+    // the function loops over all channels in _channelList and calls
+    // the onVoltageControlledRamped function of hvChannel, thus checking
+    // whether all channels are turned On, voltage controlled, ended ramping
+    // and within voltage bounds
+    bool good = true;
+
+    std::for_each(
+	_channelList.begin(),
+	_channelList.end(),
+	[&good, printFlag](hvChannel *ptrChannel){
+	    good *= ptrChannel->onVoltageControlledRamped(printFlag);
+	} );
+    
+    return good;
 }
 
 bool hvFadcManager::CheckAllChannelsInVoltageBound(){
@@ -976,6 +1077,8 @@ void hvFadcManager::ShutDownHFMForTOS(){
 
     if(toShutdown == true){
         // TODO: rewrite the shutdown function!!!
+	std::cout << "Shutdown currently not proplerly implemented. Use isegControl" << std::endl;
+	return;
 
         std::cout << std::endl << "Starting shutdown of HV for TOS" << std::endl << std::endl;
         
