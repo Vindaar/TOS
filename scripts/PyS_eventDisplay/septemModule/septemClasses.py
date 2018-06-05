@@ -245,16 +245,22 @@ class eventHeader:
         else:
             fadcTrClock = ""
 
-        veto_szint = "Veto scint clock : ".ljust(nFill)
-        veto_szint += self.attr["szint1ClockInt"] + "\n"
-        sipm = "SiPM clock : ".ljust(nFill)
-        sipm += self.attr["szint2ClockInt"] + "\n"
-        
+        # veto_szint = "Veto scint clock : ".ljust(nFill)
+        # veto_szint += self.attr["szint1ClockInt"] + "\n"
+        # sipm = "SiPM clock : ".ljust(nFill)
+        # sipm += self.attr["szint2ClockInt"] + "\n"
+        szint1 = "Szint1 clock : ".ljust(nFill)
+        szint1 += self.attr["szint1ClockInt"] + "\n"
+            
+        szint2 = "Szint2 clock : ".ljust(nFill)
+        szint2 += self.attr["szint2ClockInt"] + "\n"
+
         fname = "Filename : ".ljust(nFill)
         fname += self.filename
 
-        header = runNum + event + date + shutter + fadcTrig + fadcTrClock + veto_szint + sipm + fname
-          
+        # header = runNum + event + date + shutter + fadcTrig + fadcTrClock + veto_szint + sipm + fname
+        header = runNum + event + date + shutter + fadcTrig + fadcTrClock + szint1 + szint2 + fname
+
         return header
 
     def get_run_header_text(self):
