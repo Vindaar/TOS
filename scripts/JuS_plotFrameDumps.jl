@@ -70,7 +70,8 @@ function draw_new_frame(fig, cb, image, frame, file)
     fig[:text](0.4, 0.9, file)
     # scale the colorbar
     #image[:autoscale]()
-    image[:set_clim](0, 100)
+    println(maximum(frame))
+    image[:set_clim](0, 10)
     cb[:update_normal](image)
     fig[:canvas][:draw]()
     #sleep(1)
@@ -118,9 +119,9 @@ function main(interactive)
     if length(files) > 0
         files = sort(files)
         frame = get_frame_from_file(path1, files[1])
-        image = subplot[:imshow](frame, interpolation="none", axes=subplot)
+        image = subplot[:imshow](frame, interpolation="none", axes=subplot, cmap="viridis")
     else
-        image = subplot[:imshow](zeros(256,256), interpolation="none", axes=subplot)
+        image = subplot[:imshow](zeros(256,256), interpolation="none", axes=subplot, cmap="viridis")
     end
 
 
