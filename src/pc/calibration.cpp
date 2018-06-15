@@ -1,4 +1,4 @@
-/* This file contains all calibration functions, which are already rewritten using
+ /* This file contains all calibration functions, which are already rewritten using
    FrameArrays. Currently TO calibration and SCurve
    Part of the PC class.
  */
@@ -40,8 +40,8 @@ void PC::AllChipsSetUniformMatrix(std::set<unsigned short> chip_set,
             // set mask and test pulse
             fpga->tp->Spacing_row(       step, pixels_per_column, chip);
             fpga->tp->Spacing_row_TPulse(step, pixels_per_column, chip);
-	    //fpga->tp->Spacing_row(       0, 256, chip);
-            //fpga->tp->Spacing_row_TPulse(0, 256, chip);
+	    // fpga->tp->Spacing_row(       0, 256, chip);
+            // fpga->tp->Spacing_row_TPulse(0, 256, chip);
         }
         // now load the correct threshold.txt for each chip
         fpga->tp->LoadThresholdFromFile(GetThresholdFileName(chip), chip);
@@ -276,7 +276,14 @@ void PC::AllChipsSingleStepCtpr(std::set<unsigned short> chip_set,
 	//     value needs to be 1 larger than the offset one wants, also taking
 	//     into account that an offset of CTPR == 32 should not overflow
 	unsigned int CTPRval = 0;
-	CTPRval = 1 << ((CTPR + 1) % 32);
+	// the following line is correct, before the preload value was fixed in the
+	// TOF (i.e. before CAST_takeout_fine_preload)
+	// CTPRval = 1 << ((CTPR + 1) % 32);
+	// with this fixed, we now don't have to shift by 1 anymore
+	CTPRval = 1 << (CTPR % 32);
+	// the next line can be used as a workaround, in case we still don't see
+	// any test pulses, since it simply activates all columns
+	// CTPRval = 4294967295;
         // and set the CTPR DAC to that value
         fpga->tp->SetDAC(14, chip, CTPRval);
 
