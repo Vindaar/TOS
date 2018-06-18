@@ -357,6 +357,11 @@ class Fadc:
 
         self.pedestalDefaultPath = "../../data/pedestalRuns/pedestalRun000042_1_182143774.txt-fadc"
 
+        # init the FADC flags as False
+        self.pedestalApplied        = False
+        self.temporalApplied        = False
+        self.convertedTicksToCharge = False
+
         # now apply the pedestal run
         self.applyPedestalRun()
 
@@ -369,10 +374,6 @@ class Fadc:
 
         # and finally convert ticks to V
         self.convertFadcTicksToCharge()
-
-        self.pedestalApplied        = False
-        self.temporalApplied        = False
-        self.convertedTicksToCharge = False
         
     def getChannelsFromFadcArray(self):
         # this function splits the data read from the data file into the
