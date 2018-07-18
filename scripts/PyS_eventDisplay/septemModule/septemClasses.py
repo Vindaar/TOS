@@ -453,6 +453,8 @@ class Fadc:
 
         # calculate the number of indices to roll based on trigger record ans post trigger
         self.nRoll = (self.trigger_rec - self.posttrig) * 20
+        #self.nRoll = ((self.posttrig + 128 + 1 - self.trigger_rec) % 128) * 20
+        #print "nRoll is ", self.nRoll
         print("trig rec, posttrig, roll ", self.trigger_rec, self.posttrig, self.nRoll)
 
         # and roll each channel array
