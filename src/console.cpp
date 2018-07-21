@@ -1825,47 +1825,39 @@ int Console::CommandDoTHSopt(){
 	}
     }
     short ths = 255;
-    std::string ein2="";
     std::cout << "Set start value for ths from 20 to 255 (lower only if you are "
 	      << "sure that best ths is near that value) " 
 	      << std::endl;
-    ein2 = getUserInput(_prompt);
-    if (ein2 == "quit") return -1;
-    if(ein2==""){ths=127;}
+    std::set<std::string> allowedValues;
+    for(int i = 20; i < 256; i++) allowedValues.insert(std::to_string(i));
+    input = getUserInputNumericalNoDefault(_prompt, allowedValues);
+    if (input == "quit") return -1;
     else{
-	ths=(unsigned short) atoi(ein2.data());
+	ths = std::stoi(input);
     }
     short ext_coarse = 0;
-    std::string ein3 = "";
     std::cout << " Do you want to use extended coarse thl range (coarse 6 and 8 "
 	      << "in addition to 7)? (1=yes, 0=no) " 
 	      << std::endl;
-    ein3 = getUserInput(_prompt);
-    if (ein3 == "quit") return -1;
-    if(ein3==""){ext_coarse=0;}
-    else{
-	ext_coarse=(unsigned short) atoi(ein3.data());
+    input = getUserInputNonNumericalNoDefault(_prompt, &allowedStrings);
+    if (input == "quit") return -1;
+    else if (input == "yes"){
+	ext_coarse = 1;
     }
+    else{
+	ext_coarse = 0;
+    }
+
     short max_thl = 1023;
     short min_thl = 0;
-    if (ext_coarse==0){
-	std::string ein4="";
-	std::cout << " Use upper and lower thl bound? Then set upper first, then "
-		  << "lower. Default is 1023 and 0. " 
-		  << std::endl;
-	ein4 = getUserInput(_prompt);
-	if (ein4 == "quit") return -1;
-	if(ein4==""){max_thl = 1023;}
-	else{
-	    max_thl=(unsigned short) atoi(ein4.data());
-	}
-	std::string ein5="";
-	ein5 = getUserInput(_prompt);
-	if (ein5 == "quit") return -1;
-	if(ein5==""){min_thl = 0;}
-	else{
-	    min_thl=(unsigned short) atoi(ein5.data());
-	}
+    if (ext_coarse == 0){
+	// threshold boundary seleection
+	std::pair<int, int> threshold_boundaries;
+	threshold_boundaries = THLBoundarySelection();
+	if(threshold_boundaries.first  == 0 &&
+	   threshold_boundaries.second == 0) return -1;
+        min_thl = threshold_boundaries.first;
+        max_thl = threshold_boundaries.first;	
     }
     for (auto chip : chip_set){
 	pc->DoTHSopt(doTHeq, pix_per_col_THeq, chip, ths, ext_coarse, max_thl, min_thl);
