@@ -1306,6 +1306,17 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, int NumHits){
 #if DEBUG==2
     std::cout<<"Enter FPGA::SaveData(array)"<<std::endl;
 #endif
+    // initialize the whole array to zero to be sure
+    // NOTE: this is done to make sure, even if the user hands a FrameArray, which
+    //       was used before that the data makes sense. Important, because data will
+    //       be set in pixel_data by ADDING individual bits!
+    for(std::size_t y = 0; y < pixel_data->size(); ++y){
+	for(std::size_t x = 0; x < (*pixel_data)[x].size(); ++x){
+	    (*pixel_data)[x][y] = 0;
+	}
+    }
+
+    
     int byte;
     int packet = 0;
     int Hits;
@@ -1345,6 +1356,7 @@ int FPGA::SaveData(FrameArray<int> *pixel_data, int NumHits){
 	}
     }
     //std::cout << "pixel 102 43   has "<< pix[102][43]<<" hits"<< std::endl;
+
     return 0;
 }
 

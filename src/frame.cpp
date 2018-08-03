@@ -4,6 +4,9 @@
 #include "frame.hpp"
 #include "helper_functions.hpp"
 
+// include assert to check for pixel value being < 11810
+#include <cassert>
+
 Frame::Frame(): 
     _pix_per_dimension(PIXPD),
     _LFSR_set(false)
@@ -43,6 +46,10 @@ FrameArray<int> Frame::GetPixelData(){
     return _pixel_data;
 }
 
+FrameArray<bool> Frame::GetPixelSet(){
+    return _pixel_set;
+}
+
 void Frame::ResetMemberVariables(){
     // this function resets, i.e. sets to zero, all member variables
 
@@ -50,6 +57,7 @@ void Frame::ResetMemberVariables(){
     for(std::size_t x = 0; x < _pix_per_dimension; x++){
 	for(std::size_t y = 0; y < _pix_per_dimension; y++){
 	    _pixel_data[x][y] = 0;
+	    _pixel_set[x][y]  = false;
 	    _mask_data[x][y]  = false;
 	}
     }
@@ -68,6 +76,7 @@ void Frame::ResetLastPFrameVariables(){
     _lastPFrameSum      = 0;
     _lastPFrameMean     = 0.0;
     _lastPFrameHits     = 0;
+    _lastPFrameSet      = 0;
     _lastPFrameVariance = 0.0;
 }
 
@@ -76,6 +85,7 @@ void Frame::ResetFullFrameVariables(){
     _fullFrameSum      = 0;
     _fullFrameMean     = 0.0;
     _fullFrameHits     = 0;
+    _fullFrameSet      = 0;
     _fullFrameVariance = 0.0;
 }
 
@@ -83,14 +93,16 @@ void Frame::SetFrame(FrameArray<int>& pixel_data){
     // set the pixel_data of this Frame object to the pixel data given to
     // it by copying it
 
-    // for(int x = 0; x < _pix_per_dimension; x++){
-    // 	for(int y = 0; y < _pix_per_dimension; y++){
-    // 	    // note: IT MIGHT BE that due to the stupidity that is TOS
-    // 	    // one might need to reverse the ordering of x and y for the 
-    // 	    // pixel_data array (since Michael used them the other way round :/)
-    // 	    _pixel_data[x][y] = pixel_data[x][y];
-    // 	}
-    // }
+    for(std::size_t x = 0; x < _pix_per_dimension; x++){
+    	for(std::size_t y = 0; y < _pix_per_dimension; y++){
+    	    // note: IT MIGHT BE that due to the stupidity that is TOS
+    	    // one might need to reverse the ordering of x and y for the 
+    	    // pixel_data array (since Michael used them the other way round :/)
+    	    _pixel_set[x][y] = true;
+	    // increase number of set pixels by 1
+	    _fullFrameSet++;
+    	}
+    }
 
     // assign pixel_data given to member variable (copy the content)
     _pixel_data = pixel_data;
@@ -105,7 +117,9 @@ void Frame::StackFrame(FrameArray<int> pixel_data){
 	    // note: IT MIGHT BE that due to the stupidity that is TOS
 	    // one might need to reverse the ordering of x and y for the 
 	    // pixel_data array (since Michael used them the other way round :/)
-	    _pixel_data[x][y] += pixel_data[x][y];	    
+	    _pixel_data[x][y] += pixel_data[x][y];
+	    // set this pixel as set if it wasn't already
+	    _pixel_set[x][y] = true;
 	}
     }
 }
@@ -145,8 +159,11 @@ void Frame::SetPartialFrame(FrameArray<int> pixel_data,
 				 y_start,
 				 y_step_size,
 				 convert_from_LFSR);
-    
+
+    std::cout << "var map " << var_map["mean"] << std::endl;
+
     _lastPFrameHits     = var_map["hits"];
+    _lastPFrameSet      = var_map["set"];    
     _lastPFrameSum      = var_map["sum"];
     _lastPFrameMean     = var_map["mean"];
     _lastPFrameVariance = var_map["var"];
@@ -270,6 +287,7 @@ void Frame::CalcFullFrameVars(int x_offset){
     var_map = CalcSumHitsMeanVar(_pixel_data, false, x_offset);
     
     _fullFrameHits     = var_map["hits"];
+    _fullFrameSet      = var_map["set"];
     _fullFrameSum      = var_map["sum"];
     _fullFrameMean     = var_map["mean"];
     _fullFrameVariance = var_map["var"];
@@ -290,6 +308,7 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
     // this function performs the actual calculation of mean, sum, hits, variance
     // of (parts) of a frame array
     int sum  = 0;
+    int set  = 0;
     int hits = 0;
     int pix_value = 0;
     double mean = 0.0;
@@ -313,21 +332,39 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
 	    }
 
 	    // NOTE: left in here for now to debug CTPR stupidity with shifts etc
-	    // if (pix_value > 900){
-	    // 	std::cout << "pix value is over 900 " << x << "\t" << y << std::endl;
+	    // if (pix_value > 12000){
+	    //  	std::cout << "pix value is over 900 " << x << "\t" << y << std::endl;
+	    // 	std::cout << "mean is " <<  mean << " for pix value " << pix_value
+	    // 		  << " at pos " << x << " / " << y << std::endl;
 	    // }
+	    assert(pix_value <= ignore_max_value);
+	    //if (pFrameFlag == true){
+	    //  std::cout << "pix value " << pix_value << std::endl;
+	    //}
 
-	    if( (pix_value != 0) &&
+	    if( ( ((pFrameFlag == true) && (pix_value != 0)) ||
+		  ((pFrameFlag == false) && (_pixel_set[x][y] == true)) ) &&
 		(pix_value != ignore_max_value) &&
 		(_mask_data[x][y] == false) ){
+		// if pFrameFlag is true we set a partial frame: in that case we wish to
+		// have only pixels, which are 0
+		// if pFrameFlag is false we calculate full frame variables. In that case
+		// it's fine, if a pixel value is 0, we only care that the pixel was
+		// set at some point (even if to 0 by initialization!)
 		double delta  = 0;
 		double delta2 = 0;
-		hits++;
+		if (pix_value > 0){
+		    hits++;
+		}
+		// increase number of set pixels by 1 regardless of value
+		set++;
 		delta  = pix_value - mean;
-		mean  += delta / hits;
+		// we use number of set pixels instead of actual hits for calculation
+		// of mean!
+		mean  += delta / double(set);
 		delta2 = pix_value - mean;
 		M2    += delta * delta2;
-
+		
 		sum += pix_value;
 		if (pFrameFlag == true){
 		    // in case we run over a partial frame, we want to set the 
@@ -335,13 +372,20 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
 		    _pixel_data[x][y] = pix_value;
 		}
 	    }
+	    if (pFrameFlag == true){
+		// in case we run over a partial frame, we want to set the 
+		// as `set` pixels, i.e. their values are written (even in case they
+		// were 0!)
+		_pixel_set[x][y] = true;
+	    }
 	}
     }
 
-    if(hits > 1){
+    // use number of set pixels as basis for calculation of variance
+    if(set > 1){
 	// mean is already calculated
 	// calculate variance
-	var = M2 / (hits - 1);	
+	var = M2 / (set - 1);	
     }
     else{
 	var = 0;
@@ -363,6 +407,7 @@ std::map<std::string, double> Frame::CalcSumHitsMeanVar(FrameArray<int> pixel_da
     std::map<std::string, double> var_map;
 
     var_map["sum"]  = sum;
+    var_map["set"]  = set;    
     var_map["hits"] = hits;
     var_map["mean"] = mean;
     var_map["var"]  = var;
@@ -449,7 +494,12 @@ int Frame::GetLastPFrameHits(){
     return _lastPFrameHits;
 }
 
-int Frame::GetLastPFrameMean(){
+int Frame::GetLastPFrameSet(){
+    // returns the number of pixels set in the last partial frame
+    return _lastPFrameSet;
+}
+
+double Frame::GetLastPFrameMean(){
     // returns the mean of the last partial frame, which was set
     return _lastPFrameMean;
 }
@@ -459,7 +509,7 @@ int Frame::GetLastPFrameSum(){
     return _lastPFrameSum;
 }
 
-int Frame::GetLastPFrameVariance(){
+double Frame::GetLastPFrameVariance(){
     // returns the variance of the last partial frame, which was set
     return _lastPFrameVariance;
 }
@@ -469,7 +519,7 @@ int Frame::GetFullFrameHits(){
     return _fullFrameHits;
 }
 
-int Frame::GetFullFrameMean(){
+double Frame::GetFullFrameMean(){
     // returns the mean of the last partial frame, which was set
     return _fullFrameMean;
 }
@@ -479,7 +529,12 @@ int Frame::GetFullFrameSum(){
     return _fullFrameSum;
 }
 
-int Frame::GetFullFrameVariance(){
+int Frame::GetFullFrameSet(){
+    // returns the number of pixels set on the whole frame
+    return _fullFrameSet;
+}
+
+double Frame::GetFullFrameVariance(){
     // returns the variance of the last partial frame, which was set
     return _fullFrameVariance;
 }

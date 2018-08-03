@@ -89,6 +89,7 @@ void PC::SingleChipReadoutCalc(int chip,
     //       the data, which is to be added to the frame array of the current chip
     // this function calculates the variables needed for TOCalib based on the
     // zero suppressed readout of a single chip with spacing in x and y direction
+    int set  = 0;
     int sum  = 0;
     int hits = 0;
     double mean = 0.0;
@@ -155,7 +156,7 @@ void PC::SingleChipReadoutCalc(int chip,
 	      << " x_step_size " << 32 
 	      << " y_step_size " << y_step_size
 	      << std::endl;
-
+    
     (*frame_map)[chip].SetPartialFrame(pixel_data,
     				       CTPR,
     				       32,
@@ -165,6 +166,7 @@ void PC::SingleChipReadoutCalc(int chip,
 
     // and get the sum, mean and hits values form this partial frame
     sum  = (*frame_map)[chip].GetLastPFrameSum();
+    set  = (*frame_map)[chip].GetLastPFrameSet();    
     hits = (*frame_map)[chip].GetLastPFrameHits();
     mean = (*frame_map)[chip].GetLastPFrameMean();
     var  = (*frame_map)[chip].GetLastPFrameVariance();
@@ -199,6 +201,7 @@ void PC::SingleChipReadoutCalc(int chip,
               << "CTPR "     << CTPR  << "\t"
               << "mean "     << mean  << "\t"
               << "hits "     << hits  << "\t"
+              << "#set "     << set   << "\t"	
               << "sum "      << sum   << "\t"
     	      << "variance " << var   << "\t"
     	      << "std "      << std

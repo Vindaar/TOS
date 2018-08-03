@@ -34,6 +34,7 @@ public:
     ~Frame();
 
     FrameArray<int> GetPixelData();
+    FrameArray<bool> GetPixelSet();    
 
     // --------------------------------------------------
     // functions dealing with frames
@@ -120,12 +121,14 @@ public:
     // sum, hit and mean values
     int GetLastPFrameSum();
     int GetLastPFrameHits();
-    int GetLastPFrameMean();
-    int GetLastPFrameVariance();
+    int GetLastPFrameSet();
+    double GetLastPFrameMean();
+    double GetLastPFrameVariance();
     int GetFullFrameSum();
     int GetFullFrameHits();
-    int GetFullFrameMean();
-    int GetFullFrameVariance();
+    int GetFullFrameSet();
+    double GetFullFrameMean();
+    double GetFullFrameVariance();
 
 
     // NOTE: THIS IS SUPPOSED TO BE IN PRIVATE. HERE FOR DEBUGGING. IF YOU
@@ -162,6 +165,10 @@ private:
     // however, gcc gives a warning about it
     // the 2D vector, which contains the pixel data
     FrameArray<int>  _pixel_data{};
+    // an array, which contains all pixels, which have been set during
+    // several successive `SetPartialFrame` calls, to later be able during
+    // CalcFullFrameVars to check all pixels, which were actually set
+    FrameArray<bool> _pixel_set{};
     // 2D mask array
     FrameArray<bool> _mask_data{};
     // LFSR look up table for full frame readout (pseudo random number counting)
@@ -173,12 +180,16 @@ private:
     int _fullFrameSum;
     double _fullFrameMean;
     int _fullFrameHits;
+    // number of pixels set in the total frame (cf _pixel_set)
+    int _fullFrameSet;
     double _fullFrameVariance;
     
     // last partial frame variables
     int _lastPFrameSum;
     double _lastPFrameMean;
     int _lastPFrameHits;
+    // number of pixels set in the last partial frame (cf _pixel_set)
+    int _lastPFrameSet;
     double _lastPFrameVariance;
 
     // VARIABLES DEPRECATED
