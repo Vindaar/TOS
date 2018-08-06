@@ -95,12 +95,29 @@ public:
     // TODO: HV_FADC_Obj
     int DoDACScan(int DACstoScan, unsigned short chip);
 
-    int DoTHLScan(unsigned short chip,
-		  std::pair<int, int> coarse_boundaries,
-		  std::pair<int, int> threshold_boundaries,
-		  std::string shutter_range,
-		  std::string shutter_time,
+    std::map<int, int> THLScanImpl(const unsigned short chip,
+				   const int coarse,
+				   const std::pair<int, int> threshold_boundaries,
+				   const std::string shutter_range,
+				   const std::string shutter_time,
+				   std::atomic_bool *loop_stop);
+
+    // helper proc to get rough value for the threshold of a THL scan
+    int CalculateThreshold(std::map<int, int> countMap);
+
+    int DoTHLScan(const unsigned short chip,
+		  const std::pair<int, int> threshold_boundaries,
+		  const std::string shutter_range,
+		  const std::string shutter_time,
 		  std::atomic_bool *loop_stop);
+
+
+    int DoRawTHLScan(const unsigned short chip,
+		     const std::pair<int, int> coarse_boundaries,
+		     const std::pair<int, int> threshold_boundaries,
+		     const std::string shutter_range,
+		     const std::string shutter_time,
+		     std::atomic_bool *loop_stop);
     
     int SCurveSingleTHL(unsigned short thl, unsigned short chip, int time, int step, int pulse);
     int DoSCurveScan(unsigned short voltage,int time, unsigned short startTHL[9], unsigned short stopTHL[9], unsigned short offset);

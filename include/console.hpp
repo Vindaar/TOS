@@ -161,11 +161,17 @@ private:
     int CommandTHLScan();
     // the actual THL function, which is run in a separate thread
     void RunTHLScan(std::set<unsigned short> chip_set,
-		    std::pair<int, int> coarse_boundaries,
 		    std::pair<int, int> threshold_boundaries,
 		    std::string shutter_range,
 		    std::string shutter_time,
 		    std::atomic_bool *loop_stop);
+    // void RunRawTHLScan(std::set<unsigned short> chip_set,
+    // 		    std::pair<int, int> coarse_boundaries,
+    // 		    std::pair<int, int> threshold_boundaries,
+    // 		    std::string shutter_range,
+    // 		    std::string shutter_time,
+    // 		    std::atomic_bool *loop_stop);
+    
     
     void CommandSCurve();
     int CommandSCurveOld();

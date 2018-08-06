@@ -1413,7 +1413,6 @@ int Console::CommandDACScan(){
 }
 
 void Console::RunTHLScan(std::set<unsigned short> chip_set,
-			 std::pair<int, int> coarse_boundaries,
 			 std::pair<int, int> threshold_boundaries,
 			 std::string shutter_range,
 			 std::string shutter_time,			 
@@ -1422,7 +1421,6 @@ void Console::RunTHLScan(std::set<unsigned short> chip_set,
     // in this case perform for all chips
     for (auto chip : chip_set){
 	pc->DoTHLScan(chip,
-		      coarse_boundaries,
 		      threshold_boundaries,
 		      shutter_range,
 		      shutter_time,
@@ -1470,7 +1468,6 @@ int Console::CommandTHLScan(){
     std::thread loop_thread(&Console::RunTHLScan,
 			    this,
 			    chip_set,
-			    coarse_boundaries,
 			    threshold_boundaries,
 			    shutter_range,
 			    shutter_time,
