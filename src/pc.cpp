@@ -481,22 +481,22 @@ int PC::CalculateThreshold(std::map<int, int> countMap){
 
     int zeroCounts = 0;
     bool foundNoisePeak = false;
-    float noisyPixels = 0;
+    int noisyPixels = 0;
     auto endIter = countMap.end();
     for(int i = 0; i < 10; i++){
 	noisyPixels += endIter->second;
 	--endIter;
     }
     // div by 10 again, cast to int to get rough mean (if pixels noisy, all vals
-    // should be the same)
-    noisyPixels /= 10;
+    // should be the same). Add 1 to have an upper bound
+    noisyPixels = round(noisyPixels / 10 + 1.0);
     
     for(auto it = countMap.begin(); it != countMap.end(); ++it){
 	int thl = it->first;
 	int count = it->second;
 	//std::cout << "Current THL " << thl << "\t count " << count
 	//          << " \t zeros " << zeroCounts << std::endl;
-	if (count == noisyPixels && foundNoisePeak){
+	if (count <= noisyPixels && foundNoisePeak){
 	    // found 0 value after 4096 plateau
 	    zeroCounts++;
 	}
