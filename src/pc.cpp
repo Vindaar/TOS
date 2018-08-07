@@ -390,9 +390,11 @@ std::map<int, int> PC::THLScanImpl(const unsigned short chip,
 	// start by setting all chips to THL value of 500
 	fpga->tp->SetDAC(6, chip, 500);	
     }
-
-    fpga->tp->LoadFSRFromFile(GetFSRFileName(chip), chip);
+    // write other chip's dacs
+    fpga->WriteReadFSR();
+    fpga->WriteReadFSR();    
     
+    fpga->tp->LoadFSRFromFile(GetFSRFileName(chip), chip);
 
     std::fstream thlStream;
     std::string filename;
@@ -478,21 +480,41 @@ int PC::CalculateThreshold(std::map<int, int> countMap){
     // We search for the THL value where we have 5 consecutive 0 THL bins
 
     int zeroCounts = 0;
+    bool foundNoisePeak = false;
+    float noisyPixels = 0;
+    auto endIter = countMap.end();
+    for(int i = 0; i < 10; i++){
+	noisyPixels += endIter->second;
+	--endIter;
+    }
+    // div by 10 again, cast to int to get rough mean (if pixels noisy, all vals
+    // should be the same)
+    noisyPixels /= 10;
+    
     for(auto it = countMap.begin(); it != countMap.end(); ++it){
 	int thl = it->first;
 	int count = it->second;
-	if (count == 0){
+	//std::cout << "Current THL " << thl << "\t count " << count
+	//          << " \t zeros " << zeroCounts << std::endl;
+	if (count == noisyPixels && foundNoisePeak){
 	    // found 0 value after 4096 plateau
 	    zeroCounts++;
 	}
-	else if ((count > 0) && (zeroCounts > 0)){
+	else if ((count > noisyPixels) && (zeroCounts > 0)){
 	    // found THL value with more than 0 counts after 0 plateau began
 	    zeroCounts = 0;
 	}
-	else if (zeroCounts == 5){
+
+	// check if we can stop
+	if (zeroCounts == 5){
 	    // if we counted to 5, we found 5 successive 0 values. Good
 	    // as a rough threshold.
 	    return thl;
+	}
+
+	// check whether we are before the noise peak
+	if (!foundNoisePeak && count > noisyPixels){
+	    foundNoisePeak = true;
 	}
     }
 
