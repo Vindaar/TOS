@@ -59,10 +59,10 @@ def refresh(ns, filepath, temp_handler):
             ns.last_file = ns.files[-1]
 
         # get the refresh interval as local var
-        refreshInterval   = ns.refreshInterval            
+        refreshInterval   = ns.refreshInterval
         lock.release()
-        
-        
+
+
         # get current temps (written to ns.currentTemps is new available)
         if temp_handler is not None:
             temp_handler.get_current_temps()
@@ -81,13 +81,13 @@ def refresh(ns, filepath, temp_handler):
 # class which contains all necessary functions to work on the matplotlib graph
 class WorkOnFile:
 
-    def __init__(self, 
-                 filepath, 
-                 figure, 
-                 septem, 
-                 chip_subplots, 
-                 fadcPlot, 
-                 ns, 
+    def __init__(self,
+                 filepath,
+                 figure,
+                 septem,
+                 chip_subplots,
+                 fadcPlot,
+                 ns,
                  cb,
                  args_dict):
         self.filepath         = filepath
@@ -110,7 +110,7 @@ class WorkOnFile:
         # check whether we downsample all frames by some factor, set pix_dim accordingly
         self.downsample = int(args_dict["downsample"])
         self.pix_dim = int(NPIX / self.downsample)
-        
+
         # TODO: check if the following is now redundant that we include the single_chip_flag
         # in the args_dict
         # if len(self.chip_subplots) == 1:
@@ -160,20 +160,20 @@ class WorkOnFile:
 
         # now to create the colorbar
         try:
-            # either set the colorbar to the center chip in case of the septemboard or 
+            # either set the colorbar to the center chip in case of the septemboard or
             # to chip 0 in case of a single chip
-            # NOTE: the hardcoding of the numbers here isn't really nice. But since it's 
+            # NOTE: the hardcoding of the numbers here isn't really nice. But since it's
             # a one time thing it should be excused.
             if len(self.chip_subplots) > 1:
-                cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015, 
-                                            self.septem.row3.bottom, 
-                                            0.015, 
+                cbaxes = self.fig.add_axes([self.septem.row2.right - 0.015,
+                                            self.septem.row3.bottom,
+                                            0.015,
                                             (self.septem.row3.top - self.septem.row3.bottom)])
                 cb_object = plt.colorbar(self.im_list[self.cb.chip], cax = cbaxes)
             else:
-                cbaxes = self.fig.add_axes([self.septem.row2.right + 0.005, 
-                                            self.septem.row3.bottom + 0.036, 
-                                            0.015, 
+                cbaxes = self.fig.add_axes([self.septem.row2.right + 0.005,
+                                            self.septem.row3.bottom + 0.036,
+                                            0.015,
                                             (self.septem.row3.top - self.septem.row3.bottom)])
                 cb_object = plt.colorbar(self.im_list[0], cax = cbaxes)
             self.fig.canvas.draw()
@@ -188,29 +188,29 @@ class WorkOnFile:
         if self.single_chip_flag == False:
             for i in xrange(8):
                 if i not in [6, 7]:
-                    # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the 
+                    # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the
                     # chips, thus (0, 0) coordinate is at bottom left. default
                     # plots (0, 0) top left
                     self.chip_subplots[i - 1].invert_yaxis()
                 else:
-                    # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0) 
+                    # in case of chips 6 and 7, the bond area is above the chips, meaning (0, 0)
                     # coordinate is at the top right. thus invert x axis
                     self.chip_subplots[i - 1].invert_xaxis()
                     #self.chip_subplots[i - 1].invert_yaxis()
-                    
+
             # for some reason I'm not entirely sure of right now, we also need to
             # invert the y axis of the last chip (7)
             self.chip_subplots[6].invert_yaxis()
         else:
             self.chip_subplots[0].invert_yaxis()
-            
+
 
         if args_dict["occupancy"] is True:
             self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames, batches_dict = self.batches_dict)
             import sys
             sys.exit('Exiting after creation of occupancy plot.')
-        
-    
+
+
     def connect(self):
         # before we connect the key press events, we check if refresh ran once
         # files are read, before we accept any input
@@ -297,8 +297,8 @@ class WorkOnFile:
             # if h is typed, we create the pixel histogram for each chip
             print 'creating pixel histogram...'
             self.create_pixel_histogram()
-                        
-                
+
+
         elif c == 'q':
             print ''
             # call stop animation to stop any running animations,
@@ -309,7 +309,7 @@ class WorkOnFile:
                 # stopped before we quit
                 time.sleep(2)
             print c, 'was pressed. Exit program.'
-            
+
             plt.close('all')
             self.disconnect()
         # else:
@@ -324,7 +324,7 @@ class WorkOnFile:
         self.ani_end_event_source = ani#.event_source
         self.ani_end_running      = True
         plt.show()
-        
+
     def loop_work_on_file(self):
         # this function is used to automatically run over all files of a given frame
         ani = MyFuncAnimation(self.fig, self.work_on_file, interval=200, blit=False)
@@ -335,15 +335,15 @@ class WorkOnFile:
     def stop_animation(self):
         # this function stops the func animations
         # TODO: make sure that we DO stop the animation. currently
-        # have to press several times to stop. problematic, 
+        # have to press several times to stop. problematic,
         # because this way we cannot set the flag to False again,
         # because then it couldn't be stopped
 
         # define wait_flag which is returned to signal to the quit function
         # of the GUI, whether it should wait 2 seconds or not
         wait_flag = False
-        
-        
+
+
         if self.ani_end_running == True:
             print 'stopping the run animation...'
             # using the animation's _stop function (THANKS matplotlib source code...)
@@ -382,7 +382,7 @@ class WorkOnFile:
                 self.i = self.ns.nfiles - 1
             lock.release()
             i = self.i
-            
+
         elif i == -1:
             # in case we have called work_on_file_end(), we supply -1 to work_on_file.
             # this can be problematic, if we stop the function and want to go back
@@ -405,8 +405,8 @@ class WorkOnFile:
         else:
             eventNumber = i
         self.work_on_file(eventNumber)
-        
-        
+
+
     def work_on_file(self, i = None, online_flag = False):
         # input i: i is the index for which we plot the file. if none is given, we simply use
         #          the member variable self.i
@@ -471,9 +471,9 @@ class WorkOnFile:
             # before we plot the file, we set the file, we're going to plot as the
             # current file (to save the figure, if wanted)
             self.current_filename = self.filepath.split('/')[-1] + "_" + filename
-            
-            plot_file_general(self.filepath, 
-                              filename, 
+
+            plot_file_general(self.filepath,
+                              filename,
                               self.fig,
                               self.chip_subplots,
                               self.im_list,
@@ -484,9 +484,9 @@ class WorkOnFile:
             #if filenameFadc is not "":
             if filenameFadc is not None:
                 # only call fadc plotting function, if there is a corresponding FADC event
-                plot_fadc_file(self.filepath, 
-                               filenameFadc, 
-                               self.fadcPlot, 
+                plot_fadc_file(self.filepath,
+                               filenameFadc,
+                               self.fadcPlot,
                                self.fadcPlotLine)
             else:
                 # else set fadc plot to invisible
@@ -498,15 +498,15 @@ class WorkOnFile:
     def work_on_file_interactive_end(self, i):
         # this function is being called by matplotlib animation to perform automatic updates
         # of the filelist and always plot the last element of the list
-        # it is simply a wrapper around work_on_file, with the argument -1, as to always call the 
+        # it is simply a wrapper around work_on_file, with the argument -1, as to always call the
         # last element of the files dictionary
         self.work_on_file(-1, online_flag = True)
 
 
-    def create_occupancy_plot(self, 
+    def create_occupancy_plot(self,
                               batches_dict,
-                              ignore_full_frames = False):                              
-        # this function checks whether a dumped occupancy plot can be found, 
+                              ignore_full_frames = False):
+        # this function checks whether a dumped occupancy plot can be found,
         # if so this one is plotted, else create_occupancy_data is called
 
         # during the creation of the occupancy plots, we stop the refreshing
@@ -524,7 +524,7 @@ class WorkOnFile:
         batches_flag = batches_dict["batches_flag"]
         nbatches     = batches_dict["nbatches"]
 
-        
+
         if batches_flag is True and nbatches is None:
             # in this case calculate nbatches to ~1 batch per hour
             nbatches, scaling_factors = get_batch_num_hours_for_run(self.filepath, event_set)
@@ -535,8 +535,8 @@ class WorkOnFile:
             nbatches = 1
 
         # to scale batches, which contain less than one hour up
-        scaling_factors = np.ones(nbatches, dtype = int)            
-            
+        scaling_factors = np.ones(nbatches, dtype = int)
+
         for i in xrange(nbatches):
             # get current scaling
             scaling_f = scaling_factors[i]
@@ -550,7 +550,7 @@ class WorkOnFile:
             if file_exists is True:
                 print('%s file exists, loading data...' % data_dump_filename)
                 # now load dump and plot
-                
+
                 chip_arrays, header_text = load_occupancy_dump(data_dump_filename)
             else:
                 print('No data dump found for file %s, reading data...' % data_dump_filename)
@@ -561,25 +561,25 @@ class WorkOnFile:
                                                                                nbatches)
             # apply scaling factor and add line to header text
             chip_arrays *= scaling_f
-            header_text  = add_line_to_header(header_text, 
+            header_text  = add_line_to_header(header_text,
                                               "scaling_factor",
                                               scaling_f)
 
-                
 
-            plot_occupancy(occupancy_filename, 
+
+            plot_occupancy(occupancy_filename,
                            header_text,
-                           self.septem, 
-                           self.fig, 
-                           self.chip_subplots, 
+                           self.septem,
+                           self.fig,
+                           self.chip_subplots,
                            self.im_list,
                            chip_arrays,
-                           self.cb)            
+                           self.cb)
         # now we can activate the refreshing of the filelist again
         lock.acquire()
         self.ns.doRefresh = True
         lock.release()
-                
+
 
     def create_occupancy_data_batch_mp(self, event_set, ignore_full_frames, iter_batch, nbatches):
         # multithreaded version of create_occupancy_data_batch
@@ -590,8 +590,8 @@ class WorkOnFile:
         # call with full eventSet, because function only needs to read any file,
         # which exists in this case
         header_text = get_occupancy_batch_header(self.ns.eventSet,
-                                                 self.ns.nfiles, 
-                                                 self.filepath, 
+                                                 self.ns.nfiles,
+                                                 self.filepath,
                                                  ignore_full_frames,
                                                  nbatches,
                                                  iter_batch)
@@ -639,7 +639,7 @@ class WorkOnFile:
 
         # doRead controls worker thread, which only reads files
         co_ns.doRead = True
-        # finished reading will be set to True by the reader process, once it 
+        # finished reading will be set to True by the reader process, once it
         # has finished reading all files of list_of_files
         co_ns.finishedReading = False
         # do work controls worker thread, which creates septemClasses
@@ -670,7 +670,7 @@ class WorkOnFile:
         # create an empty list, which will store tuples of centroids including the energy
         # (from the number of pixels), as (x, y, Energy)
         centroid_list = []
-        
+
         while co_ns.finishedReading is False or co_ns.finishedWorking is False or qWork.empty() is False:
             # TODO: think about setting doRead and doWork from here based on finished bools?
             # run over loop as long as there is still something to read and work on
@@ -678,7 +678,7 @@ class WorkOnFile:
             #     # in this case stop reader process
             #     co_ns.doRead = False
             # if co_ns.finishedWorking is True:
-            #     # in this case stop worker process. 
+            #     # in this case stop worker process.
             #     # NOTE: in theory this should never happen before reader is
             #     # finished! Due to while statement this should if statement
             #     # should never be true
@@ -710,12 +710,12 @@ class WorkOnFile:
                             else:
                                 chip_arrays[chip_num, chip_data[:,1], chip_data[:,0]] += 1
                         elif npix > 0 and ignore_full_frames is True and npix < 4097:
-                            # if ignore_full_frames is True we drop all events with more 
+                            # if ignore_full_frames is True we drop all events with more
                             # than 4096 pixels
                             if self.calc_centroid_flag is True:
                                 centroid = calc_centroid(chip_data)
                                 x_mean, y_mean, energy = centroid
-                                if chip_num == self.cb.chip:                                
+                                if chip_num == self.cb.chip:
                                     centroid_list.append(centroid)
                                 chip_arrays[chip_num, y_mean, x_mean] += 1
                             else:
@@ -731,11 +731,11 @@ class WorkOnFile:
         # assert both queues really are empty and we didn't skip data
         assert qRead.empty() is True
         assert qWork.empty() is True
-                                 
+
         # after having finished reading and working, stop both threads
         co_ns.doRead = False
         co_ns.doWork = False
-        
+
         print('Joining all processes.')
         #pRead.join()
         #pWork.join()
@@ -756,11 +756,11 @@ class WorkOnFile:
         print('finished batch #%i at event #%i' % (iter_batch, nEnd))
 
         return chip_arrays, header_text
-            
+
 
     def create_occupancy_data_batch(self, event_set, ignore_full_frames, iter_batch, nbatches):
         """
-        create an occupancy plot. count number of times each pixel was hit during the 
+        create an occupancy plot. count number of times each pixel was hit during the
         whole run
 
         TODO: think about another way to run over all files. NOT SURE, but it seems
@@ -769,8 +769,8 @@ class WorkOnFile:
         Idea: create function, which does what create_filename_from_event_number does
         but returns list of filenames from eventSet
 
-        bool ignore_full_frames : this flag controls whether we drop all events from 
-                                  the occupancy creation, which have more than 4096 
+        bool ignore_full_frames : this flag controls whether we drop all events from
+                                  the occupancy creation, which have more than 4096
                                   active pixels. In that case data is lost (only 4096)
                                   pixels fit in zero suppressed readout.
         int iter_batch          : this integer determines the batch we're going to calculate
@@ -780,9 +780,9 @@ class WorkOnFile:
 
         # first create the header text box for the occupancy plot
         # call with full event set, since we only need to read any file
-        header_text = get_occupancy_batch_header(self.ns.eventSet, 
-                                                 self.ns.nfiles, 
-                                                 self.filepath, 
+        header_text = get_occupancy_batch_header(self.ns.eventSet,
+                                                 self.ns.nfiles,
+                                                 self.filepath,
                                                  ignore_full_frames,
                                                  nbatches,
                                                  iter_batch)
@@ -820,7 +820,7 @@ class WorkOnFile:
                                                          fadcFlag = False)
             # we create the event and chip header object
             filename = os.path.join(self.filepath, filename)
-            
+
             evHeader, chpHeaderList = read_zero_suppressed_data_file(filename)
             # now go through each chip header and add data of frame
             # to chip_arrays
@@ -841,8 +841,8 @@ class WorkOnFile:
                 print event_num, ' events done.'
 
             # now check whether we dump data and return
-            if (eventNumber == max(eventNumbers) or 
-                eventNumber == (iter_batch + 1) * nEventsPerBatch - 1 and 
+            if (eventNumber == max(eventNumbers) or
+                eventNumber == (iter_batch + 1) * nEventsPerBatch - 1 and
                 eventNumber > 0):
                 # now plot the occupancy of the thus generated data
                 # now set the file we're going to plot as the
@@ -866,7 +866,7 @@ class WorkOnFile:
 
     def create_pixel_histogram(self):
         # create the pixel histogram for all chips of the current run
-        
+
         # define a list of lists for the number of hits for each chip
         nHitsList = [ [] for _ in xrange(self.septem.nChips)]
 
@@ -891,10 +891,10 @@ class WorkOnFile:
                     # now if we have 1 hits or more, add event to histogram
                     # chipnum - 1, because we count from 1
                     nHitsList[chip_num - 1].append(nHits)
-                
+
             event_num = int(evHeader.attr["eventNumber"])
             if event_num % 1000 == 0:
-                print event_num, ' events done.' 
+                print event_num, ' events done.'
 
         plot_pixel_histogram(self.filepath,
                              self.fig,
@@ -908,18 +908,18 @@ class WorkOnFile:
 def create_chip_axes(sep, fig, single_chip_flag):
     # this function receives the septem object and creates the axes for the chip layout
     # from it. The list of axes and the grid is returned
-    
+
     # define a list of chip subplots
     chip_subplots = []
 
     if single_chip_flag is False:
         # need to add row 3 first, since this is actually chip 1, 2 from left to right
         row3 = gridspec.GridSpec(1, 2)
-        row3.update(left=sep.row3.left, 
-                    right=sep.row3.right, 
-                    wspace=sep.row3.wspace, 
-                    top=sep.row3.top, 
-                    bottom = sep.row3.bottom, 
+        row3.update(left=sep.row3.left,
+                    right=sep.row3.right,
+                    wspace=sep.row3.wspace,
+                    top=sep.row3.top,
+                    bottom = sep.row3.bottom,
                     hspace=0)
         ch1 = fig.add_subplot(row3[0, 0])
         chip_subplots.append(ch1)
@@ -928,11 +928,11 @@ def create_chip_axes(sep, fig, single_chip_flag):
 
         # now add row 2, with chips 3, 4 and 5, from left to right
         row2 = gridspec.GridSpec(1, 3)
-        row2.update(left=sep.row2.left, 
-                    right=sep.row2.right, 
-                    wspace=sep.row2.wspace, 
-                    top=sep.row2.top, 
-                    bottom = sep.row2.bottom, 
+        row2.update(left=sep.row2.left,
+                    right=sep.row2.right,
+                    wspace=sep.row2.wspace,
+                    top=sep.row2.top,
+                    bottom = sep.row2.bottom,
                     hspace=0)
         # add the three center channels
         ch3 = fig.add_subplot(row2[0, 0])
@@ -946,38 +946,35 @@ def create_chip_axes(sep, fig, single_chip_flag):
         # first row is chips 7, 6 from left to right
         row1 = gridspec.GridSpec(1, 2)
         # updates the positions
-        row1.update(left=sep.row1.left, 
-                    right=sep.row1.right, 
-                    wspace=sep.row1.wspace, 
-                    top=sep.row1.top, 
-                    bottom = sep.row1.bottom, 
+        row1.update(left=sep.row1.left,
+                    right=sep.row1.right,
+                    wspace=sep.row1.wspace,
+                    top=sep.row1.top,
+                    bottom = sep.row1.bottom,
                     hspace=0)
         # and add the correct chips to the grid
         ch6 = fig.add_subplot(row1[0, 1])
         chip_subplots.append(ch6)
         ch7 = fig.add_subplot(row1[0, 0])
         chip_subplots.append(ch7)
-
-        # now create the grid object from the individual rows
-        grid = gridspec.GridSpecFromSubplotSpec(3, 1, [row1, row2, row3])
     else:
         # in this case we only use a single chip
         chip = gridspec.GridSpec(1, 1)
         chip.update(left = sep.row2.left,
-                    right = sep.row2.right, 
-                    top = sep.row1.top, 
+                    right = sep.row2.right,
+                    top = sep.row1.top,
                     wspace = 0,
                     bottom = sep.row3.bottom,
                     hspace = 0)
         chipPlot = fig.add_subplot(chip[0])
         chip_subplots.append(chipPlot)
-    
+
     return chip_subplots
 
 def setup_temp_watcher(filepath, ns):
     # sets up the temparature file watcher. Can easily be extended
     # to check every file in run folder
-    
+
     # then start watcher daemon, which watches over filepath and checks
     # whether files change / are added
     #wm_run   = pyinotify.WatchManager()
@@ -1038,7 +1035,7 @@ def main(args):
     parser.add_argument('--fadc_triggered_only', action = 'store_true',
                         help = "Defines to only use FADC triggered events for occupancy")
     parser.add_argument('--calc_centroids', action = 'store_true',
-                        help = """If set will calculate centroids of clusters during occupancy 
+                        help = """If set will calculate centroids of clusters during occupancy
                         creation and dumps to file centroid_hits.dat (for center chip)""")
     parser.add_argument('--cb_flag', default = 1, type = int,
                         help = """Sets color bar flag to absolute (1) or percentile of values (0).
@@ -1064,7 +1061,7 @@ def main(args):
     parser.add_argument('--ignore_full_frames', action = 'store_true',
                         help = "Ignore completely full frames in occupancy plot")
     parser.add_argument('--batches_flag', action = "store_true",
-                        help = "Use batches in occupancy plot.")    
+                        help = "Use batches in occupancy plot.")
     parser.add_argument('--batches', default = None, type = int, dest = "nbatches",
                         help = """Use this many batches for occupancy plot. If 0 and
                         batches_flag == True, calc batches to be ~1 hour.""")
@@ -1074,7 +1071,7 @@ def main(args):
 
     print(args_dict)
 
-    # create a custom colorbar object to store colorbar related properties; 
+    # create a custom colorbar object to store colorbar related properties;
     # initialize with values either as defaults from above or command line argument
     cb = customColorbar(args_dict["cb_flag"], args_dict["cb_value"], args_dict["cb_chip"])
 
@@ -1100,12 +1097,12 @@ def main(args):
     fig.canvas.set_window_title('This is a secret title!')
     # add a subplot for the FADC plot
     fadc = gridspec.GridSpec(1, 1)
-    # set the fadc plot to some reasonable value.. 
+    # set the fadc plot to some reasonable value..
     fadc.update(left=0.55, right=0.95, top=0.7, bottom=0.25)
     fadcPlot = fig.add_subplot(fadc[0])
 
-    
-    # create the axes for the chip layout 
+
+    # create the axes for the chip layout
     chip_subplots = create_chip_axes(sep, fig, args_dict["single_chip_flag"])
 
 
@@ -1143,7 +1140,7 @@ def main(args):
     ns.currentTemps = None
     ns.temps_dict   = None
 
-    
+
     try:
         (temp_notifier, temp_watcher), (run_notifier, run_handler) = setup_temp_watcher(folder, ns)
         #temp_watcher = None
@@ -1153,7 +1150,7 @@ def main(args):
         # and the second thread, which performs the refreshing
         p2 = mp.Process(target = refresh, args = (ns, folder, temp_watcher))
         p2.start()
-        
+
 
         # now create the main thread, which starts the plotting
         files = WorkOnFile(folder, fig, sep, chip_subplots, fadcPlot, ns, cb, args_dict)
