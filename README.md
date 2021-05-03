@@ -3,7 +3,7 @@
 The Timepix Operating Software (TOS) is a C++ project which provides the
 interface of the Timepix Operating Firmware (TOF) to a PC.
 
-The current version can always be found at <https://gitweb.physik.uni-bonn.de/cgit/ilc/software/TOS.git/>.
+The current version can always be found at <https://bitbucket.team.uni-bonn.de/projects/PGD/repos/tos>.
 
 
 ## Installation
@@ -19,7 +19,7 @@ libboost-dev \
 libudev-dev
 ```
 and the 'libxxusb.h', which needs to be installed manually.
-Visit <https://wiki.physik.uni-bonn.de/ilc/private/index.php/Wiener_VM-USB> for more information.
+The code for the Wiener XXUSB library can be found at: <https://bitbucket.team.uni-bonn.de/projects/PGD/repos/wiener-xxusb/>.
 Regarding the boost dependency: It is probably enough to install libboost-dev. If not, one needs to install libboost-all-dev after all.
 
 If all dependencies are met,
