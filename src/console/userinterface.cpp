@@ -5,25 +5,25 @@
 
 int Console::UserInterface(){
 #if DEBUG==2
-    std::cout<<"Enter Console::UserInterface()"<<std::endl;     
+    std::cout<<"Enter Console::UserInterface()"<<std::endl;
 #endif
 
     int running = 1;
-    
+
     // create a char buffer, which stores the input from the readline() function
     char *buf = NULL;
     // define the attempted completion function (our custom TOS_Command_Completion
     // function defined in tosCommandCompletion.cpp
     rl_attempted_completion_function = TOS_Command_Completion;
- 
+
     static const std::set<std::string> TOSCommandsSet = get_tos_commands();
     static const std::set<std::string> HFMCommandsSet = get_hfm_commands();
 
-  
+
     // while loop runs the basic UserInterface
-    // it checks, whether we're still running, prints 
-    // TOS> 
-    // to each line and reads the user input based on 
+    // it checks, whether we're still running, prints
+    // TOS>
+    // to each line and reads the user input based on
     // readline() function
     // ##################################################
     // IMPORTANT!!!
@@ -39,7 +39,7 @@ int Console::UserInterface(){
             free(buf);
             continue;
         }
-        // if something else is typed, we add the command to our 
+        // if something else is typed, we add the command to our
         // command history
         else{
             add_history( buf );
@@ -48,7 +48,7 @@ int Console::UserInterface(){
         // now initialize a new std::string with the input buf
         // in order to start the case machine
         std::string input(buf);
-	
+
 	auto is_hfm_input = HFMCommandsSet.find(input);
 	auto is_tos_input = TOSCommandsSet.find(input);
 
@@ -58,7 +58,7 @@ int Console::UserInterface(){
 	}
         // ##################################################
         // ################## HV_FADC related commands ######
-        // ##################################################   
+        // ##################################################
 
         else if (input.compare("ActivateHFM") == 0){
             CommandActivateHvFadcManager();
@@ -66,7 +66,7 @@ int Console::UserInterface(){
 
 	else if (_hvFadcManagerActive == false &&
 		 is_hfm_input != HFMCommandsSet.end()){
-	    std::cout << "HFM not initialized. Nothing to do. \n" 
+	    std::cout << "HFM not initialized. Nothing to do. \n"
 		      << "Call ActivateHFM command and try again"
 		      << std::endl;
 	}
@@ -92,7 +92,7 @@ int Console::UserInterface(){
         // free the buffer pointer and point it to NULL again
         free(buf);
         buf = NULL;
-        
+
     }// end while(running){}
     // if while loop ends and buffer not freed, free it.
     if (buf != NULL) free(buf);
@@ -108,14 +108,14 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
     // HFM usage
 
     int result = 0;
-    
-    if((input.compare("GeneralReset")==0)||(input.compare("1")==0)) 
+
+    if((input.compare("GeneralReset")==0)||(input.compare("1")==0))
     {
 	result=pc->fpga->GeneralReset();
 	if(result>10){ ErrorMessages(result); }
 	else{ std::cout<<"\tGeneralReset accomplished\n"<<std::flush; }
     }
-    
+
     else if( (input.compare("Counting")==0) ||
 	     (input.compare("2")==0) )
     {
@@ -135,27 +135,27 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
 	     (input.compare("2z")==0 ))
     {
 	// this function will not receive an argument anymore. Instead after binputg called
-	// it will ask the user, which multiplier he wants to use (represents 
+	// it will ask the user, which multiplier he wants to use (represents
 	// standard, long and verylong of the past)
 	CommandCountingTime();
     }
     else if( (input.compare("ReadOut")==0)||
-	     (input.compare("3")==0) ) 
+	     (input.compare("3")==0) )
     {
 	CommandReadOut();
     }
     else if( (input.compare("ReadOut2")==0)||
-	     (input.compare("3a")==0) ) 
+	     (input.compare("3a")==0) )
     {
 	CommandReadOut2();
     }
     else if( (input.compare("SetMatrix")==0)||
-	     (input.compare("4")==0) ) 
+	     (input.compare("4")==0) )
     {
 	CommandSetMatrix();
     }
     else if( (input.compare("WriteReadFSR")==0)||
-	     (input.compare("5")==0) ) 
+	     (input.compare("5")==0) )
     {
 	CommandWriteReadFSR();
     }
@@ -222,17 +222,17 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
 	CommandDoTHSopt();
     }
     else if( (input.compare("ThEqNoiseCenter")==0) ||
-	     (input.compare("7")==0) ) 
+	     (input.compare("7")==0) )
     {
 	CommandThresholdEqNoiseCenter();
     }
     else if( (input.compare("TOCalib")==0) ||
-	     (input.compare("8")==0) ) 
+	     (input.compare("8")==0) )
     {
 	CommandTOCalib();
     }
     else if( (input.compare("TOCalibFast")==0) ||
-	     (input.compare("8a")==0) ) 
+	     (input.compare("8a")==0) )
     {
 	CommandTOCalibFast();
     }
@@ -245,12 +245,12 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
 	CommandSaveFSR();
     }
     else if( (input.compare("LoadFSR")==0) ||
-	     (input.compare("lf")==0)) 
+	     (input.compare("lf")==0))
     {
 	CommandLoadFSR();
     }
     else if( (input.compare("LoadFSRAll")==0) ||
-	     (input.compare("lfa")==0)) 
+	     (input.compare("lfa")==0))
     {
 	CommandLoadFSRAll();
     }
@@ -275,12 +275,12 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
 	CommandVarChessMatrix(false);
     }
     else if( (input.compare("UniformMatrix")==0) ||
-	     (input.compare("um")==0) ) 
+	     (input.compare("um")==0) )
     {
 	CommandUniformMatrix();
     }
     else if( (input.compare("UniformMatrixAllChips")==0) ||
-	     (input.compare("uma")==0) ) 
+	     (input.compare("uma")==0) )
     {
 	CommandUniformMatrixAllChips();
     }
@@ -330,7 +330,7 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
     {
 	CommandSetPreload();
     }
-    
+
     else if( input.compare("SetNumChips")==0 )
     {
 	CommandSetNumChips();
@@ -346,7 +346,7 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
     else if( input.compare("CheckOffset")==0 or
 	     input.compare("CheckOffsetFullMatrix") == 0){
 	CommandCheckOffsetFullMatrix();
-    }    
+    }
     else if( input.compare("Calibrate")==0 )
     {
 	CommandCalibrate();
@@ -372,7 +372,7 @@ void Console::ParseNormalTosCommands(std::string input, int &running){
 
     // ##################################################
     // ################## MCP2210 related commands ######
-    // ##################################################   
+    // ##################################################
 
     else if (input.compare("TempLoopReadout") == 0){
 	CommandTempLoopReadout();
@@ -395,7 +395,7 @@ void Console::ParseActiveHfmCommands(std::string input){
     else if (input.compare("ConnectModule") == 0){
 	std::cout << _hvFadcManager->H_ConnectModule() << std::endl;
     }
-    
+
     // function to call to ramp up
     else if (input.compare("RampChannels") == 0){
 	_hvFadcManager->RampChannels();
@@ -453,12 +453,12 @@ void Console::ParseActiveHfmCommands(std::string input){
 	CommandSetChannelValue();
     }
 
-    
+
     // ##################################################
     // ################## FADC related commands #########
     // ##################################################
 
-    
+
     else if (input.compare("PrintFADCSettings") == 0){
 	_hvFadcManager->FADC_Functions->printSettings();
     }
@@ -473,11 +473,11 @@ void Console::ParseActiveHfmCommands(std::string input){
     }
     else if ((input.compare("StartFadcAcquisition") == 0) ||
 	     (input.compare("StartFadcAcq")         == 0)){
-                    
+
 	_hvFadcManager->F_StartAcquisition();
     }
     else if (input.compare("SendFadcSoftwareTrigger") == 0){
-	_hvFadcManager->F_SendSoftwareTrigger();        
+	_hvFadcManager->F_SendSoftwareTrigger();
     }
     else if (input.compare("SetFadcTriggerLevel") == 0){
 	CommandFadcTriggerLevel();
@@ -561,7 +561,7 @@ void Console::ParseActiveHfmCommands(std::string input){
 	std::cout << "#Channels: " << _hvFadcManager->F_GetNbOfChannels() << std::endl;
     }
     else if (input.compare("SetFadcModeRegister") == 0){
-	_hvFadcManager->F_SetModeRegister(static_cast<const unsigned short>(getInputValue()));
+	_hvFadcManager->F_SetModeRegister(static_cast<unsigned short>(getInputValue()));
     }
     else if (input.compare("GetFadcModeRegister") == 0){
 	std::cout << "mode register: " << _hvFadcManager->F_GetModeRegister() << std::endl;
