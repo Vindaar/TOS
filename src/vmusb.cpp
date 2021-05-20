@@ -179,9 +179,9 @@ int CVmUsb::readLong(int vmeAddress, int addressModifier, int *errorCode)
 
 std::vector<int> CVmUsb::readBlock32( int addr, int nWords, int addrMod)
 {
-/* Function taken directly from Interface.h from Thorsten Krautscheid 
+/* Function taken directly from Interface.h from Thorsten Krautscheid
    uses functions defined in libxxusb.h directly */
-    
+
     if( udev != 0 )
     {
 	return std::vector<int>();
@@ -190,7 +190,7 @@ std::vector<int> CVmUsb::readBlock32( int addr, int nWords, int addrMod)
     //long tempData[nWords];
     long *tempData;
     tempData = (long *) malloc(nWords * sizeof(long));
-    
+
     int result = vmeBltRead32( udev, addrMod, nWords, addr, tempData );
 
     std::cout << "Result: " << result << std::endl;
