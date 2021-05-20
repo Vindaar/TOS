@@ -9,7 +9,7 @@ hvFlexGroup::hvFlexGroup(hvModule *hvModule,
 			 int groupNumber,
 			 std::string groupType)
     : _hvModule(hvModule),
-      _groupName(groupName), 
+      _groupName(groupName),
       _channelList(channelList),
       _groupNumber(groupNumber),
       _groupType(groupType),
@@ -17,11 +17,11 @@ hvFlexGroup::hvFlexGroup(hvModule *hvModule,
       _isSetOnModule(false),
       _sleepTime(DEFAULT_HV_SLEEP_TIME){
     // main creator of the hv flex group class
-    // the main creator receives a channelList containing hvChannels. The constructor 
+    // the main creator receives a channelList containing hvChannels. The constructor
     // is overloaded, with a second constructor receiving a set of integers of channel numbers
     // instead, which then creates a list of hvChannels
-    
-    // the base class can not be set on the iseg module, since we do not know 
+
+    // the base class can not be set on the iseg module, since we do not know
     // the group type. Hence, we provide a set flex group function, but won't call
     // it from the creator. Instead, the derived classes will call this class from
     // their creator
@@ -30,20 +30,20 @@ hvFlexGroup::hvFlexGroup(hvModule *hvModule,
 
     // clal function to create binary rep int of members from channel set
     _groupMembersBinaryInt = GetBinaryRepFromChannelList();
-    
+
     // variable to decide, whether we wish to remove the group upon deletion of
     // the flex group object
     // we default to false
     _deleteUponDelete = true;
 
     // flag which decides, whether we want to shut down and reset channels
-    // upon deleting group in module (not the object, only happens when we 
+    // upon deleting group in module (not the object, only happens when we
     // _deleteUponDelete is true, of course)
     _rampDownChannelsUponDelete = true;
 
     // now we should set the actual group on the iseg HV module
-    
-    
+
+
 }
 
 hvFlexGroup::~hvFlexGroup(){
@@ -70,7 +70,7 @@ hvFlexGroup::~hvFlexGroup(){
 	GroupSTRUCT emptyGroup;
 	emptyGroup.MemberList1.Word = noMembersNoType;
 	emptyGroup.Type1.Word       = noMembersNoType;
-	
+
 	// and set empty group
 	_hvModule->SetFlexGroup(_groupNumber, emptyGroup);
 
@@ -80,7 +80,7 @@ hvFlexGroup::~hvFlexGroup(){
 		delete(channelObj);
 	    } );
 
-	// now we should be good	
+	// now we should be good
     }
 }
 
@@ -89,10 +89,10 @@ bool hvFlexGroup::SetGroupOnModule(){
 
     // NOTE: groups created so far are still 'empty'
     //       they only contain group type and group members!
-    
+
     // create an empty group struct
     GroupSTRUCT groupStruct;
-    
+
     // we only continue, if the _goodToWrite flag is set to true
     // in this case, the derived class has changed flag to true and set
     // the Type1.Word to something valid
@@ -144,7 +144,7 @@ uint16_t hvFlexGroup::GetBinaryRepFromChannelList(){
     std::for_each(_channelList.begin(), _channelList.end(), [&newChannelMember, &channelListInt](hvChannel *channel){
 	    // loop over all channelList and assign integer from each channel
 	    newChannelMember = channel->getChannelNumber();
-	    // we use this int to perform bitwise operation on 
+	    // we use this int to perform bitwise operation on
 	    // channelNumberBinary
 	    // we shift a '1'
 	    // 'newChannelMember' places to the left
@@ -152,7 +152,7 @@ uint16_t hvFlexGroup::GetBinaryRepFromChannelList(){
 	    // channelNumberBinary = 1 << 3 --> 00000001 << 3 --> 000001000
 	    int channelNumberBinary = 0;
 	    channelNumberBinary = 1 << newChannelMember;
-	
+
 	    // and now add this binary number to the channelListInt
 	    channelListInt += channelNumberBinary;
 	} );
@@ -170,6 +170,6 @@ bool hvFlexGroup::setVoltageForGroup(float voltage){
 		std::cout << "One or more channels could not be set." <<std::endl;
 	    }
 	} );
-    
+
     return good;
 }

@@ -29,8 +29,8 @@ CVmeModule::CVmeModule(CVmeController *vmeController, int baseAddress)
 
 CVmeModule::~CVmeModule()
 {
-    
-    
+
+
     // TODO: close VME controller
 }
 
