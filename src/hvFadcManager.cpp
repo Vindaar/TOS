@@ -1835,7 +1835,7 @@ void hvFadcManager::ReadHFMConfig(){
     try{
 	boost::property_tree::ini_parser::read_ini(iniFile, pt);
     }
-    catch (boost::property_tree::ini_parser::ini_parser_error){
+    catch (boost::property_tree::ini_parser::ini_parser_error const&){
 	std::cout << "Could not find .ini file. Please enter path to .ini" << std::endl;
 	std::string input_path;
 	const char* prompt = "> ";
