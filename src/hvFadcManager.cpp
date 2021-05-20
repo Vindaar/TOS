@@ -1850,6 +1850,8 @@ void hvFadcManager::ReadHFMConfig(){
     // now simply get all values from the property tree created by boost
     // general section
     sAddress_fadc  = pt.get_optional<int>("General.sAddress_fadc").get_value_or(DEFAULT_S_ADDRESS_FADC);
+    // boost PropertyTree cannot deal with hex integers. Thus base addresses in config
+    // file need to be given as base 10 ints
     baseAddress_hv = pt.get_optional<int>("General.baseAddress_hv").get_value_or(DEFAULT_BASE_ADDRESS_HV);
     // hvModule section
     setKillEnable  = pt.get_optional<bool>("HvModule.setKillEnable").get_value_or(DEFAULT_SET_KILL_ENABLE);
