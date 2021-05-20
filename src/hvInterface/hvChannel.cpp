@@ -39,8 +39,8 @@ hvChannel::~hvChannel(){
     if(_rampDownUponDelete == true){
         // in this case ramp down channel
         bool good;
-        good =  setVoltage(voltageOff);
-        good *= setCurrent(currentOff);
+        good = setVoltage(voltageOff);
+        good = good && setCurrent(currentOff);
         if(good == false){
             // either voltage or current could not be set
             // TODO: decide what to do
@@ -780,17 +780,17 @@ bool hvChannel::onVoltageControlledRamped(bool printFlag){
     //updateChannel();
 
     // check is on and voltage controlled
-    good  = isOn();
+    good = isOn();
     //std::cout << "channel " << getChannelName() << " isOn " << _isOn << std::endl;
     // voltage controlled is a bad indicator for channel health
     // TODO: think about something...
     // good *= isVoltageControlled();
     //std::cout << "channel " << getChannelName() << " voltContr " << isVoltageControlled() << std::endl;
     // and has finished ramping
-    good *= endOfRamping();
+    good = good && endOfRamping();
     //std::cout << "channel " << getChannelName() << " EoR " << endOfRamping() << std::endl;
     // and finally also make sure our voltage is within bounds
-    good *= voltageInBounds();
+    good = good && voltageInBounds();
     //std::cout << "channel " << getChannelName() << " voltBounds " << voltageInBounds() << std::endl;
 
     if (printFlag == true){

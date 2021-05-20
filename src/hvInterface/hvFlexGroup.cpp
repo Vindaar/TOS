@@ -165,7 +165,7 @@ bool hvFlexGroup::setVoltageForGroup(float voltage){
     bool good = true;
     std::for_each( _channelList.begin(), _channelList.end(), [voltage, &good](hvChannel *ptrChannel){
 	    good = ptrChannel->setVoltage(voltage);
-	    good *= ptrChannel->turnOn();
+	    good = good && ptrChannel->turnOn();
 	    if (good == false){
 		std::cout << "One or more channels could not be set." <<std::endl;
 	    }

@@ -407,7 +407,7 @@ bool hvFadcManager::SetAllChannelsOn(){
     // before loop) with the result, good will only be true, if all channels return
     // true
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
-            good *= ptrChannel->turnOn();
+            good = good && ptrChannel->turnOn();
         } );
     if (good == true){
         std::cout << "All channels successfully turned on." << std::endl;
@@ -761,11 +761,13 @@ void hvFadcManager::CheckModuleIsRamping(bool rampUpFlag){
 
                 if (rampUpFlag == true){
                     // if we ramp up, check for onVoltageControlledRamped
-                    localControlled *= ptrChannel->onVoltageControlledRamped(false);
+                    localControlled = localControlled &&
+			ptrChannel->onVoltageControlledRamped(false);
                 }
                 else{
                     // if we're ramping down, check for finishedRampingDown
-                    localControlled *= ptrChannel->finishedRampingDown();
+                    localControlled = localControlled &&
+			ptrChannel->finishedRampingDown();
                 }
             } );
 
@@ -797,7 +799,7 @@ bool hvFadcManager::CheckAllChannelsRamped(bool printFlag){
 	_channelList.begin(),
 	_channelList.end(),
 	[&good, printFlag](hvChannel *ptrChannel){
-	    good *= ptrChannel->onVoltageControlledRamped(printFlag);
+	    good = good && ptrChannel->onVoltageControlledRamped(printFlag);
 	} );
 
     return good;
@@ -810,7 +812,7 @@ bool hvFadcManager::CheckAllChannelsInVoltageBound(){
     bool good = true;
 
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
-            good *= ptrChannel->voltageInBounds();
+            good = good && ptrChannel->voltageInBounds();
         } );
 
     return good;
@@ -876,7 +878,7 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
         // and isOn is set
 
         std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
-                good *= ptrChannel->onVoltageControlledRamped();
+                good = good && ptrChannel->onVoltageControlledRamped();
             } );
         if (good == false){
             std::cout << "One of the channels is not voltage controlled." << std::endl;
@@ -1146,7 +1148,7 @@ bool hvFadcManager::ClearAllChannelEventStatus(){
     // before loop) with the result, good will only be true, if all channels return
     // true
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
-            good *= ptrChannel->clearChannelEventStatus();
+            good = good && ptrChannel->clearChannelEventStatus();
         } );
     if(good == true){
         std::cout << "All channels' ChannelEventStatus successfully reset."
@@ -1184,16 +1186,28 @@ void hvFadcManager::H_SetNominalValues(){
                 // set voltages and currents for all channels
                 std::for_each( _channelList.begin(), _channelList.end(), [&good,this](hvChannel *ptrChannel){
                         if( ptrChannel->getChannelName() == "grid" ){
-                            good *= ptrChannel->setVoltageNominal(this->gridVoltageNominal);
-                            good *= ptrChannel->setCurrentNominal(this->gridCurrentNominal);
+                            good = good && ptrChannel->setVoltageNominal(
+				this->gridVoltageNominal
+				);
+                            good = good && ptrChannel->setCurrentNominal(
+				this->gridCurrentNominal
+				);
                         }
                         else if ( ptrChannel->getChannelName() == "anode" ){
-                            good *= ptrChannel->setVoltageNominal(this->anodeVoltageNominal);
-                            good *= ptrChannel->setCurrentNominal(this->anodeCurrentNominal);
+                            good = good && ptrChannel->setVoltageNominal(
+				this->anodeVoltageNominal
+				);
+                            good = good && ptrChannel->setCurrentNominal(
+				this->anodeCurrentNominal
+				);
                         }
                         else if ( ptrChannel->getChannelName() == "cathode" ){
-                            good *= ptrChannel->setVoltageNominal(this->cathodeVoltageNominal);
-                            good *= ptrChannel->setCurrentNominal(this->cathodeCurrentNominal);
+                            good = good && ptrChannel->setVoltageNominal(
+				this->cathodeVoltageNominal
+				);
+                            good = good && ptrChannel->setCurrentNominal(
+				this->cathodeCurrentNominal
+				);
                         }
                     } );
 
