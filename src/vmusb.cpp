@@ -6,11 +6,7 @@ CVmUsb::CVmUsb()
 {
     udev = NULL;
 
-#ifdef Q_OS_LINUX
-    const QString libName = "xx_usb";
-#else
-    const QString libName = "libxxusb";
-#endif
+    const QString libName = "libxxusb"; // library was called `xx_usb.so` in the past
 
     lib = new QLibrary(libName);
     lib->load();
