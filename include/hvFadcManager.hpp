@@ -5,7 +5,7 @@
 // is a convenience object for the combined communication with
 // the ISEG HV module and the CAEN FADC
 // (vmemodule controls the ISEG HV)
-// This may be called in a program to access 
+// This may be called in a program to access
 // the HV and control it by simple functions without having
 // to worry about sending commands and not knowing whether
 // they were actually done
@@ -142,7 +142,7 @@
 #define MAX_INI_PATH_LENGTH                                       300
 
 
-// forward declare some 
+// forward declare some
 // class hvChannel;
 // class hvFlexGroup;
 // class hvSetGroup;
@@ -190,7 +190,7 @@ public:
     //************ and convenience functions ***********
     //************ based on module functions ***********
     //**************************************************
-    
+
     // this function returns the pointer of the created hvModule
     // useful if one wants to add channels externally
     hvModule* getHVModulePtr();
@@ -238,22 +238,22 @@ public:
     bool H_CheckIsConnectionGood();
     // this function is used during a Run in order to check
     // whether the HV module is good
-    // this is done every checkModuleTimeInterval (from 
+    // this is done every checkModuleTimeInterval (from
     // HFOSettings.ini) seconds
     // TODO: change!
     int H_CheckHVModuleIsGood(bool verbose = true);
 
-    // setter and getter for _currentTemps 
+    // setter and getter for _currentTemps
     void SetCurrentTemps(Temps temps);
     Temps GetCurrentTemps();
     bool CheckIfTempsGood();
-    
+
     // optional arguments to the error dump include temperatures for IMB and septem,
     // default to 0 if not supplied.
     void H_DumpErrorLogToFile(int event);
 
-    // These two functions are convenience functions, which 
-    // write a group (from a GroupSTRUCT struct to the 
+    // These two functions are convenience functions, which
+    // write a group (from a GroupSTRUCT struct to the
     // HV module. Internally it simply calls both the
     // H_SetModuleFlexGroupType and H_SetModuleFlexGroupMemberList
     // functions, which write 32bit to the module.
@@ -320,7 +320,7 @@ public:
     /*************** HV functions   *******************/
     //**************************************************
     /* These functions just redefine HV_module functions
-       as functions of the hvFadcManager 
+       as functions of the hvFadcManager
        ALL of these functions start with H_  */
 
     bool   H_IsConnected(void) { return HV_module->IsConnected(); }
@@ -457,13 +457,13 @@ public:
     /*************** FADC functions *******************/
     //**************************************************
     // These functions just redefine FADC_module functions
-    // as functions of the HV_FADC_Obj 
-    // ALL of these functions start with F_ for FADC 
+    // as functions of the HV_FADC_Obj
+    // ALL of these functions start with F_ for FADC
     // For descriptions of these functions take a look at
     // "V1729a_VME.h"
     // CAREFUL: Some functions still do not work correctly,
     //          judging by the comments in the "V1729a_VME.h"
-    
+
     void         F_Reset() throw();
     void         F_StartAcquisition() throw();
     void         F_SetFrequency( const unsigned short& frequency ) throw();
@@ -517,10 +517,10 @@ public:
 
 private:
     /*************** Member modules ***************/
-    /* TODO: implement all functions of interest to us 
+    /* TODO: implement all functions of interest to us
        as functions of hvFadcManager and declare modules as
        private objects */
-    
+
     // HV member, based on hvModule based on VMEmodule (by ISEG)
     hvModule *HV_module;
     // FADC member, based on V1729a_VME class (by Alexander Deisting)
@@ -539,7 +539,7 @@ private:
     // voltageScheduler is a list of pairs containing voltages
     // and times (in minutes). the list is worked through from beginning
     // to end, ramping to first of pair and wait second of pair minutes
-    // then, next element is taken 
+    // then, next element is taken
     std::list<std::pair<float, int>> _voltageScheduler;
 
     // base addresses for devices
@@ -553,7 +553,7 @@ private:
     // (FADC and HV)
     // variable is declared as an atomic_bool, because it has to be handed to the
     // BackgroundTempLoop function, which checks whether the temperatues are within
-    // safe bounds. 
+    // safe bounds.
     std::atomic_bool _hvModInitFlag;
     // FADC Initialization flag is used to check whether only FADC is up and running
     bool _hvFadcInitFlag;
@@ -567,7 +567,7 @@ private:
 
     // monitor variables
     int checkModuleTimeInterval;
-    // the event status variables which were current in the 
+    // the event status variables which were current in the
     // last call of H_CheckHVModuleIsGood()
     ChEventStatusSTRUCT gridEventStatusLastIter;
     ChEventStatusSTRUCT anodeEventStatusLastIter;
@@ -667,7 +667,7 @@ private:
     std::thread *_temp_safety_loop;
     std::atomic_bool _safety_temp_loop_continue;
     Temps _currentTemps;
-    
+
     // special functions have no need to be public
     // --- HV Special Control ----------------------------------------------------
     void   H_SetModuleSpecialControlCommand(uint32_t command);
@@ -682,4 +682,3 @@ private:
 
 
 #endif
-

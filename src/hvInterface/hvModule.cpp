@@ -11,7 +11,7 @@ hvModule::hvModule(CVmeController *vmeController, int baseAddress)
     // vmemodule (HV) instance using the base Addresses
 
     // first of all, if we are handed a NULL pointer to the constructor for
-    // the vmeController, we need to initialize our own VmeController and 
+    // the vmeController, we need to initialize our own VmeController and
     // thus point it to the VmeController member variable
     // initialize the USB Controller
     if (vmeController == NULL) {
@@ -47,7 +47,7 @@ bool hvModule::ConnectModule(){
     int timeout;
     timeout = 1000;
 
-    while( (good == 0) && 
+    while( (good == 0) &&
            (timeout > 0) ) {
         // if no good connection is available, try to establish it
         good = IsConnected();
@@ -62,11 +62,11 @@ bool hvModule::ConnectModule(){
         std::cout << "timeout in ConnectModule " << timeout << std::endl;
         good = true;
     }
-    
+
     // set the member variable to good so that one can always see, if connection was established correctly
     _isConnected = good;
 
-    return good;    
+    return good;
 }
 
 bool hvModule::IsKillEnabled(){
@@ -79,7 +79,7 @@ bool hvModule::IsKillEnabled(){
 }
 
 void hvModule::updateModule(){
-    _moduleEventGroupMask = GetModuleEventGroupMask(); 
+    _moduleEventGroupMask = GetModuleEventGroupMask();
     // TODO: add more
 
     _moduleControl.Word     = GetModuleControl();
@@ -132,7 +132,7 @@ GroupSTRUCT hvModule::GetFlexGroup(int group) {
     GroupSTRUCT groupObject;
 
     groupObject.MemberList1.Word = GetModuleFlexGroupMemberList(group);
-    
+
     // we're using Type 1, because in our implementation we're only properly
     // supporting the module with 12 channels
     groupObject.Type1.Word = GetModuleFlexGroupType(group);
@@ -143,7 +143,7 @@ GroupSTRUCT hvModule::GetFlexGroup(int group) {
 
 void hvModule::SetFlexGroup(int group, GroupSTRUCT groupObject){
     SetModuleFlexGroupMemberList(group, groupObject.MemberList1.Word);
-    
+
     // we're using Type 1, because in our implementation we're only properly
     // supporting the module with 12 channels
     SetModuleFlexGroupType(group, groupObject.Type1.Word);
@@ -185,8 +185,8 @@ bool hvModule::setStopModule(bool stop){
     } else {
         std::cout << "timeout in setStopModule " << timeout << std::endl;
         good = true;
-    }    
-    
+    }
+
     return good;
 }
 
@@ -242,8 +242,8 @@ bool hvModule::clearModuleEventStatusAndCheck(){
     } else {
         std::cout << "timeout in clearModuleEventStatus " << timeout << std::endl;
         good = true;
-    }    
-    
+    }
+
     return good;
 }
 
@@ -264,7 +264,7 @@ void hvModule::printEventStatus(){
 bool hvModule::isEventStatusGood(){
     updateModule();
     bool good;
-    
+
     if (_moduleEventStatus.Word == 0){
         good = true;
     } else {

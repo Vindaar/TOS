@@ -23,7 +23,7 @@ void BackgroundTempLoop(hvFadcManager *hfm, std::atomic_bool &loop_continue, std
        inputs:
        hvFadcManager *hfm: allows access to check temps fn and dump error log fn
        std::atomic_bool &loop_continue: reference to bool variable, which can
-       stop this thread, once TOS is to be shut down 
+       stop this thread, once TOS is to be shut down
        std::atomic_bool &hvModInitFlag: reference to the flag, which shows whether
        the hvFadcManager was initalized (HV ramped!)
 
@@ -36,16 +36,16 @@ void BackgroundTempLoop(hvFadcManager *hfm, std::atomic_bool &loop_continue, std
 
        If in safe bounds:
            be happy :)
-       NOTE: warnings will also be printed to stdout, to make sure user becomes 
+       NOTE: warnings will also be printed to stdout, to make sure user becomes
        aware of the problem! At the same time written to temp log file.
        (if HV was on, HV error dump file will be created too!)
-       NOTE2: this function is explicitly NOT part of hvFadcManager, because handing 
+       NOTE2: this function is explicitly NOT part of hvFadcManager, because handing
        a non-static member function to a separate thread is not allowed.
        However, this function only needs to know about some hvFadcManager functions
        which are non-vital (check temps and dump an error log; except that Shutdown
        functino I suppose....). Not exactly nice, but necessary atm.
        TODO: find nicer way to handle this!
-       Thus, a pointer of the hvFadcManager object calling this function is 
+       Thus, a pointer of the hvFadcManager object calling this function is
        handed (via this).
     */
 
@@ -63,7 +63,7 @@ void BackgroundTempLoop(hvFadcManager *hfm, std::atomic_bool &loop_continue, std
     bool tempsGood = false;
     //int hvGood = -1;
 
-    // loop and check temps every 500ms 
+    // loop and check temps every 500ms
     while(loop_continue == true){
 	if(hvModInitFlag == true){
 	    // HV should be activated! get HV and temps status
@@ -96,7 +96,7 @@ void BackgroundTempLoop(hvFadcManager *hfm, std::atomic_bool &loop_continue, std
 	    if(tempsGood == false){
 		std::cout << "WARNING: Temperatures are out of safety bounds! "
 			  << "Temp IMB    = " << temps.first  << "\n"
-			  << "Temp Septem = " << temps.second << "\n"		    
+			  << "Temp Septem = " << temps.second << "\n"
 			  << "HV currently not ramped. Take care of this NOW!"
 			  << "See $TOS/log/temp_log.txt for further details."
 			  << std::endl;
@@ -141,9 +141,9 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     //                   MaskEventEmergency = 1
     //                   rest to 0.
     // done by creating set of strings corresponding to options
-    std::set<std::string> _eventMaskSet = {"CurrentTrip", 
-                                          "EndOfRamping", 
-                                          "VoltageLimit", 
+    std::set<std::string> _eventMaskSet = {"CurrentTrip",
+                                          "EndOfRamping",
+                                          "VoltageLimit",
                                           "CurrentLimit",
                                           "Emergency"};
 
@@ -162,7 +162,7 @@ hvFadcManager::hvFadcManager(std::string iniFilePath):
     HV_module   = new hvModule(&Controller, baseAddress_hv);
 
     FADC_module = new V1729a_VME(&Controller, sAddress_fadc);
-    
+
     // now create FADC functions object
     FADC_Functions = new HighLevelFunction_VME(FADC_module);
     FADC_module->reset();
@@ -202,7 +202,7 @@ hvFadcManager::~hvFadcManager() {
 
     // Before we delete the HV module,
     // we should properly shut both of them down
-    
+
     // TODO: check, if voltages already ramped down?
     // yes, this
 
@@ -272,7 +272,7 @@ uint16_t hvFadcManager::GetBinaryRepFromNumberSet(std::set<int> numberSet){
         // loop over all channelSet and assign integer from set
         // corresponding to iterator value to new int
         newNumber = *it;
-        // we use this int to perform bitwise operation on 
+        // we use this int to perform bitwise operation on
         // channelNumberBinary
         // we shift a '1'
         // 'newChannelMember' places to the left
@@ -300,20 +300,20 @@ std::set<int> hvFadcManager::GetChannelSetFromBinaryRep(uint32_t binaryRep){
             // if binary rep modulo 2^n is not binaryRep, n is a divisor
             channelSet.insert(n);
             // new value for rep is simply the rest of the division
-            binaryRep = binaryRep % pow_of_2; 
+            binaryRep = binaryRep % pow_of_2;
         }
         // decrease n by 1
         n--;
     }
-    
+
     return channelSet;
 }
 
 void hvFadcManager::AddChannel(hvChannel *ptrChannel){
-    // this function simply adds a channel that is being used to the 
+    // this function simply adds a channel that is being used to the
     // channelList member variable. Thus the object is aware of all its
     // channels. The list is used for actions acting on all channels
-    // input is: 
+    // input is:
     // hvChannel channel: a channel object to be added
     _channelList.push_back(ptrChannel);
 }
@@ -321,12 +321,12 @@ void hvFadcManager::AddChannel(hvChannel *ptrChannel){
 void hvFadcManager::AddFlexGroup(hvFlexGroup *ptrGroup){
     // this function adds a flex group to the flex group list member variable
     // and sets the group on the module
-    // channels. 
-    // input is: 
+    // channels.
+    // input is:
     // hvFlexGroup group: a flex group object to be added
 
     bool good;
-    
+
     // set group on module
     good = ptrGroup->SetGroupOnModule();
     if (good == true){
@@ -363,7 +363,7 @@ bool hvFadcManager::SetModuleEventGroupMask(){
     // now we need to create binary representation of channels
     // thus call GetBinary function
     activeGroupsBinary = GetBinaryRepFromNumberSet(groupSet);
-        
+
     // however, for the event group mask, we need a uint32_t instead
     // of a uint16_t:
     uint32_t moduleEventGroupMask = activeGroupsBinary;
@@ -401,10 +401,10 @@ bool hvFadcManager::SetAllChannelsOn(){
     // turned on
     bool good;
     good = true;
-    
-    // using for each we get each element of channelList (an hvChannel) and call 
-    // its clearChannelEventStatus function. By multiplying good (equals to true 
-    // before loop) with the result, good will only be true, if all channels return 
+
+    // using for each we get each element of channelList (an hvChannel) and call
+    // its clearChannelEventStatus function. By multiplying good (equals to true
+    // before loop) with the result, good will only be true, if all channels return
     // true
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
             good *= ptrChannel->turnOn();
@@ -426,14 +426,14 @@ bool hvFadcManager::SetAllChannelsOn(){
         // that means set channels to SetOn = 1
         // for the anodeGridGroup, we only set the master channel
         // to SetOn = 1
-        
+
         // now use transform to update Status.Word for each element of
         // channel status vector. this updates the elements of chStatusVector
         // transform uses last argument (function) and acts it with arguments contained
-        // in 1st and 2nd argument vectors and puts the result of the function in 
+        // in 1st and 2nd argument vectors and puts the result of the function in
         // vector of 3rd argument
-        // std::transform( channelNumbers.begin(), 
-        //              channelNumbers.end(),  
+        // std::transform( channelNumbers.begin(),
+        //              channelNumbers.end(),
         //              chStatusVector.begin(),
         //              [this](int channel){
         //                  return this->H_GetChannelStatusStruct(channel);
@@ -444,9 +444,9 @@ bool hvFadcManager::SetAllChannelsOn(){
         //    - the object which owns the function (non static member functions
         //      only exist, if an object which owns it exists!)
         //    - and the argument (int channel)
-        // lambda function acts as a wrapper around this fact. 
+        // lambda function acts as a wrapper around this fact.
         // [this] means we hand the object, which owns this function (SetAllChannelsOn)
-        // to the lambda function. then the arguments of the runction and we return 
+        // to the lambda function. then the arguments of the runction and we return
         // what we wish to return
 }
 
@@ -455,9 +455,9 @@ void hvFadcManager::InitHVForTOS(){
 
     // First we read the Settings file
     //     done in ReadHFMConfig() called in creator
-    // in case _createdFlag is false 
+    // in case _createdFlag is false
     // we use the read settings to create the objects properly
-    
+
 
     // define variables
 
@@ -479,7 +479,7 @@ void hvFadcManager::InitHVForTOS(){
         // and reset FADC + set settings on device
         FADC_module->reset();
 	SetFadcSettings();
-	
+
         bool good;
         std::cout << "creating... " << std::flush;
         good = H_CheckIsConnectionGood();
@@ -490,7 +490,7 @@ void hvFadcManager::InitHVForTOS(){
             return;
         }
     }
-    
+
     // now call H_SetKillEnable to try and set kill to enable
     bool killEnabled;
     killEnabled = HV_module->SetKillEnable(setKillEnable);
@@ -514,7 +514,7 @@ void hvFadcManager::InitHVForTOS(){
 	channelPtr->setVoltageBound(channel.voltageBound);
         good = channelPtr->setCurrent(channel.currentSet);
         if (good == false) return;
-        
+
         // only add grid and anode to anode Grid group
         if( (channel.name == "grid") ||
             (channel.name == "anode") ||
@@ -530,13 +530,13 @@ void hvFadcManager::InitHVForTOS(){
         }
         rampingMembers.push_back(channelPtr);
     }
-    
+
     // create flex groups
     hvSetGroup *anodeGridSetOnGroup;
     std::cout << "some stuff\n"
               << anodeGridGroupMasterChannel << std::endl;
     anodeGridSetOnGroup = new hvSetGroup(HV_module,
-                                         "anodeGridSetOnGroup", 
+                                         "anodeGridSetOnGroup",
                                          anodeGridMembers,
                                          anodeGridGroupNumber,
                                          anodeGridGroupMasterChannel);
@@ -547,7 +547,7 @@ void hvFadcManager::InitHVForTOS(){
                                           monitorTripMembers,
                                           monitorTripGroupNumber);
 
-                                    
+
     hvStatusGroup *rampingGroup;
     rampingGroup = new hvStatusGroup(HV_module,
                                      "rampingGroup",
@@ -560,14 +560,14 @@ void hvFadcManager::InitHVForTOS(){
     // define anode as master Channel (in constructor); include both in .ini file
     anodeGridSetOnGroup->setMode(DEFAULT_ANODE_GRID_GROUP_MODE);
     anodeGridSetOnGroup->setControl("set_on");
-    
+
     // monitor group, need to set monitoring to tripping
     monitorTripGroup->setMonitor("is_tripped");
     // set Mode to 1. That way, the action of the group is called,
     // if one of the group channels reports a 1 for the bit, that is being
     // checked. In our case:
     // Channel.Bit.CurrentTrip == 1 for one channel means group shut down
-    monitorTripGroup->setMode(1); 
+    monitorTripGroup->setMode(1);
     monitorTripGroup->setAction("shut_group");
 
     rampingGroup->setMonitor("is_ramping");
@@ -586,7 +586,7 @@ void hvFadcManager::InitHVForTOS(){
     // now clear the channel status as far as necessary
     good = ClearAllChannelEventStatus();
     if (good != true){
-        std::cout << "Could not reset Event status.\n" 
+        std::cout << "Could not reset Event status.\n"
                   << "Probably will not start ramping."
                   << std::endl;
     }
@@ -637,11 +637,11 @@ void hvFadcManager::RampChannels(bool alreadyInBounds){
 
     if (!alreadyInBounds){
 	// get max voltage so that we can calculate necessary ratio of all voltages
-	// get the voltage of the 
+	// get the voltage of the
 	auto maxChannel = std::max_element(_channelList.begin(),
 						 _channelList.end());
 	const float maxVoltage = (*maxChannel)->getVoltage();
-	
+
 	// create a map of the current voltages (the targets we will aim for) and
 	// the scaling factors needed for each channel based on target voltage and
 	// max voltage
@@ -655,7 +655,7 @@ void hvFadcManager::RampChannels(bool alreadyInBounds){
 		const float ratio = float(voltage) / float(maxVoltage);
 		scalingRatios.insert(std::make_pair(number, ratio));
 	    } );
-	
+
 	// number of steps we use to ramp the voltage
 	// TODO: move this to the ini file!
 	const int nSteps = 150;
@@ -669,7 +669,7 @@ void hvFadcManager::RampChannels(bool alreadyInBounds){
 		const float current = ptrChannel->getCurrent();
 		ptrChannel->setCurrent(current * currentMultiplier);
 	    } );
-	
+
 
 	for(int i = int(nSteps / 10); i <= nSteps; i++){
 	    // set the voltages of all channels to the current iteration
@@ -693,7 +693,7 @@ void hvFadcManager::RampChannels(bool alreadyInBounds){
 
 	    // call check hv module to print current voltages
 	    H_CheckHVModuleIsGood(true);
-	    
+
 	    while(!CheckAllChannelsRamped(false)){
 		H_CheckHVModuleIsGood(true);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -701,7 +701,7 @@ void hvFadcManager::RampChannels(bool alreadyInBounds){
 	    }
 	    // once it is done, we continue to the next voltage
 	}
-	
+
 	// set the trip current back to a "operating current"
 	std::for_each(
 	    _channelList.begin(),
@@ -715,7 +715,7 @@ void hvFadcManager::RampChannels(bool alreadyInBounds){
 
     // TODO: implement the above in a separate function, which will also be called for
     // the ramp down. This can then be done in a separate thread as well.
-    
+
     // // create seperate thread, which loops and will be stopped, if we type stop in terminal
     // if (alreadyInBounds == false){
     //     // now check if ramping started
@@ -744,11 +744,11 @@ void hvFadcManager::CheckModuleIsRamping(bool rampUpFlag){
     // currently ramping
 
     // we can loop over all channels of _channelList and use the isRamping()
-    // function 
+    // function
 
     int timeout = 100;
     bool doneChecking = false;
-    
+
     while( (_loop_stop == true) &&
            (timeout > 0) &&
            (doneChecking == false) ){
@@ -783,7 +783,7 @@ void hvFadcManager::CheckModuleIsRamping(bool rampUpFlag){
     }
 
     std::cout << "timeout in CheckModuleIsRamping " << timeout << std::endl;
- 
+
 }
 
 bool hvFadcManager::CheckAllChannelsRamped(bool printFlag){
@@ -799,7 +799,7 @@ bool hvFadcManager::CheckAllChannelsRamped(bool printFlag){
 	[&good, printFlag](hvChannel *ptrChannel){
 	    good *= ptrChannel->onVoltageControlledRamped(printFlag);
 	} );
-    
+
     return good;
 }
 
@@ -812,7 +812,7 @@ bool hvFadcManager::CheckAllChannelsInVoltageBound(){
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
             good *= ptrChannel->voltageInBounds();
         } );
-    
+
     return good;
 }
 
@@ -843,13 +843,13 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
     // HVSettings.ini) seconds and checks, whether all voltages
     // are good / if any events happened
     // if module tripped / voltages bad, stop Run immediately (return -1)
-    // and shut down module (if Trip, is done automatically through 
+    // and shut down module (if Trip, is done automatically through
     // monitoring group)
 
     // this function can only be called, if _createdFlag == true
     // hvObj
     if (_createdFlag == true){
-        
+
         // variables to store the current EventStatus values
         // these will be compared to the values of the last call
         // of this function
@@ -874,7 +874,7 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
         // additionally check whether module is in IsControlledVoltage,
         // which should be set, if our module is at the set level
         // and isOn is set
-	
+
         std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
                 good *= ptrChannel->onVoltageControlledRamped();
             } );
@@ -894,20 +894,20 @@ int hvFadcManager::H_CheckHVModuleIsGood(bool verbose){
 
     std::cout << "This should never be reached." << std::endl;
     return -1;
-        
+
 }
 
 void hvFadcManager::sleepModule(int sleepTime, std::string unit){
-    // function which calls sleep for this thread for time given by 
+    // function which calls sleep for this thread for time given by
     // macro in header
-    
+
     if (sleepTime == 0){
         // if we hand default value of 0, we set the sleepTime
         // to the member variable (which is set to the default given
         // by a macro in the header)
         sleepTime = _sleepTime;
     }
-    
+
     if (unit == "milliseconds"){
         std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
     }
@@ -955,13 +955,13 @@ void hvFadcManager::printModuleEventStatus(){
 
 void hvFadcManager::H_DumpErrorLogToFile(int event){
     /* int event: if function is called from a run, we
-                  include the event after which error log is 
+                  include the event after which error log is
 		  created
 		  If function was called from outside event, event number will be
 		  set to -1!
        int temp_IMB: temperature of the intermediate board when this function
                   was called. If 0, probably not included (default is 0)
-       int temp_septem: temperature of the septemboard. 
+       int temp_septem: temperature of the septemboard.
     */
     int temp_imb    = _currentTemps.first;
     int temp_septem = _currentTemps.second;
@@ -978,8 +978,8 @@ void hvFadcManager::H_DumpErrorLogToFile(int event){
     logfile.open("../log/HV_error.log", std::ios::app);
 
     // prepare appending to file
-    logfile << "\n" << "\n" 
-            << "######################### NEW ENTRY #########################" 
+    logfile << "\n" << "\n"
+            << "######################### NEW ENTRY #########################"
             << "\n" << std::endl;
 
     // the commented code below would be nicer, but is only supported from
@@ -993,7 +993,7 @@ void hvFadcManager::H_DumpErrorLogToFile(int event){
     logfile << "Error log append happened at: " << currentDateTime() <<  "\n";
     logfile << "During event #: " << event << "\n";
 
-    
+
     // now get event status of groups and channels
     uint32_t moduleEventGroupStatus = H_GetModuleEventGroupStatus();
 
@@ -1009,7 +1009,7 @@ void hvFadcManager::H_DumpErrorLogToFile(int event){
             << "Each bit corresponds to one group. If a bit is set, the "
             << "corresponding group had an event\n"
             << "moduleEventGroupStatus: " << moduleEventGroupStatus << "\n\n";
-    
+
     logfile << "##### Channel Event Status #####\n"
             << "Grid Event Status: \n"
             << "\t EventInputError:          " << gridEventStatus.Bit.EventInputError << "\n"
@@ -1024,7 +1024,7 @@ void hvFadcManager::H_DumpErrorLogToFile(int event){
             << "\t EventCurrentLimit:        " << gridEventStatus.Bit.EventCurrentLimit << "\n"
             << "\t EventVoltageLimit:        " << gridEventStatus.Bit.EventVoltageLimit << "\n"
             << "\n";
-   
+
     logfile << "Anode Event Status: \n"
             << "\t EventInputError:          " << anodeEventStatus.Bit.EventInputError << "\n"
             << "\t EventOnToOff:             " << anodeEventStatus.Bit.EventOnToOff << "\n"
@@ -1070,7 +1070,7 @@ void hvFadcManager::ShutDownHFMForTOS(){
 
     // only need to perform shutdown if _hvModInitFlag is true
     // TODO: init flag not the correct way to decide whether shutdown or not
-    // instead of using hvObjInitFlag, we can use CheckHVModuleIsGood as 
+    // instead of using hvObjInitFlag, we can use CheckHVModuleIsGood as
     // a way to decide
     bool toShutdown = 0;
     toShutdown = CheckToShutdown();
@@ -1081,16 +1081,16 @@ void hvFadcManager::ShutDownHFMForTOS(){
 	return;
 
         std::cout << std::endl << "Starting shutdown of HV for TOS" << std::endl << std::endl;
-        
+
         // TODO: ramp down
         //       check for any Events
         //       perform a doClear
         //       setStatus to 0x0000 (everything off)
         //       set KillEnable == False
-        //       
+        //
         // ModuleStatusSTRUCT  moduleStatus = { 0 };
         ModuleControlSTRUCT moduleControl = { };
-        // ChControlSTRUCT     channelControl = { 0 };    
+        // ChControlSTRUCT     channelControl = { 0 };
 
         // // ramp down voltages (use anode Grid Group master channel to ramp down group)
         // // and cathode channel
@@ -1113,7 +1113,7 @@ void hvFadcManager::ShutDownHFMForTOS(){
 
 
         // TODO: before we perform DoClear, we should check events!
-        
+
         // perform a DoClear (that is reset every event)
         // and set Kill Enable to 0
         moduleControl.Word = H_GetModuleControl();
@@ -1121,7 +1121,7 @@ void hvFadcManager::ShutDownHFMForTOS(){
         // do not disable kill enable
         // moduleControl.Bit.SetKillEnable = 0;
         H_SetModuleControl(moduleControl.Word);
-        
+
         // this should properly shut down the device
         // set init flag to false again
         _hvModInitFlag = false;
@@ -1141,22 +1141,22 @@ bool hvFadcManager::ClearAllChannelEventStatus(){
 
     bool good;
     good = true;
-    // using for each we get each element of channelList (an hvChannel) and call 
-    // its clearChannelEventStatus function. By multiplying good (equals to true 
-    // before loop) with the result, good will only be true, if all channels return 
+    // using for each we get each element of channelList (an hvChannel) and call
+    // its clearChannelEventStatus function. By multiplying good (equals to true
+    // before loop) with the result, good will only be true, if all channels return
     // true
     std::for_each( _channelList.begin(), _channelList.end(), [&good](hvChannel *ptrChannel){
             good *= ptrChannel->clearChannelEventStatus();
         } );
     if(good == true){
-        std::cout << "All channels' ChannelEventStatus successfully reset." 
+        std::cout << "All channels' ChannelEventStatus successfully reset."
                   << std::endl;
     }
     else{
-        std::cout << "Could not reset ChannelEventStatus of one or more channels" 
+        std::cout << "Could not reset ChannelEventStatus of one or more channels"
                   << std::endl;
     }
-    
+
     return good;
 }
 
@@ -1196,7 +1196,7 @@ void hvFadcManager::H_SetNominalValues(){
                             good *= ptrChannel->setCurrentNominal(this->cathodeCurrentNominal);
                         }
                     } );
-                
+
                 // if good is still true, after this, all channels could be set correctly
                 if (good == true){
                     break;
@@ -1230,7 +1230,7 @@ GroupSTRUCT hvFadcManager::H_GetFlexGroup(int group){
     GroupSTRUCT groupObject;
 
     groupObject.MemberList1.Word = H_GetModuleFlexGroupMemberList(group);
-    
+
     // we're using Type 1, because in our implementation we're only properly
     // supporting the module with 12 channels
     groupObject.Type1.Word = H_GetModuleFlexGroupType(group);
@@ -1244,7 +1244,7 @@ void hvFadcManager::H_SetFlexGroup(int group, GroupSTRUCT groupObject){
     // and write them to the HV module
 
     H_SetModuleFlexGroupMemberList(group, groupObject.MemberList1.Word);
-    
+
     // we're using Type 1, because in our implementation we're only properly
     // supporting the module with 12 channels
     H_SetModuleFlexGroupType(group, groupObject.Type1.Word);
@@ -1260,7 +1260,7 @@ std::set<std::string> hvFadcManager::PrintActiveChannels(){
     // and also returns a set of strings, which are allowed to be used for
     // user input
     std::set<std::string> allowedStrings;
-    
+
     std::cout << "isOn state of currently active channels (0 = off, 1 = on):" << std::endl;
     std::for_each( _channelList.begin(), _channelList.end(), [&allowedStrings](hvChannel *ptrChannel){
             // print channel information regarding on / off state
@@ -1272,7 +1272,7 @@ std::set<std::string> hvFadcManager::PrintActiveChannels(){
             allowedStrings.insert(number);
         } );
 
-    return allowedStrings;    
+    return allowedStrings;
 }
 
 void hvFadcManager::TurnChannelOnOff(){
@@ -1283,7 +1283,7 @@ void hvFadcManager::TurnChannelOnOff(){
     // also create a set of allowed strings for input
     std::set<std::string> allowedStrings;
     allowedStrings = PrintActiveChannels();
-    
+
     allowedStrings.insert("all");
 
     std::cout << "Select channel to switch (on <-> off) / type quit: " << std::endl;
@@ -1310,7 +1310,7 @@ void hvFadcManager::TurnChannelOnOff(){
                 }
             } );
     }
-    
+
 }
 
 bool hvFadcManager::ClearChannelEventStatus(){
@@ -1327,7 +1327,7 @@ bool hvFadcManager::ClearChannelEventStatus(){
             std::string number;
             number = std::to_string(ptrChannel->getChannelNumber());
             allowedStrings.insert(number);
-        } );    
+        } );
 
     std::cout << "Select channel for which to clear event status / type quit: " << std::endl;
     std::string input;
@@ -1348,7 +1348,7 @@ bool hvFadcManager::ClearChannelEventStatus(){
             } );
     }
 
-    return good;    
+    return good;
 }
 
 
@@ -1357,7 +1357,7 @@ bool hvFadcManager::ClearChannelEventStatus(){
 // #############################################################################
 
 void hvFadcManager::AddElementToVoltageScheduler(float voltage, int time){
-    // this is just a convenient wrapper around 
+    // this is just a convenient wrapper around
     // the same function receiving a pair of voltage and time
     std::pair<float, int> voltageTimePair;
     voltageTimePair = std::make_pair(voltage, time);
@@ -1379,7 +1379,7 @@ void hvFadcManager::RemoveFirstElementFromVoltageScheduler(){
 
 void hvFadcManager::RunVoltageScheduler(std::string channelIdentifier, std::string groupIdentifier){
     // this function runs the voltage scheduler
-    // i.e. we go through the _voltageScheduler list, 
+    // i.e. we go through the _voltageScheduler list,
     // take the pair, ramp to the first element and wait
     // the second element minutes, after that, get next element
     // input arguments:
@@ -1424,13 +1424,13 @@ void hvFadcManager::RunVoltageScheduler(std::string channelIdentifier, std::stri
                     }
                 }
             }
-            
+
             // after we have set the voltage, make sure we're ramping
             CheckModuleIsRamping(true);
-            // and if ramping is done, wait the time we want to wait 
+            // and if ramping is done, wait the time we want to wait
             sleepModule(time, "minutes");
         } );
-    
+
     // well I kind of doubt that this works!
 }
 
@@ -1481,7 +1481,7 @@ void hvFadcManager::RemoveChannelByNumber(int channelNumber){
                 this->_channelList.remove(ptrChannel);
                 // and then delete the channel, thus shutting it down
                 ptrChannel->SetRampDownUponDelete(true);
-                delete(ptrChannel);             
+                delete(ptrChannel);
             }
         } );
 
@@ -1503,7 +1503,7 @@ void hvFadcManager::RemoveChannelByName(std::string channelName){
                 this->_channelList.remove(ptrChannel);
                 // and then delete the channel, thus shutting it down
                 ptrChannel->SetRampDownUponDelete(true);
-                delete(ptrChannel);             
+                delete(ptrChannel);
             }
         } );
 
@@ -1520,8 +1520,8 @@ void hvFadcManager::PrintChannel(int channelNumber){
                 // call the printing function
                 ptrChannel->printChannel();
             }
-        } );    
-    
+        } );
+
 }
 
 void hvFadcManager::SetChannelValue(std::string key, int channelNumber, std::string value){
@@ -1543,7 +1543,7 @@ void hvFadcManager::SetChannelValue(std::string key, int channelNumber, std::str
                     ptrChannel->setCurrent(std::stod(value));
                 }
             }
-        } );        
+        } );
 
 }
 
@@ -1585,9 +1585,9 @@ void hvFadcManager::SetFadcSettings(){
     // 14 bit readout. Need this variable to properly set the trigger threshold
     // as a range! Range of TriggerThresholdRegister not from 0 - 4096 but 0 - 16384
     F_SetModeRegister( fadcModeRegister );
-    
+
     _hvFadcInitFlag = true;
-    
+
 }
 
 void hvFadcManager::StartFadcPedestalRun(){
@@ -1643,7 +1643,7 @@ void hvFadcManager::StartFadcPedestalRun(){
     // create the filename to which we write the data (with pedestalRun flag equal true)
     std::string filename;
     filename = buildFileName("", true, 0);
-    
+
     // now we can write this vector to some file
     writeFadcData(filename, fadcParams, meanFadcData);
 }
@@ -1674,8 +1674,8 @@ std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunF
         buildFileName << "pedestalRun";
     }
     else{
-        // ... or ... 
-        buildFileName << "/data";       
+        // ... or ...
+        buildFileName << "/data";
     }
     buildFileName << std::setw(6) << std::setfill('0') << eventNumber
                   << ".txt";
@@ -1687,7 +1687,7 @@ std::string hvFadcManager::buildFileName(std::string filePath, bool pedestalRunF
         fileName += "-fadc";
     }
 
-    return fileName;    
+    return fileName;
 }
 
 
@@ -1696,10 +1696,10 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
 
     // define flag which is used to return whether file was written
     bool good = false;
-    
+
     // only does anything, if FADC is active!
     if (_hvFadcInitFlag == true){
-        
+
         // create output file stream
         std::ofstream outFile(filename);
 
@@ -1707,8 +1707,8 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
         std::cout << "writing FADC data to " << filename << std::endl;
         // TODO: change local variable here!!!!
         int channels = 4;
-       
-        
+
+
         //write data to output file
         if( outFile.is_open() )
         {
@@ -1730,11 +1730,11 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
         std::cout << "number of channels?! " << channels << std::endl;
         for(int iData = 0; iData < 3*channels; iData++)
             outFile << "# " << fadcData[iData] << std::endl;
-        
+
         //print the actual data to file
         for(int iVector = 3*channels; iVector < 2563*channels; iVector++)
             outFile << fadcData[iVector] << std::endl;
-              
+
         //"skip the remaining data points
         for(unsigned int iRest = channels * 2563; iRest < fadcData.size(); iRest++)
             outFile << "# " << fadcData.at(iRest) << std::endl;
@@ -1766,11 +1766,11 @@ bool hvFadcManager::writeFadcData(std::string filename, std::map<std::string, in
 // #############################################################################
 
 void hvFadcManager::ReadHFMConfig(){
-    // This function reads the .ini file from the 
+    // This function reads the .ini file from the
     // member variable iniFile, which is set in the creator
-    // this function is called in the creator    
+    // this function is called in the creator
 
-    // // create path for iniFile 
+    // // create path for iniFile
     // #ifdef __WIN32__
     // // in case of using windows, we need to call the GetCurrentDirectory function
     // // as an input it receives: DWORD WINAPI GetCurrentDirectory(_In_  DWORD  nBufferLength, _Out_ LPTSTR lpBuffer);
@@ -1813,7 +1813,7 @@ void hvFadcManager::ReadHFMConfig(){
     // // settings object contains every setting from file
     // // TODO: check if file exists
     // QSettings settings(iniFile, QSettings::IniFormat);
-    
+
     // // flag which tracks, if one or more settings was not found in the HVsettings.ini
     // bool containsNotFlag = false;
 
@@ -1876,7 +1876,7 @@ void hvFadcManager::ReadHFMConfig(){
         // set the nHvChannels variable to the number of elements in the dummyChannelVector
         // minus 1, so that we can use nHvChannels to access the elements of the list
         nHvChannels = _dummyChannelVector.size() - 1;
-        
+
         if (key.first.find("Name") != std::string::npos){
             // if Name is in the current key, we add a new dummy channel to the dummyChannelVector
             dummyHvChannel channel;
@@ -1905,7 +1905,7 @@ void hvFadcManager::ReadHFMConfig(){
             _dummyChannelVector[nHvChannels].currentBound   = key.second.get_value<float>();
         }
     }
-    
+
     _settingsReadFlag = true;
 
 }
@@ -1921,13 +1921,13 @@ std::map<std::string, int> hvFadcManager::GetFadcParameterMap(){
     // simply done by calling several FADC functions
 
     std::map<std::string, int> fadcParams;
-    
+
     fadcParams["NumChannels"]  = F_GetNbOfChannels();
     fadcParams["ChannelMask"]  = F_GetChannelMask();
-    fadcParams["PostTrig"]     = F_GetPosttrig(); 
-    fadcParams["PreTrig"]      = F_GetPretrig(); 
-    fadcParams["TriggerRec"]   = F_GetTriggerRecord(); 
-    fadcParams["Frequency"]    = F_GetFrequency(); 
+    fadcParams["PostTrig"]     = F_GetPosttrig();
+    fadcParams["PreTrig"]      = F_GetPretrig();
+    fadcParams["TriggerRec"]   = F_GetTriggerRecord();
+    fadcParams["Frequency"]    = F_GetFrequency();
     fadcParams["ModeRegister"] = F_GetModeRegister();
     // pedestal run is a flag, which simply defines, whether a data file
     // contains a pedestal calibration run or normal data
@@ -2238,7 +2238,7 @@ ChStatusSTRUCT hvFadcManager::H_GetChannelStatusStruct(int channel){
     // creates a ChStatusSTRUCT, which is returned instead
     ChStatusSTRUCT tempChStruct;
     tempChStruct.Word = H_GetChannelStatus(channel);
-    
+
     return tempChStruct;
 }
 
