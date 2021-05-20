@@ -6,36 +6,45 @@ TEMPLATE = app
 TARGET = TOS
 DEPENDPATH += . src
 INCLUDEPATH += . include
-QMAKE_CXXFLAGS += -std=c++14 -o0 -g -Wall -W -pedantic -Wl,--no-as-needed
+QMAKE_CFLAGS = ""
+QMAKE_CXXFLAGS += -std=c++14 -Wall -W -pedantic -Wl,--no-as-needed
 OBJECTS_DIR = output/tmp
 MOC_DIR = output/tmp
 DESTDIR = output/bin
-DEFINES += "PERFORMANCE=0"
-DEFINES += "DEBUG=4"
+#DEFINES += "PERFORMANCE=0"
+#DEFINES += "DEBUG=4"
 # if not compiling for cygwin on Windows, change CYGWIN to 1 and
 # remove CONFIG += cygwin
 DEFINES += "CYGWIN=0"
 # CONFIG += cygwin
 
+# remove possible optimization flags (we add them again)
+QMAKE_CXXFLAGS_RELEASE -= -O
+QMAKE_CXXFLAGS_RELEASE -= -O1
+QMAKE_CXXFLAGS_RELEASE -= -O2
+QMAKE_CXXFLAGS_RELEASE -= -g
+QMAKE_CFLAGS_RELEASE -= -O
+QMAKE_CFLAGS_RELEASE -= -O1
+QMAKE_CFLAGS_RELEASE -= -O2
+QMAKE_CFLAGS_RELEASE -= -g
+
 # last element is considered the active setting. if want to build tests,
 # set tests as last element
-#CONFIG += debug
 #CONFIG += tests
-CONFIG += tests
-CONFIG += debug
-
+CONFIG -= debug
+CONFIG += release
 
 # Input
-HEADERS += include/console.hpp \ 
-           include/fpga.hpp \ 
-           include/pc.hpp \ 
+HEADERS += include/console.hpp \
+           include/fpga.hpp \
+           include/pc.hpp \
            include/timepix.hpp \
            include/waitconditions.hpp \
            include/V1729a_VME.h \
            include/V1729a.h \
            include/vmemodule.h \
            include/vmecontroller.h \
-           include/vmusb.h \ 
+           include/vmusb.h \
            include/DeviceVME.h \
            include/High-Level-functions_VME.h \
            include/FADCConstants_V1729a.h \
@@ -56,14 +65,14 @@ HEADERS += include/console.hpp \
            include/mcp2210/temp_auslese.hpp \
            include/mcp2210/temp_defaults.hpp \
            include/mcp2210/temp_helpers.hpp \
-           include/helper_functions.hpp 
-           
+           include/helper_functions.hpp
+
 
 SOURCES += src/console.cpp \
            src/console/userinterface.cpp \
            src/console/serialization.cpp \
            src/console/selection.cpp \
-           src/fpga.cpp \ 
+           src/fpga.cpp \
            src/pc.cpp \
            src/pc/calibration.cpp \
            src/timepix.cpp \
@@ -78,7 +87,7 @@ SOURCES += src/console.cpp \
            src/tosCommandCompletion.cpp \
            src/networkWrapper.cpp \
            src/hvFadcManager.cpp \
-           src/hvTempMonitor.cpp \           
+           src/hvTempMonitor.cpp \
            src/hvInterface/hvModule.cpp \
            src/hvInterface/hvChannel.cpp \
            src/hvInterface/hvFlexGroup.cpp \
@@ -104,10 +113,18 @@ message("tests will be built, instead of normal TOS")
     DEFINES += "TESTS=1"
 }
 CONFIG(debug, debug|tests){
+    message("Building a debug build")
     # define preprocessor macro such that userinterface is run
     DEFINES += "TESTS=0"
+    QMAKE_CXXFLAGS += "-O0 -g"
 }
-           
+CONFIG(release){
+    message("Building a release build")
+    # define preprocessor macro such that userinterface is run
+    DEFINES += "TESTS=0"
+    # define optimized build
+    QMAKE_CXXFLAGS += "-O3"
+}
 
 LIBS += -Wl,--no-as-needed \
         -Wl,--rpath=/usr/local/lib \
@@ -127,7 +144,7 @@ LIBS += -ludev
 
 
 # external QT headers
-INCLUDEPATH += /usr/include/qt4/QtCore 
+INCLUDEPATH += /usr/include/qt4/QtCore
 
  # documentation target
 dox.target = doc
@@ -142,7 +159,7 @@ QMAKE_EXTRA_TARGETS += dox
 windows|win32{
     message(Generating Makefile for windows)
 
-    # for windows add readline library, which needs to be put into 
+    # for windows add readline library, which needs to be put into
     # include folder
     HEADERS += external/readline/readline/readline.h
 
