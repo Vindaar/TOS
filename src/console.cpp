@@ -1854,7 +1854,7 @@ int Console::CommandDoTHSopt(){
 	if(threshold_boundaries.first  == 0 &&
 	   threshold_boundaries.second == 0) return -1;
         min_thl = threshold_boundaries.first;
-        max_thl = threshold_boundaries.first;	
+        max_thl = threshold_boundaries.second;
     }
     for (auto chip : chip_set){
 	pc->DoTHSopt(doTHeq, pix_per_col_THeq, chip, ths, ext_coarse, max_thl, min_thl);
