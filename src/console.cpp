@@ -66,16 +66,16 @@ Console::Console(std::string iniFilePath):
     _tp = new Timepix(_nbOfChips);
     // and now create a PC object and hand it the timepix object pointer
     pc = new PC(_tp);
-    
+
     _hvFadcManager = new hvFadcManager(iniFilePath);
 
-    // now the HV_FADC_Obj should be set up and running 
+    // now the HV_FADC_Obj should be set up and running
     // HV voltages ramped up
 
     //init FADC
     pc->initHV_FADC(_hvFadcManager, _hvFadcManagerActive);
     ok = pc->okay();
-    
+
     std::cout << "Warning: In FADC-Mode one can only use one Chip" << std::endl;
 
     //get preoload
@@ -114,7 +114,7 @@ unsigned short Console::getPreload()
 
 int Console::okay(){
 #if DEBUG==2
-    std::cout<<"Enter Console::okay()"<<std::endl;	
+    std::cout<<"Enter Console::okay()"<<std::endl;
 #endif
     return ok;
 }
@@ -122,8 +122,8 @@ int Console::okay(){
 
 void Console::ConsoleMain(){
 #if DEBUG==2
-    std::cout<<"Enter Console::ConsoleMain()"<<std::endl;	
-#endif	
+    std::cout<<"Enter Console::ConsoleMain()"<<std::endl;
+#endif
     //pc->fpga->tp->SaveFSRToFile(FSRFileName.c_str());
     //pc->fpga->tp->ChessMatrix(48,112);
     //pc->fpga->tp->SaveMatrixToFile(MatrixFileName.c_str());
@@ -154,19 +154,19 @@ void Console::RunTests(bool hardware_connected){
 
 void Console::CommandActivateHvFadcManager(){
     // this function activates the usage of the HV_FADC manager
-    // after TOS was called without command line arguments 
+    // after TOS was called without command line arguments
     // e.g. not with ./TOS -v
     // This function does
     //       - ask for config file to use to initialize HV_FADC object
     //       - set _hvFadcManagerActive flag to true
     //       - initialize _hvFadcManager
 
-    // flags and variables for getUserInput 
+    // flags and variables for getUserInput
     bool numericalInput = false;
     bool allowDefaultOnEmptyInput = true;
     std::string input;
     bool activateHFM = true;
-    
+
     if (activateHFM == true){
 	// will activate HFM
 	std::string iniFilePath;
@@ -181,9 +181,9 @@ void Console::CommandActivateHvFadcManager(){
 
 	// set HFM flag to active (only after last user input call!)
 	_hvFadcManagerActive = true;
-	
+
 	_hvFadcManager = new hvFadcManager(iniFilePath);
-	
+
 	//init FADC
 	pc->initHV_FADC(_hvFadcManager, _hvFadcManagerActive);
 	ok = pc->okay();
@@ -213,144 +213,144 @@ void Console::ClearFpgaExtTriggerFlag()
 
 void Console::ErrorMessages(int err){
     switch(err){
-	case 11: 
+	case 11:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by GeneralReset) - no valid file-descriptors\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 12: 
+	case 12:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by GeneralReset) - timeout\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 13: 
+	case 13:
 	    std::cout << "Warning "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by GeneralReset) - wrong packet-number received\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 21: 
+	case 21:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by Counting) - no valid file-descriptors\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 22: 
+	case 22:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by Counting) - timeout\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 23: 
+	case 23:
 	    std::cout << "Warning"
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by Counting) - wrong packet-number received\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 24: 
+	case 24:
 	    std::cout << "Warning"
-		      << err 
+		      << err
 		      << ": In Console::CommandCounting - Software thinks Timepix is already counting. Nothing has be done. Stop counting before you continue. If Software is wrong and Timepix is not counting, it will have any effect.\n"
 		      << std::flush;
 	    break;
-	case 25: 
+	case 25:
 	    std::cout << "Warning"
-		      << err 
+		      << err
 		      << ": In Console::CommandCounting - Software thinks Timepix is already not-counting. Anyway, a further stop-command will be sent now."
-		      << std::endl; 
+		      << std::endl;
 	    break;
-	case 301: 
+	case 301:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by ReadOut) - no valid file-descriptors\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 302: 
+	case 302:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by ReadOut) - timeout\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 303: 
+	case 303:
 	    std::cout << "Warning "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by ReadOut) - wrong packet-number received\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 310: 
+	case 310:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::SaveData (called by ReadOut) - could not open DataFile\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 41: 
+	case 41:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by SetMatrix) - no valid file-descriptors\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 42: 
+	case 42:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by SetMatrix) - timeout\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 43: 
+	case 43:
 	    std::cout << "Warning "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by SetMatrix) - wrong packet-number received\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 51: 
+	case 51:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by WriteReadFSR) - no valid file-descriptors\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 52: 
+	case 52:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by WriteReadFSR) - timeout\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 53: 
+	case 53:
 	    std::cout << "Warning "
-		      << err 
+		      << err
 		      << ": In FPGA::Communication (called by WriteReadFSR) - wrong packet-number received\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 59: 
+	case 59:
 	    std::cout << "Warning "
-		      << err 
+		      << err
 		      << ": In Timepix::ChipID (called by WriteReadFSR) - wrong ChipID -  received for one of the chips: "
 		      << pc->fpga->ErrInfo<<", expected: "
 		      << std::flush;
 	    for(auto chip : _chip_set){
-		std::cout << "chip " << chip << ": " 
-			  << pc->fpga->tp->GetChipID(chip) << "\n>" 
+		std::cout << "chip " << chip << ": "
+			  << pc->fpga->tp->GetChipID(chip) << "\n>"
 			  << std::flush;
 	    }
 	    break;
 
-	case 61: 
+	case 61:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal value for this dac\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 62: 
+	case 62:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In TimePix::SetDAC (called by CommandSetDAC) - illegal DAC number\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 63: 
+	case 63:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In Console::SenseDAC - illegal DAC number\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
 	case 64:
 	    std::cout << "Error "
@@ -358,23 +358,23 @@ void Console::ErrorMessages(int err){
 		      << ": In Timepix::SetDAC (called by CommandSetDAC) - illegal chip number\n"
 		      << std::flush;
 	    break;
-	case 80: 
+	case 80:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In TimePix::UniformMatrix - illegal input\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 81: 
+	case 81:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In TimePix::VarChessMatrix - illegal input\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
-	case 82: 
+	case 82:
 	    std::cout << "Error "
-		      << err 
+		      << err
 		      << ": In PC::ThresholdNoise - invalid ThrH\n"
-		      << std::flush; 
+		      << std::flush;
 	    break;
     }
 
@@ -395,21 +395,21 @@ int Console::CommandHelp()
 
               << "CountingTrigger <shutter-time>             = 2t <shutter-time>: "
               << "open shutter after external trigger for t[µs] = 46* <shutter-time>/40 \n\t"
-        
+
               << "CountingTime <shutter-time>                = 2z <shutter-time>: "
               << "open shutter for t[µs] = 46* <shutter-time>/40 \n\t"
 
               << "2f <shutter-time>: open shutter for t[µs]  = 46* <shutter-time>/40 "
               << "but with a 80MHz sampling clock \n\t"
-        
+
               << "2l <shutter-time>: open shutter for t[µs]  = 46*256* <shutter-time>/40 \n\t"
               << "2vl <shutter-time>: open shutter for t[µs] = 46*256*256* <shutter-time>/40 \n\t"
               << "ReadOut                                    = 3: read matrix from chip, "
               << "non zero suppressed, save data in data/data.txt \n\t"
-        
+
               << "ReadOut3                                   = 3a: read matrix from chip, "
               << "zero suppressed, save data in data/data.txt \n\t"
-        
+
               << "SetMatrix                                  = 4:  send matrix data to chip "
               << "and hence set the matrix \n\t"
 
@@ -492,8 +492,8 @@ int Console::CommandHelp()
 
               << "DisableFastClock (default)                 =     to use 40 MHz "
               << "clock in shutter"
-              << "\n\n" 
-              << std::flush; 
+              << "\n\n"
+              << std::flush;
 
     return 1;
 }
@@ -516,7 +516,7 @@ int Console::CommandSpacing(){
 
 void Console::CommandSetPreload(){
     // function to set the preload separate from the number of chips
-    // implemented by getting current number of chips and calling 
+    // implemented by getting current number of chips and calling
     // the SetNumChips function with that number as an argument
     int nChips = pc->fpga->tp->GetNumChips();
     SetNumChips(nChips);
@@ -532,7 +532,7 @@ int Console::CommandSetNumChips(bool callSetNumChips){
     // inputs:
     //     bool callSetNumChips: determines whether we call SetNumChips
     //         to set number of chips to member variable _nbOfChips and
-    //         call function to get preload immediately (== true) or whether 
+    //         call function to get preload immediately (== true) or whether
     //         to return number of chips (== false).
     //         Default is == true
     int nChips;
@@ -618,12 +618,12 @@ int Console::CommandSetOption(){
 
 int Console::CommandRun(bool useHvFadc){
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandCounting()"<<std::endl;	
+    std::cout<<"Enter Console::CommandCounting()"<<std::endl;
 #endif
-  
+
     int result = 1;
     // TODO: probably a good idea to replace runtimeFrames variable at some point
-    unsigned short runtimeFrames = 0;              //< run mode var  
+    unsigned short runtimeFrames = 0;              //< run mode var
     int shutterTime = 128;
     int runtime = 0;                               //< var to store the runtime or the nb of triggers
     std::string shutter_mode;
@@ -652,7 +652,7 @@ int Console::CommandRun(bool useHvFadc){
     // starts run: DoRun()
 
 
-  
+
     //ProfilerStart();
 
     //Get input vals from user
@@ -662,7 +662,7 @@ int Console::CommandRun(bool useHvFadc){
     inputRunParameter = getUserInputNumericalNoDefault(promptRunParameter, &allowedRunParameterStrings);
     if (inputRunParameter == "quit") return -1;
 
-    // exception handling is done in getUserInput, thus this conversion should 
+    // exception handling is done in getUserInput, thus this conversion should
     // always work
     runtimeFrames = std::stoi(inputRunParameter);
     std::cout << "Run parameter set to: " << runtimeFrames << std::endl;
@@ -686,13 +686,13 @@ int Console::CommandRun(bool useHvFadc){
 
     // explanation of previous input to current input methods:
     // Shutter mode
-    // 0 = untriggered, 
+    // 0 = untriggered,
     //     inputTrigger == "noexternal" && inputShutterMode == "standard" && inputFastClock == "standard"
     // 1 = external trigger,
     //     inputTrigger == "external"   && inputShutterMode == "standard" && inputFastClock == "standard"
-    // 2 = untriggered 2x faster clock, 
+    // 2 = untriggered 2x faster clock,
     //     inputTrigger == "noexternal" && inputShutterMode == "standard" && inputFastClock == "fastclock"
-    // 3 = external trigger 2x faster clock, 
+    // 3 = external trigger 2x faster clock,
     //     inputTrigger == "external"   && inputShutterMode == "standard" && inputFastClock == "fastclock"
     // 4 = untriggered long
     //     inputTrigger == "noexternal" && inputShutterMode == "long"     && inputFastClock == "standard"
@@ -722,7 +722,7 @@ int Console::CommandRun(bool useHvFadc){
     // Shutter mode
     // for the shutter mode, we can call ShutterRangeSelection()
     if (useExternalTrigger == false){
-	// only if we do not use an external trigger, we allow the selection of 
+	// only if we do not use an external trigger, we allow the selection of
 	// the different shutter modes
 	inputShutterMode = ShutterRangeSelection();
 	if (inputShutterMode == "quit") return -1;
@@ -734,7 +734,7 @@ int Console::CommandRun(bool useHvFadc){
 	shutter_mode = "external";
     }
 
-    //Shutter time; call ShutterTimeSelection with inputShutterMode (as an int) 
+    //Shutter time; call ShutterTimeSelection with inputShutterMode (as an int)
     //              as argument.
     inputShutterTime = ShutterTimeSelection(shutter_mode);
     if (inputShutterTime == "quit") return -1;
@@ -743,9 +743,9 @@ int Console::CommandRun(bool useHvFadc){
     //full matrix or zero surpressed
     std::cout << "(Run)\t Run mode (0 = zero suppressed, 1 = complete matrix (slow)" << std::endl;
     if(useHvFadc) std::cout << "Choose zero surpressed if you want to use the FADC" << std::endl;
-    std::set<std::string> allowedZeroSuppressionStrings = {"zero",     "0", 
+    std::set<std::string> allowedZeroSuppressionStrings = {"zero",     "0",
 							   "complete", "1" };
-    inputZeroSuppression = getUserInputNonNumericalNoDefault(_prompt, 
+    inputZeroSuppression = getUserInputNonNumericalNoDefault(_prompt,
 							     &allowedZeroSuppressionStrings);
     if (inputZeroSuppression == "quit") return -1;
     else if ( (inputZeroSuppression == "zero") ||
@@ -764,22 +764,22 @@ int Console::CommandRun(bool useHvFadc){
     {
 	// temporary int variable, used as flag for yes / no inputs
 	int temp;
-	std::cout << "Detected FADC - do you want to start a measurement with simultaneous Chip and Fadc readout? 1 = yes, 0 = no \n" 
+	std::cout << "Detected FADC - do you want to start a measurement with simultaneous Chip and Fadc readout? 1 = yes, 0 = no \n"
 		  << std::endl;
-	
+
 	//check if the user wants to use the fadc
 	input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
 	if (input == "quit") return -1;
 	temp  = std::stoi(input);
 	if(temp != 1){
 	    useHvFadc = false;
-	    std::cout << "Don't use the Fadc" << std::endl; 
+	    std::cout << "Don't use the Fadc" << std::endl;
 	}
 	else{
 	    //print fadc settings
 	    _hvFadcManager->FADC_Functions->printSettings();
 
-	    std::cout << "Return to main menu to change some Fadc settings? 1 = y, 0 = n \n" 
+	    std::cout << "Return to main menu to change some Fadc settings? 1 = y, 0 = n \n"
 		      << "If yes, this aborts the run."
 		      << std::endl;
 	    input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
@@ -787,8 +787,8 @@ int Console::CommandRun(bool useHvFadc){
 	    temp  = std::stoi(input);
 	    if(temp == 1){
 		std::cout << "Aborting Run - display menu by entering 0" << std::endl;
-		return 0; 
-	    }      
+		return 0;
+	    }
 	}
     }//end of if(useHvFadc)
 
@@ -799,24 +799,24 @@ int Console::CommandRun(bool useHvFadc){
     // Start measurement
     // TODO: finish changing Run function!
     if(useHvFadc){
-	result = pc->DoRun(runtimeFrames, 
-			  runtime, 
-			  shutterTime, 
-			  0, 
-			  shutter_mode, 
-			  run_mode, 
-			  useFastClock, 
-			  useExternalTrigger, 
+	result = pc->DoRun(runtimeFrames,
+			  runtime,
+			  shutterTime,
+			  0,
+			  shutter_mode,
+			  run_mode,
+			  useFastClock,
+			  useExternalTrigger,
 			  useHvFadc);
     }
     else {
 	// if Fadc not used, init FADC with NULL and call standard DoRun function
 	pc->initHV_FADC(NULL,false);
-	result = pc->DoRun(runtimeFrames, 
-			  runtime, 
-			  shutterTime, 
-			  0, 
-			  shutter_mode, 
+	result = pc->DoRun(runtimeFrames,
+			  runtime,
+			  shutterTime,
+			  0,
+			  shutter_mode,
 			  run_mode,
 			  useFastClock,
 			  useExternalTrigger);
@@ -824,25 +824,25 @@ int Console::CommandRun(bool useHvFadc){
 
     // print error message
     if(result>0){
-	ErrorMessages(90+result); 
+	ErrorMessages(90+result);
 	return -1;
 	std::cout << "Run closed" << std::endl;
     }
-  
+
     //FIXME: drop this?
     if((!useHvFadc) && _hvFadcManagerActive) return 1;
-    else return 0;	
+    else return 0;
 }//end CommandRun
 
 
 int Console::CommandCounting(int c){
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandCounting()"<<std::endl;	
+    std::cout<<"Enter Console::CommandCounting()"<<std::endl;
 #endif
     int result=0;
     if(c!=0){
 	if(pc->fpga->tp->IsCounting()!=0){ErrorMessages(24);}
-	else{	
+	else{
 	    result=pc->fpga->Counting();
 	    if(result>20){ErrorMessages(result);}
 	    else{std::cout<<"\tCounting started\n"<<std::flush;}
@@ -860,10 +860,10 @@ int Console::CommandCounting(int c){
 
 int Console::CommandCountingTrigger(){
     // default CommandCountingTrigger function
-    // this function is used to set the time the shutter opens after 
+    // this function is used to set the time the shutter opens after
     // a trigger from an external trigger
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTrigger()" << std::endl;	
+    std::cout<<"Enter Console::CommandCountingTrigger()" << std::endl;
 #endif
     int result=0;
     unsigned int time;
@@ -882,7 +882,7 @@ int Console::CommandCountingTrigger(){
 	pc->fpga->UseFastClock(0);
     }
 
-    // 
+    //
     // get user input to get valid value of x in range of 1 to 255
     // for this call ShutterTimeSelection() to get user input interface
     // in case we use an external trigger, only the standard shutter range is allowed
@@ -906,10 +906,10 @@ int Console::CommandCountingTrigger(){
 }
 
 int Console::CommandCountingTime(){
-    // CommandCountingTime function, dealing with all different 'multiplier' cases 
+    // CommandCountingTime function, dealing with all different 'multiplier' cases
     // (standard, long, verylong)
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandCountingTime() " << time <<std::endl;	
+    std::cout<<"Enter Console::CommandCountingTime() " << time <<std::endl;
 #endif
     // use getUserInput to get the desired mode first
     std::string inputClock;
@@ -965,7 +965,7 @@ int Console::CommandCountingTime(){
     if (_hvFadcManagerActive == true){
 	// enable fadc shutter
 	pc->fpga->EnableFADCshutter(1);
-	
+
         std::vector<std::thread> threads;
 
         threads.push_back(std::thread(&hvFadcManager::F_StartAcquisition, this->_hvFadcManager));
@@ -993,13 +993,13 @@ int Console::CommandCountingTime(){
 
     // int result;
     // result = pc->fpga->CountingTime(std::stoi(inputTime), n);
-    if (result>20){ 
-	ErrorMessages(result); 
+    if (result>20){
+	ErrorMessages(result);
     }
     else{
 	std::cout << "\tCountingTime accomplished\n" << std::flush;
     }
-    
+
     // now send software trigger to FADC to close frame
     if (_hvFadcManagerActive == true){
 	std::cout << "sending software trigger..." << std::endl;
@@ -1014,7 +1014,7 @@ int Console::CommandCountingTime(){
 
 int Console::CommandReadOut(){
 #if DEBUG==2
-    std::cout << "Enter Console::CommandReadOut()"  <<  std::endl;	
+    std::cout << "Enter Console::CommandReadOut()"  <<  std::endl;
 #endif
     int result;
     std::string filename[9] = {""};
@@ -1042,7 +1042,7 @@ int Console::CommandReadOut2(){
 
 	// now check whether we're using the FADC
 	if (_hvFadcManagerActive == true){
-	    // in this case use 
+	    // in this case use
 	    result   = pc->DoReadOutFadc(chip);
 	}
 	else{
@@ -1050,7 +1050,7 @@ int Console::CommandReadOut2(){
 	}
 #if DEBUG==2
 	std::cout << "DEBUG: Filename: " << filename << std::endl;
-#endif    
+#endif
 	std::cout<<"CommandReadOut:"<< result <<" for chip "<< chip << std::endl;
 	if(result<0){ErrorMessages(-result);}
 	else{std::cout<<"\tReadOut accomplished\n"<<std::flush;}
@@ -1062,7 +1062,7 @@ int Console::CommandReadOut2(){
 
 int Console::CommandSetMatrix(){
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandSetMatrix()"<<std::endl;	
+    std::cout<<"Enter Console::CommandSetMatrix()"<<std::endl;
 #endif
     int result;
     result=pc->fpga->SetMatrix();
@@ -1086,8 +1086,8 @@ int Console::CommandWriteReadFSR(){
 
 int Console::CommandSetDAC(){
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandSetDAC()"<<std::endl;	
-#endif	
+    std::cout<<"Enter Console::CommandSetDAC()"<<std::endl;
+#endif
     std::string  input;
     const char *promptDAC = "Please choose a DAC to set (#0 to #17)> ";
     input = getUserInputNumericalNoDefault(promptDAC);
@@ -1105,10 +1105,10 @@ int Console::CommandSetDAC(){
     int i = std::stoi(input);
     int err = 1;
 
-    if (chip > _nbOfChips){ 
-	std::cout << "You only have " 
-		  << _nbOfChips 
-		  << " chips, please provide correct chip number." 
+    if (chip > _nbOfChips){
+	std::cout << "You only have "
+		  << _nbOfChips
+		  << " chips, please provide correct chip number."
 		  << std::endl;
 	err = 64;
     }
@@ -1118,13 +1118,13 @@ int Console::CommandSetDAC(){
 		  << "later, once this is common knowledge." << std::endl;
     }
     if(err != 50){
-	std::cout << "SetDACandWrite returned error code: " << err << std::endl;	
+	std::cout << "SetDACandWrite returned error code: " << err << std::endl;
 	ErrorMessages(err);
     }
     else{
-	std::cout << "DAC " << dac 
-		  << " (" << pc->fpga->tp->GetDACName(dac) << ") of chip " << chip 
-		  << " set to " << i 
+	std::cout << "DAC " << dac
+		  << " (" << pc->fpga->tp->GetDACName(dac) << ") of chip " << chip
+		  << " set to " << i
 		  << std::endl;
     }
     return 1;
@@ -1135,7 +1135,7 @@ int Console::CommandShowFSR(){
     for (auto chip : _chip_set){
 	std::string chip_name;
 	chip_name = pc->fpga->tp->GetChipName(chip);
-	std::cout << "current FSR for chip #" << chip 
+	std::cout << "current FSR for chip #" << chip
 		  << " with name " << chip_name
 		  << std::endl;
 	for(unsigned int i=0;i<18;i++){
@@ -1167,7 +1167,7 @@ int Console::CommandVarChessMatrix(bool all_chips){
     //     bool all_chips: if this flag is true, we set a single chess matrix
     //                     for all chips
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandSenseDAC()"<<std::endl;	
+    std::cout<<"Enter Console::CommandSenseDAC()"<<std::endl;
 #endif
     int err = 0;
 
@@ -1184,7 +1184,7 @@ int Console::CommandVarChessMatrix(bool all_chips){
 	    return -1;
 	}
     }
-    
+
     for (auto chip : chip_set){
 	// for the selected chips we now either set the same chess matrix (all_chips == true)
 	// or individual matrices (all_chips == false)
@@ -1193,7 +1193,7 @@ int Console::CommandVarChessMatrix(bool all_chips){
 	    chess_matrix_map = ChessMatrixSelection(chip);
 	    if (chess_matrix_map.empty()){
 		return -1;
-	    }	    
+	    }
 	}
 	err = pc->fpga->tp->VarChessMatrix(chip, chess_matrix_map);
 	if (err == 0){
@@ -1217,7 +1217,7 @@ int Console::CommandGetMatrixAsIntAndDump(){
     frame.ConvertFullFrameFromLFSR();
     filename = GetFrameDumpFilename(0, 0, 0);
     frame.DumpFrameToFile(filename);
-    return 0;    
+    return 0;
 }
 
 int Console::CommandUniformMatrix(){
@@ -1256,7 +1256,7 @@ int Console::CommandUniformMatrix(){
 	else{ErrorMessages(80);}
     }
 
-    return err;	
+    return err;
 }
 
 int Console::CommandUniformMatrixAllChips(){
@@ -1271,7 +1271,7 @@ int Console::CommandUniformMatrixAllChips(){
     bool numericalInput = true;
     bool allowDefaultOnEmptyInput = false;
     std::string input;
-    
+
     std::cout << "This matrix will be set for all active chips." << std::endl;
     std::cout<<"\t P0="<<std::flush;
     input = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
@@ -1300,7 +1300,7 @@ int Console::CommandUniformMatrixAllChips(){
     else{ErrorMessages(80);}
 
 
-    return err;	
+    return err;
 }
 
 int Console::CommandFADCshutter(){
@@ -1415,7 +1415,7 @@ int Console::CommandDACScan(){
 void Console::RunTHLScan(std::set<unsigned short> chip_set,
 			 std::pair<int, int> threshold_boundaries,
 			 std::string shutter_range,
-			 std::string shutter_time,			 
+			 std::string shutter_time,
 			 std::atomic_bool *loop_stop){
 
     // in this case perform for all chips
@@ -1424,7 +1424,7 @@ void Console::RunTHLScan(std::set<unsigned short> chip_set,
 		      threshold_boundaries,
 		      shutter_range,
 		      shutter_time,
-		      loop_stop);	    
+		      loop_stop);
     }
     return;
 }
@@ -1446,7 +1446,7 @@ int Console::CommandTHLScan(){
     coarse_boundaries = CoarseBoundarySelection();
     if(coarse_boundaries.first  == 0 &&
        coarse_boundaries.second == 0) return -1;
-    
+
     // threshold boundary seleection
     std::pair<int, int> threshold_boundaries;
     threshold_boundaries = THLBoundarySelection();
@@ -1455,14 +1455,14 @@ int Console::CommandTHLScan(){
 
     // shutter type selection
     shutter_range = ShutterRangeSelection();
-    
+
     // shutter time selection
     shutter_time  = ShutterTimeSelection(shutter_range);
 
 
     // now loop over fpga->tpulse to pulse..
     // create seperate thread, which loops and will be stopped, if we type stop in terminal
-        
+
     std::atomic_bool loop_stop;
     loop_stop = false;
     std::thread loop_thread(&Console::RunTHLScan,
@@ -1495,7 +1495,7 @@ void Console::CommandSCurve(){
     // - choose which chips to do SCurve scan for
     // - choose internal or external pulser
     // - choose pulse heights if internal pulser
-    
+
     // variable which stores pulser (internal or external)
     std::string pulser;
     // variable which stores CTPR value
@@ -1519,8 +1519,8 @@ void Console::CommandSCurve(){
     if (CTPR_str == "quit") return;
     std::cout << "using " << CTPR_str << std::endl;
     CTPR = std::stoi(CTPR_str);
-    
-    
+
+
     // now we're asking if the user wants to use an internal or external pulser
     pulser = PulserSelection();
     if (pulser == "quit") return;
@@ -1529,7 +1529,7 @@ void Console::CommandSCurve(){
     // TODO: IN case of internal pulser, use default values for shutter range and time
     //       standard and 100
 
-    // now we need to create a list of pulses, which is going to 
+    // now we need to create a list of pulses, which is going to
     // be used
     // if we use an external pulser, this list will only contain a single value
     // for the internal pulser, we create a list
@@ -1547,12 +1547,12 @@ void Console::CommandSCurve(){
     threshold_boundaries = THLBoundarySelection();
     if(threshold_boundaries.first  == 0 &&
        threshold_boundaries.second == 0) return;
-    
+
     // in case of an external pulser, we will allow the user to add another voltages
     // to the list after the first voltage has finished
 
     if (pulser == "internal"){
-	// in case we use the internal pulser, we only allow to use the pulse list 
+	// in case we use the internal pulser, we only allow to use the pulse list
 	// created before
 	pc->SCurve("SCurve",
 		   chip_set,
@@ -1564,7 +1564,7 @@ void Console::CommandSCurve(){
 		   threshold_boundaries);
     }
     else if (pulser == "external"){
-	// in case of an external trigger, we ask whether the user wants to add 
+	// in case of an external trigger, we ask whether the user wants to add
 	// another voltage after the first one has finished
 	do{
 	    pc->SCurve("SCurve",
@@ -1575,9 +1575,9 @@ void Console::CommandSCurve(){
 		       shutter_time,
 		       CTPR,
 		       threshold_boundaries);
-	    
+
 	    // ask for more input
-	    std::cout << "Do you wish to use another external pulse voltage? (y / n)" 
+	    std::cout << "Do you wish to use another external pulse voltage? (y / n)"
 		      << std::endl;
 	    input = getUserInputNonNumericalNoDefault(_prompt, {"y", "n", "Y", "N"});
 	    if (input == "quit") return;
@@ -1589,7 +1589,7 @@ void Console::CommandSCurve(){
 	    else{
 		// in this case we just finish
 		std::cout << callerFunction << " calibration finished." << std::endl;
-		
+
 	    }
 	} while ( (input != "n") || (input != "N") );
     }
@@ -1599,7 +1599,7 @@ void Console::CommandSCurve(){
 
 
 
-int Console::CommandSCurveOld(){    
+int Console::CommandSCurveOld(){
     // variables for getUserInput
     bool numericalInput = true;
     bool allowDefaultOnEmptyInput = false;
@@ -1612,24 +1612,24 @@ int Console::CommandSCurveOld(){
     unsigned short StopTHL[9] = {1023};
     std::cout << "Hello, this is fast S-Curve scan. I will do a THL scan and "
     	      << "count how many counts there are in average on the chips. "
-    	      << "Scan will be done for one chip after the other from chip 0 to " 
-    	      <<  _nbOfChips 
-    	      << ") " 
+    	      << "Scan will be done for one chip after the other from chip 0 to "
+    	      <<  _nbOfChips
+    	      << ") "
     	      << std::flush;
     std::cout << "Warning: Only CTPR = 1 will be used. Hence only column x = 0, "
     	      << "x= 32, ... Make sure that NONE of these columns are dead. "
-    	      << "Otherwise put a column offset ( 0(no offset) to 31)" 
+    	      << "Otherwise put a column offset ( 0(no offset) to 31)"
     	      << std::flush;
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     offset     = std::stoi(input);
-    std::cout << "What voltage did you set on pulser, put 0 for internal pulser?" 
+    std::cout << "What voltage did you set on pulser, put 0 for internal pulser?"
     	      << std::flush;
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     voltage    = std::stoi(input);
     std::cout << "Shutter time in clock cycles (0-255), LONG mode used "
-    	      << "(100 is ok for internal pulser) " 
+    	      << "(100 is ok for internal pulser) "
     	      << std::flush;
     input      = getUserInput(_prompt, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
@@ -1669,7 +1669,7 @@ int Console::Commandi2cDAC(){
     input = getUserInput(promptDACvoltage, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     Umv   = std::stoi(input);
-    
+
     pc->fpga->i2cDAC(Umv, DACchannel);
     return 0;
 }
@@ -1700,7 +1700,7 @@ int Console::CommandTpulse(){
     if (input == "quit") return -1;
     Npulses = std::stoi(input);
     const char *promptFreqTestPulse = "Testpulse frequency: Divide 500 kHz by (1 - 50): ";
-    input     = getUserInput(promptFreqTestPulse, numericalInput, allowDefaultOnEmptyInput);    
+    input     = getUserInput(promptFreqTestPulse, numericalInput, allowDefaultOnEmptyInput);
     if (input == "quit") return -1;
     div500kHz = std::stoi(input);
     pc->fpga->tpulse(Npulses, div500kHz);
@@ -1716,7 +1716,7 @@ void Console::runTestPulses(){
       to create test pulses do one of the following:
       - set i2c DACs (2, upper and 3, lower) to some appropriate value
       --> loop over this
-          - call fpga::tpulses function 
+          - call fpga::tpulses function
           - call fpga::EnableTPulse and set to true
           --> test pulses will be created
           - call fpga::EnableTPulse and set to false
@@ -1724,7 +1724,7 @@ void Console::runTestPulses(){
 
       or do the following:
       - set i2c DACs (2, upper and 3, lower) to some appropriate value
-      - call fpga::tpulses function 
+      - call fpga::tpulses function
       - call fpga::EnableTPulse and set to true
       -- loop over this:
           - call fpga::CountingTime function
@@ -1746,7 +1746,7 @@ int Console::CommandTestTPulse(){
     // this function is simply used to test, whether the test pulses properly work
     // and the i2cDACs are properly set. To some extend similar to a mix of Commandi2cDAC and
     // CommandTpulse (as far as I understand!!)
-    
+
     // first handle user input
     std::cout << "Please enter an upper (non-offset!) value for the i2cDAC in mV. Choose from x = {350, 2200}"
 	      << std::endl;
@@ -1761,7 +1761,7 @@ int Console::CommandTestTPulse(){
     // now handle setting the DAC
     pc->fpga->i2cDAC(std::stoi(input), 2);
     pc->fpga->i2cDAC(350, 3);
-    
+
     //pc->fpga->EnableTPulse(1);
     // now loop over fpga->tpulse to pulse..
     // create seperate thread, which loops and will be stopped, if we type stop in terminal
@@ -1776,7 +1776,7 @@ int Console::CommandTestTPulse(){
     }
     loop_thread.join();
     pc->fpga->EnableTPulse(0);
-    
+
     return 0;
 }
 
@@ -1797,7 +1797,7 @@ int Console::CommandDoTHSopt(){
     std::cout << "I will do a few threshold scans as in THeq, but with 16 pixels"
 	      << " active per row at same time (but only one step). Only 4096 "
 	      << "pixels are used. Do you want to do a THeq directly afterwards?"
-	      << " (no extended coarse THeq possible) (yes / NO) " 
+	      << " (no extended coarse THeq possible) (yes / NO) "
 	      << std::endl;
     std::set<std::string> allowedStrings = {"y", "Y", "yes", "YES",
 					    "n", "N", "no", "NO"};
@@ -1823,7 +1823,7 @@ int Console::CommandDoTHSopt(){
     }
     short ths = 255;
     std::cout << "Set start value for ths from 20 to 255 (lower only if you are "
-	      << "sure that best ths is near that value) " 
+	      << "sure that best ths is near that value) "
 	      << std::endl;
     std::set<std::string> allowedValues;
     for(int i = 20; i < 256; i++) allowedValues.insert(std::to_string(i));
@@ -1834,7 +1834,7 @@ int Console::CommandDoTHSopt(){
     }
     short ext_coarse = 0;
     std::cout << " Do you want to use extended coarse thl range (coarse 6 and 8 "
-	      << "in addition to 7)? (1=yes, 0=no) " 
+	      << "in addition to 7)? (1=yes, 0=no) "
 	      << std::endl;
     input = getUserInputNonNumericalNoDefault(_prompt, &allowedStrings);
     if (input == "quit") return -1;
@@ -1915,7 +1915,7 @@ int Console::CommandThresholdEqNoiseCenter(){
 
 
 void Console::CommandTOCalib(){
-    // This function does the TO calibration. It is based on the previous TOCalibFast, 
+    // This function does the TO calibration. It is based on the previous TOCalibFast,
     // rewritten in a cleaner way
     // TODO: describe what the function does exactly
     // - choose which chips to calibrate
@@ -1924,8 +1924,8 @@ void Console::CommandTOCalib(){
     // - choose pixels per column (i.e. at the same time this many rows will be
     //   pulsed at the same time
     // - choose shutter type and length
-    // - 
-    
+    // -
+
     // variable which stores, whether we're doing TOT or TOA calibration
     std::string TOmode;
     // variable which stores pulser (internal or external)
@@ -1943,7 +1943,7 @@ void Console::CommandTOCalib(){
     std::set<unsigned short> chip_set;
     chip_set = ChipSelection();
 
-    // second we're going to determine whether the user wants to do a TOT or a 
+    // second we're going to determine whether the user wants to do a TOT or a
     // TOA calibration
     TOmode = CalibrationSelection();
     if (TOmode == "quit") return;
@@ -1957,31 +1957,31 @@ void Console::CommandTOCalib(){
     // TODO: IN case of internal pulser, use default values for shutter range and time
     //       standard and 100
 
-    // now we need to create a list of pulses, which is going to 
+    // now we need to create a list of pulses, which is going to
     // be used
     // if we use an external pulser, this list will only contain a single value
     // for the internal pulser, we create a list
     std::list<int> pulseList;
     std::string callerFunction = "TOCalib";
     pulseList = PulseListCreator(pulser, callerFunction);
-    
+
     // now determine the pixels per columns to use
     pixels_per_column = PixPerColumnSelection();
     if (pixels_per_column == -1) return;
 
     // shutter type selection
     shutter_range = ShutterRangeSelection();
-    
+
     // shutter time selection
     shutter_time  = ShutterTimeSelection(shutter_range);
 
-    
+
     // in case of an external pulser, we will allow the user to add another voltages
     // to the list after the first voltage has finished
 
     // now I guess call the actual TO calib function?
     if (pulser == "internal"){
-	// in case we use the internal pulser, we only allow to use the pulse list 
+	// in case we use the internal pulser, we only allow to use the pulse list
 	// created before
 	pc->TOCalib(callerFunction,
 		    chip_set,
@@ -1993,7 +1993,7 @@ void Console::CommandTOCalib(){
 		    shutter_time);
     }
     else if (pulser == "external"){
-	// in case of an external trigger, we ask whether the user wants to add 
+	// in case of an external trigger, we ask whether the user wants to add
 	// another voltage after the first one has finished
 	do{
 	    pc->TOCalib(callerFunction,
@@ -2004,9 +2004,9 @@ void Console::CommandTOCalib(){
 			pixels_per_column,
 			shutter_range,
 			shutter_time);
-	    
+
 	    // ask for more input
-	    std::cout << "Do you wish to use another external pulse voltage? (y / n)" 
+	    std::cout << "Do you wish to use another external pulse voltage? (y / n)"
 		      << std::endl;
 	    input = getUserInputNonNumericalNoDefault(_prompt, {"y", "n", "Y", "N"});
 	    if (input == "quit") return;
@@ -2018,7 +2018,7 @@ void Console::CommandTOCalib(){
 	    else{
 		// in this case we just finish
 		std::cout << TOmode << " calibration finished." << std::endl;
-		
+
 	    }
 	} while ( (input != "n") || (input != "N") );
     }
@@ -2050,7 +2050,7 @@ int Console::CommandTOCalibFast(){
 	      << "want to do another voltage if you use the external pulser. "
 	      << std::endl;
     std::cout << "You have "
-	      << _nbOfChips 
+	      << _nbOfChips
 	      <<" chips, all of them will be calibrated at the same time. "
 	      << std::endl;
     const char *promptExtIntPulser = "Do you want to use the external (0, default) or internal (1) pulser? ";
@@ -2075,7 +2075,7 @@ int Console::CommandTOCalibFast(){
     }
     std::cout << pix_per_row << " pixel per row at same time" << std::endl;
     std::cout << "Shutter length: press 1 for short shutter (0-255 clock cycles);"
-	      << " press 2 for long shutter (256 - 65280 clock cycles)" 
+	      << " press 2 for long shutter (256 - 65280 clock cycles)"
 	      << std::endl;
     std::string ein2="";
     ein2 = getUserInput(_prompt);
@@ -2085,7 +2085,7 @@ int Console::CommandTOCalibFast(){
 	shuttertype = (unsigned short) atoi(ein2.data());
     }
     std::cout << "Set shutter length in clock cycles(0 -255) (if you have "
-	      << "chosen long shutter this value will be multiplied by 256):" 
+	      << "chosen long shutter this value will be multiplied by 256):"
 	      << std::endl;
     std::string ein3="";
     ein3 = getUserInput(_prompt);
@@ -2106,7 +2106,7 @@ void Console::CommandCheckOffsetFullMatrix(){
     // matrix readout
 
     pc->CheckOffsetFullMatrix();
-    
+
 }
 
 void Console::CommandCheckOffsetZeroSuppressed(){
@@ -2122,12 +2122,12 @@ void Console::CommandCheckOffsetZeroSuppressed(){
 
 int Console::CommandCalibrate(){
 
-    std::cout << "This is the calibration function." 
+    std::cout << "This is the calibration function."
 	      << std::endl;
-    std::cout << "All chips or a selected chip will be calibrated." 
+    std::cout << "All chips or a selected chip will be calibrated."
 	      << std::endl;
     std::cout << "This can take long (~2 days for an octoboard, several "
-	      << "hours for a single chip)." 
+	      << "hours for a single chip)."
 	      << std::endl;
     std::cout << "THS optimisation, threshold equalisation, S-curve scan, "
 	      << "(optional: TOT calibration and  TOA calibration) will "
@@ -2154,9 +2154,9 @@ int Console::CommandCalibrate(){
     unsigned short chp = 1;
     std::string ein1="";
     std::cout << ""  << std::endl;
-    std::cout << "You have " 
-	      <<  _nbOfChips 
-	      << " chips" 
+    std::cout << "You have "
+	      <<  _nbOfChips
+	      << " chips"
 	      << std::endl;
     std::cout << "Which chips do you want to calibrate? Put 0 if you want to "
 	      << "go for all of them one after the other. "
@@ -2173,9 +2173,9 @@ int Console::CommandCalibrate(){
     short ths = 255;
     std::string ein2="";
     std::cout << "Set start value for the THS DAC from 20 to 255 (lower only "
-	      << "if you are sure that best ths is near that value) " 
+	      << "if you are sure that best ths is near that value) "
 	      << std::endl;
-    std::cout << "Press ENTER to use 127 (default) " 
+    std::cout << "Press ENTER to use 127 (default) "
 	      << std::flush;
     ein2 = getUserInput(_prompt);
     if (ein2 == "quit") return -1;
@@ -2219,10 +2219,10 @@ int Console::CommandCalibrate(){
     }
     unsigned short pix_per_row = 1;
     std::string ein6="";
-    std::cout << "Threshold equalisation parameters:" 
+    std::cout << "Threshold equalisation parameters:"
 	      << std::endl;
     std::cout << "(Spacing) How many active pixel per row at the same time? "
-	      << "1,2,4,8,16 (more is not good!)?" 
+	      << "1,2,4,8,16 (more is not good!)?"
 	      << std::flush;
     ein6 = getUserInput(_prompt);
     if (ein6 == "quit") return -1;
@@ -2238,19 +2238,19 @@ int Console::CommandCalibrate(){
     unsigned short StopTHL[9] = {1023};
     // input string for getUserInput in the following few lines of code
     std::string input;
-    std::cout << "S-Curve parameters (internal pulser will be used):" 
+    std::cout << "S-Curve parameters (internal pulser will be used):"
 	      << std::endl;
     std::cout << "Warning: Only CTPR = 1 will be used. Hence only "
-	      << "column x = 0, x= 32, ..." 
+	      << "column x = 0, x= 32, ..."
 	      << std::endl;
     std::cout << "Make sure that NONE of this columns is dead and press 0. "
-	      << "Otherwise put a column offset ( 0(no offset) to 31)" 
+	      << "Otherwise put a column offset ( 0(no offset) to 31)"
 	      << std::flush;
     input      = getUserInput(_prompt, true, false);
     if (input == "quit") return -1;
     offset     = std::stoi(input);
     std::cout << "Shutter time in clock cycles (0-255), LONG mode used "
-	      << "(100 is ok for internal pulser) " 
+	      << "(100 is ok for internal pulser) "
 	      << std::flush;
     input      = getUserInput(_prompt, true, false);
     if (input == "quit") return -1;
@@ -2274,8 +2274,8 @@ int Console::CommandCalibrate(){
 		  << "pulser will be used): "
 		  << std::endl;
 	std::cout << "You have "
-		  << _nbOfChips 
-		  <<" chips, all of them will be calibrated at the same time. " 
+		  << _nbOfChips
+		  <<" chips, all of them will be calibrated at the same time. "
 		  << std::endl;
 	std::cout << "For the spacing: How many pixel per row at same time? "
 		  << "1,2,4,8,16 (more is not good!)? "
@@ -2287,7 +2287,7 @@ int Console::CommandCalibrate(){
 	else{
 	    pix_per_rowTO=(unsigned short) atoi(ein7.data());
 	}
-	std::cout << pix_per_rowTO 
+	std::cout << pix_per_rowTO
 		  << " pixel per row at same time"
 		  <<std::endl;
 	std::cout << "Shutter length: press 1 for short shutter "
@@ -2342,7 +2342,7 @@ int Console::CommandSwitchTriggerConnection(){
     // default CommandSwitchTriggerConnection function
 #if DEBUG==2
     std::cout << "Enter Console::CommandCountingTime()"
-	      << std::endl;	
+	      << std::endl;
 #endif
     std::string input;
     const char *promptType = "Please provide a trigger connection type { tlu, lemo }> ";
@@ -2353,7 +2353,7 @@ int Console::CommandSwitchTriggerConnection(){
 	pc->fpga->SwitchTriggerConnection(1);
     }
     else{
-	// if tlu is not in input, lemo is (getUserInput takes care of 
+	// if tlu is not in input, lemo is (getUserInput takes care of
 	// only allowing strings in allowedStrings
 	pc->fpga->SwitchTriggerConnection(0);
     }
@@ -2362,7 +2362,7 @@ int Console::CommandSwitchTriggerConnection(){
 
 void Console::DACScanLive(char dac, int val){
 #if DEBUG==2
-    std::cout<<"Enter Console::CommandDACScanLive()"<<std::endl;	
+    std::cout<<"Enter Console::CommandDACScanLive()"<<std::endl;
 #endif
     if(dac>=0){std::cout << std::endl << pc->fpga->tp->GetDACName((unsigned int) dac) << "\n";}
     std::cout << val << "   ";
@@ -2371,7 +2371,7 @@ void Console::DACScanLive(char dac, int val){
 
 void Console::WrapperToDACScanLive(void* PointerToObject, char dac, int val){
 #if DEBUG==2
-    std::cout << "Enter Console::WrapperToDACScanLive()" << std::endl;	
+    std::cout << "Enter Console::WrapperToDACScanLive()" << std::endl;
 #endif
     Console* mySelf = (Console*) PointerToObject;
     mySelf->DACScanLive(dac, val);
@@ -2380,7 +2380,7 @@ void Console::WrapperToDACScanLive(void* PointerToObject, char dac, int val){
 
 void Console::CommandSpeedTest(std::string ein){
     int wdh,freq,pos;
-	
+
     if(ein==""){std::cout << "Falsche Eingabe" << std::endl; return;}
     else{
 	if(ein.find_first_not_of("0123456789 ",0)==ein.npos){
@@ -2391,7 +2391,7 @@ void Console::CommandSpeedTest(std::string ein){
 	}
 	else{
 	    std::cout << "\tNon-numerical sign\n"
-		      << std::flush; 
+		      << std::flush;
 	    return;
 	}
     }
@@ -2406,7 +2406,7 @@ void Console::CommandSetIP(){
     std::stringstream ip;
     std::string input;
     const char *promptIP = "Please enter a new IP address> ";
-    input = getUserInputNonNumericalNoDefault(promptIP);    
+    input = getUserInputNonNumericalNoDefault(promptIP);
     if (input == "quit") return;
     else if((input.length()>5)&&(input.length()<16)&&(input.find_first_not_of("0123456789.",0)==input.npos)){
 	n=0; i=0; pos=-1;
@@ -2417,21 +2417,21 @@ void Console::CommandSetIP(){
 		byte[n]=atoi(&str[0]);
 	    }
 	    else{
-		std::cout << "Invalid IP\n" 
-			  << std::flush; 
+		std::cout << "Invalid IP\n"
+			  << std::flush;
 		return;
 	    }
 	    if(byte[n]>255){
 		std::cout << "Invalid IP\n"
-			  << std::flush; 
+			  << std::flush;
 		return;
 	    }
 	    ++n; pos=i; ++i;
 	}
 	while( (i<input.length()) && (input[i]!='.') ){++i;}
 	if( (input[i]=='.') || (i-pos>4) || (i-pos==1) ){
-	    std::cout << "Invalid IP\n" 
-		      << std::flush; 
+	    std::cout << "Invalid IP\n"
+		      << std::flush;
 	    return;
 	}
 	else{
@@ -2439,14 +2439,14 @@ void Console::CommandSetIP(){
 	    byte[n]=atoi(&str[0]);
 	}
 	if(byte[n]>255){
-	    std::cout << "Invalid IP\n" 
-		      << std::flush; 
+	    std::cout << "Invalid IP\n"
+		      << std::flush;
 	    return;
-	}   
+	}
     }
     else{
-	std::cout << "Invalid IP\n" 
-		  << std::flush; 
+	std::cout << "Invalid IP\n"
+		  << std::flush;
 	return;
     }
 
@@ -2457,7 +2457,7 @@ void Console::CommandSetIP(){
 
 void Console::CommandSetChipIdOffset(){
     // this function asks the user for input on the Chip ID offset (for the timepix class)
-    std::set<std::string> allowedChipIdOffsets; 
+    std::set<std::string> allowedChipIdOffsets;
     // fill this set with all values from 1 to 255
     for( int l=1; l<256; l++) allowedChipIdOffsets.insert(std::to_string(l));
     std::string input;
@@ -2476,7 +2476,7 @@ void Console::CommandSetChipIdOffset(){
     else{
 	newChipIdOffset = std::stoi(input);
     }
-    
+
     pc->fpga->tp->SetChipIDOffset(newChipIdOffset);
 
     // to make sure that the new offset is good, read the Chip ID; done by calling CommandWriteReadFSR()
@@ -2496,7 +2496,7 @@ void Console::CommandFadcPedestalRun(){
     std::cout << "Before starting the pedestal calibration run, please disconnect all "
 	      << "devices from the FADC! Type { continue } once that is done."
 	      << std::endl;
-    
+
     input = getUserInputNonNumericalNoDefault(_prompt, &allowedStrings);
     if (input == "quit"){
 	return;
@@ -2518,7 +2518,7 @@ void Console::CommandFadcTriggerLevel(){
     // now call FADC set trigger level (a wrapper around
     // SetFadcTriggerThresholdRegisterAll)
     _hvFadcManager->FADC_Functions->setTriggerLevel(trigger_level);
-    
+
 }
 
 
@@ -2555,7 +2555,7 @@ void Console::CommandAddChannel(){
 		  << std::endl;
 	return;
     }
-    
+
 }
 
 void Console::CommandRemoveChannel(){
@@ -2611,7 +2611,7 @@ void Console::CommandSetChannelValue(){
     }
 
     _hvFadcManager->PrintChannel(channelNumber);
-    
+
     std::cout << "Choose a value to set:\n"
 	      << "    voltage\n"
 	      << "    current\n"
@@ -2650,7 +2650,7 @@ void Console::CommandSetChannelValue(){
     std::string inputValue;
     inputValue = getUserInputNumericalNoDefault(_prompt, &allowedValues);
     if (inputValue == "quit") return;
-    
+
     _hvFadcManager->SetChannelValue(inputKey, channelNumber, inputValue);
 }
 
@@ -2665,7 +2665,7 @@ void Console::CommandSetCenterChip(){
     for(auto chip : _chip_set){
 	allowedChipNum.insert(std::to_string(chip));
     }
-    
+
     input = getUserInputNumericalNoDefault(prompt, &allowedChipNum);
     if (input == "quit") return;
     else{
@@ -2708,4 +2708,3 @@ void Console::CommandTempLoopReadout(){
     loop_thread.join();
 
 }
-
