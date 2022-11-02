@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # this is a short script, which is used in order to plot a hits per time
-# plot for individual pixels (or pixel regions) based on a bunch of 
+# plot for individual pixels (or pixel regions) based on a bunch of
 # cPickled occupancy data batches
 
 import cPickle
@@ -15,7 +15,7 @@ import numpy as np
 
 
 def read_folders_and_pixel_parse(folders, pixel_parser):
-    # this function reads from all files in the folders and extracts the 
+    # this function reads from all files in the folders and extracts the
     # hits into the pixel_parser. The pixel_parser is then returned
     # now we wish to run over all given folders (if we wish to append several folders to one
     # batch)
@@ -39,7 +39,7 @@ def read_folders_and_pixel_parse(folders, pixel_parser):
                 batch_iter = max(batches) + 1
                 print batch_iter
                 batch_lengths.append(max(batches))
-        
+
     return pixel_parser, batch_lengths
 
 def read_fadc_files(folders, nbatches = None):
@@ -63,7 +63,7 @@ def read_fadc_files(folders, nbatches = None):
             nbatches = calc_length_of_run(first, last)
         elif type(nbatches) is not int:
             raise NotImplementedError('Use integer as number of batches')
-        
+
         # calc events per batch. in this case this gives us the binning for
         # the fadc events
         nEventsPerBatch = np.ceil(nevents / nbatches)
@@ -94,7 +94,7 @@ def create_plots(args_dict, pixel_parser, batch_lengths, iff_flag, fadc_bins = N
     else:
         dump_file = open('out/hitrate/cPickle_hitrate_per_time_iff_false.dat', 'wb')
 
-    for i in xrange(args_dict["nchips"]):
+    for i in range(args_dict["nchips"]):
         name = (name_chips % i)
         if args_dict["npix"] is False:
             t, h = pixel_parser.get_hits_per_time_for_name(name)
@@ -105,7 +105,7 @@ def create_plots(args_dict, pixel_parser, batch_lengths, iff_flag, fadc_bins = N
             t, np = pixel_parser.get_npix_per_time_for_name(name)
             plt.plot(t, np, label=name, linestyle='', marker='x', markersize=4)
         if len(batch_lengths) > 1:
-            # in this case plot vertical lines, which show beginning and end of 
+            # in this case plot vertical lines, which show beginning and end of
             # different runs
             tot_b = float(sorted(t)[-1])
             for b in batch_lengths:
@@ -119,7 +119,7 @@ def create_plots(args_dict, pixel_parser, batch_lengths, iff_flag, fadc_bins = N
         import numpy as np
         times = np.linspace(0, max(t), len(fadc_bins))
         inds = np.where(fadc_bins > 25)[0]
-        print inds        
+        print inds
         plt.plot(times, fadc_bins, label='FADC triggers', marker='v', markersize=4, linestyle='')
 
     # plt.plot(times1, hits1, 'r.', label=n1)
@@ -199,15 +199,15 @@ def main(args):
     #pixel_parser.add_pixels(dy, [0, 0, 10, 255], chip = 3)
     name_chips = 'Chip #%i'
     args_dict["name_chips"] = name_chips
-    for i in xrange(args_dict["nchips"]):
-        pixel_parser.add_pixels((name_chips % i), [0, 0, 255, 255], chip = i)  
+    for i in range(args_dict["nchips"]):
+        pixel_parser.add_pixels((name_chips % i), [0, 0, 255, 255], chip = i)
 
     if args_dict["fadc_folder"] != []:
         fadc = read_fadc_files(args_dict["fadc_folder"], nbatches = args_dict["nbatches"])[0]
     else:
         fadc = None
     pixel_parser, batch_lengths = read_folders_and_pixel_parse(folders, pixel_parser)
-    
+
     # determine if iff true or false
     if 'iff_true' in folders[0]:
         iff_flag = True

@@ -5,15 +5,15 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from septemFiles import read_zero_suppressed_data_file, read_full_matrix_data_file
-from septemClasses import Fadc
-from septemMisc import add_line_to_header, convert_datetime_str_to_datetime, block_mean
-from profilehooks import profile
+from .septemFiles import read_zero_suppressed_data_file, read_full_matrix_data_file
+from .septemClasses import Fadc
+from .septemMisc import add_line_to_header, convert_datetime_str_to_datetime, block_mean
+#from profilehooks import profile
 
 
 
 def make_ticklabels_invisible(subplots):
-    
+
     for i, ax in enumerate(subplots):
         #ax.text(0.5, 0.5, "ax%d" % (i+1), va="center", ha="center")
         for tl in ax.get_xticklabels() + ax.get_yticklabels():
@@ -23,11 +23,11 @@ def make_ticklabels_invisible(subplots):
 def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb,
                       temps = None, full_matrix = False, downsample = 1):
     """
-    function which decides between offline and online viewing based on type 
-    of temps. Depending on case read either from dictionary (offline) or 
-    use floats from tuple as temps in header (online). Or nothing in terms 
+    function which decides between offline and online viewing based on type
+    of temps. Depending on case read either from dictionary (offline) or
+    use floats from tuple as temps in header (online). Or nothing in terms
     of None.
-    It reads the file given by filename and extracts the correct temperature 
+    It reads the file given by filename and extracts the correct temperature
     data for the datetime from the list of temps (if existing)
     inputs:
      filepath: string containing the path to the file to be read
@@ -40,7 +40,7 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb,
      cb: a custom colorbar object to set the colorbar to any value, define relative
        of absolute colorbars etc.
      temps: either a tuple or a dictionary containing temperature data for the detector
-     full_matrix: a bool determining whether we read full matrix events or zero 
+     full_matrix: a bool determining whether we read full matrix events or zero
        suppressed data
      downsample: an int of a factor by which we downsample the events before plotting
        them
@@ -62,7 +62,7 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb,
         header_text = add_line_to_header("", "Path", filepath)
         header_text = add_line_to_header(header_text, "Filename", filename)
         header_text = add_line_to_header(header_text, "Full matrix", True)
-        
+
     if header_text == "":
         return None
 
@@ -86,12 +86,12 @@ def plot_file_general(filepath, filename, fig, chip_subplots, im_list, cb,
                                          septem_temp)
 
     plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list, cb, downsample)
-    
-            
+
+
 #@profile
 def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
               cb, downsample):
-    # function which performs actual plotting (i.e. updating of the data in the 
+    # function which performs actual plotting (i.e. updating of the data in the
     # images and redrawing) of the event display
     # inputs:
     #  evHeader: an eventHeader object, which contains the event header information,
@@ -112,7 +112,7 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
 
     # TODO: rewrite the plotting parts such that it is more neatly combined for
     # full matrix and zero suppressed readout
-    
+
 
     # using im_list we now define a variable for the number of chips we have
     # (single or septem). That way, we can distinguish in the loop in which
@@ -120,7 +120,7 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
     nChips = len(im_list)
 
     # determine whether we are plotting full matrix or zero suppressed frames
-    full_matrix = evHeader.attr["full_matrix_flag"] 
+    full_matrix = evHeader.attr["full_matrix_flag"]
 
     # and remove the text symbol from before
     texts = fig.texts
@@ -131,7 +131,9 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
     header_box = fig.text(0.5, 0.9, header_text,
                           bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
                           family = 'monospace',
-                          transform = chip_subplots[-1].transAxes,
+                          ## NOTE: `transform` either never worked in python 2 & old matplotlib, or
+                          ## behavior changed significantly
+                          #transform = chip_subplots[-1].transAxes,
                           horizontalalignment = 'center',
                           verticalalignment = 'center',
                           multialignment = 'left')
@@ -140,12 +142,17 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
     # print at the top left
     hits_text = "Hits\n"
 
-    plots_to_hide = range(nChips)
+    singleChip = True
+
+    plots_to_hide = [i for i in range(nChips)]
     if full_matrix == False:
         for i, chpHeader in enumerate(chpHeaderList):
             chip_data = chpHeader.pixData
             # now get current chip number so that we plot on to the correct chip
             chipNum = int(chpHeader.attr["chipNumber"])
+            if singleChip:
+                #chipNum = 0
+                print("Chip: ", chipNum)
 
             # using the chip number we can determine whether we still continue or stop now
             # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
@@ -173,14 +180,14 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
                 # apply potential downsampling
                 if downsample != 1:
                     chip_full_array = block_mean(chip_full_array, downsample)
-                
+
                 im_list[chipNum].set_data(chip_full_array)
-                            
+
                 # # now remove this chip from the plots_to_hide list
                 plots_to_hide.remove(chipNum)
                 im_list[chipNum].set_visible(True)
 
-                
+
                 if cb.flag == True:
                     # before we can set the colorscale, we need to get the array, which
                     # only contains nonzero elements
@@ -195,10 +202,10 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
                 #im = chip_subplots[chipNum-1].imshow(chip_full_array, interpolation='none', axes=chip_subplots[chipNum-1])#, vmin=0, vmax=250)
 
             except IndexError:
-                print 'IndexError: chip', chpHeader.attr["chipNumber"], ' has no hits'
-                print chip_data
+                print('IndexError: chip', chpHeader.attr["chipNumber"], ' has no hits')
+                print(chip_data)
             except TypeError:
-                print 'TypeError: chip', chpHeader.attr["chipNumber"], ' has no hits'
+                print('TypeError: chip', chpHeader.attr["chipNumber"], ' has no hits')
     else:
         # in this case plot full matrix frames
         # get the full chip array for the event
@@ -211,12 +218,12 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
         hits_text += "Chip #%i : %s\n" % (chipNum, numHits)
         # now create an image, but rather use im_list to set the correct image data
         im_list[chipNum].set_data(chip_full_array)
-                    
+
         # # now remove this chip from the plots_to_hide list
         plots_to_hide.remove(chipNum)
         im_list[chipNum].set_visible(True)
 
-        
+
         if cb.flag == True:
             # before we can set the colorscale, we need to get the array, which
             # only contains nonzero elements
@@ -229,13 +236,13 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
             im_list[chipNum].set_clim(0, color_value)
         else:
             im_list[chipNum].set_clim(0, cb.value)
-        
-        
+
+
     # now create the hits box
     hits_box = fig.text(0.2, 0.9, hits_text,
                         bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
                         family = 'monospace',
-                        transform = chip_subplots[-1].transAxes,
+                        #transform = chip_subplots[-1].transAxes,
                         horizontalalignment = 'center',
                         verticalalignment = 'center',
                         multialignment = 'left')
@@ -245,17 +252,17 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
     for i in plots_to_hide:
         im_list[i].set_visible(False)
 
-        
+
     if nChips > 1:
         # update colorbar
         cb.update_normal(im_list[cb.chip])
-        cb.update_normal(im_list[cb.chip])        
+        cb.update_normal(im_list[cb.chip])
     else:
         # only update colorbar in this case
         cb.update_normal(im_list[0])
-        cb.update_normal(im_list[0])        
+        cb.update_normal(im_list[0])
         #cb.update_normal(im_list[0])
-        # now we draw the canvas again. This is only done, because when using an animation 
+        # now we draw the canvas again. This is only done, because when using an animation
         # (auto updating), sometimes otherwise we'd end up with a blank canvas where the plots
         # should be.
         # alternatively, one can call the update_normal function again
@@ -281,31 +288,31 @@ def plot_file(evHeader, chpHeaderList, header_text, fig, chip_subplots, im_list,
     plt.pause(0.000001)
 
     return chip_subplots + im_list
-    
-    
+
+
 
 #@profile
 def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
 
-    print 'working on ', filename#self.filelist[self.i]
+    print('working on ', filename)#self.filelist[self.i]
     # make sure fadc plot is visible
     fadcPlotLine[0].set_visible(True)
 
-    
+
 
     # first we create an FADC object and give the filename to it
-    
+
     # create full path to file
     filepathName = os.path.join(filepath, filename)
     # creating the fadc object takes care of pedestal runs, temporal corrections
     # and the splitting by channels
     fadc = Fadc(filepathName)
-    
+
     #channel0 = fadc.channel0
     #channel1 = fadc.channel1
     #channel2 = fadc.channel2
     channel3 = fadc.channel3
-    
+
     # and plot everything
     # create title build from Run folder and filename:
     plot_title = filepath.rstrip("/").split("/")[-1] + "/" + filename
@@ -327,21 +334,21 @@ def plot_fadc_file(filepath, filename, fadcPlot, fadcPlotLine):#, fadc):
     return fadcPlot
 
 
-def plot_occupancy(filename, 
+def plot_occupancy(filename,
                    header_text,
-                   sep, 
-                   fig, 
-                   chip_subplots, 
-                   im_list, 
-                   chip_arrays, 
+                   sep,
+                   fig,
+                   chip_subplots,
+                   im_list,
+                   chip_arrays,
                    cb):
-    # this function plots the occupancy plots, which are created by the 
+    # this function plots the occupancy plots, which are created by the
     # create_occupancy_plot function
 
     # define nChips based on the chip_subplots list, to differentiate between
     # single chip and septemboard
     nChips = len(chip_subplots)
-    
+
     # first remove the texts from before, if any
     texts = fig.texts
     for i in range(len(texts)):
@@ -356,14 +363,14 @@ def plot_occupancy(filename,
     header_box = fig.text(0.5, 0.9, header_text,
                           bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
                           family = 'monospace',
-                          transform = chip_subplots[-1].transAxes,
+                          #transform = chip_subplots[-1].transAxes,
                           horizontalalignment = 'center',
                           verticalalignment = 'center',
                           multialignment = 'left')
 
 
     # now perform plotting
-    plots_to_hide = range(7)
+    plots_to_hide = [i for i in range(7)]
     for i, chip_array in enumerate(chip_arrays):
         # using the iterator i, we determine if we break or not
         # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
@@ -398,15 +405,15 @@ def plot_occupancy(filename,
                 im_list[i].set_clim(0, cb.value)
 
         except IndexError:
-            print 'IndexError: chip', i, ' has no hits'
+            print('IndexError: chip', i, ' has no hits')
         except TypeError:
-            print 'TypeError: chip', i, ' has no hits'
+            print('TypeError: chip', i, ' has no hits')
 
     # now create the hits box
     hits_box = fig.text(0.2, 0.9, hits_text,
                         bbox={'facecolor':'blue', 'alpha':0.1, 'pad':15},
                         family = 'monospace',
-                        transform = chip_subplots[-1].transAxes,
+                        #transform = chip_subplots[-1].transAxes,
                         horizontalalignment = 'center',
                         verticalalignment = 'center',
                         multialignment = 'left')
@@ -420,7 +427,7 @@ def plot_occupancy(filename,
     else:
         # only update colorbar in this case
         cb.update_normal(im_list[0])
-    
+
     make_ticklabels_invisible(chip_subplots)
 
     # now save the file
@@ -444,7 +451,7 @@ def plot_pixel_histogram(filepath,
     # define nChips based on the chip_subplots list, to differentiate between
     # single chip and septemboard
     nChips = len(chip_subplots)
-    
+
     # first remove the texts from before, if any
     texts = fig.texts
     for i in range(len(texts)):
@@ -455,8 +462,8 @@ def plot_pixel_histogram(filepath,
     # hits_text = "".ljust(10) + "Hits".ljust(10) + "max values\n"
 
     # now perform plotting
-    plots_to_hide = range(7)
-    print nChips, 'h'
+    plots_to_hide = [i for i in range(7)]
+    print(nChips, 'h')
     for i, hitsList in enumerate(nHitsList):
         # using the iterator i, we determine if we break or not
         # (relevant for single chip plotting. Then we don't want to plot more than chip #1)
@@ -467,20 +474,20 @@ def plot_pixel_histogram(filepath,
         # chip
 
         im_list[i].set_visible(False)
-        
+
         #fig2 = plt.figure(2)
-        
+
         #plt.hist(hitsList, 100, histtype = 'bar')
         pos = chip_subplots[i].get_position()
-        print pos
+        print(pos)
 
-        print pos.x0, pos.y0, pos.x1, pos.y1
+        print(pos.x0, pos.y0, pos.x1, pos.y1)
         histo = fig.add_axes([pos.x0 + 0.05 * pos.width, pos.y0, pos.width * 0.95, pos.height * 0.95])
         histo.hist(hitsList, 20, histtype = 'bar')
 
         #chip_subplots[i].hist(hitsList, 100, histtype = 'bar')
         #else:
-            
+
 
         # hits_text += ("Chip #%i : %i" % (i, numHits)).ljust(20)
         # hits_text += str(int(maxVals))
@@ -503,18 +510,17 @@ def plot_pixel_histogram(filepath,
 
     axes = fig.get_axes()
     for ax in axes:
-        print ax.get_children()
+        print(ax.get_children())
 
     #fig.canvas.draw()
 
     # left set all plots invisible, which were not updated this time (only if septemboard)
     #if nChips > 1:
-    for i in xrange(nChips):
-        print 'visible no', i
+    for i in range(nChips):
+        print('visible no', i)
         im_list[i].set_visible(False)
-    
+
     make_ticklabels_invisible(chip_subplots)
 
     # and now plot everythin
     plt.pause(0.01)
-    

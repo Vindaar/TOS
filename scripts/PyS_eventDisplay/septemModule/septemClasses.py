@@ -2,13 +2,13 @@
 import numpy as np
 from matplotlib import animation
 import pyinotify
-from septemMisc import tail, convert_datetime_str_to_datetime
-import Queue
+from .septemMisc import tail, convert_datetime_str_to_datetime
+import queue
 
 
 
 class chip:
-    # this class implements a basics single chip 
+    # this class implements a basics single chip
     def __init__(self):
         self.width         = 14.1
         self.bond_height   = 2
@@ -43,7 +43,7 @@ class septem_row:
         # using calc gridspec one calculates the coordinates of the row on
         # the figure in relative canvas coordinates
         # include padding by adding or subtracting from left, right, top, bottom
-        self.left      = self.x_offset / x_size 
+        self.left      = self.x_offset / x_size
         self.right     = self.left + self.width / x_size#1.0 - self.x_offset / x_size
         self.wspace    = self.x_dist / x_size
         #self.hspace    = self.chip_list[0].height_full / y_size
@@ -85,7 +85,7 @@ class septem:
         # and now create the row objects
         self.create_rows()
 
-        # now calculate the needed ratio to get the correct scaling of the septem on any 
+        # now calculate the needed ratio to get the correct scaling of the septem on any
         # figure scale. fig_ratio / own ratio
         ratio = self.fig_ratio / self.ratio
 
@@ -95,10 +95,10 @@ class septem:
         self.row3.calc_gridSpec(self.x_size * ratio * self.scaling_factor, self.y_size * self.scaling_factor)
 
         # self.change_size(0.1)
-        
+
     def create_rows(self):
         # this function creates the row objects for the septem class
-        
+
         # calculation of row 1 top and bottom (in abs. coords.):
         # (top need to add padding to top of row 1)
         row1_y_top    = self.y_size - self.pChip.bond_height# - padding * self.y_size
@@ -124,22 +124,22 @@ class septem:
 
     def change_size(self, padding):
         # NOT WORKING YET
-        
+
         # now update the coordinates such that we get the correct coordinates for the figure size
         # and padding
-        self.row1.left = self.row1.left + padding 
-        self.row2.left = self.row2.left + padding 
-        self.row3.left = self.row3.left + padding 
+        self.row1.left = self.row1.left + padding
+        self.row2.left = self.row2.left + padding
+        self.row3.left = self.row3.left + padding
 
-        self.row1.right = self.row1.right - padding 
-        self.row2.right = self.row2.right - padding 
-        self.row3.right = self.row3.right - padding 
+        self.row1.right = self.row1.right - padding
+        self.row2.right = self.row2.right - padding
+        self.row3.right = self.row3.right - padding
 
-        # self.row1.top = self.row1.top - padding 
+        # self.row1.top = self.row1.top - padding
         # self.row2.top = self.row2.top - padding
-        # self.row3.top = self.row3.top - padding 
+        # self.row3.top = self.row3.top - padding
 
-        # self.row1.bottom = self.row1.bottom + padding 
+        # self.row1.bottom = self.row1.bottom + padding
         # self.row2.bottom = self.row2.bottom + padding
         # self.row3.bottom = self.row3.bottom + padding
 
@@ -151,7 +151,7 @@ class event:
     # this class stores a single event from the septem board (zero suppressed readout)
     def __init__(self):
         self.numActiveChips = 0
-        
+
 class eventHeader:
     # this class is used to store the data from the header of a single event
     # (zero suppressed from septem board)
@@ -190,7 +190,7 @@ class eventHeader:
                 el_key  = el.split(":")
                 key = el_key[0].split()[-1]
                 val = el.split()[-1]
-            
+
             #print(val, key
             self.attr[key] = val
         else:
@@ -200,7 +200,7 @@ class eventHeader:
         # this function returns the string, which is used for
         # the header of the event display
         # columns to fill all strings to
-        
+
         nFill = 24
 
         try:
@@ -209,7 +209,7 @@ class eventHeader:
         except KeyError:
             print('no run number contained, continue without')
             runNum = ''
-        
+
         try:
             event = "Event # : ".ljust(nFill)
             event += self.attr["eventNumber"] + "\n"
@@ -229,16 +229,16 @@ class eventHeader:
                 return ""
                 #import sys
                 #sys.exit()
-            
+
         date = "Date : ".ljust(nFill)
         date += self.attr["dateTime"] + "\n"
-        
+
         shutter = "Shutter time / mode : ".ljust(nFill)
         shutter += self.attr["shutterTime"] + " / " + self.attr["shutterMode"] + "\n"
 
         fadcTrig = "FADC triggered : ".ljust(nFill)
         fadcTrig += self.attr["fadcReadout"] + "\n"
-        
+
         if int(self.attr["fadcReadout"]) == 1:
             fadcTrClock = "    at : ".ljust(nFill)
             fadcTrClock += self.attr["fadcTriggerClock"] + " clock cycles\n"
@@ -251,7 +251,7 @@ class eventHeader:
         # sipm += self.attr["szint2ClockInt"] + "\n"
         szint1 = "Szint1 clock : ".ljust(nFill)
         szint1 += self.attr["szint1ClockInt"] + "\n"
-            
+
         szint2 = "Szint2 clock : ".ljust(nFill)
         szint2 += self.attr["szint2ClockInt"] + "\n"
 
@@ -268,7 +268,7 @@ class eventHeader:
         # the header of the occupancy plot for the run, which
         # this event corresponds to
         # columns to fill all strings to
-        
+
         nFill = 24
 
         try:
@@ -277,10 +277,10 @@ class eventHeader:
         except KeyError:
             print('Run number not available yet, skipping')
             runNum = ""
-        
+
         date = "Date : ".ljust(nFill)
         date += self.attr["dateTime"] + "\n"
-        
+
         shutter = "Shutter time / mode : ".ljust(nFill)
         shutter += self.attr["shutterTime"] + " / " + self.attr["shutterMode"] + "\n"
 
@@ -288,7 +288,7 @@ class eventHeader:
         rname += self.runname
 
         header = runNum + date + shutter + rname
-          
+
         return header
 
 class chipHeaderData:
@@ -345,7 +345,7 @@ class Fadc:
         self.trigger_rec   = 0
         self.posttrig      = 0
         self.mode_register = 0
-        
+
         # and it immediately reads the data from it
         # fadc values stores the raw data from an fadc data file
         self.fadcValues = self.readFadcFile()
@@ -365,16 +365,16 @@ class Fadc:
         # now apply the pedestal run
         self.applyPedestalRun()
 
-        # after pedestal correction, we can get 
+        # after pedestal correction, we can get
         # the individual channels from the data
         self.getChannelsFromFadcArray()
-        
+
         # perform the temporal correction on each channel
         self.performTemporalCorrection()
 
         # and finally convert ticks to V
         self.convertFadcTicksToCharge()
-        
+
     def getChannelsFromFadcArray(self):
         # this function splits the data read from the data file into the
         # 4 seperate channels
@@ -386,10 +386,10 @@ class Fadc:
         # check for pedestal and temporal flag, if not set, perform now:
         if self.pedestalApplied is False:
             applyPedestalRun()
-            
+
         # create the indices for each channel
         ch0_indices = np.arange(0, 4*2560, 4)
-        ch1_indices = np.arange(1, 4*2560, 4) 
+        ch1_indices = np.arange(1, 4*2560, 4)
         ch2_indices = np.arange(2, 4*2560, 4)
         ch3_indices = np.arange(3, 4*2560, 4)
         # and use them to get arrays for each channel
@@ -399,13 +399,13 @@ class Fadc:
         self.channel3 = np.asarray(self.fadcValues[ch3_indices])
 
     def convertFadcTicksToCharge(self):
-        """ this function converts the channel arrays from FADC ticks to V, by 
+        """ this function converts the channel arrays from FADC ticks to V, by
             making use of the mode_register written to file.
             Mode register contains (3 bit register, see CAEN manual p.31):
                bit 0: EN_VME_IRQ interruption tagging of VME bus?!
-               bit 1: 14BIT_MODE if set to 1, output uses 14 bit register, instead of 
+               bit 1: 14BIT_MODE if set to 1, output uses 14 bit register, instead of
                       backward compatible 12 bit
-               bit 2: AUTO_RESTART_ACQ if 1, automatic restart of acqusition at end of 
+               bit 2: AUTO_RESTART_ACQ if 1, automatic restart of acqusition at end of
                       RAM readout
         """
 
@@ -442,7 +442,7 @@ class Fadc:
 
         # and set the pedestalAppplied to true
         self.pedestalApplied = True
-    
+
     def performTemporalCorrection(self):
         # this function performs the temporal correction of the FADC vector array
         # due to the FADC using a cyclic memory, one needs to shift the data, which is
@@ -468,7 +468,7 @@ class Fadc:
         self.channel1 = np.roll(self.channel1, -self.nRoll)
         self.channel2 = np.roll(self.channel2, -self.nRoll)
         self.channel3 = np.roll(self.channel3, -self.nRoll)
-        
+
         # set flag for temporal correction
         self.temporalApplied = True
 
@@ -515,11 +515,11 @@ class Fadc:
 class customColorbar:
     # this class defines the colorbar we use for this project
     # it's basically just a container for the different settings we
-    # use in the event display. 
+    # use in the event display.
     # NOTE: one might inherit from the matplotlib colorbar class, but that
     # would be messy overkill I reckon
     def __init__(self, cb_flag, cb_value, cb_chip):
-        # the arguments used during construction are 
+        # the arguments used during construction are
         # cb_flag : type bool
         #           controls whether we use an absolute maximum value (0) for the colorbar
         #           or a percentile of the given data array (1)
@@ -531,8 +531,8 @@ class customColorbar:
         self.flag  = cb_flag
         self.value = cb_value
         self.chip  = cb_chip
-        
-        # assign the colorbar object to be None from initialization. 
+
+        # assign the colorbar object to be None from initialization.
         # can check whether colorbar was assigned already that way
         self.cb    = None
 
@@ -549,10 +549,10 @@ class customColorbar:
 class Pixels:
     """ simple pixel class, which stores information about
         which chip a list of pixels corresponds to.
-        input is the chip number and a list of indices for the x 
-        position of the pixels and a corresponding list of y 
+        input is the chip number and a list of indices for the x
+        position of the pixels and a corresponding list of y
         indices
-    int npix: number of pixels 
+    int npix: number of pixels
     int chip: number of the chip these pixels are on
     list pixels_x: list of coordinates for x
     list pixels_y: list of coordinates for y
@@ -573,20 +573,20 @@ class Pixels:
         return self.pixel_ind
     def get_chip_num(self):
         return self.chip
-    
+
 class pixelParser:
     """ This class is used to parse pixels, pixel regions etc. to be used
         to extract information of a given region on a frame. Used in script
         to plot pixel hits per time vs time of occupancy data.
         receives pixels (as tuples), regions [bottom, left, top, right], stores
-        internally and provides function to create a dictionary 
+        internally and provides function to create a dictionary
      """
 
     def __init__(self):
         # on initialization two empty dictionaries are created,
         # which will contain:
         #     all pixels / pixel regions
-        #     hits for the corresopnding keys in pixels. 
+        #     hits for the corresopnding keys in pixels.
         #     hits itself contains a list of tuples for each key in pixels
         #     where (batch_num, hits_per_time) is the syntax
         self.pixels = {}
@@ -600,7 +600,7 @@ class pixelParser:
         # add_pixels is a multi purpose function, which accepts either
         # a single pixel tuple (x, y) as input, a list of tuples
         # or a pixel region, given as a list [bottom, left, top, right]
-        
+
         if type(pixels) is tuple:
             # in this case simply add individual pixel
             pixel_ind = np.s_[pixels[1], pixels[0]]
@@ -635,7 +635,7 @@ class pixelParser:
         # now also add a corresponding key in hits and npix containing an empty list
         self.hits[name] = []
         self.npix[name] = []
-        
+
     def extract_hits(self, data, batch_num, mean_incl_empty = True):
         # given a data array, use the pixels dictionary to extract the hits for batch_num
         for key in self.pixels:
@@ -643,7 +643,7 @@ class pixelParser:
             pixel_ind = self.pixels[key].get_pixel_ind()
             chip_num  = self.pixels[key].get_chip_num()
             pix_values = data[chip_num][pixel_ind]
-            # calculate the effective hits per time based on the 
+            # calculate the effective hits per time based on the
             # mean value of the range of pixels, which we look at
             if mean_incl_empty == False:
                 # in this case drop empty pixels for calculation of mean
@@ -661,7 +661,7 @@ class pixelParser:
             self.npix[key].append( tup_npix )
 
     def get_hits_per_time_for_name(self, key):
-        # given a name two lists are returned: all hits per time for a 
+        # given a name two lists are returned: all hits per time for a
         # pixel region and the corresponding time (that is batch_nums)
         if key in self.pixels:
             hits_tuples = self.hits[key]
@@ -671,9 +671,9 @@ class pixelParser:
         else:
             print("Name %s not found in added pixels.")
             return None, None
-                                
+
     def get_npix_per_time_for_name(self, key):
-        # given a name two lists are returned: all npix per time for a 
+        # given a name two lists are returned: all npix per time for a
         # pixel region and the corresponding time (that is batch_nums)
         if key in self.pixels:
             npix_tuples = self.npix[key]
@@ -705,7 +705,7 @@ class MyFuncAnimation(animation.FuncAnimation):
 class TempHandler(pyinotify.ProcessEvent):
     """
     This class deals with watching the run folder for changes, as
-    well as watching changes to the temp_log file, specifically for 
+    well as watching changes to the temp_log file, specifically for
     the temp log
     """
 
@@ -749,7 +749,7 @@ class TempHandler(pyinotify.ProcessEvent):
         line = self.get_last_line()
         if line is not None:
             self.set_new_temparature(line)
-            
+
             self.lock.acquire()
             self.ns.currentTemps = (self.current_temps["IMB"], self.current_temps["Septem"])
             self.lock.release()
@@ -765,7 +765,7 @@ class TempHandler(pyinotify.ProcessEvent):
     def get_filename_from_queue(self):
         # returns the filename from the queue
         fname, descr = self.q.get()
-        return fname        
+        return fname
 
     def put_queue(self, pathname, descr):
         # puts event into queue
@@ -773,7 +773,7 @@ class TempHandler(pyinotify.ProcessEvent):
         # put a tuple of pathname and event into queue
         self.q.put((pathname, descr))
         self.get_current_temps()
-        
+
     def get_queue(self):
         # gets the next element from the queue
         return self.q.get()
@@ -784,17 +784,17 @@ class TempHandler(pyinotify.ProcessEvent):
 
     def is_full(self):
         # returns queue full state
-        return self.q.full()        
-    
+        return self.q.full()
+
     def process_IN_CREATE(self, event):
         #print("Creating:", event.pathname)
         #print(pyinotify.ProcessEvent)
         self.put_queue(event.pathname, "create")
-        
+
     def process_IN_DELETE(self, event):
         #print("Removing:", event.pathname)
         self.put_queue(event.pathname, "delete")
-        
+
     def process_IN_MODIFY(self, event):
         #print("Modifying:", event.pathname)
         #print('is empty yet ' , self.is_empty())
@@ -803,7 +803,7 @@ class TempHandler(pyinotify.ProcessEvent):
     def print_files(self):
         pass
 
-    
+
 
 # class TempHandler():
 #     """ This is a special class, which owns an EventHandler, specially
@@ -814,8 +814,8 @@ class TempHandler(pyinotify.ProcessEvent):
 #         else:
 #             self.event_handler = event_handler
 #             print(id(event_handler))
-        
-        
+
+
 class EventsHandler(pyinotify.ProcessEvent):
     """
     This class deals with watching the run folder for changes,
@@ -859,7 +859,7 @@ class EventsHandler(pyinotify.ProcessEvent):
     #     line = self.get_last_line()
     #     if line is not None:
     #         self.set_new_temparature(line)
-            
+
     #         self.lock.acquire()
     #         self.ns.currentTemps = (self.current_temps["IMB"], self.current_temps["Septem"])
     #         self.lock.release()
@@ -875,7 +875,7 @@ class EventsHandler(pyinotify.ProcessEvent):
     def get_filename_from_queue(self):
         # returns the filename from the queue
         fname, descr = self.q.get()
-        return fname        
+        return fname
 
     def put_queue(self, pathname, descr):
         # puts event into queue
@@ -883,7 +883,7 @@ class EventsHandler(pyinotify.ProcessEvent):
         # put a tuple of pathname and event into queue
         self.q.put((pathname, descr))
         print(self.q.get())
-        
+
     def get_queue(self):
         # gets the next element from the queue
         return self.q.get()
@@ -894,17 +894,17 @@ class EventsHandler(pyinotify.ProcessEvent):
 
     def is_full(self):
         # returns queue full state
-        return self.q.full()        
-    
+        return self.q.full()
+
     def process_IN_CREATE(self, event):
         print("Creating:", event.pathname)
         #print(pyinotify.ProcessEvent)
         self.put_queue(event.pathname, "create")
-        
+
     def process_IN_DELETE(self, event):
         print("Removing:", event.pathname)
         self.put_queue(event.pathname, "delete")
-        
+
     def process_IN_MODIFY(self, event):
         print("Modifying:", event.pathname)
         #print('is empty yet ' , self.is_empty())

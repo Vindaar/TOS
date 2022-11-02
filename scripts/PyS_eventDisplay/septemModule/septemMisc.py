@@ -7,7 +7,7 @@ from time import sleep
 from collections import deque
 
 #from septemFiles import read_zero_suppressed_data_file, create_filename_from_event_number, work_on_read_data
-import septemFiles
+from . import septemFiles
 
 
 def add_line_to_header(header, str_to_add, value):
@@ -19,17 +19,17 @@ def add_line_to_header(header, str_to_add, value):
 
 def get_TOS_date_syntax():
     # returns the syntax used in TOS for all dates (incl time)
-    # as a string, which can be used for python's datetime 
+    # as a string, which can be used for python's datetime
     # strptime function
     return '%Y-%m-%d.%H:%M:%S'
 
 # DEPRECATED
 # def calc_scaling_factor(batches, i):
-#     # calculates the scaling factor for iteration i 
+#     # calculates the scaling factor for iteration i
 #     # for batches
 #     val = batches - i
 #     if val < 0:
-#         # return inverse of 
+#         # return inverse of
 #         return 1 / (b - i + 1)
 #     else:
 #         return 1
@@ -39,15 +39,15 @@ def get_scaling_factors(batches):
     # batch for the occupancy plots. In case of values smaller 0
     floor = int(np.floor(batches))
     rest  = batches - floor
-    
+
     scaling = 1. / rest
-    factors = [1 for _ in xrange(floor)]
+    factors = [1 for _ in range(floor)]
     factors.append(scaling)
 
     return factors
 
 def get_batch_num_hours_for_run(run_folder, eventSet, total_flag = False):
-    """ 
+    """
        This function returns the number of batches of 1 hour length
        for a given run. Calls calc_length_of_run internally
        string run_folder: a string containing the folder name
@@ -62,7 +62,7 @@ def get_batch_num_hours_for_run(run_folder, eventSet, total_flag = False):
     nfiles = len(eventsSorted)
     first = run_folder + septemFiles.create_filename_from_event_number(eventSet, eventsSorted[0], nfiles, False)
     last  = run_folder + septemFiles.create_filename_from_event_number(eventSet, eventsSorted[-1], nfiles, False)
-    
+
     if total_flag is True:
         nbatches = calc_total_length_of_run(first, last)
         return nbatches
@@ -95,7 +95,7 @@ def calc_total_length_of_run(first, last):
        string first: filename of first event in run
        string last:  filename of last event in run
     """
-    
+
     evHeaderFirst, chpHeadersFirst = septemFiles.read_zero_suppressed_data_file(first, True)
     evHeaderLast, chpHeadersLast   = septemFiles.read_zero_suppressed_data_file(last, True)
 
@@ -109,15 +109,15 @@ def calc_total_length_of_run(first, last):
     return int(hours)
 
 def calc_active_length_of_run(event_file, nfiles):
-    """ 
+    """
        This function calculates the total time the detector was actively taking
-       data in a given run. In contrast to calc_total_length_of_run, which 
+       data in a given run. In contrast to calc_total_length_of_run, which
        uses the timestamps in the first and last frame as a reference.
        This function is especially useful in case of shutter times smaller
        than 1 seconds, because the dead time increases significantly.
        string event_file: filename of any event in a given run
        int nfiles: the number of total events in the run
-    
+
        returns: total hours of active time in run
     """
 
@@ -125,12 +125,12 @@ def calc_active_length_of_run(event_file, nfiles):
 
     shutter_length = calc_shutter_length_from_event_header(evHeader)
     active_length  = shutter_length * nfiles
-    
+
     # convert active_length (given in microseconds) to hours
     active_length = float(active_length / (1e6 * 3600))
-    
+
     return active_length
-    
+
 def get_iter_batch_from_header_text(header_text):
     # this function returns the iter_batch number from a given
     # header text
@@ -142,12 +142,12 @@ def get_iter_batch_from_header_text(header_text):
 
 def get_occupancy_batch_header(eventSet, nfiles, filepath, ignore_full_frames, nbatches, iter_batch):
     """
-    Function which returns a header for an occupancy batch. Prints arguments based on 
+    Function which returns a header for an occupancy batch. Prints arguments based on
     first file in 'filepath' folder
     """
     if len(eventSet) > 0:
         # need to read one of the files to get the header. Choose first file, thus
-        
+
         filename     = septemFiles.create_filename_from_event_number(eventSet,
                                                                      min(eventSet),
                                                                      nfiles,
@@ -156,23 +156,23 @@ def get_occupancy_batch_header(eventSet, nfiles, filepath, ignore_full_frames, n
         evHeader, chpHeaderList = septemFiles.read_zero_suppressed_data_file(fname)
         header_text = evHeader.get_run_header_text()
     else:
-        print 'filelist not filled yet or empty; returning.'
+        print('filelist not filled yet or empty; returning.')
         return
-    
 
-    header_text = add_line_to_header(header_text, 
+
+    header_text = add_line_to_header(header_text,
                                      "# events",
                                      nfiles)
-    header_text = add_line_to_header(header_text, 
+    header_text = add_line_to_header(header_text,
                                      "ignore_full_frames",
                                      ignore_full_frames)
-    header_text = add_line_to_header(header_text, 
+    header_text = add_line_to_header(header_text,
                                      "n_batches",
                                      nbatches)
-    header_text = add_line_to_header(header_text, 
+    header_text = add_line_to_header(header_text,
                                      "iter_batch",
                                      iter_batch)
-    
+
     return header_text
 
 
@@ -186,7 +186,7 @@ def fill_classes_from_file_data_mp(co_ns, qRead, qWork):
     Queue qRead : the queue containing the data, which is read in separate thread
     Queue qWork : the queue into which the output is put
     """
-    
+
     while co_ns.doWork is True:
         if qRead.empty() is False:
             print('Worker process: retrieving from queue...')
@@ -219,10 +219,10 @@ def fill_classes_from_file_data_mp(co_ns, qRead, qWork):
                 pass
 
 def get_shutter_mode_dict():
-    # this function returns the shutter mode dictionary, which 
+    # this function returns the shutter mode dictionary, which
     # creates correspondence between shutter modes given as string
     # and the mode given as an exponent for the calculation
-    
+
     shutter_mode_dict = { "standard" : 0,
                           "std"      : 0,
                           "0"        : 0,
@@ -239,7 +239,7 @@ def get_shutter_mode_dict():
 def calc_shutter_length_from_event_header(evHeader):
     # this function calculates the shutter opening time in microseconds
     # calls calc_shutter_length internally
-    
+
     shutterTime = int(evHeader.attr["shutterTime"])
     shutterMode = evHeader.attr["shutterMode"]
 
@@ -249,18 +249,18 @@ def calc_shutter_length_from_event_header(evHeader):
     length = calc_shutter_length(shutterTime, shutterMode)
 
     return length
-    
+
 
 def calc_shutter_length(time, mode):
     # this function calculates the shutter length based on the time
     # and shutter mode
     # return value given in microseconds
-    
+
     length = 256 ** mode * 46 * time / 40.
-    
+
     return length
 
-    
+
 def tail(fname, lines = 1):
     # tails the given file, returning lines as list using deque
     with open(fname) as f:
@@ -282,7 +282,7 @@ def calc_centroid(data):
     energy = npix * 0.026
 
     return (x_mean, y_mean, energy)
-    
+
 def block_mean(ar, fact):
     # this function is used to downsample a 2D numpy array `ar` by a factor
     # `fact`

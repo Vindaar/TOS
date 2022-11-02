@@ -7,7 +7,8 @@ import argparse
 
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
+#matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.animation as animation
@@ -153,7 +154,7 @@ class WorkOnFile:
                                                       interpolation='none',
                                                       axes=chip_subplots[i],
                                                       vmin=0)
-                              for i in xrange(len(self.chip_subplots))]
+                              for i in range(len(self.chip_subplots))]
         # and set the colormaps for the plots
         for im in self.im_list:
             im.set_cmap(self.colormap)
@@ -178,15 +179,15 @@ class WorkOnFile:
                 cb_object = plt.colorbar(self.im_list[0], cax = cbaxes)
             self.fig.canvas.draw()
         except UnboundLocalError:
-            print "Warning: UnboundLocalError in init of WorkOnFile"
-            print filename
+            print("Warning: UnboundLocalError in init of WorkOnFile")
+            print(filename)
 
         # and assign newly created colorbar as member variable
         self.cb.assign_colorbar(cb_object)
 
         # and now invert the correct plots, if septemboard is used
         if self.single_chip_flag == False:
-            for i in xrange(8):
+            for i in range(8):
                 if i not in [6, 7]:
                     # in case of chips 1 to 5, we need to invert the y axis. Bonds are below the
                     # chips, thus (0, 0) coordinate is at bottom left. default
@@ -217,16 +218,16 @@ class WorkOnFile:
         # we check 50 times if the number of files is larger than 0 (which
         # indicates that we have finished reading the files in the folder
         # at least once), and wait 100ms after each check.
-        for _ in xrange(50):
+        for _ in range(50):
             lock.acquire()
             nfiles = self.ns.nfiles
             empty_folder = self.ns.empty_folder
             lock.release()
             if nfiles > 0 or empty_folder == True:
-                print 'nfiles : ', nfiles
+                print('nfiles : ', nfiles)
                 break
             else:
-                print 'waiting...'
+                print('waiting...')
                 time.sleep(0.1)
 
         # connect both figures (septem and FADC windows) to the keypress event
@@ -244,9 +245,9 @@ class WorkOnFile:
         c = event.key
         sys.stdout.flush()
         if c == 'n':
-            print ''
-            print 'keypress read:', c
-            print 'going to next file #', self.i
+            print('')
+            print('keypress read:', c)
+            print('going to next file #', self.i)
             self.i += 1
             lock.acquire()
             self.nfiles = self.ns.nfiles
@@ -255,15 +256,15 @@ class WorkOnFile:
                 self.work_on_existing_file(self.i)
             else:
                 plt.close()
-                print 'reached last file in folder'
+                print('reached last file in folder')
                 self.disconnect()
         elif c == 'b':
-            print ''
-            print 'keypress read:', c
-            print 'going to previous file'
+            print('')
+            print('keypress read:', c)
+            print('going to previous file')
             #if self.i > 0:
             self.i -= 1
-            print self.i
+            print(self.i)
             self.work_on_existing_file()
             #else:
             #    self.work_on_file()
@@ -271,7 +272,7 @@ class WorkOnFile:
             # if e is typed, we jump to the end of the list and automatically
             # always get the last frame
             if self.ani_end_running == False:
-                print 'jumping to last file and start automatically refreshing'
+                print('jumping to last file and start automatically refreshing')
                 self.loop_work_on_file_end()
             else:
                 # in the event this animation is running, we stop it
@@ -280,27 +281,27 @@ class WorkOnFile:
             # if l is typed, we start to automatically go through all files
             # in the filelist
             if self.ani_loop_running == False:
-                print 'jumping to last file and start automatically refreshing'
+                print('jumping to last file and start automatically refreshing')
                 self.loop_work_on_file()
             else:
                 # stop the animation
                 self.stop_animation()
         elif c == 'o':
             # if o is typed, we create an occupancy plot of the whole run
-            print 'creating occupancy plot...'
+            print('creating occupancy plot...')
             self.create_occupancy_plot(ignore_full_frames = self.ignore_full_frames, batches_dict = self.batches_dict)
         elif c == 's':
             # if s is typed, we save the current figure
-            print 'saving figure...'
+            print('saving figure...')
             self.save_figure(self.current_filename)
         elif c == 'h':
             # if h is typed, we create the pixel histogram for each chip
-            print 'creating pixel histogram...'
+            print('creating pixel histogram...')
             self.create_pixel_histogram()
 
 
         elif c == 'q':
-            print ''
+            print('')
             # call stop animation to stop any running animations,
             # before closing (makes sure there's no error on exit)
             wait_flag = self.stop_animation()
@@ -308,7 +309,7 @@ class WorkOnFile:
                 # we built in a wait of 2 seconds, to make sure the animation is actually
                 # stopped before we quit
                 time.sleep(2)
-            print c, 'was pressed. Exit program.'
+            print(c, 'was pressed. Exit program.')
 
             plt.close('all')
             self.disconnect()
@@ -345,12 +346,12 @@ class WorkOnFile:
 
 
         if self.ani_end_running == True:
-            print 'stopping the run animation...'
+            print('stopping the run animation...')
             # using the animation's _stop function (THANKS matplotlib source code...)
             # we can stop the animation properly
             self.ani_end_event_source._stop()
         if self.ani_loop_running == True:
-            print 'stopping the loop animation...'
+            print('stopping the loop animation...')
             self.ani_loop_event_source._stop()
         # now wait for 0.5 seconds to make sure it stops
         if self.ani_end_running is True or self.ani_loop_running is True:
@@ -359,7 +360,7 @@ class WorkOnFile:
             # if both are set to False)
             self.ani_end_running  = False
             self.ani_loop_running = False
-            print 'waiting for animations to stop...'
+            print('waiting for animations to stop...')
             wait_flag = True
             time.sleep(0.5)
 
@@ -537,7 +538,7 @@ class WorkOnFile:
         # to scale batches, which contain less than one hour up
         scaling_factors = np.ones(nbatches, dtype = int)
 
-        for i in xrange(nbatches):
+        for i in range(nbatches):
             # get current scaling
             scaling_f = scaling_factors[i]
 
@@ -723,7 +724,7 @@ class WorkOnFile:
 
                             event_num = int(evHeader.attr["eventNumber"])
                             if event_num % 1000 == 0:
-                                print event_num, ' events done.'
+                                print(event_num, ' events done.')
             else:
                 print('Main process: is sleeping...')
                 time.sleep(co_ns.sleeping_time)
@@ -838,7 +839,7 @@ class WorkOnFile:
 
             event_num = int(evHeader.attr["eventNumber"])
             if event_num % 1000 == 0:
-                print event_num, ' events done.'
+                print(event_num, ' events done.')
 
             # now check whether we dump data and return
             if (eventNumber == max(eventNumbers) or
@@ -868,7 +869,7 @@ class WorkOnFile:
         # create the pixel histogram for all chips of the current run
 
         # define a list of lists for the number of hits for each chip
-        nHitsList = [ [] for _ in xrange(self.septem.nChips)]
+        nHitsList = [ [] for _ in range(self.septem.nChips)]
 
         for eventNumber in self.ns.eventSet:
             # first create the filename to supply it to read function
@@ -894,7 +895,7 @@ class WorkOnFile:
 
             event_num = int(evHeader.attr["eventNumber"])
             if event_num % 1000 == 0:
-                print event_num, ' events done.'
+                print(event_num, ' events done.')
 
         plot_pixel_histogram(self.filepath,
                              self.fig,
@@ -957,6 +958,10 @@ def create_chip_axes(sep, fig, single_chip_flag):
         chip_subplots.append(ch6)
         ch7 = fig.add_subplot(row1[0, 0])
         chip_subplots.append(ch7)
+
+        # now create the grid object from the individual rows
+        #grid = gridspec.GridSpecFromSubplotSpec(3, 1, [row1, row2, row3])
+        #grid = gridspec.GridSpecFromSubplotSpec(3, 1, subplot_spec = row1)#[row1, row2, row3])
     else:
         # in this case we only use a single chip
         chip = gridspec.GridSpec(1, 1)
@@ -982,7 +987,7 @@ def setup_temp_watcher(filepath, ns):
     mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY
 
     temp_log_file = get_temp_filename(filepath)
-    if temp_log_file is not "":
+    if temp_log_file != "":
         print("Temperature log file found at: %s" % temp_log_file)
 
         temp_handler = TempHandler(ns, lock)
@@ -1134,7 +1139,7 @@ def main(args):
         ns.files = None
     # and the interval, in which the thread refreshes the filelist
     ns.refreshInterval = 0.0001
-    print ns
+    print(ns)
 
     # temparature readout related
     ns.currentTemps = None

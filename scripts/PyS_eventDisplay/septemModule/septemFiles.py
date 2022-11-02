@@ -6,10 +6,10 @@ from os.path import expanduser
 import scandir
 import numpy as np
 import collections
-import cPickle
+import pickle
 
-import septemClasses
-import septemMisc
+from . import septemClasses
+from . import septemMisc
 
 
 ################################################################################
@@ -18,10 +18,10 @@ import septemMisc
 
 def read_zsub_mp(co_ns, list_of_files, qRead):
     """
-    this function is called from a worker process, which reads 
+    this function is called from a worker process, which reads
     all files of the list of files and puts it into the queue qRead
     """
-    # TODO: implement max cached batches 
+    # TODO: implement max cached batches
 
     while co_ns.doRead is True:
         for i, f in enumerate(list_of_files):
@@ -52,7 +52,7 @@ def read_multiple_zsup_data_files(list_of_files):
     # function to be called by a worker thread, which simply reads
     # a batch of files and returns a list of read data
     # internally calls read_zero_suppressed_data_file
-    
+
     data = []
     for f in list_of_files:
         data.append(read_zero_suppressed_data_file(f, False))
@@ -129,8 +129,8 @@ def get_temp_filename(filepath):
             return ""
 
 def read_temparature_log(filepath):
-    """ 
-    reads a temparature log file created during a run from the MCP2210 
+    """
+    reads a temparature log file created during a run from the MCP2210
     returns a dictionary of
     {datetime object : (IMB_temp, septem_temp)}
     """
@@ -174,7 +174,7 @@ def work_on_read_data(data, filepath = None, header_only = False):
                 # numpy array
                 if len(chpHeaderList) > 0:
                     chpHeaderList[-1].convert_list_to_array()
-                    
+
                 chpHeader = septemClasses.chipHeaderData()
                 chpHeaderList.append(chpHeader)
             # in this case read the chip header
@@ -185,7 +185,7 @@ def work_on_read_data(data, filepath = None, header_only = False):
         else:
             # else (header_only is True), we break from the loop
             break
-    
+
     # after we're done reading the last file, we still need to convert the listOfPixels
     # of the last element in the chpHeaderList to an array:
     if len(chpHeaderList) > 0:
@@ -203,7 +203,7 @@ def create_files_from_path(folder):
     # filter files by data in file and no fadc flag in filename
     n = 0
     eventFiles = []
-    
+
     for el in files:
         if "data" in el and "fadc" not in el:
             n += 1
@@ -218,7 +218,7 @@ def create_files_from_path_fadc(folder):
     # this function removes any non fadc files which are in a folder
     files = os.listdir(folder)
     # filter files by -fadc flag in filename
-    print len(files)
+    print(len(files))
     n = 0
     files_fadc = []
     for el in files:
@@ -269,8 +269,8 @@ def create_files_from_path_combined(folder, eventSet, fadcSet, full_matrix = Fal
                 elif "fadc" in el:
                     el = int(el.split('/')[-1].lstrip('data').rstrip('.txt-fadc'))
                     if el not in fadcSet:
-                        fadcSet.add(el)                    
-        
+                        fadcSet.add(el)
+
     if full_matrix == False:
         return [eventSet, fadcSet]
     else:
@@ -286,7 +286,7 @@ def build_filename_string_from_event_number(number, fadcFlag = False):
         filename = "data" + str(number).zfill(6) + '.txt-fadc'
 
     return filename
-    
+
 
 def create_filename_from_event_number(event_num_set, event_number, nfiles, fadcFlag):
     # this function is used to create a full filename from a filepath,
@@ -328,7 +328,7 @@ def get_event_number_from_filename(filename):
     else:
         num = basename.lstrip('data').rstrip('.txt-fadc')
     return int(num)
-    
+
 def create_occupancy_filename(filepath, iBatch):
     # this function creates a correct filename for an occupancy plot
     # NOTE: previously it said os.path.basename(os.path.dirname(filepath))
@@ -350,24 +350,24 @@ def create_pickle_filename(filename, fadc_triggered_only):
     return pickle_filename
 
 def dump_occupancy_data(filename, data, header_text, fadc_triggered_only):
-    # this function cPickles the data needed for an occupancy plot and 
+    # this function cPickles the data needed for an occupancy plot and
     # dumps it
     pickle_filename = create_pickle_filename(filename, fadc_triggered_only)
     data_dump = open(pickle_filename, 'wb')
-    
+
     # create a dictionary to store the data
     data_dict = {"chip_arrays"  : data,
                  "header_text" : header_text}
-                    
-    cPickle.dump(data_dict, data_dump, -1)
+
+    pickle.dump(data_dict, data_dump, -1)
     data_dump.close()
 
 def load_occupancy_dump(filename):
     # this function loads a data dump created by dump_occupancy_data()
     data_dump = open(filename, 'r')
-    data_dict = cPickle.load(data_dump)
+    data_dict = pickle.load(data_dump)
     data_dump.close()
-    
+
     data         = data_dict["chip_arrays"]
     header_text  = data_dict["header_text"]
 
@@ -378,7 +378,7 @@ def check_occupancy_dump_exist(filename):
     basename = os.path.basename(filename)
 
     outfolder = os.listdir('out/')
-    
+
     if basename in outfolder:
         return True
     else:
@@ -397,7 +397,7 @@ def create_list_of_inodes(filepath):
 
 def create_list_of_files(nStart, nEnd, eventSet, filepath):
     """
-    This function creates a list of files from start event nStart to end 
+    This function creates a list of files from start event nStart to end
     event nEnd using eventSet and prepending the filepath.
     """
     list_of_files = []
@@ -442,16 +442,16 @@ def create_list_of_files_dumb(filepath):
 
     inodes = [os.stat(el).st_ino for el in files]
     fi = [x for (y, x) in sorted(zip(inodes, files))]
-    
+
     return fi
-    
+
 
 def get_frame_from_file(folder, f, chip):
-    """ 
+    """
     This is a convenience function, which returns a numpy array of the frame 'f',
     in folder 'folder' given to the function for chip 'chip'.
     """
-    
+
     try:
         evH, chpHs = read_zero_suppressed_data_file(os.path.join(folder, f))
     except IOError:
@@ -475,7 +475,7 @@ def write_centroids_to_file(filepath, centroid_list):
     # of clusters from the center chip and the energy given by the number of
     # hit pixels
     # we convert the centroids to mm before writing them to file
-    
+
     filename = os.path.join(filepath, "centroid_hits.dat")
     print("Writing centroids to file %s" % filename)
     with open(filename, 'wb') as f:
