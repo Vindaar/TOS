@@ -292,7 +292,7 @@ def block_mean(ar, fact):
     if fact == 1: return ar
     sx, sy = ar.shape
     X, Y = np.ogrid[0:sx, 0:sy]
-    regions = sy/fact * (X/fact) + Y/fact
+    regions = (sy // fact) * (X // fact) + Y // fact
     res = ndimage.mean(ar, labels=regions, index=np.arange(regions.max() + 1))
-    res.shape = (sx/fact, sy/fact)
+    res.shape = (sx // fact, sy // fact)
     return res

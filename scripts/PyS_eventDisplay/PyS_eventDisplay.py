@@ -148,7 +148,8 @@ class WorkOnFile:
         self.ani_loop_running      = False
 
         # zero initialized numpy array
-        temp_array         = np.zeros((self.pix_dim, self.pix_dim))
+        temp_array         = np.zeros((self.pix_dim // self.downsample,
+                                       self.pix_dim // self.downsample))
         #self.im_list       = [chip_subplots[i].imshow(temp_array, interpolation='none', axes=chip_subplots[i], vmin=0, vmax=250) for i in xrange(len(self.chip_subplots))]
         self.im_list       = [chip_subplots[i].imshow(temp_array,
                                                       interpolation='none',
